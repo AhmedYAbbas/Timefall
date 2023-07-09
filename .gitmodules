@@ -1,0 +1,3 @@
+[submodule "Timefall/vendor/spdlog"]
+	path = Timefall/vendor/spdlog
+	url = https://github.com/gabime/spdlog
