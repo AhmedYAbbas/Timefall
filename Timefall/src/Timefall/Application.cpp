@@ -1,4 +1,6 @@
 #include "Application.h"
+#include "Events/ApplicationEvent.h"
+#include "Timefall/Log.h"
 
 namespace Timefall
 {
@@ -14,6 +16,9 @@ namespace Timefall
 
 	void Application::Run()
 	{
+		WindowResizeEvent e(1920, 1080);
+		TF_TRACE(e);
+
 		while (true);
 	}
 }
