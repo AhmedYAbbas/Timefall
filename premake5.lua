@@ -18,6 +18,9 @@ project "Timefall"
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("int/" .. outputdir .. "/%{prj.name}")
 
+	pchheader "tfpch.h"
+	pchsource "Timefall/src/tfpch.cpp"
+
 	files
 	{
 		"%{prj.name}/src/**.h",

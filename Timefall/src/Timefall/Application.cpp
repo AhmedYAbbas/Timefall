@@ -1,3 +1,5 @@
+#include "tfpch.h"
+
 #include "Application.h"
 #include "Events/ApplicationEvent.h"
 #include "Timefall/Log.h"

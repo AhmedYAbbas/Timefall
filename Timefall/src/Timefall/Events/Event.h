@@ -2,10 +2,6 @@
 
 #include "Timefall/Core.h"
 
-#include <string>
-#include <sstream>
-#include <functional>
-
 namespace Timefall
 {
 	// Events in Timefall are currently blocking, meaning when an event occurs it

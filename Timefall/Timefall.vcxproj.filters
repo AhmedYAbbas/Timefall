@@ -19,15 +19,22 @@
     <ClInclude Include="src\Timefall\EntryPoint.h">
       <Filter>Timefall</Filter>
     </ClInclude>
+    <ClInclude Include="src\Timefall\Events\ApplicationEvent.h">
+      <Filter>Timefall\Events</Filter>
+    </ClInclude>
     <ClInclude Include="src\Timefall\Events\Event.h">
+      <Filter>Timefall\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Timefall\Events\KeyEvent.h">
+      <Filter>Timefall\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Timefall\Events\MouseEvent.h">
       <Filter>Timefall\Events</Filter>
     </ClInclude>
     <ClInclude Include="src\Timefall\Log.h">
       <Filter>Timefall</Filter>
     </ClInclude>
-    <ClInclude Include="src\Timefall\Events\ApplicationEvent.h" />
-    <ClInclude Include="src\Timefall\Events\KeyEvent.h" />
-    <ClInclude Include="src\Timefall\Events\MouseEvent.h" />
+    <ClInclude Include="src\tfpch.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Timefall\Application.cpp">
@@ -36,5 +43,6 @@
     <ClCompile Include="src\Timefall\Log.cpp">
       <Filter>Timefall</Filter>
     </ClCompile>
+    <ClCompile Include="src\tfpch.cpp" />
   </ItemGroup>
 </Project>
