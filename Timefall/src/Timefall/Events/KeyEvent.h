@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Event.h"
-
 namespace Timefall
 {
 	class TIMEFALL_API KeyEvent : public Event

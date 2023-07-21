@@ -1,8 +1,5 @@
 #pragma once
 
-#include "tfpch.h"
-
-#include "Timefall/Core.h"
 #include "Timefall/Events/Event.h"
 
 namespace Timefall

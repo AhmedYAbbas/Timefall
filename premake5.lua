@@ -48,7 +48,7 @@ project "Timefall"
 	
 	filter "system:windows"
 		cppdialect "C++17"
-		staticruntime "On"
+		staticruntime "Off"
 		systemversion "latest"
 
 		defines
@@ -64,14 +64,17 @@ project "Timefall"
 
 	filter "configurations:Debug"
 		defines "TF_DEBUG"
+		runtime "Debug"
 		symbols "On"
 
 	filter "configurations:Release"
 		defines "TF_RELEASE"
+		runtime "Release"
 		optimize "On"
 
 	filter "configurations:Dist"
 		defines "TF_DIST"
+		runtime "Release"
 		optimize "On"
 
 project "Sandbox"
@@ -101,7 +104,7 @@ project "Sandbox"
 	
 	filter "system:windows"
 		cppdialect "C++17"
-		staticruntime "On"
+		staticruntime "Off"
 		systemversion "latest"
 
 		defines

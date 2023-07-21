@@ -40,6 +40,12 @@
     <ClInclude Include="src\Timefall\Events\MouseEvent.h">
       <Filter>Timefall\Events</Filter>
     </ClInclude>
+    <ClInclude Include="src\Timefall\Layer.h">
+      <Filter>Timefall</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Timefall\LayerStack.h">
+      <Filter>Timefall</Filter>
+    </ClInclude>
     <ClInclude Include="src\Timefall\Log.h">
       <Filter>Timefall</Filter>
     </ClInclude>
@@ -53,6 +59,12 @@
       <Filter>Platform\Windows</Filter>
     </ClCompile>
     <ClCompile Include="src\Timefall\Application.cpp">
+      <Filter>Timefall</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Timefall\Layer.cpp">
+      <Filter>Timefall</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Timefall\LayerStack.cpp">
       <Filter>Timefall</Filter>
     </ClCompile>
     <ClCompile Include="src\Timefall\Log.cpp">

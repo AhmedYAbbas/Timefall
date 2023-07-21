@@ -83,7 +83,7 @@
       <AdditionalIncludeDirectories>src;vendor\spdlog\include;vendor\GLFW\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
@@ -109,7 +109,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
@@ -136,7 +136,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
@@ -161,6 +161,8 @@
     <ClInclude Include="src\Timefall\Events\Event.h" />
     <ClInclude Include="src\Timefall\Events\KeyEvent.h" />
     <ClInclude Include="src\Timefall\Events\MouseEvent.h" />
+    <ClInclude Include="src\Timefall\Layer.h" />
+    <ClInclude Include="src\Timefall\LayerStack.h" />
     <ClInclude Include="src\Timefall\Log.h" />
     <ClInclude Include="src\Timefall\Window.h" />
     <ClInclude Include="src\tfpch.h" />
@@ -168,6 +170,8 @@
   <ItemGroup>
     <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp" />
     <ClCompile Include="src\Timefall\Application.cpp" />
+    <ClCompile Include="src\Timefall\Layer.cpp" />
+    <ClCompile Include="src\Timefall\LayerStack.cpp" />
     <ClCompile Include="src\Timefall\Log.cpp" />
     <ClCompile Include="src\tfpch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
