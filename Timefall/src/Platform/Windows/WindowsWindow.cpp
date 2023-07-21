@@ -5,6 +5,8 @@
 #include "Timefall/Events/MouseEvent.h"
 #include "Timefall/Events/KeyEvent.h"
 
+#include <glad/glad.h>
+
 namespace Timefall
 {
 	static bool s_GLFWInitialized = false;
@@ -48,6 +50,8 @@ namespace Timefall
 
 		m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, props.Title.c_str(), nullptr, nullptr);
 		glfwMakeContextCurrent(m_Window);
+		int success = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+		TF_CORE_ASSERT(success, "Faild to initialize Glad!");
 		glfwSetWindowUserPointer(m_Window, &m_Data);
 		SetVsync(true);
 

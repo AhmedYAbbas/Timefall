@@ -13,8 +13,10 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 -- Include directories relative to root folder (solution directory)
 IncludeDir = {}
 IncludeDir["GLFW"] = "Timefall/vendor/GLFW/include"
+IncludeDir["Glad"] = "Timefall/vendor/Glad/include"
 
 include "Timefall/vendor/GLFW"
+include "Timefall/vendor/Glad"
 
 project "Timefall"
 	location "Timefall"
@@ -37,12 +39,14 @@ project "Timefall"
 	{
 		"%{prj.name}/src",
 		"%{prj.name}/vendor/spdlog/include",
-		"%{IncludeDir.GLFW}"
+		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.Glad}"
 	}
 
 	links
 	{
 		"GLFW",
+		"Glad",
 		"opengl32.lib"
 	}
 	
@@ -54,7 +58,8 @@ project "Timefall"
 		defines
 		{
 			"TF_PLATFORM_WINDOWS",
-			"TF_BUILD_DLL"				
+			"TF_BUILD_DLL",
+			"GLFW_INCLUDE_NONE"
 		}
 
 		postbuildcommands
