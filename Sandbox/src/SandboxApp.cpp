@@ -24,6 +24,7 @@ public:
 	Sandbox()
 	{
 		PushLayer(new ExampleLayer());
+		PushLayer(new Timefall::ImGuiLayer());
 	}
 
 	~Sandbox()
