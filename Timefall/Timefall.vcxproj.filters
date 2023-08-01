@@ -65,6 +65,8 @@
       <Filter>Timefall</Filter>
     </ClInclude>
     <ClInclude Include="src\tfpch.h" />
+    <ClInclude Include="src\Timefall\Input.h" />
+    <ClInclude Include="src\Platform\Windows\WindowsInput.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Platform\OpenGL\ImGuiOpenGLRenderer.cpp">
@@ -89,5 +91,6 @@
       <Filter>Timefall</Filter>
     </ClCompile>
     <ClCompile Include="src\tfpch.cpp" />
+    <ClCompile Include="src\Platform\Windows\WindowsInput.cpp" />
   </ItemGroup>
 </Project>

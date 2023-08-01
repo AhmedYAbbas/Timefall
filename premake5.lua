@@ -1,5 +1,6 @@
 workspace "Timefall"
 	architecture "x64"
+	startproject "Sandbox"
 
 	configurations
 	{
@@ -16,14 +17,18 @@ IncludeDir["GLFW"] = "Timefall/vendor/GLFW/include"
 IncludeDir["Glad"] = "Timefall/vendor/Glad/include"
 IncludeDir["ImGui"] = "Timefall/vendor/imgui"
 
-include "Timefall/vendor/GLFW"
-include "Timefall/vendor/Glad"
-include "Timefall/vendor/ImGui"
+group "Dependencies"
+	include "Timefall/vendor/GLFW"
+	include "Timefall/vendor/Glad"
+	include "Timefall/vendor/ImGui"
+
+group ""
 
 project "Timefall"
 	location "Timefall"
 	kind "SharedLib"
 	language "C++"
+	staticruntime "Off"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("int/" .. outputdir .. "/%{prj.name}")
@@ -57,7 +62,6 @@ project "Timefall"
 	
 	filter "system:windows"
 		cppdialect "C++17"
-		staticruntime "Off"
 		systemversion "latest"
 
 		defines
@@ -69,7 +73,7 @@ project "Timefall"
 
 		postbuildcommands
 		{
-			("{COPY} %{cfg.buildtarget.relpath} ../bin/" .. outputdir .. "/Sandbox")
+			("{COPY} %{cfg.buildtarget.relpath} \"../bin/" .. outputdir .. "/Sandbox/\"")
 		}
 
 	filter "configurations:Debug"
@@ -91,6 +95,7 @@ project "Sandbox"
 	location "Sandbox"
 	kind "ConsoleApp"
 	language "C++"
+	staticruntime "Off"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("int/" .. outputdir .. "/%{prj.name}")
@@ -114,7 +119,6 @@ project "Sandbox"
 	
 	filter "system:windows"
 		cppdialect "C++17"
-		staticruntime "Off"
 		systemversion "latest"
 
 		defines
@@ -124,12 +128,15 @@ project "Sandbox"
 
 	filter "configurations:Debug"
 		defines "TF_DEBUG"
+		runtime "Debug"
 		symbols "On"
 
 	filter "configurations:Release"
 		defines "TF_RELEASE"
+		runtime "Release"
 		optimize "On"
 
 	filter "configurations:Dist"
 		defines "TF_DIST"
+		runtime "Release"
 		optimize "On"

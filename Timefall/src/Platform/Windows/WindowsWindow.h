@@ -22,6 +22,8 @@ namespace Timefall
 		void SetVsync(bool enabled) override;
 		bool IsVsync() const override { return m_Data.Vsync; }
 
+		void* GetNativeWindow() const override  { return m_Window; }
+
 	private:
 		void Init(const WindowProps& props);
 		void Shutdown() const;
