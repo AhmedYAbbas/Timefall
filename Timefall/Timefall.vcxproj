@@ -165,9 +165,11 @@
     <ClInclude Include="src\Timefall\Events\MouseEvent.h" />
     <ClInclude Include="src\Timefall\ImGui\ImGuiLayer.h" />
     <ClInclude Include="src\Timefall\Input.h" />
+    <ClInclude Include="src\Timefall\Keycodes.h" />
     <ClInclude Include="src\Timefall\Layer.h" />
     <ClInclude Include="src\Timefall\LayerStack.h" />
     <ClInclude Include="src\Timefall\Log.h" />
+    <ClInclude Include="src\Timefall\MouseButtonCodes.h" />
     <ClInclude Include="src\Timefall\Window.h" />
     <ClInclude Include="src\tfpch.h" />
   </ItemGroup>

@@ -136,13 +136,9 @@ static void ImGui_ImplGlfw_SetClipboardText(void* user_data, const char* text)
 namespace Timefall
 {
 	ImGuiLayer::ImGuiLayer()
-		: Layer("ImGuiLayer")
-	{
-	}
+		: Layer("ImGuiLayer") {}
 
-	ImGuiLayer::~ImGuiLayer()
-	{
-	}
+	ImGuiLayer::~ImGuiLayer() {}
 
 	void ImGuiLayer::OnAttach()
 	{

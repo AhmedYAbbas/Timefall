@@ -6,6 +6,10 @@
 #include "Timefall/Layer.h"
 #include "Timefall/Log.h"
 
+#include "Timefall/Input.h"
+#include "Timefall/Keycodes.h"
+#include "Timefall/MouseButtonCodes.h"
+
 #include "Timefall/ImGui/ImGuiLayer.h"
 // ------------EntryPoint--------------
 #include "Timefall/EntryPoint.h"
