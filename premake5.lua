@@ -16,6 +16,7 @@ IncludeDir = {}
 IncludeDir["GLFW"] = "Timefall/vendor/GLFW/include"
 IncludeDir["Glad"] = "Timefall/vendor/Glad/include"
 IncludeDir["ImGui"] = "Timefall/vendor/imgui"
+IncludeDir["glm"] = "Timefall/vendor/glm"
 
 group "Dependencies"
 	include "Timefall/vendor/GLFW"
@@ -39,7 +40,9 @@ project "Timefall"
 	files
 	{
 		"%{prj.name}/src/**.h",
-		"%{prj.name}/src/**.cpp"
+		"%{prj.name}/src/**.cpp",
+		"%{prj.name}/vendor/glm/glm/**.hpp",
+		"%{prj.name}/vendor/glm/glm/**.inl"
 	}
 	
 	includedirs
@@ -49,7 +52,8 @@ project "Timefall"
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.Glad}",
 		"%{IncludeDir.ImGui}",
-		"%{IncludeDir.ImGui}/backends"
+		"%{IncludeDir.ImGui}/backends",
+		"%{IncludeDir.glm}"
 	}
 
 	links
@@ -109,7 +113,8 @@ project "Sandbox"
 	includedirs
 	{
 		"Timefall/vendor/spdlog/include",
-		"Timefall/src"
+		"Timefall/src",
+		"%{IncludeDir.glm}"
 	}
 
 	links
