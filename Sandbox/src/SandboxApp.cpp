@@ -1,14 +1,20 @@
 #include <Timefall.h>
 
+#include "ImGui/imgui.h"
+
 class ExampleLayer : public Timefall::Layer
 {
 public:
 	ExampleLayer()
 		: Layer("Example") {}
 
-	void OnUpdate() override
+	void OnUpdate() override {}
+
+	void OnImGuiRender() override
 	{
-		
+		ImGui::Begin("Test");
+		ImGui::Text("Hello World!");
+		ImGui::End();
 	}
 
 	void OnEvent(Timefall::Event& event) override
@@ -30,7 +36,6 @@ public:
 	Sandbox()
 	{
 		PushLayer(new ExampleLayer());
-		PushLayer(new Timefall::ImGuiLayer());
 	}
 
 	~Sandbox()

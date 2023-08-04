@@ -4,6 +4,8 @@
 #include "LayerStack.h"
 #include "Events/ApplicationEvent.h"
 
+#include "ImGui/ImGuiLayer.h"
+
 namespace Timefall
 {
 	class TIMEFALL_API Application
@@ -26,6 +28,7 @@ namespace Timefall
 
 	private:
 		std::unique_ptr<Window> m_Window;
+		ImGuiLayer* m_ImGuiLayer;
 		bool m_Running;
 		LayerStack m_LayerStack;
 

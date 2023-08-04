@@ -114,6 +114,7 @@ project "Sandbox"
 	{
 		"Timefall/vendor/spdlog/include",
 		"Timefall/src",
+		"Timefall/vendor",
 		"%{IncludeDir.glm}"
 	}
 
