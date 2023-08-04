@@ -8,8 +8,6 @@ public:
 	ExampleLayer()
 		: Layer("Example") {}
 
-	void OnUpdate() override {}
-
 	void OnImGuiRender() override
 	{
 		ImGui::Begin("Test");
@@ -21,11 +19,11 @@ public:
 	{
 		if (event.GetEventType() == Timefall::EventType::KeyPressed)
 		{
-			Timefall::KeyPressedEvent& e = dynamic_cast<Timefall::KeyPressedEvent&>(event);
+			/*Timefall::KeyPressedEvent& e = dynamic_cast<Timefall::KeyPressedEvent&>(event);
 			if (e.GetKeyCode() == TF_KEY_TAB)
-				TF_TRACE("Tab key is pressed");
+			TF_TRACE("Tab key is pressed");
 
-			TF_TRACE("{0}", (char)e.GetKeyCode());
+			TF_TRACE("{0}", (char)e.GetKeyCode());*/
 		}
 	}
 };
