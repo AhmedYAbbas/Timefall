@@ -23,6 +23,8 @@ group "Dependencies"
 	include "Timefall/vendor/Glad"
 	include "Timefall/vendor/ImGui"
 
+group ""
+
 project "Timefall"
 	location "Timefall"
 	kind "StaticLib"

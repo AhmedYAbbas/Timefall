@@ -10,7 +10,6 @@
 #else
 	#define TIMEFALL_API
 #endif
-
 #else
 	#error Timefall only supports windows!
 #endif

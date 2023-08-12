@@ -5,7 +5,7 @@
 #include "Timefall/Events/MouseEvent.h"
 #include "Timefall/Events/KeyEvent.h"
 
-#include <glad/glad.h>
+#include "Platform/OpenGL/OpenGLContext.h"
 
 namespace Timefall
 {
@@ -49,9 +49,10 @@ namespace Timefall
 		}
 
 		m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, props.Title.c_str(), nullptr, nullptr);
-		glfwMakeContextCurrent(m_Window);
-		int success = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-		TF_CORE_ASSERT(success, "Faild to initialize Glad!");
+
+		m_Context = new OpenGLContext(m_Window);
+		m_Context->Init();
+
 		glfwSetWindowUserPointer(m_Window, &m_Data);
 		SetVsync(true);
 
@@ -154,7 +155,7 @@ namespace Timefall
 	void WindowsWindow::OnUpdate()
 	{
 		glfwPollEvents();
-		glfwSwapBuffers(m_Window);
+		m_Context->SwapBuffers();
 	}
 
 	void WindowsWindow::SetVsync(bool enabled)
