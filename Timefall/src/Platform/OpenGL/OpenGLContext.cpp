@@ -17,6 +17,11 @@ namespace Timefall
 		glfwMakeContextCurrent(m_WindowHandle);
 		int success = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 		TF_CORE_ASSERT(success, "Faild to initialize Glad!");
+
+		TF_CORE_INFO("OpenGL Info:");
+		TF_CORE_INFO("	Vendor: {0}", (const char*)glGetString(GL_VENDOR));
+		TF_CORE_INFO("	Renderer: {0}", (const char*)glGetString(GL_RENDERER));
+		TF_CORE_INFO("	Version: {0}", (const char*)glGetString(GL_VERSION));
 	}
 
 	void OpenGLContext::SwapBuffers()
