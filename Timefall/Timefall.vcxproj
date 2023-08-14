@@ -162,6 +162,7 @@
     <ClInclude Include="src\Timefall\Log.h" />
     <ClInclude Include="src\Timefall\MouseButtonCodes.h" />
     <ClInclude Include="src\Timefall\Renderer\GraphicsContext.h" />
+    <ClInclude Include="src\Timefall\Renderer\Shader.h" />
     <ClInclude Include="src\Timefall\Window.h" />
     <ClInclude Include="src\tfpch.h" />
     <ClInclude Include="vendor\glm\glm\common.hpp" />
@@ -594,6 +595,7 @@
     <ClCompile Include="src\tfpch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\Timefall\Renderer\Shader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="vendor\GLFW\GLFW.vcxproj">
