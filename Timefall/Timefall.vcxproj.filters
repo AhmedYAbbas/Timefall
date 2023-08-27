@@ -1350,6 +1350,9 @@
     <ClInclude Include="src\Timefall\Renderer\GraphicsContext.h" />
     <ClInclude Include="src\Platform\OpenGL\OpenGLContext.h" />
     <ClInclude Include="src\Timefall\Renderer\Shader.h" />
+    <ClInclude Include="src\Timefall\Renderer\Buffer.h" />
+    <ClInclude Include="src\Timefall\Renderer\Renderer.h" />
+    <ClInclude Include="src\Platform\OpenGL\OpenGLBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Platform\Windows\WindowsInput.cpp">
@@ -1381,5 +1384,8 @@
     </ClCompile>
     <ClCompile Include="src\Platform\OpenGL\OpenGLContext.cpp" />
     <ClCompile Include="src\Timefall\Renderer\Shader.cpp" />
+    <ClCompile Include="src\Timefall\Renderer\Buffer.cpp" />
+    <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp" />
+    <ClCompile Include="src\Timefall\Renderer\Renderer.cpp" />
   </ItemGroup>
 </Project>
