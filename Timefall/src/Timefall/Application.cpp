@@ -44,7 +44,7 @@ namespace Timefall
 		m_IndexBuffer->Bind();
 		m_IndexBuffer->SetData(indices, sizeof(indices) / sizeof(uint32_t));
 
-		std::string vertexSrc = R"(
+		const std::string vertexSrc = R"(
 			#version 330 core
 		
 			layout(location = 0) in vec4 a_Position;
@@ -58,7 +58,7 @@ namespace Timefall
 			}
 		)";
 
-		std::string fragmentSrc = R"(
+		const std::string fragmentSrc = R"(
 			#version 330 core
 		
 			out vec4 color;
@@ -71,7 +71,7 @@ namespace Timefall
 			}
 		)";
 
-		m_Shader.reset(new Shader(vertexSrc, fragmentSrc));
+		m_Shader.reset(Shader::Create(vertexSrc, fragmentSrc));
 	}
 
 	Application::~Application()

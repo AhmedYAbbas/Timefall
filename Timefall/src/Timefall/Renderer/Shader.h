@@ -5,13 +5,11 @@ namespace Timefall
 	class Shader
 	{
 	public:
-		Shader(const std::string& vertexSrc, const std::string& fragmentSrc);
-		~Shader();
+		virtual ~Shader() {}
 
-		void Bind() const;
-		void Unbind() const;
+		virtual void Bind() const = 0;
+		virtual void Unbind() const = 0;
 
-	private:
-		uint32_t m_RendererID;
+		static Shader* Create(const std::string& vertexSrc, const std::string& fragmentSrc);
 	};
 }
