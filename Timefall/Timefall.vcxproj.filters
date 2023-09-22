@@ -7,6 +7,9 @@
     <Filter Include="src\Platform">
       <UniqueIdentifier>{21CA02E5-0D2D-9289-B6B2-CA3FA2F45D0C}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\Platform\OpenGL">
+      <UniqueIdentifier>{35A49437-A105-7245-2A73-B8F796D3A804}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\Platform\Windows">
       <UniqueIdentifier>{5B054582-4794-CE4B-F0B2-E246DC20DFF1}</UniqueIdentifier>
     </Filter>
@@ -18,6 +21,9 @@
     </Filter>
     <Filter Include="src\Timefall\ImGui">
       <UniqueIdentifier>{B4B74636-A09B-078C-09FC-01DFF5FEF10D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Timefall\Renderer">
+      <UniqueIdentifier>{F0F1857D-5C5E-4178-2552-D9D5917D63E0}</UniqueIdentifier>
     </Filter>
     <Filter Include="vendor">
       <UniqueIdentifier>{B3738122-9F15-ACF8-88D0-BF4C74113349}</UniqueIdentifier>
@@ -42,6 +48,18 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Platform\OpenGL\OpenGLBuffer.h">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\OpenGL\OpenGLContext.h">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\OpenGL\OpenGLShader.h">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\OpenGL\OpenGLVertexArray.h">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClInclude>
     <ClInclude Include="src\Platform\Windows\WindowsInput.h">
       <Filter>src\Platform\Windows</Filter>
     </ClInclude>
@@ -92,6 +110,21 @@
     </ClInclude>
     <ClInclude Include="src\Timefall\MouseButtonCodes.h">
       <Filter>src\Timefall</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Timefall\Renderer\Buffer.h">
+      <Filter>src\Timefall\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Timefall\Renderer\GraphicsContext.h">
+      <Filter>src\Timefall\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Timefall\Renderer\Renderer.h">
+      <Filter>src\Timefall\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Timefall\Renderer\Shader.h">
+      <Filter>src\Timefall\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Timefall\Renderer\VertexArray.h">
+      <Filter>src\Timefall\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\Timefall\Window.h">
       <Filter>src\Timefall</Filter>
@@ -1347,15 +1380,20 @@
     <ClInclude Include="vendor\glm\glm\vector_relational.hpp">
       <Filter>vendor\glm\glm</Filter>
     </ClInclude>
-    <ClInclude Include="src\Timefall\Renderer\GraphicsContext.h" />
-    <ClInclude Include="src\Platform\OpenGL\OpenGLContext.h" />
-    <ClInclude Include="src\Timefall\Renderer\Shader.h" />
-    <ClInclude Include="src\Timefall\Renderer\Buffer.h" />
-    <ClInclude Include="src\Timefall\Renderer\Renderer.h" />
-    <ClInclude Include="src\Platform\OpenGL\OpenGLBuffer.h" />
-    <ClInclude Include="src\Platform\OpenGL\OpenGLShader.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\OpenGL\OpenGLContext.cpp">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\OpenGL\OpenGLShader.cpp">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\OpenGL\OpenGLVertexArray.cpp">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClCompile>
     <ClCompile Include="src\Platform\Windows\WindowsInput.cpp">
       <Filter>src\Platform\Windows</Filter>
     </ClCompile>
@@ -1380,14 +1418,20 @@
     <ClCompile Include="src\Timefall\Log.cpp">
       <Filter>src\Timefall</Filter>
     </ClCompile>
+    <ClCompile Include="src\Timefall\Renderer\Buffer.cpp">
+      <Filter>src\Timefall\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Timefall\Renderer\Renderer.cpp">
+      <Filter>src\Timefall\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Timefall\Renderer\Shader.cpp">
+      <Filter>src\Timefall\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Timefall\Renderer\VertexArray.cpp">
+      <Filter>src\Timefall\Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="src\tfpch.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\Platform\OpenGL\OpenGLContext.cpp" />
-    <ClCompile Include="src\Timefall\Renderer\Shader.cpp" />
-    <ClCompile Include="src\Timefall\Renderer\Buffer.cpp" />
-    <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp" />
-    <ClCompile Include="src\Timefall\Renderer\Renderer.cpp" />
-    <ClCompile Include="src\Platform\OpenGL\OpenGLShader.cpp" />
   </ItemGroup>
 </Project>

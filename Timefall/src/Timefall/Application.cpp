@@ -11,27 +11,6 @@ namespace Timefall
 {
 	Application* Application::s_Instance = nullptr;
 
-	static GLenum ShaderDataTypeToGLBaseType(ShaderDataType type)
-	{
-		switch (type)
-		{
-			case Timefall::ShaderDataType::Float:    return GL_FLOAT;
-			case Timefall::ShaderDataType::Float2:   return GL_FLOAT;
-			case Timefall::ShaderDataType::Float3:   return GL_FLOAT;
-			case Timefall::ShaderDataType::Float4:   return GL_FLOAT;
-			case Timefall::ShaderDataType::Mat3:     return GL_FLOAT;
-			case Timefall::ShaderDataType::Mat4:     return GL_FLOAT;
-			case Timefall::ShaderDataType::Int:	     return GL_INT;
-			case Timefall::ShaderDataType::Int2:     return GL_INT;
-			case Timefall::ShaderDataType::Int3:     return GL_INT;
-			case Timefall::ShaderDataType::Int4:     return GL_INT;
-			case Timefall::ShaderDataType::Bool:     return GL_BOOL;
-		}
-
-		TF_CORE_ASSERT(false, "Unknown ShaderDataType!");
-		return 0;
-	}
-
 	Application::Application()
 	{
 		TF_CORE_ASSERT(!s_Instance, "Application already exists!");
@@ -43,9 +22,8 @@ namespace Timefall
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
 
-		glGenVertexArrays(1, &m_VertexArray);
-		glBindVertexArray(m_VertexArray);
-
+		m_VertexArray.reset(VertexArray::Create());
+		m_VertexArray->Bind();
 
 		float vertices[] =
 		{
@@ -54,32 +32,26 @@ namespace Timefall
 			 0.0f,  0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f
 		};
 
-		m_VertexBuffer.reset(VertexBuffer::Create());
-		m_VertexBuffer->Bind();
-		m_VertexBuffer->SetData(vertices, sizeof(vertices));
-
-		{
-			BufferLayout layout = {
-				{ ShaderDataType::Float3, "a_Position" },
-				{ ShaderDataType::Float4, "a_Color" }
-			};
-
-			m_VertexBuffer->SetLayout(layout);
-		}
-
-		uint32_t index = 0;
-		const BufferLayout& layout = m_VertexBuffer->GetLayout();
-		for (const BufferElement& element : layout)
-		{
-			glEnableVertexAttribArray(index);
-			glVertexAttribPointer(index, element.GetComponentCount(), ShaderDataTypeToGLBaseType(element.Type), element.Normalized ? GL_TRUE : GL_FALSE, layout.GetStride(), (const void*)element.Offset);
-			index++;
-		}
+		std::shared_ptr<VertexBuffer> vertexBuffer;
+		vertexBuffer.reset(VertexBuffer::Create());
+		vertexBuffer->Bind();
+		vertexBuffer->SetData(vertices, sizeof(vertices));
+		
+		
+		BufferLayout layout = {
+			{ ShaderDataType::Float3, "a_Position" },
+			{ ShaderDataType::Float4, "a_Color" }
+		};
+		vertexBuffer->SetLayout(layout);
+		m_VertexArray->AddVertexBuffer(vertexBuffer);
+		
 
 		uint32_t indices[3] = { 0, 1, 2 };
-		m_IndexBuffer.reset(IndexBuffer::Create());
-		m_IndexBuffer->Bind();
-		m_IndexBuffer->SetData(indices, sizeof(indices) / sizeof(uint32_t));
+		std::shared_ptr<IndexBuffer> indexBuffer;
+		indexBuffer.reset(IndexBuffer::Create());
+		indexBuffer->Bind();
+		indexBuffer->SetData(indices, sizeof(indices) / sizeof(uint32_t));
+		m_VertexArray->SetIndexBuffer(indexBuffer);
 
 		const std::string vertexSrc = R"(
 			#version 330 core
@@ -153,8 +125,8 @@ namespace Timefall
 			glClear(GL_COLOR_BUFFER_BIT);
 
 			m_Shader->Bind();
-			glBindVertexArray(m_VertexArray);
-			glDrawElements(GL_TRIANGLES, m_IndexBuffer->GetCount(), GL_UNSIGNED_INT, nullptr);
+			m_VertexArray->Bind();
+			glDrawElements(GL_TRIANGLES, m_VertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
 
 			for (Layer* layer : m_LayerStack)
 				layer->OnUpdate();
