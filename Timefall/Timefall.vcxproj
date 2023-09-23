@@ -145,6 +145,7 @@
   <ItemGroup>
     <ClInclude Include="src\Platform\OpenGL\OpenGLBuffer.h" />
     <ClInclude Include="src\Platform\OpenGL\OpenGLContext.h" />
+    <ClInclude Include="src\Platform\OpenGL\OpenGLRendererAPI.h" />
     <ClInclude Include="src\Platform\OpenGL\OpenGLShader.h" />
     <ClInclude Include="src\Platform\OpenGL\OpenGLVertexArray.h" />
     <ClInclude Include="src\Platform\Windows\WindowsInput.h" />
@@ -166,7 +167,9 @@
     <ClInclude Include="src\Timefall\MouseButtonCodes.h" />
     <ClInclude Include="src\Timefall\Renderer\Buffer.h" />
     <ClInclude Include="src\Timefall\Renderer\GraphicsContext.h" />
+    <ClInclude Include="src\Timefall\Renderer\RenderCommand.h" />
     <ClInclude Include="src\Timefall\Renderer\Renderer.h" />
+    <ClInclude Include="src\Timefall\Renderer\RendererAPI.h" />
     <ClInclude Include="src\Timefall\Renderer\Shader.h" />
     <ClInclude Include="src\Timefall\Renderer\VertexArray.h" />
     <ClInclude Include="src\Timefall\Window.h" />
@@ -591,6 +594,7 @@
   <ItemGroup>
     <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp" />
     <ClCompile Include="src\Platform\OpenGL\OpenGLContext.cpp" />
+    <ClCompile Include="src\Platform\OpenGL\OpenGLRendererAPI.cpp" />
     <ClCompile Include="src\Platform\OpenGL\OpenGLShader.cpp" />
     <ClCompile Include="src\Platform\OpenGL\OpenGLVertexArray.cpp" />
     <ClCompile Include="src\Platform\Windows\WindowsInput.cpp" />
@@ -602,7 +606,9 @@
     <ClCompile Include="src\Timefall\LayerStack.cpp" />
     <ClCompile Include="src\Timefall\Log.cpp" />
     <ClCompile Include="src\Timefall\Renderer\Buffer.cpp" />
+    <ClCompile Include="src\Timefall\Renderer\RenderCommand.cpp" />
     <ClCompile Include="src\Timefall\Renderer\Renderer.cpp" />
+    <ClCompile Include="src\Timefall\Renderer\RendererAPI.cpp" />
     <ClCompile Include="src\Timefall\Renderer\Shader.cpp" />
     <ClCompile Include="src\Timefall\Renderer\VertexArray.cpp" />
     <ClCompile Include="src\tfpch.cpp">
