@@ -166,6 +166,7 @@
     <ClInclude Include="src\Timefall\Log.h" />
     <ClInclude Include="src\Timefall\MouseButtonCodes.h" />
     <ClInclude Include="src\Timefall\Renderer\Buffer.h" />
+    <ClInclude Include="src\Timefall\Renderer\Camera.h" />
     <ClInclude Include="src\Timefall\Renderer\GraphicsContext.h" />
     <ClInclude Include="src\Timefall\Renderer\RenderCommand.h" />
     <ClInclude Include="src\Timefall\Renderer\Renderer.h" />
@@ -606,6 +607,7 @@
     <ClCompile Include="src\Timefall\LayerStack.cpp" />
     <ClCompile Include="src\Timefall\Log.cpp" />
     <ClCompile Include="src\Timefall\Renderer\Buffer.cpp" />
+    <ClCompile Include="src\Timefall\Renderer\Camera.cpp" />
     <ClCompile Include="src\Timefall\Renderer\RenderCommand.cpp" />
     <ClCompile Include="src\Timefall\Renderer\Renderer.cpp" />
     <ClCompile Include="src\Timefall\Renderer\RendererAPI.cpp" />
