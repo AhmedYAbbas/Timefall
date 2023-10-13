@@ -20,6 +20,7 @@ namespace Timefall
 		shader->Bind();
 		shader->UploadUniformMat4("u_ViewProjection", m_SceneData->ViewProjectionMatrix);
 		vertexArray->Bind();
+		RenderCommand::Clear({0.1f, 0.1f, 0.1f, 1.0f});
 		RenderCommand::DrawIndexed(vertexArray);
 	}
 }
