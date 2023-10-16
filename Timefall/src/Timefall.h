@@ -8,6 +8,8 @@
 #include "Timefall/Layer.h"
 #include "Timefall/Log.h"
 
+#include "Timefall/Core/Timestep.h"
+
 // ------------Input--------------
 #include "Timefall/Input.h"
 #include "Timefall/Keycodes.h"

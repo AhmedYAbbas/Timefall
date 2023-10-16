@@ -153,6 +153,7 @@
     <ClInclude Include="src\Timefall.h" />
     <ClInclude Include="src\Timefall\Application.h" />
     <ClInclude Include="src\Timefall\Core.h" />
+    <ClInclude Include="src\Timefall\Core\Timestep.h" />
     <ClInclude Include="src\Timefall\EntryPoint.h" />
     <ClInclude Include="src\Timefall\Events\ApplicationEvent.h" />
     <ClInclude Include="src\Timefall\Events\Event.h" />

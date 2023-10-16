@@ -16,6 +16,9 @@
     <Filter Include="src\Timefall">
       <UniqueIdentifier>{0AA309CA-F605-996E-9F8B-D1248BCD64F1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\Timefall\Core">
+      <UniqueIdentifier>{A23D54CB-0E54-5261-57CB-DD82C32023E9}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\Timefall\Events">
       <UniqueIdentifier>{AE3F7CF6-1AA1-5904-A30E-A0B60F6F90C3}</UniqueIdentifier>
     </Filter>
@@ -54,6 +57,9 @@
     <ClInclude Include="src\Platform\OpenGL\OpenGLContext.h">
       <Filter>src\Platform\OpenGL</Filter>
     </ClInclude>
+    <ClInclude Include="src\Platform\OpenGL\OpenGLRendererAPI.h">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClInclude>
     <ClInclude Include="src\Platform\OpenGL\OpenGLShader.h">
       <Filter>src\Platform\OpenGL</Filter>
     </ClInclude>
@@ -74,6 +80,9 @@
     </ClInclude>
     <ClInclude Include="src\Timefall\Core.h">
       <Filter>src\Timefall</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Timefall\Core\Timestep.h">
+      <Filter>src\Timefall\Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Timefall\EntryPoint.h">
       <Filter>src\Timefall</Filter>
@@ -114,10 +123,19 @@
     <ClInclude Include="src\Timefall\Renderer\Buffer.h">
       <Filter>src\Timefall\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="src\Timefall\Renderer\Camera.h">
+      <Filter>src\Timefall\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="src\Timefall\Renderer\GraphicsContext.h">
       <Filter>src\Timefall\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="src\Timefall\Renderer\RenderCommand.h">
+      <Filter>src\Timefall\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="src\Timefall\Renderer\Renderer.h">
+      <Filter>src\Timefall\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Timefall\Renderer\RendererAPI.h">
       <Filter>src\Timefall\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\Timefall\Renderer\Shader.h">
@@ -1380,16 +1398,15 @@
     <ClInclude Include="vendor\glm\glm\vector_relational.hpp">
       <Filter>vendor\glm\glm</Filter>
     </ClInclude>
-    <ClInclude Include="src\Timefall\Renderer\RendererAPI.h" />
-    <ClInclude Include="src\Timefall\Renderer\RenderCommand.h" />
-    <ClInclude Include="src\Platform\OpenGL\OpenGLRendererAPI.h" />
-    <ClInclude Include="src\Timefall\Renderer\Camera.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Platform\OpenGL\OpenGLBuffer.cpp">
       <Filter>src\Platform\OpenGL</Filter>
     </ClCompile>
     <ClCompile Include="src\Platform\OpenGL\OpenGLContext.cpp">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\OpenGL\OpenGLRendererAPI.cpp">
       <Filter>src\Platform\OpenGL</Filter>
     </ClCompile>
     <ClCompile Include="src\Platform\OpenGL\OpenGLShader.cpp">
@@ -1425,7 +1442,16 @@
     <ClCompile Include="src\Timefall\Renderer\Buffer.cpp">
       <Filter>src\Timefall\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\Timefall\Renderer\Camera.cpp">
+      <Filter>src\Timefall\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Timefall\Renderer\RenderCommand.cpp">
+      <Filter>src\Timefall\Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="src\Timefall\Renderer\Renderer.cpp">
+      <Filter>src\Timefall\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Timefall\Renderer\RendererAPI.cpp">
       <Filter>src\Timefall\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\Timefall\Renderer\Shader.cpp">
@@ -1437,9 +1463,5 @@
     <ClCompile Include="src\tfpch.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\Timefall\Renderer\RendererAPI.cpp" />
-    <ClCompile Include="src\Timefall\Renderer\RenderCommand.cpp" />
-    <ClCompile Include="src\Platform\OpenGL\OpenGLRendererAPI.cpp" />
-    <ClCompile Include="src\Timefall\Renderer\Camera.cpp" />
   </ItemGroup>
 </Project>

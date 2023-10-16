@@ -7,6 +7,8 @@
 #include "Timefall/Events/MouseEvent.h"
 #include "Timefall/Events/ApplicationEvent.h"
 
+#include "Timefall/Core/Timestep.h"
+
 namespace Timefall
 {
 	class TIMEFALL_API Layer
@@ -17,7 +19,7 @@ namespace Timefall
 
 		virtual void OnAttach() {}
 		virtual void OnDetach() {}
-		virtual void OnUpdate() {}
+		virtual void OnUpdate(Timestep ts) {}
 		virtual void OnEvent(Event& event) {}
 		virtual void OnImGuiRender() {}
 
