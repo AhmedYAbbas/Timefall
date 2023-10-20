@@ -1,6 +1,10 @@
 #include <Timefall.h>
 
+#include "Platform/OpenGL/OpenGLShader.h"
+
+#include <imgui/imgui.h>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 class ExampleLayer : public Timefall::Layer
 {
@@ -64,14 +68,16 @@ public:
 			out vec4 color;
 
 			in vec4 v_Color;
+
+			uniform vec3 u_Color;
 			
 			void main()
 			{
-				color = v_Color;
+				color = vec4(u_Color, 1.0f);
 			}
 		)";
 
-		m_Shader.reset(Timefall::Shader::Create(vertexSrc, fragmentSrc));
+		m_FlatColorShader.reset(Timefall::Shader::Create(vertexSrc, fragmentSrc));
 	}
 
 	void OnUpdate(Timefall::Timestep ts) override
@@ -100,6 +106,11 @@ public:
 		Timefall::Renderer::BeginScene(m_Camera);
 
 		static glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
+		glm::vec4 redColor(0.8f, 0.2f, 0.3f, 1.0f);
+		glm::vec4 blueColor(0.2f, 0.3f, 0.8f, 1.0f);
+
+		m_FlatColorShader->Bind();
+		std::dynamic_pointer_cast<Timefall::OpenGLShader>(m_FlatColorShader)->UploadUniformFloat3("u_Color", m_SqaureColor);
 
 		for (int y = 0; y < 20; y++)
 		{
@@ -107,7 +118,7 @@ public:
 			{
 				glm::vec3 pos(x * 0.11f, y * 0.11f, 0.0f);
 				glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * scale;
-				Timefall::Renderer::Submit(m_Shader, m_VertexArray, transform);
+				Timefall::Renderer::Submit(m_FlatColorShader, m_VertexArray, transform);
 			}
 		}
 
@@ -116,6 +127,9 @@ public:
 
 	void OnImGuiRender() override
 	{
+		ImGui::Begin("Settings");
+		ImGui::ColorEdit3("Square Color", glm::value_ptr(m_SqaureColor));
+		ImGui::End();
 	}
 
 	void OnEvent(Timefall::Event& event) override
@@ -123,8 +137,10 @@ public:
 	}
 
 private:
-	std::shared_ptr<Timefall::Shader> m_Shader;
+	std::shared_ptr<Timefall::Shader> m_FlatColorShader;
 	std::shared_ptr<Timefall::VertexArray> m_VertexArray;
+
+	glm::vec3 m_SqaureColor = {0.2f, 0.3f, 0.8f};
 
 	Timefall::OrthographicCamera m_Camera;
 	glm::vec3 m_CameraPosition;

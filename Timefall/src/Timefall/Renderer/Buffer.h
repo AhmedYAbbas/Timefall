@@ -108,7 +108,7 @@ namespace Timefall
 	class VertexBuffer
 	{
 	public:
-		virtual ~VertexBuffer() {}
+		virtual ~VertexBuffer() = default;
 
 		virtual void SetData(float* vertices, uint32_t size) = 0;
 		virtual void Bind() const = 0;
@@ -123,7 +123,7 @@ namespace Timefall
 	class IndexBuffer
 	{
 	public:
-		virtual ~IndexBuffer() {}
+		virtual ~IndexBuffer() = default;
 
 		virtual void SetData(uint32_t* indices, uint32_t count) = 0;
 		virtual void Bind() const = 0;
