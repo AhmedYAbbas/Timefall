@@ -23,7 +23,7 @@ public:
 			-0.5f,  0.5f, 0.0f,		0.0f, 1.0f, 1.0f, 1.0f
 		};
 
-		std::shared_ptr<Timefall::VertexBuffer> vertexBuffer;
+		Timefall::Ref<Timefall::VertexBuffer> vertexBuffer;
 		vertexBuffer.reset(Timefall::VertexBuffer::Create());
 		vertexBuffer->Bind();
 		vertexBuffer->SetData(vertices, sizeof(vertices));
@@ -38,7 +38,7 @@ public:
 
 
 		uint32_t indices[] = {0, 1, 2, 2, 3, 0};
-		std::shared_ptr<Timefall::IndexBuffer> indexBuffer;
+		Timefall::Ref<Timefall::IndexBuffer> indexBuffer;
 		indexBuffer.reset(Timefall::IndexBuffer::Create());
 		indexBuffer->Bind();
 		indexBuffer->SetData(indices, sizeof(indices) / sizeof(uint32_t));
@@ -137,8 +137,8 @@ public:
 	}
 
 private:
-	std::shared_ptr<Timefall::Shader> m_FlatColorShader;
-	std::shared_ptr<Timefall::VertexArray> m_VertexArray;
+	Timefall::Ref<Timefall::Shader> m_FlatColorShader;
+	Timefall::Ref<Timefall::VertexArray> m_VertexArray;
 
 	glm::vec3 m_SqaureColor = {0.2f, 0.3f, 0.8f};
 
