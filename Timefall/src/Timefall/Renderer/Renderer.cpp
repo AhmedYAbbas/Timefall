@@ -6,7 +6,7 @@
 
 namespace Timefall
 {
-	Renderer::SceneData* Renderer::m_SceneData = new SceneData;
+	Ref<Renderer::SceneData> Renderer::m_SceneData = std::make_shared<SceneData>();
 
 	void Renderer::BeginScene(OrthographicCamera& camera)
 	{

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Timefall/Core.h"
+
 namespace Timefall
 {
 	enum class ShaderDataType
@@ -117,7 +119,7 @@ namespace Timefall
 		virtual void SetLayout(const BufferLayout& layout) = 0;
 		virtual const BufferLayout& GetLayout() const = 0;
 
-		static VertexBuffer* Create();
+		static Ref<VertexBuffer> Create();
 	};
 
 	class IndexBuffer
@@ -131,6 +133,6 @@ namespace Timefall
 
 		virtual uint32_t GetCount() const = 0;
 
-		static IndexBuffer* Create();
+		static Ref<IndexBuffer> Create();
 	};
 }

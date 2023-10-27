@@ -4,6 +4,8 @@
 #include "Camera.h"
 #include "Shader.h"
 
+#include "Timefall/Core.h"
+
 #include <glm/glm.hpp>
 
 namespace Timefall
@@ -24,6 +26,6 @@ namespace Timefall
 			glm::mat4 ViewProjectionMatrix;
 		};
 
-		static SceneData* m_SceneData;
+		static Ref<SceneData> m_SceneData;
 	};
 }

@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Buffer.h"
-
-#include <memory>
+#include "Timefall/Core.h"
 
 namespace Timefall 
 {
@@ -19,6 +18,6 @@ namespace Timefall
 		virtual std::vector<Ref<VertexBuffer>> GetVertexBuffer() const = 0;
 		virtual Ref<IndexBuffer> GetIndexBuffer() const = 0;
 
-		static VertexArray* Create();
+		static Ref<VertexArray> Create();
 	};
 }

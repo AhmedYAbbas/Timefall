@@ -6,24 +6,24 @@
 
 namespace Timefall
 {
-	VertexBuffer* VertexBuffer::Create()
+	Ref<VertexBuffer> VertexBuffer::Create()
 	{
 		switch (Renderer::GetAPI())
 		{
 			case RendererAPI::API::None:   TF_CORE_ASSERT(false, "RendererAPI::None is not currently supported!"); return nullptr;
-			case RendererAPI::API::OpenGL: return new OpenGLVertexBuffer();
+			case RendererAPI::API::OpenGL: return std::make_shared<OpenGLVertexBuffer>();
 		}
 
 		TF_CORE_ASSERT(false, "Unknown RendererAPI!");
 		return nullptr;
 	}
 
-	IndexBuffer* IndexBuffer::Create()
+	Ref<IndexBuffer> IndexBuffer::Create()
 	{
 		switch (Renderer::GetAPI())
 		{
 			case RendererAPI::API::None:   TF_CORE_ASSERT(false, "RendererAPI::None is not currently supported!"); return nullptr;
-			case RendererAPI::API::OpenGL: return new OpenGLIndexBuffer();
+			case RendererAPI::API::OpenGL: return std::make_shared<OpenGLIndexBuffer>();
 		}
 
 		TF_CORE_ASSERT(false, "Unknown RendererAPI!");

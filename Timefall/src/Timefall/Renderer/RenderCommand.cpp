@@ -1,8 +1,8 @@
 #include "tfpch.h"
-#include "Timefall\Renderer\RenderCommand.h"
-#include "Platform\OpenGL\OpenGLRendererAPI.h"
+#include "Timefall/Renderer/RenderCommand.h"
+#include "Platform/OpenGL/OpenGLRendererAPI.h"
 
 namespace Timefall
 {
-	RendererAPI* RenderCommand::s_RendererAPI = new OpenGLRendererAPI();
+	Ref<RendererAPI> RenderCommand::s_RendererAPI = std::make_shared<OpenGLRendererAPI>();
 }

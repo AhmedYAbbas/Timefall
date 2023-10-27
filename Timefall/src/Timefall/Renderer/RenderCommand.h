@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RendererAPI.h"
+#include "Timefall/Core.h"
 
 namespace Timefall
 {
@@ -18,6 +19,6 @@ namespace Timefall
 		}
 		
 	private:
-		static RendererAPI* s_RendererAPI;
+		static Ref<RendererAPI> s_RendererAPI;
 	};
 }

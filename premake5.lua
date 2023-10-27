@@ -17,6 +17,7 @@ IncludeDir["GLFW"] = "Timefall/vendor/GLFW/include"
 IncludeDir["Glad"] = "Timefall/vendor/Glad/include"
 IncludeDir["ImGui"] = "Timefall/vendor/imgui"
 IncludeDir["glm"] = "Timefall/vendor/glm"
+IncludeDir["stb_image"] = "Timefall/vendor/stb_image"
 
 group "Dependencies"
 	include "Timefall/vendor/GLFW"
@@ -42,6 +43,8 @@ project "Timefall"
 	{
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp",
+		"%{prj.name}/vendor/stb_image/**.h",
+		"%{prj.name}/vendor/stb_image/**.cpp",
 		"%{prj.name}/vendor/glm/glm/**.hpp",
 		"%{prj.name}/vendor/glm/glm/**.inl"
 	}
@@ -54,7 +57,8 @@ project "Timefall"
 		"%{IncludeDir.Glad}",
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.ImGui}/backends",
-		"%{IncludeDir.glm}"
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.stb_image}"
 	}
 
 	defines

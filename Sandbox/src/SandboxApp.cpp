@@ -1,6 +1,7 @@
 #include <Timefall.h>
 
 #include "Platform/OpenGL/OpenGLShader.h"
+#include "Platform/OpenGL/OpenGLTexture.h"
 
 #include <imgui/imgui.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -12,26 +13,26 @@ public:
 	ExampleLayer()
 		: Layer("Example"), m_Camera(-1.6f, 1.6f, -0.9f, 0.9f), m_CameraPosition(0.0f)
 	{
-		m_VertexArray.reset(Timefall::VertexArray::Create());
+		m_VertexArray = Timefall::VertexArray::Create();
 		m_VertexArray->Bind();
 
 		float vertices[] =
 		{
-			-0.5f, -0.5f, 0.0f,		1.0f, 0.0f, 1.0f, 1.0f,
-			 0.5f, -0.5f, 0.0f,		0.0f, 0.0f, 1.0f, 1.0f,
-			 0.5f,  0.5f, 0.0f,		1.0f, 1.0f, 0.0f, 1.0f,
-			-0.5f,  0.5f, 0.0f,		0.0f, 1.0f, 1.0f, 1.0f
+			-0.5f, -0.5f, 0.0f,  0.0f, 0.0f,
+			 0.5f, -0.5f, 0.0f,  1.0f, 0.0f,
+			 0.5f,  0.5f, 0.0f,	 1.0f, 1.0f,
+			-0.5f,  0.5f, 0.0f,	 0.0f, 1.0f
 		};
 
 		Timefall::Ref<Timefall::VertexBuffer> vertexBuffer;
-		vertexBuffer.reset(Timefall::VertexBuffer::Create());
+		vertexBuffer = Timefall::VertexBuffer::Create();
 		vertexBuffer->Bind();
 		vertexBuffer->SetData(vertices, sizeof(vertices));
 
 
 		Timefall::BufferLayout layout = {
 			{ Timefall::ShaderDataType::Float3, "a_Position" },
-			{ Timefall::ShaderDataType::Float4, "a_Color" }
+			{ Timefall::ShaderDataType::Float2, "a_TexCoord" }
 		};
 		vertexBuffer->SetLayout(layout);
 		m_VertexArray->AddVertexBuffer(vertexBuffer);
@@ -39,12 +40,12 @@ public:
 
 		uint32_t indices[] = {0, 1, 2, 2, 3, 0};
 		Timefall::Ref<Timefall::IndexBuffer> indexBuffer;
-		indexBuffer.reset(Timefall::IndexBuffer::Create());
+		indexBuffer = Timefall::IndexBuffer::Create();
 		indexBuffer->Bind();
 		indexBuffer->SetData(indices, sizeof(indices) / sizeof(uint32_t));
 		m_VertexArray->SetIndexBuffer(indexBuffer);
 
-		const std::string vertexSrc = R"(
+		const std::string flatColorVertexShaderSrc = R"(
 			#version 330 core
 		
 			layout(location = 0) in vec3 a_Position;
@@ -62,7 +63,7 @@ public:
 			}
 		)";
 
-		const std::string fragmentSrc = R"(
+		const std::string flatColorFragmentShaderSrc = R"(
 			#version 330 core
 		
 			out vec4 color;
@@ -77,7 +78,46 @@ public:
 			}
 		)";
 
-		m_FlatColorShader.reset(Timefall::Shader::Create(vertexSrc, fragmentSrc));
+		m_FlatColorShader = Timefall::Shader::Create(flatColorVertexShaderSrc, flatColorFragmentShaderSrc);
+
+		const std::string textureVertexShaderSrc = R"(
+			#version 330 core
+		
+			layout(location = 0) in vec3 a_Position;
+			layout(location = 1) in vec2 a_TexCoord;
+		
+			uniform mat4 u_ViewProjection;
+			uniform mat4 u_Transform;
+
+			out vec2 v_TexCoord;
+			
+			void main()
+			{
+				v_TexCoord = a_TexCoord;
+				gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 1.0f);
+			}
+		)";
+
+		const std::string textureFragmentShaderSrc = R"(
+			#version 330 core
+		
+			in vec2 v_TexCoord;
+
+			uniform sampler2D u_Texture;
+
+			out vec4 color;
+
+			void main()
+			{
+				color = texture(u_Texture, v_TexCoord);
+			}
+		)";
+
+		m_TextureShader = Timefall::Shader::Create(textureVertexShaderSrc, textureFragmentShaderSrc);
+		m_Texture = Timefall::Texture2D::Create("Assets/Textures/Naiyra.jpg");
+
+		std::dynamic_pointer_cast<Timefall::OpenGLShader>(m_TextureShader)->Bind();
+		std::dynamic_pointer_cast<Timefall::OpenGLShader>(m_TextureShader)->UploadUniformInt("u_Texture", 0);
 	}
 
 	void OnUpdate(Timefall::Timestep ts) override
@@ -106,10 +146,8 @@ public:
 		Timefall::Renderer::BeginScene(m_Camera);
 
 		static glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
-		glm::vec4 redColor(0.8f, 0.2f, 0.3f, 1.0f);
-		glm::vec4 blueColor(0.2f, 0.3f, 0.8f, 1.0f);
 
-		m_FlatColorShader->Bind();
+		std::dynamic_pointer_cast<Timefall::OpenGLShader>(m_FlatColorShader)->Bind();
 		std::dynamic_pointer_cast<Timefall::OpenGLShader>(m_FlatColorShader)->UploadUniformFloat3("u_Color", m_SqaureColor);
 
 		for (int y = 0; y < 20; y++)
@@ -121,6 +159,9 @@ public:
 				Timefall::Renderer::Submit(m_FlatColorShader, m_VertexArray, transform);
 			}
 		}
+
+		m_Texture->Bind();
+		Timefall::Renderer::Submit(m_TextureShader, m_VertexArray, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 
 		Timefall::Renderer::EndScene();
 	}
@@ -138,7 +179,10 @@ public:
 
 private:
 	Timefall::Ref<Timefall::Shader> m_FlatColorShader;
+	Timefall::Ref<Timefall::Shader> m_TextureShader;
 	Timefall::Ref<Timefall::VertexArray> m_VertexArray;
+
+	Timefall::Ref<Timefall::Texture> m_Texture;
 
 	glm::vec3 m_SqaureColor = {0.2f, 0.3f, 0.8f};
 
