@@ -8,6 +8,11 @@ namespace Timefall
 {
 	Ref<Renderer::SceneData> Renderer::m_SceneData = std::make_shared<SceneData>();
 
+	void Renderer::Init()
+	{
+		RenderCommand::Init();
+	}
+
 	void Renderer::BeginScene(OrthographicCamera& camera)
 	{
 		m_SceneData->ViewProjectionMatrix = camera.GetViewProjectionMatrix();
