@@ -4,6 +4,7 @@
 #include "Platform/OpenGL/OpenGLTexture.h"
 
 #include <imgui/imgui.h>
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -18,10 +19,10 @@ public:
 
 		float vertices[] =
 		{
-			-0.5f, -0.5f, 0.0f,  0.0f, 0.0f,
 			 0.5f, -0.5f, 0.0f,  1.0f, 0.0f,
 			 0.5f,  0.5f, 0.0f,	 1.0f, 1.0f,
-			-0.5f,  0.5f, 0.0f,	 0.0f, 1.0f
+			-0.5f,  0.5f, 0.0f,	 0.0f, 1.0f,
+			-0.5f, -0.5f, 0.0f,  0.0f, 0.0f
 		};
 
 		Timefall::Ref<Timefall::VertexBuffer> vertexBuffer;
@@ -30,11 +31,10 @@ public:
 		vertexBuffer->SetData(vertices, sizeof(vertices));
 
 
-		Timefall::BufferLayout layout = {
+		vertexBuffer->SetLayout({
 			{ Timefall::ShaderDataType::Float3, "a_Position" },
 			{ Timefall::ShaderDataType::Float2, "a_TexCoord" }
-		};
-		vertexBuffer->SetLayout(layout);
+		});
 		m_VertexArray->AddVertexBuffer(vertexBuffer);
 
 
@@ -49,16 +49,12 @@ public:
 			#version 330 core
 		
 			layout(location = 0) in vec3 a_Position;
-			layout(location = 1) in vec4 a_Color;
 		
 			uniform mat4 u_ViewProjection;
 			uniform mat4 u_Transform;
 
-			out vec4 v_Color;
-			
 			void main()
 			{
-				v_Color = a_Color;
 				gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 1.0f);
 			}
 		)";
@@ -66,11 +62,9 @@ public:
 		const std::string flatColorFragmentShaderSrc = R"(
 			#version 330 core
 		
-			out vec4 color;
-
-			in vec4 v_Color;
-
 			uniform vec3 u_Color;
+
+			out vec4 color;
 			
 			void main()
 			{
@@ -79,43 +73,10 @@ public:
 		)";
 
 		m_FlatColorShader = Timefall::Shader::Create(flatColorVertexShaderSrc, flatColorFragmentShaderSrc);
+		m_TextureShader = Timefall::Shader::Create("assets/shaders/Texture.glsl");
 
-		const std::string textureVertexShaderSrc = R"(
-			#version 330 core
-		
-			layout(location = 0) in vec3 a_Position;
-			layout(location = 1) in vec2 a_TexCoord;
-		
-			uniform mat4 u_ViewProjection;
-			uniform mat4 u_Transform;
-
-			out vec2 v_TexCoord;
-			
-			void main()
-			{
-				v_TexCoord = a_TexCoord;
-				gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 1.0f);
-			}
-		)";
-
-		const std::string textureFragmentShaderSrc = R"(
-			#version 330 core
-		
-			in vec2 v_TexCoord;
-
-			uniform sampler2D u_Texture;
-
-			out vec4 color;
-
-			void main()
-			{
-				color = texture(u_Texture, v_TexCoord);
-			}
-		)";
-
-		m_TextureShader = Timefall::Shader::Create(textureVertexShaderSrc, textureFragmentShaderSrc);
-		m_Texture = Timefall::Texture2D::Create("Assets/Textures/Naiyra.jpg");
-		m_AlphaTexture = Timefall::Texture2D::Create("Assets/Textures/Fish.png");
+		m_Texture = Timefall::Texture2D::Create("assets/textures/Naiyra.jpg");
+		m_AlphaTexture = Timefall::Texture2D::Create("assets/textures/Fish.png");
 
 		std::dynamic_pointer_cast<Timefall::OpenGLShader>(m_TextureShader)->Bind();
 		std::dynamic_pointer_cast<Timefall::OpenGLShader>(m_TextureShader)->UploadUniformInt("u_Texture", 0);
@@ -142,7 +103,6 @@ public:
 
 		m_Camera.SetPosition(m_CameraPosition);
 		m_Camera.SetRotation(m_CameraRotation);
-
 
 		Timefall::Renderer::BeginScene(m_Camera);
 
