@@ -84,20 +84,37 @@ public:
 
 	void OnUpdate(Timefall::Timestep ts) override
 	{
-		if (Timefall::Input::IsKeyPressed(TF_KEY_UP))
-			m_CameraPosition.y += m_CameraMoveSpeed * ts;
-		else if (Timefall::Input::IsKeyPressed(TF_KEY_DOWN))
-			m_CameraPosition.y -= m_CameraMoveSpeed * ts;
-
 		if (Timefall::Input::IsKeyPressed(TF_KEY_LEFT))
-			m_CameraPosition.x -= m_CameraMoveSpeed * ts;
+		{
+			m_CameraPosition.x -= std::cos(glm::radians(m_CameraRotation)) * m_CameraMoveSpeed * ts;
+			m_CameraPosition.y -= std::sin(glm::radians(m_CameraRotation)) * m_CameraMoveSpeed * ts;
+		}
 		else if (Timefall::Input::IsKeyPressed(TF_KEY_RIGHT))
-			m_CameraPosition.x += m_CameraMoveSpeed * ts;
+		{
+			m_CameraPosition.x += std::cos(glm::radians(m_CameraRotation)) * m_CameraMoveSpeed * ts;
+			m_CameraPosition.y += std::sin(glm::radians(m_CameraRotation)) * m_CameraMoveSpeed * ts;
+		}
+
+		if (Timefall::Input::IsKeyPressed(TF_KEY_UP))
+		{
+			m_CameraPosition.x += -std::sin(glm::radians(m_CameraRotation)) * m_CameraMoveSpeed * ts;
+			m_CameraPosition.y += std::cos(glm::radians(m_CameraRotation))* m_CameraMoveSpeed * ts;
+	}
+		else if (Timefall::Input::IsKeyPressed(TF_KEY_DOWN))
+		{
+			m_CameraPosition.x -= -std::sin(glm::radians(m_CameraRotation)) * m_CameraMoveSpeed * ts;
+			m_CameraPosition.y -= std::cos(glm::radians(m_CameraRotation))* m_CameraMoveSpeed * ts;
+	}
 
 		if (Timefall::Input::IsKeyPressed(TF_KEY_A))
 			m_CameraRotation += m_CameraRotationSpeed * ts;
 		else if (Timefall::Input::IsKeyPressed(TF_KEY_D))
 			m_CameraRotation -= m_CameraRotationSpeed * ts;
+
+		if (m_CameraRotation > 180.0f)
+			m_CameraRotation -= 360.0f;
+		else if (m_CameraRotation <= -180.0f)
+			m_CameraRotation += 360.0f;
 
 		Timefall::RenderCommand::Clear({0.1f, 0.1f, 0.1f, 1.0f});
 
@@ -151,7 +168,7 @@ private:
 
 	Timefall::OrthographicCamera m_Camera;
 	glm::vec3 m_CameraPosition;
-	float m_CameraMoveSpeed = 5.f;
+	float m_CameraMoveSpeed = 1.0f;
 	float m_CameraRotation = 0.0f;
 	float m_CameraRotationSpeed = 180.0f;
 };
