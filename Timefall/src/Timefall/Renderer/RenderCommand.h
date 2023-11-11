@@ -24,6 +24,6 @@ namespace Timefall
 		}
 		
 	private:
-		static Ref<RendererAPI> s_RendererAPI;
+		static Scope<RendererAPI> s_RendererAPI;
 	};
 }

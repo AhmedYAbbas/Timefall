@@ -6,7 +6,7 @@
 
 namespace Timefall
 {
-	Ref<Renderer::SceneData> Renderer::s_SceneData = std::make_shared<SceneData>();
+	Scope<Renderer::SceneData> Renderer::s_SceneData = CreateScope<SceneData>();
 
 	void Renderer::Init()
 	{
