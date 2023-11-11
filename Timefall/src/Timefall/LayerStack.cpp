@@ -29,7 +29,7 @@ namespace Timefall
 
 	void LayerStack::PopLayer(Layer* layer)
 	{
-		const auto it = std::find(m_Layers.begin(), m_Layers.end(), layer);
+		const auto it = std::find(m_Layers.begin(), m_Layers.begin() + m_LayerInsertIndex, layer);
 		if (it != m_Layers.end())
 		{
 			layer->OnDetach();
@@ -40,7 +40,7 @@ namespace Timefall
 
 	void LayerStack::PopOverlay(Layer* overlay)
 	{
-		const auto it = std::find(m_Layers.begin(), m_Layers.end(), overlay);
+		const auto it = std::find(m_Layers.begin() + m_LayerInsertIndex, m_Layers.end(), overlay);
 		if (it != m_Layers.end())
 		{
 			overlay->OnDetach();
