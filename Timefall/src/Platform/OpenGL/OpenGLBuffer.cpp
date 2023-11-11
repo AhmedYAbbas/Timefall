@@ -39,6 +39,7 @@ namespace Timefall
 	/////////////////////////////////////////////////////////////////////////////////
 
 	OpenGLIndexBuffer::OpenGLIndexBuffer()
+		: m_Count(0)
 	{
 		glCreateBuffers(1, &m_RendererID);
 

@@ -7,6 +7,9 @@ namespace Timefall
 	class TIMEFALL_API Input
 	{
 	public:
+		Input(const Input&) = delete;
+		Input& operator=(const Input&) = delete;
+
 		static bool IsKeyPressed(int keycode) { return s_Instance->IsKeyPressedImpl(keycode); }
 		static bool IsMouseButtonPressed(int button) { return s_Instance->IsMouseButtonPressedImpl(button); }
 		static std::pair<float, float> GetMousePosition() { return s_Instance->GetMousePositionImpl(); }
@@ -19,6 +22,9 @@ namespace Timefall
 		virtual std::pair<float, float> GetMousePositionImpl() = 0;
 		virtual float GetMouseXImpl() = 0;
 		virtual float GetMouseYImpl() = 0;
+
+	protected:
+		Input() = default;
 
 	private:
 		static Input* s_Instance;
