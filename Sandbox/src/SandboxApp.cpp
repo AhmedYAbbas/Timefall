@@ -164,9 +164,7 @@ public:
 		PushLayer(new ExampleLayer());
 	}
 
-	~Sandbox()
-	{
-	}
+	~Sandbox() = default;
 };
 
 Timefall::Application* Timefall::CreateApplication()

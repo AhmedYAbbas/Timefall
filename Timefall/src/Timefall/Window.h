@@ -10,7 +10,9 @@ namespace Timefall
 		unsigned int Width, Height;
 
 		WindowProps(const std::string& title = "Timefall Engine", unsigned int width = 1280, unsigned int height = 720)
-			: Title(title), Width(width), Height(height) {}
+			: Title(title), Width(width), Height(height) 
+		{
+		}
 	};
 
 	// Interface representing a desktop system based window
@@ -19,7 +21,7 @@ namespace Timefall
 	public:
 		using EventCallBackFn = std::function<void(Event&)>;
 
-		virtual ~Window() {}
+		virtual ~Window() = default;
 
 		virtual void OnUpdate() = 0;
 

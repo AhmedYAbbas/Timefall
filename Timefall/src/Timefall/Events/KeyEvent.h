@@ -11,7 +11,9 @@ namespace Timefall
 
 	protected:
 		KeyEvent(int keycode)
-			: m_KeyCode(keycode) {}
+			: m_KeyCode(keycode) 
+		{
+		}
 
 	protected:
 		int m_KeyCode;
@@ -21,7 +23,9 @@ namespace Timefall
 	{
 	public:
 		KeyPressedEvent(int keycode, int repeatCount)
-			: KeyEvent(keycode), m_RepeatCount(repeatCount) {}
+			: KeyEvent(keycode), m_RepeatCount(repeatCount) 
+		{
+		}
 
 		int GetRepeatCount() const { return m_RepeatCount; }
 
@@ -42,7 +46,9 @@ namespace Timefall
 	{
 	public:
 		KeyReleasedEvent(int keycode)
-			: KeyEvent(keycode) {}
+			: KeyEvent(keycode) 
+		{
+		}
 
 		std::string ToString() const override
 		{
@@ -58,7 +64,9 @@ namespace Timefall
 	{
 	public:
 		KeyTypedEvent(int keycode)
-			: KeyEvent(keycode) {}
+			: KeyEvent(keycode) 
+		{
+		}
 
 		std::string ToString() const override
 		{

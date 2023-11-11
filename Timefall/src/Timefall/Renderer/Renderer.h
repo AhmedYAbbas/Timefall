@@ -28,6 +28,6 @@ namespace Timefall
 			glm::mat4 ViewProjectionMatrix;
 		};
 
-		static Ref<SceneData> m_SceneData;
+		static Ref<SceneData> s_SceneData;
 	};
 }

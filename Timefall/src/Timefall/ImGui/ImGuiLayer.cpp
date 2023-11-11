@@ -13,9 +13,11 @@
 namespace Timefall
 {
 	ImGuiLayer::ImGuiLayer()
-		: Layer("ImGuiLayer") {}
+		: Layer("ImGuiLayer") 
+    {
+    }
 
-	ImGuiLayer::~ImGuiLayer() {}
+    ImGuiLayer::~ImGuiLayer() = default;
 
 	void ImGuiLayer::OnAttach()
 	{
