@@ -84,7 +84,6 @@ project "Timefall"
 
 		defines
 		{
-			"TF_PLATFORM_WINDOWS",
 			"TF_BUILD_DLL",
 			"GLFW_INCLUDE_NONE"
 		}
@@ -135,11 +134,6 @@ project "Sandbox"
 	
 	filter "system:windows"
 		systemversion "latest"
-
-		defines
-		{
-			"TF_PLATFORM_WINDOWS"			
-		}
 
 	filter "configurations:Debug"
 		defines "TF_DEBUG"

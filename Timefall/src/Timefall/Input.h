@@ -4,7 +4,7 @@
 
 namespace Timefall
 {
-	class TIMEFALL_API Input
+	class Input
 	{
 	public:
 		Input(const Input&) = delete;

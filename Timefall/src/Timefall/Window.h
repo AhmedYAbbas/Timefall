@@ -16,7 +16,7 @@ namespace Timefall
 	};
 
 	// Interface representing a desktop system based window
-	class TIMEFALL_API Window
+	class Window
 	{
 	public:
 		using EventCallBackFn = std::function<void(Event&)>;

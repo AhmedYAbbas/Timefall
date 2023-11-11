@@ -6,7 +6,7 @@
 
 namespace Timefall
 {
-	class TIMEFALL_API Log
+	class Log
 	{
 	public:
 		static void Init();

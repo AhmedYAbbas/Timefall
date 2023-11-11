@@ -2,7 +2,7 @@
 
 namespace Timefall
 {
-	class TIMEFALL_API MouseMovedEvent : public Event
+	class MouseMovedEvent : public Event
 	{
 	public:
 		MouseMovedEvent(float x, float y)
@@ -27,7 +27,7 @@ namespace Timefall
 		float m_MouseX, m_MouseY;
 	};
 
-	class TIMEFALL_API MouseScrolledEvent : public Event
+	class MouseScrolledEvent : public Event
 	{
 	public:
 		MouseScrolledEvent(float xOffset, float yOffset)
@@ -52,7 +52,7 @@ namespace Timefall
 		float m_XOffset, m_YOffset;
 	};
 
-	class TIMEFALL_API MouseButtonEvent : public Event
+	class MouseButtonEvent : public Event
 	{
 	public:
 		int GetMouseButton() const { return m_Button; }
@@ -69,7 +69,7 @@ namespace Timefall
 		int m_Button;
 	};
 
-	class TIMEFALL_API MouseButtonPressedEvent : public MouseButtonEvent
+	class MouseButtonPressedEvent : public MouseButtonEvent
 	{
 	public:
 		MouseButtonPressedEvent(int button)
@@ -87,7 +87,7 @@ namespace Timefall
 		EVENT_CLASS_TYPE(MouseButtonPressed)
 	};
 
-	class TIMEFALL_API MouseButtonReleasedEvent : public  MouseButtonEvent
+	class MouseButtonReleasedEvent : public  MouseButtonEvent
 	{
 	public:
 		MouseButtonReleasedEvent(int button)

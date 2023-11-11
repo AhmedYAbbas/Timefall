@@ -34,7 +34,7 @@ namespace Timefall
 
 #define EVENT_CLASS_CATEGORY(category) virtual int GetCategoryFlags() const override { return category; }
 
-	class TIMEFALL_API Event
+	class Event
 	{
 	private:
 		friend class EventDispatcher;
