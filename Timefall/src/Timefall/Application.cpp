@@ -80,5 +80,4 @@ namespace Timefall
 		m_Running = false;
 		return true;
 	}
-
 }
