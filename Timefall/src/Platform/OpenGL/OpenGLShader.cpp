@@ -142,6 +142,7 @@ namespace Timefall
 		for (auto id : glShaderIDs)
 		{
 			glDetachShader(program, id);
+			// Might need to keep the shaders in the future for debugging
 			glDeleteShader(id);
 		}
 
