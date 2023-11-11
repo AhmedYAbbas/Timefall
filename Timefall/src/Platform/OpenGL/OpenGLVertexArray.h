@@ -20,6 +20,7 @@ namespace Timefall
 
 	private:
 		uint32_t m_RendererID;
+		uint32_t m_VertexBufferIndexOffset = 0;
 		std::vector<Ref<VertexBuffer>> m_VertexBuffers;
 		Ref<IndexBuffer> m_IndexBuffer;
 	};
