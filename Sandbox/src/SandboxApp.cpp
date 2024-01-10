@@ -72,14 +72,14 @@ public:
 			}
 		)";
 
-		m_FlatColorShader = Timefall::Shader::Create(flatColorVertexShaderSrc, flatColorFragmentShaderSrc);
-		m_TextureShader = Timefall::Shader::Create("assets/shaders/Texture.glsl");
+		m_FlatColorShader = Timefall::Shader::Create("FlatColor", flatColorVertexShaderSrc, flatColorFragmentShaderSrc);
+		auto textureShader = m_ShaderLibrary.Load("assets/shaders/Texture.glsl");
 
 		m_Texture = Timefall::Texture2D::Create("assets/textures/Naiyra.jpg");
 		m_AlphaTexture = Timefall::Texture2D::Create("assets/textures/Fish.png");
 
-		std::dynamic_pointer_cast<Timefall::OpenGLShader>(m_TextureShader)->Bind();
-		std::dynamic_pointer_cast<Timefall::OpenGLShader>(m_TextureShader)->UploadUniformInt("u_Texture", 0);
+		std::dynamic_pointer_cast<Timefall::OpenGLShader>(textureShader)->Bind();
+		std::dynamic_pointer_cast<Timefall::OpenGLShader>(textureShader)->UploadUniformInt("u_Texture", 0);
 	}
 
 	void OnUpdate(Timefall::Timestep ts) override
@@ -138,10 +138,12 @@ public:
 			}
 		}
 
+		auto textureShader = m_ShaderLibrary.Get("Texture");
+
 		m_Texture->Bind();
-		Timefall::Renderer::Submit(m_TextureShader, m_VertexArray, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+		Timefall::Renderer::Submit(textureShader, m_VertexArray, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 		m_AlphaTexture->Bind();
-		Timefall::Renderer::Submit(m_TextureShader, m_VertexArray, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+		Timefall::Renderer::Submit(textureShader, m_VertexArray, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 
 		Timefall::Renderer::EndScene();
 	}
@@ -158,8 +160,8 @@ public:
 	}
 
 private:
+	Timefall::ShaderLibrary m_ShaderLibrary;
 	Timefall::Ref<Timefall::Shader> m_FlatColorShader;
-	Timefall::Ref<Timefall::Shader> m_TextureShader;
 	Timefall::Ref<Timefall::VertexArray> m_VertexArray;
 
 	Timefall::Ref<Timefall::Texture> m_Texture, m_AlphaTexture;
