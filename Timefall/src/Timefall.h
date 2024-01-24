@@ -32,7 +32,3 @@
 // ------------ImGui--------------
 #include "Timefall/ImGui/ImGuiLayer.h"
 // ------------------------------------
-
-// ------------EntryPoint--------------
-#include "Timefall/Core/EntryPoint.h"
-// ------------------------------------
