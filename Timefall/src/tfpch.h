@@ -15,7 +15,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "Timefall/Log.h"
+#include "Timefall/Core/Log.h"
 
 #ifdef TF_PLATFORM_WINDOWS
 	#include <Windows.h>

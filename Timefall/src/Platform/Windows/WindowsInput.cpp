@@ -1,7 +1,7 @@
 #include "tfpch.h"
-#include "WindowsInput.h"
+#include "Platform/Windows/WindowsInput.h"
 
-#include "Timefall/Application.h"
+#include "Timefall/Core/Application.h"
 #include <GLFW/glfw3.h>
 
 namespace Timefall

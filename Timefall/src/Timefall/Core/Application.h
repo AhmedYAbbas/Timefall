@@ -1,10 +1,10 @@
 #pragma once
 	
-#include "Timefall/Window.h"
-#include "LayerStack.h"
-#include "Events/ApplicationEvent.h"
+#include "Timefall/Core/Window.h"
+#include "Timefall/Core/LayerStack.h"
+#include "Timefall/Events/ApplicationEvent.h"
 
-#include "ImGui/ImGuiLayer.h"
+#include "Timefall/ImGui/ImGuiLayer.h"
 
 namespace Timefall
 {

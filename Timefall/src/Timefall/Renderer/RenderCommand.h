@@ -1,7 +1,7 @@
 #pragma once
 
-#include "RendererAPI.h"
-#include "Timefall/Core.h"
+#include "Timefall/Renderer/RendererAPI.h"
+#include "Timefall/Core/Core.h"
 
 namespace Timefall
 {

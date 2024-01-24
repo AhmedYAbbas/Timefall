@@ -68,7 +68,8 @@ project "Timefall"
 
 	defines
 	{
-		"_CRT_SECURE_NO_WARNINGS"
+		"_CRT_SECURE_NO_WARNINGS",
+		"_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING"
 	}
 
 	links
@@ -125,6 +126,11 @@ project "Sandbox"
 		"Timefall/src",
 		"Timefall/vendor",
 		"%{IncludeDir.glm}"
+	}
+
+	defines
+	{
+		"_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING"
 	}
 
 	links

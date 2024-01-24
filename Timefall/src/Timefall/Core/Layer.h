@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Core.h"
-#include "Events/Event.h"
+#include "Timefall/Core/Core.h"
+#include "Timefall/Events/Event.h"
 
 #include "Timefall/Events/KeyEvent.h"
 #include "Timefall/Events/MouseEvent.h"

@@ -1,8 +1,8 @@
 #include "tfpch.h"
-#include "OrthographicCameraController.h"
+#include "Timefall/Renderer/OrthographicCameraController.h"
 
-#include "Timefall/Input.h"
-#include "Timefall/Keycodes.h"
+#include "Timefall/Core/Input.h"
+#include "Timefall/Core/Keycodes.h"
 
 namespace Timefall
 {

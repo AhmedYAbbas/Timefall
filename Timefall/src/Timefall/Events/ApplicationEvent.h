@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Timefall/Core.h"
-#include "Event.h"
+#include "Timefall/Core/Core.h"
+#include "Timefall/Events/Event.h"
 
 namespace Timefall
 {

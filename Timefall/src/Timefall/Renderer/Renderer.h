@@ -1,10 +1,10 @@
 #pragma once
 
-#include "RendererAPI.h"
-#include "Camera.h"
-#include "Shader.h"
+#include "Timefall/Renderer/RendererAPI.h"
+#include "Timefall/Renderer/Camera.h"
+#include "Timefall/Renderer/Shader.h"
 
-#include "Timefall/Core.h"
+#include "Timefall/Core/Core.h"
 
 #include <glm/glm.hpp>
 

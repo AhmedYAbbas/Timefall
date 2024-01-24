@@ -2,19 +2,19 @@
 
 // For use by Timefall applications
 
-#include "Timefall/Core.h"
+#include "Timefall/Core/Core.h"
 
-#include "Timefall/Application.h"
-#include "Timefall/Layer.h"
-#include "Timefall/Log.h"
+#include "Timefall/Core/Application.h"
+#include "Timefall/Core/Layer.h"
+#include "Timefall/Core/Log.h"
 
 #include "Timefall/Core/Timestep.h"
-#include "Timefall/OrthographicCameraController.h"
+#include "Timefall/Renderer/OrthographicCameraController.h"
 
 // ------------Input--------------
-#include "Timefall/Input.h"
-#include "Timefall/Keycodes.h"
-#include "Timefall/MouseButtonCodes.h"
+#include "Timefall/Core/Input.h"
+#include "Timefall/Core/Keycodes.h"
+#include "Timefall/Core/MouseButtonCodes.h"
 // ------------------------------------
 
 // ------------Renderer--------------
@@ -34,5 +34,5 @@
 // ------------------------------------
 
 // ------------EntryPoint--------------
-#include "Timefall/EntryPoint.h"
+#include "Timefall/Core/EntryPoint.h"
 // ------------------------------------

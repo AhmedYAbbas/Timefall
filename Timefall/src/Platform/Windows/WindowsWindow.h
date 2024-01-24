@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Timefall/Window.h"
+#include "Timefall/Core/Window.h"
 #include "Timefall/Renderer/GraphicsContext.h"
 
 #include <GLFW/glfw3.h>

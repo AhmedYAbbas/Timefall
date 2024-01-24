@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Timefall/Input.h"
+#include "Timefall/Core/Input.h"
 
 namespace Timefall
 {
