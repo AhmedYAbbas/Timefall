@@ -20,7 +20,7 @@ namespace Timefall
 		virtual void OnAttach() {}
 		virtual void OnDetach() {}
 		virtual void OnUpdate(Timestep ts) {}
-		virtual void OnEvent(Event& event) {}
+		virtual void OnEvent(Event& e) {}
 		virtual void OnImGuiRender() {}
 
 		const std::string& GetName() const { return m_DebugName; }

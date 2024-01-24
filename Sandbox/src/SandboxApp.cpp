@@ -12,7 +12,7 @@ class ExampleLayer : public Timefall::Layer
 {
 public:
 	ExampleLayer()
-		: Layer("Example"), m_Camera(-1.6f, 1.6f, -0.9f, 0.9f), m_CameraPosition(0.0f)
+		: Layer("Example"), m_CameraController(1280.0f / 720.0f, true)
 	{
 		m_VertexArray = Timefall::VertexArray::Create();
 		m_VertexArray->Bind();
@@ -84,44 +84,12 @@ public:
 
 	void OnUpdate(Timefall::Timestep ts) override
 	{
-		if (Timefall::Input::IsKeyPressed(TF_KEY_LEFT))
-		{
-			m_CameraPosition.x -= std::cos(glm::radians(m_CameraRotation)) * m_CameraMoveSpeed * ts;
-			m_CameraPosition.y -= std::sin(glm::radians(m_CameraRotation)) * m_CameraMoveSpeed * ts;
-		}
-		else if (Timefall::Input::IsKeyPressed(TF_KEY_RIGHT))
-		{
-			m_CameraPosition.x += std::cos(glm::radians(m_CameraRotation)) * m_CameraMoveSpeed * ts;
-			m_CameraPosition.y += std::sin(glm::radians(m_CameraRotation)) * m_CameraMoveSpeed * ts;
-		}
+		// Update
+		m_CameraController.OnUpdate(ts);
 
-		if (Timefall::Input::IsKeyPressed(TF_KEY_UP))
-		{
-			m_CameraPosition.x += -std::sin(glm::radians(m_CameraRotation)) * m_CameraMoveSpeed * ts;
-			m_CameraPosition.y += std::cos(glm::radians(m_CameraRotation))* m_CameraMoveSpeed * ts;
-	}
-		else if (Timefall::Input::IsKeyPressed(TF_KEY_DOWN))
-		{
-			m_CameraPosition.x -= -std::sin(glm::radians(m_CameraRotation)) * m_CameraMoveSpeed * ts;
-			m_CameraPosition.y -= std::cos(glm::radians(m_CameraRotation))* m_CameraMoveSpeed * ts;
-	}
-
-		if (Timefall::Input::IsKeyPressed(TF_KEY_A))
-			m_CameraRotation += m_CameraRotationSpeed * ts;
-		else if (Timefall::Input::IsKeyPressed(TF_KEY_D))
-			m_CameraRotation -= m_CameraRotationSpeed * ts;
-
-		if (m_CameraRotation > 180.0f)
-			m_CameraRotation -= 360.0f;
-		else if (m_CameraRotation <= -180.0f)
-			m_CameraRotation += 360.0f;
-
+		// Render
 		Timefall::RenderCommand::Clear({0.1f, 0.1f, 0.1f, 1.0f});
-
-		m_Camera.SetPosition(m_CameraPosition);
-		m_Camera.SetRotation(m_CameraRotation);
-
-		Timefall::Renderer::BeginScene(m_Camera);
+		Timefall::Renderer::BeginScene(m_CameraController.GetCamera());
 
 		static glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
 
@@ -155,8 +123,9 @@ public:
 		ImGui::End();
 	}
 
-	void OnEvent(Timefall::Event& event) override
+	void OnEvent(Timefall::Event& e) override
 	{
+		m_CameraController.OnEvent(e);
 	}
 
 private:
@@ -168,11 +137,7 @@ private:
 
 	glm::vec3 m_SqaureColor = {0.2f, 0.3f, 0.8f};
 
-	Timefall::OrthographicCamera m_Camera;
-	glm::vec3 m_CameraPosition;
-	float m_CameraMoveSpeed = 1.0f;
-	float m_CameraRotation = 0.0f;
-	float m_CameraRotationSpeed = 180.0f;
+	Timefall::OrthographicCameraController m_CameraController;
 };
 
 class Sandbox : public Timefall::Application

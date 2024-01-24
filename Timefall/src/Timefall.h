@@ -9,6 +9,7 @@
 #include "Timefall/Log.h"
 
 #include "Timefall/Core/Timestep.h"
+#include "Timefall/OrthographicCameraController.h"
 
 // ------------Input--------------
 #include "Timefall/Input.h"

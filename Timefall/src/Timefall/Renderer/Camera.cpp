@@ -11,6 +11,12 @@ namespace Timefall
 		m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
 	}
 
+	void OrthographicCamera::SetProjection(float left, float right, float bottom, float top, float zNear, float zFar)
+	{
+		m_ProjectionMatrix = glm::ortho(left, right, bottom, top, zNear, zFar);
+		m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
+	}
+
 	void OrthographicCamera::SetPosition(const glm::vec3& position)
 	{
 		m_Position = position;
