@@ -10,6 +10,7 @@
 
 #include "Timefall/Core/Timestep.h"
 #include "Timefall/Renderer/OrthographicCameraController.h"
+#include "Timefall/Renderer/PerspectiveCameraController.h"
 
 // ------------Input--------------
 #include "Timefall/Core/Input.h"

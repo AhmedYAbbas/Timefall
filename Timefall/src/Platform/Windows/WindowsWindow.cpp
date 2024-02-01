@@ -49,11 +49,11 @@ namespace Timefall
 		}
 
 		m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, props.Title.c_str(), nullptr, nullptr);
-
 		m_Context = CreateScope<OpenGLContext>(m_Window);
 		m_Context->Init();
 
 		glfwSetWindowUserPointer(m_Window, &m_Data);
+		glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		SetVsync(true);
 
 		// Setup GLFW callbacks

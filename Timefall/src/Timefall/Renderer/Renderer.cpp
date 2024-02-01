@@ -23,6 +23,12 @@ namespace Timefall
 		s_SceneData->ViewProjectionMatrix = camera.GetViewProjectionMatrix();
 	}
 
+	// TODO: separate the two renderers and their cameras
+	void Renderer::BeginScene(PerspectiveCamera& camera)
+	{
+		s_SceneData->ViewProjectionMatrix = camera.GetViewProjectionMatrix();
+	}
+
 	void Renderer::EndScene()
 	{
 	}
@@ -34,7 +40,6 @@ namespace Timefall
 		std::dynamic_pointer_cast<OpenGLShader>(shader)->UploadUniformMat4("u_Transform", transform);
 
 		vertexArray->Bind();
-
 		RenderCommand::DrawIndexed(vertexArray);
 	}
 }
