@@ -53,7 +53,7 @@ namespace Timefall
 		m_Context->Init();
 
 		glfwSetWindowUserPointer(m_Window, &m_Data);
-		glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		SetVsync(true);
 
 		// Setup GLFW callbacks
