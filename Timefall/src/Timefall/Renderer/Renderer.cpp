@@ -1,5 +1,6 @@
 #include "tfpch.h"
 #include "Renderer.h"
+#include "Renderer2D.h"
 #include "RenderCommand.h"
 
 #include "Platform/OpenGL/OpenGLShader.h"
@@ -11,6 +12,7 @@ namespace Timefall
 	void Renderer::Init()
 	{
 		RenderCommand::Init();
+		Renderer2D::Init();
 	}
 
 	void Renderer::OnWindowResize(uint32_t width, uint32_t height)
@@ -19,12 +21,6 @@ namespace Timefall
 	}
 
 	void Renderer::BeginScene(OrthographicCamera& camera)
-	{
-		s_SceneData->ViewProjectionMatrix = camera.GetViewProjectionMatrix();
-	}
-
-	// TODO: separate the two renderers and their cameras
-	void Renderer::BeginScene(PerspectiveCamera& camera)
 	{
 		s_SceneData->ViewProjectionMatrix = camera.GetViewProjectionMatrix();
 	}
