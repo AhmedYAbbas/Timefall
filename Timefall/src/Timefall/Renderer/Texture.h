@@ -18,6 +18,6 @@ namespace Timefall
 	class Texture2D : public Texture
 	{
 	public:
-		static Ref<Texture> Create(const std::string& path);
+		static Ref<Texture2D> Create(const std::string& path);
 	};
 }

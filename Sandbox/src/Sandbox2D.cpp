@@ -13,6 +13,7 @@ Sandbox2D::Sandbox2D()
 
 void Sandbox2D::OnAttach()
 {
+	m_CheckerboardTexture = Timefall::Texture2D::Create("assets/textures/Checkerboard.png");
 }
 
 void Sandbox2D::OnDetach()
@@ -27,9 +28,12 @@ void Sandbox2D::OnUpdate(Timefall::Timestep ts)
 	// Render
 	Timefall::RenderCommand::Clear({0.1f, 0.1f, 0.1f, 1.0f});
 	Timefall::Renderer2D::BeginScene(m_CameraController.GetCamera());
+
+	Timefall::Renderer2D::DrawQuad(m_CheckerboardTexture, {0.0f, 0.0f, -0.1f}, 0.0f, {10.0f, 10.0f});
 	Timefall::Renderer2D::DrawQuad({0.0f, 0.0f, 0.0f}, 45.0f, {1.0f, 1.0f}, {0.8f, 0.2f, 0.3f, 1.0f});
 	Timefall::Renderer2D::DrawQuad({-1.0f, -0.5f, 0.0f}, 45.0f, {2.0f, 0.5f}, {0.2f, 0.2f, 0.8f, 1.0f});
-	Timefall::Renderer2D::DrawQuad({1.0f, 0.5f, 0.0f});
+	Timefall::Renderer2D::DrawQuad({1.0f, 0.5f, 0.0f}, 0.0f, {1.0f, 1.0f}, {1.0f, 1.0f, 0.0f, 0.5f});
+
 	Timefall::Renderer2D::EndScene();
 }
 

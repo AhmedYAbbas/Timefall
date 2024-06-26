@@ -20,4 +20,6 @@ private:
 	glm::vec4 m_SqaureColor = {0.2f, 0.3f, 0.8f, 1.0f};
 
 	Timefall::OrthographicCameraController m_CameraController;
+
+	Timefall::Ref<Timefall::Texture2D> m_CheckerboardTexture;
 };
