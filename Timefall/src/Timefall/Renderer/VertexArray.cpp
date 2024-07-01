@@ -1,7 +1,8 @@
 #include "tfpch.h"
-#include "VertexArray.h"
 
-#include "Renderer.h"
+#include "Timefall/Renderer/VertexArray.h"
+#include "Timefall/Renderer/Renderer.h"
+
 #include "Platform\OpenGL\OpenGLVertexArray.h"
 
 namespace Timefall

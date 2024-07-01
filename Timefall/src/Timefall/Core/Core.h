@@ -43,22 +43,6 @@
 	#error "Unknown platform!"
 #endif // End of platform detection
 
-
-// DLL support
-#ifdef TF_PLATFORM_WINDOWS
-	#if TF_DYNAMIC_LINK
-		#ifdef TF_BUILD_DLL
-			#define TIMEFALL_API __declspec(dllexport)
-		#else
-			#define TIMEFALL_API __declspec(dllimport)
-		#endif
-	#else
-		#define TIMEFALL_API
-	#endif
-#else
-	#error Hazel only supports Windows!
-#endif // End of DLL support
-
 #if TF_DEBUG
 	#define TF_ENABLE_ASSERTS
 #endif

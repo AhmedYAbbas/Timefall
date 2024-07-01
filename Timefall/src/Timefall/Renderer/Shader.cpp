@@ -1,7 +1,8 @@
 #include "tfpch.h"
-#include "Shader.h"
 
-#include "Renderer.h"
+#include "Timefall/Renderer/Shader.h"
+#include "Timefall/Renderer/Renderer.h"
+
 #include "Platform/OpenGL/OpenGLShader.h"
 
 namespace Timefall

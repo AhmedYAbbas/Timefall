@@ -1,12 +1,9 @@
 #include "tfpch.h"
-#include "LayerStack.h"
+
+#include "Timefall/Core/LayerStack.h"
 
 namespace Timefall
 {
-	LayerStack::LayerStack()
-	{	
-	}
-
 	LayerStack::~LayerStack()
 	{
 		for (Layer* layer : m_Layers)

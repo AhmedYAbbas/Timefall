@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Core.h"
-#include "Layer.h"
+#include "Timefall/Core/Core.h"
+#include "Timefall/Core/Layer.h"
 
 #include <vector>
 
@@ -10,7 +10,7 @@ namespace Timefall
 	class LayerStack
 	{
 	public:
-		LayerStack();
+		LayerStack() = default;
 		~LayerStack();
 
 		void PushLayer(Layer* layer);

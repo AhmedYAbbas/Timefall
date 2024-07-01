@@ -1,7 +1,7 @@
 #include "tfpch.h"
-#include "Application.h"
 
-#include "Input.h"
+#include "Timefall/Core/Application.h"
+#include "Timefall/Core/Input.h"
 #include "Timefall/Core/Timestep.h"
 #include "Timefall/Renderer/Renderer.h"
 
@@ -16,7 +16,7 @@ namespace Timefall
 		TF_CORE_ASSERT(!s_Instance, "Application already exists!");
 		s_Instance = this;
 
-		m_Window = std::unique_ptr<Window>(Window::Create());
+		m_Window = Window::Create();
 		m_Window->SetEventCallBack(TF_BIND_EVENT_FN(&Application::OnEvent));
 		m_Window->SetVsync(true);
 
@@ -28,7 +28,7 @@ namespace Timefall
 
 	Application::~Application()
 	{
-
+		Renderer::Shutdown();
 	}
 
 	void Application::PushLayer(Layer* layer)

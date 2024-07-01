@@ -1,8 +1,8 @@
 #include "tfpch.h"
-#include "OpenGLTexture.h"
 
-#include "stb_image.h"
+#include "Platform/OpenGL/OpenGLTexture.h"
 
+#include <stb_image.h>
 #include <glad/glad.h>
 
 namespace Timefall

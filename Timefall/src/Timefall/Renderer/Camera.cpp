@@ -1,5 +1,5 @@
 #include "tfpch.h"
-#include "Camera.h"
+#include "Timefall/Renderer/Camera.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 

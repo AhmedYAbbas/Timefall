@@ -1,7 +1,8 @@
 #include "tfpch.h"
-#include "Texture.h"
 
+#include "Timefall/Renderer/Texture.h"
 #include "Timefall/Renderer/Renderer.h"
+
 #include "Platform/OpenGL/OpenGLTexture.h"
 
 namespace Timefall

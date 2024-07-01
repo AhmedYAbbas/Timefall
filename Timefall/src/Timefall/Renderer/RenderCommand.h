@@ -18,7 +18,7 @@ namespace Timefall
 			s_RendererAPI->SetViewport(x, y, width, height);
 		}
 
-		inline static void Clear(const glm::vec4& color) 
+		inline static void Clear(const glm::vec4& color = glm::vec4(0)) 
 		{
 			s_RendererAPI->Clear(color);
 		}

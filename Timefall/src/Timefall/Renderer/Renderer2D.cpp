@@ -1,9 +1,10 @@
 #include "tfpch.h"
-#include "Renderer2D.h"
 
-#include "VertexArray.h"
-#include "Shader.h"
-#include "RenderCommand.h"
+#include "Timefall/Renderer/Renderer2D.h"
+
+#include "Timefall/Renderer/VertexArray.h"
+#include "Timefall/Renderer/Shader.h"
+#include "Timefall/Renderer/RenderCommand.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -33,23 +34,21 @@ namespace Timefall
 			-0.5f,  0.5f, 0.0f, 0.0f, 1.0f
 		};
 
-		Ref<VertexBuffer> vertexBuffer;
-		vertexBuffer = VertexBuffer::Create();
-		vertexBuffer->Bind();
-		vertexBuffer->SetData(vertices, sizeof(vertices));
+		Ref<VertexBuffer> squareVB = VertexBuffer::Create();
+		squareVB->Bind();
+		squareVB->SetData(vertices, sizeof(vertices));
 
-		vertexBuffer->SetLayout({
+		squareVB->SetLayout({
 			{ ShaderDataType::Float3, "a_Position" },
 			{ ShaderDataType::Float2, "a_TexCoord" }
 		});
-		s_Data->QuadVertexArray->AddVertexBuffer(vertexBuffer);
+		s_Data->QuadVertexArray->AddVertexBuffer(squareVB);
 
 		uint32_t indices[] = {0, 1, 2, 2, 3, 0};
-		Ref<IndexBuffer> indexBuffer;
-		indexBuffer = IndexBuffer::Create();
-		indexBuffer->Bind();
-		indexBuffer->SetData(indices, sizeof(indices) / sizeof(uint32_t));
-		s_Data->QuadVertexArray->SetIndexBuffer(indexBuffer);
+		Ref<IndexBuffer> squareIB = IndexBuffer::Create();
+		squareIB->Bind();
+		squareIB->SetData(indices, sizeof(indices) / sizeof(uint32_t));
+		s_Data->QuadVertexArray->SetIndexBuffer(squareIB);
 
 		s_Data->WhiteTexture = Texture2D::Create(1, 1);
 		uint32_t whiteTextureData = 0xffffffff;

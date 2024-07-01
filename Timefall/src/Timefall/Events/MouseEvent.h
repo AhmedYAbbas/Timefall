@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Timefall/Events/Event.h"
+
 namespace Timefall
 {
 	class MouseMovedEvent : public Event

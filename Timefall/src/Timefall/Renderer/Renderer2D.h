@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Camera.h"
-#include "Texture.h"
+#include "Timefall/Renderer/Camera.h"
+#include "Timefall/Renderer/Texture.h"
 
 namespace Timefall
 {

@@ -1,7 +1,7 @@
 #include "tfpch.h"
-#include "Buffer.h"
+#include "Timefall/Renderer/Buffer.h"
 
-#include "Renderer.h"
+#include "Timefall/Renderer/Renderer.h"
 #include "Platform/OpenGL/OpenGLBuffer.h"
 
 namespace Timefall
