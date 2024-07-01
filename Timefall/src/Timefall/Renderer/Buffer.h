@@ -35,7 +35,7 @@ namespace Timefall
 		std::string Name;
 		ShaderDataType Type;
 		uint32_t Size;
-		uint32_t Offset;
+		size_t Offset;
 		bool Normalized;
 
 		BufferElement()
