@@ -18,6 +18,8 @@ namespace Timefall
 		static float GetMouseX() { return s_Instance->GetMouseXImpl(); }
 		static float GetMouseY() { return s_Instance->GetMouseYImpl(); }
 
+		static Scope<Input> Create();
+
 	protected:
 		virtual bool IsKeyPressedImpl(KeyCode key) = 0;
 		virtual bool IsMouseButtonPressedImpl(MouseCode button) = 0;
