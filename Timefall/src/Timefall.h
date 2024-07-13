@@ -14,7 +14,7 @@
 // ------------Input--------------
 #include "Timefall/Core/Input.h"
 #include "Timefall/Core/Keycodes.h"
-#include "Timefall/Core/MouseButtonCodes.h"
+#include "Timefall/Core/MouseCodes.h"
 // ------------------------------------
 
 // ------------Renderer--------------

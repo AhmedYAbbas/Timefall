@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Timefall/Events/Event.h"
+#include "Timefall/Core/Input.h"
 
 namespace Timefall
 {
@@ -57,24 +58,24 @@ namespace Timefall
 	class MouseButtonEvent : public Event
 	{
 	public:
-		int GetMouseButton() const { return m_Button; }
+		MouseCode GetMouseButton() const { return m_Button; }
 
 		EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
 
 	protected:
-		MouseButtonEvent(int button)
+		MouseButtonEvent(MouseCode button)
 			: m_Button(button) 
 		{
 		}
 
 	protected:
-		int m_Button;
+		MouseCode m_Button;
 	};
 
 	class MouseButtonPressedEvent : public MouseButtonEvent
 	{
 	public:
-		MouseButtonPressedEvent(int button)
+		MouseButtonPressedEvent(MouseCode button)
 			: MouseButtonEvent(button) 
 		{
 		}
@@ -92,7 +93,7 @@ namespace Timefall
 	class MouseButtonReleasedEvent : public  MouseButtonEvent
 	{
 	public:
-		MouseButtonReleasedEvent(int button)
+		MouseButtonReleasedEvent(MouseCode button)
 			: MouseButtonEvent(button) 
 		{
 		}

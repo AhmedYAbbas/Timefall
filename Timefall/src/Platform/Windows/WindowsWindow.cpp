@@ -1,6 +1,7 @@
 #include "tfpch.h"
 #include "WindowsWindow.h"
 
+#include "Timefall/Core/Input.h"
 #include "Timefall/Events/ApplicationEvent.h"
 #include "Timefall/Events/MouseEvent.h"
 #include "Timefall/Events/KeyEvent.h"
@@ -96,19 +97,19 @@ namespace Timefall
 			{
 				case GLFW_PRESS:
 				{
-					KeyPressedEvent event(key, 0);
+					KeyPressedEvent event(static_cast<KeyCode>(key), 0);
 					data.EventCallBack(event);
 					break;
 				}
 				case GLFW_RELEASE:
 				{
-					KeyReleasedEvent event(key);
+					KeyReleasedEvent event(static_cast<KeyCode>(key));
 					data.EventCallBack(event);
 					break;
 				}
 				case GLFW_REPEAT:
 				{
-					KeyPressedEvent event(key, 1);
+					KeyPressedEvent event(static_cast<KeyCode>(key), 1);
 					data.EventCallBack(event);
 					break;
 				}
@@ -119,7 +120,7 @@ namespace Timefall
 		{
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
-			KeyTypedEvent event(character);
+			KeyTypedEvent event(static_cast<KeyCode>(character));
 			data.EventCallBack(event);
 		});
 
@@ -131,13 +132,13 @@ namespace Timefall
 			{
 				case GLFW_PRESS:
 				{
-					MouseButtonPressedEvent event(button);
+					MouseButtonPressedEvent event(static_cast<MouseCode>(button));
 					data.EventCallBack(event);
 					break;
 				}
 				case GLFW_RELEASE:
 				{
-					MouseButtonReleasedEvent event(button);
+					MouseButtonReleasedEvent event(static_cast<MouseCode>(button));
 					data.EventCallBack(event);
 					break;
 				}
