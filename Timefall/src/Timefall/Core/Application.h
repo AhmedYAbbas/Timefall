@@ -6,6 +6,8 @@
 
 #include "Timefall/ImGui/ImGuiLayer.h"
 
+int main(int argc, char** argv);
+
 namespace Timefall
 {
 	class Application
@@ -14,7 +16,6 @@ namespace Timefall
 		Application();
 		virtual ~Application();
 
-		void Run();
 
 		void OnEvent(Event& e);
 
@@ -23,9 +24,12 @@ namespace Timefall
 
 		static Application& Get() { return *s_Instance; }
 		Window& GetWindow() const { return *m_Window; }
+
 	private:
+		void Run();
 		bool OnWindowClose(WindowCloseEvent& e);
 		bool OnWindowResize(WindowResizeEvent& e);
+
 	private:
 		Scope<Window> m_Window;
 		ImGuiLayer* m_ImGuiLayer;
@@ -36,6 +40,7 @@ namespace Timefall
 
 	private:
 		static Application* s_Instance;
+		friend int ::main(int argc, char** argv);
 	};
 
 	Application* CreateApplication();
