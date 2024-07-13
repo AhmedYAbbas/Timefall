@@ -15,6 +15,8 @@ namespace Timefall
 
 	void OpenGLContext::Init()
 	{
+		TF_PROFILE_FUNCTION();
+
 		glfwMakeContextCurrent(m_WindowHandle);
 		int success = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 		TF_CORE_ASSERT(success, "Faild to initialize Glad!");
@@ -36,6 +38,8 @@ namespace Timefall
 
 	void OpenGLContext::SwapBuffers()
 	{
+		TF_PROFILE_FUNCTION();
+
 		glfwSwapBuffers(m_WindowHandle);
 	}
 }

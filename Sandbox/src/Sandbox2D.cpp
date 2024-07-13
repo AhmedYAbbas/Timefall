@@ -12,11 +12,14 @@ Sandbox2D::Sandbox2D()
 
 void Sandbox2D::OnAttach()
 {
+	TF_PROFILE_FUNCTION();
+
 	m_CheckerboardTexture = Timefall::Texture2D::Create("assets/textures/Checkerboard.png");
 }
 
 void Sandbox2D::OnDetach()
 {
+	TF_PROFILE_FUNCTION();
 }
 
 void Sandbox2D::OnUpdate(Timefall::Timestep ts)
@@ -24,10 +27,7 @@ void Sandbox2D::OnUpdate(Timefall::Timestep ts)
 	TF_PROFILE_FUNCTION();
 
 	// Update
-	{
-		TF_PROFILE_SCOPE("CameraController::OnUpdate");
-		m_CameraController.OnUpdate(ts);
-	}
+	m_CameraController.OnUpdate(ts);
 
 	// Render
 	{
@@ -49,6 +49,8 @@ void Sandbox2D::OnUpdate(Timefall::Timestep ts)
 
 void Sandbox2D::OnEvent(Timefall::Event& e)
 {
+	TF_PROFILE_FUNCTION();
+
 	m_CameraController.OnEvent(e);
 }
 

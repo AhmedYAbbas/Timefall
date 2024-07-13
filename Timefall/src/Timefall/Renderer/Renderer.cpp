@@ -10,6 +10,8 @@ namespace Timefall
 
 	void Renderer::Init()
 	{
+		TF_PROFILE_FUNCTION();
+
 		RenderCommand::Init();
 		Renderer2D::Init();
 	}

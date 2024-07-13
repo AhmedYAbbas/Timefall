@@ -21,6 +21,8 @@ namespace Timefall
 
 	void Renderer2D::Init()
 	{
+		TF_PROFILE_FUNCTION();
+
 		s_Data = new Renderer2DStorage;
 
 		s_Data->QuadVertexArray = VertexArray::Create();
@@ -61,17 +63,22 @@ namespace Timefall
 
 	void Renderer2D::Shutdown()
 	{
+		TF_PROFILE_FUNCTION();
+
 		delete s_Data;
 	}
 
 	void Renderer2D::BeginScene(const OrthographicCamera& camera)
 	{
+		TF_PROFILE_FUNCTION();
+
 		s_Data->TextureShader->Bind();
 		s_Data->TextureShader->SetMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
 	}
 
 	void Renderer2D::EndScene()
 	{
+		TF_PROFILE_FUNCTION();
 	}
 
 	void Renderer2D::DrawQuad(const glm::vec2& position, float rotation, const glm::vec2& size, const glm::vec4& color)
@@ -81,6 +88,8 @@ namespace Timefall
 
 	void Renderer2D::DrawQuad(const glm::vec3& position, float rotation, const glm::vec2& size, const glm::vec4& color)
 	{
+		TF_PROFILE_FUNCTION();
+
 		s_Data->TextureShader->Bind();
 		s_Data->TextureShader->SetFloat4("u_Color", color);
 
@@ -102,6 +111,8 @@ namespace Timefall
 
 	void Renderer2D::DrawQuad(const Ref<Texture2D>& texture, const glm::vec3& position, float rotation, const glm::vec2& size, const glm::vec4& tint)
 	{
+		TF_PROFILE_FUNCTION();
+
 		s_Data->TextureShader->Bind();
 		s_Data->TextureShader->SetFloat4("u_Color", tint);
 
