@@ -4,6 +4,7 @@
 #include "Timefall/Events/ApplicationEvent.h"
 #include "Timefall/Events/MouseEvent.h"
 #include "Timefall/Events/KeyEvent.h"
+#include "Timefall/Renderer/Renderer.h"
 
 namespace Timefall
 {
@@ -54,7 +55,10 @@ namespace Timefall
 
 		{
 			TF_PROFILE_SCOPE("glfwCreateWindow()");
-
+		#if defined(TF_DEBUG)
+			if (Renderer::GetAPI() == RendererAPI::API::OpenGL)
+				glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+		#endif
 			m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, props.Title.c_str(), nullptr, nullptr);
 			++s_GLFWWindowCount;
 		}
