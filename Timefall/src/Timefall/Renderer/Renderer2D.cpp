@@ -92,6 +92,7 @@ namespace Timefall
 
 		s_Data->TextureShader->Bind();
 		s_Data->TextureShader->SetFloat4("u_Color", color);
+		s_Data->TextureShader->SetFloat("u_Tiling", 1.0f);
 
 		s_Data->WhiteTexture->Bind();
 
@@ -104,17 +105,18 @@ namespace Timefall
 		RenderCommand::DrawIndexed(s_Data->QuadVertexArray);
 	}
 
-	void Renderer2D::DrawQuad(const Ref<Texture2D>& texture, const glm::vec2& position, float rotation, const glm::vec2& size, const glm::vec4& tint)
+	void Renderer2D::DrawQuad(const Ref<Texture2D>& texture, const glm::vec2& position, float rotation, const glm::vec2& size, const glm::vec4& tint, float tiling)
 	{
-		DrawQuad(texture, {position.x, position.y, 0.0f}, rotation, size, tint);
+		DrawQuad(texture, {position.x, position.y, 0.0f}, rotation, size, tint, tiling);
 	}
 
-	void Renderer2D::DrawQuad(const Ref<Texture2D>& texture, const glm::vec3& position, float rotation, const glm::vec2& size, const glm::vec4& tint)
+	void Renderer2D::DrawQuad(const Ref<Texture2D>& texture, const glm::vec3& position, float rotation, const glm::vec2& size, const glm::vec4& tint, float tiling)
 	{
 		TF_PROFILE_FUNCTION();
 
 		s_Data->TextureShader->Bind();
 		s_Data->TextureShader->SetFloat4("u_Color", tint);
+		s_Data->TextureShader->SetFloat("u_Tiling", tiling);
 
 		texture->Bind();
 
