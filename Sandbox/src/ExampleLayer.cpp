@@ -8,7 +8,7 @@
 ExampleLayer::ExampleLayer()
 	: Layer("Example"), m_CameraController(1280.0f / 720.0f)
 {
-	m_VertexArray = Timefall::VertexArray::Create();
+	/*m_VertexArray = Timefall::VertexArray::Create();
 	m_VertexArray->Bind();
 
 	float vertices[3 * 7] = {
@@ -136,7 +136,7 @@ ExampleLayer::ExampleLayer()
 	m_ChernoLogoTexture = Timefall::Texture2D::Create("assets/textures/ChernoLogo.png");
 
 	textureShader->Bind();
-	textureShader->SetInt("u_Texture", 0);
+	textureShader->SetInt("u_Texture", 0);*/
 }
 
 void ExampleLayer::OnAttach()

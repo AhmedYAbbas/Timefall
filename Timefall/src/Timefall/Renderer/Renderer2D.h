@@ -13,6 +13,7 @@ namespace Timefall
 		
 		static void BeginScene(const OrthographicCamera& camera);
 		static void EndScene();
+		static void Flush();
 
 		// Primitives
 		static void DrawQuad(const glm::vec2& position = glm::vec2(1), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1), const glm::vec4& color = glm::vec4(1));

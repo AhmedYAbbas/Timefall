@@ -10,11 +10,22 @@ namespace Timefall
 	/// VertexBuffer ////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////
 
-	OpenGLVertexBuffer::OpenGLVertexBuffer()
+	OpenGLVertexBuffer::OpenGLVertexBuffer(uint32_t size)
 	{
 		TF_PROFILE_FUNCTION();
 
 		glCreateBuffers(1, &m_RendererID);
+		glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
+		glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
+	}
+
+	OpenGLVertexBuffer::OpenGLVertexBuffer(float* vertices, uint32_t size)
+	{
+		TF_PROFILE_FUNCTION();
+
+		glCreateBuffers(1, &m_RendererID);
+		glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
+		glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_DYNAMIC_DRAW);
 	}
 
 	OpenGLVertexBuffer::~OpenGLVertexBuffer()
@@ -22,13 +33,6 @@ namespace Timefall
 		TF_PROFILE_FUNCTION();
 
 		glDeleteBuffers(1, &m_RendererID);
-	}
-
-	void OpenGLVertexBuffer::SetData(float* vertices, uint32_t size)
-	{
-		TF_PROFILE_FUNCTION();
-
-		glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
 	}
 
 	void OpenGLVertexBuffer::Bind() const
@@ -45,16 +49,28 @@ namespace Timefall
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
+	void OpenGLVertexBuffer::SetData(const void* data, uint32_t size)
+	{
+		TF_PROFILE_FUNCTION();
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
+	}
+
 	/////////////////////////////////////////////////////////////////////////////////
 	/// IndexBuffer /////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////
 
-	OpenGLIndexBuffer::OpenGLIndexBuffer()
+	OpenGLIndexBuffer::OpenGLIndexBuffer(uint32_t* indices, uint32_t count)
 		: m_Count(0)
 	{
 		TF_PROFILE_FUNCTION();
 
 		glCreateBuffers(1, &m_RendererID);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(uint32_t), indices, GL_STATIC_DRAW);
+
+		m_Count = count;
 	}
 
 	OpenGLIndexBuffer::~OpenGLIndexBuffer()
@@ -62,14 +78,6 @@ namespace Timefall
 		TF_PROFILE_FUNCTION();
 
 		glDeleteBuffers(1, &m_RendererID);
-	}
-
-	void OpenGLIndexBuffer::SetData(uint32_t* indices, uint32_t count)
-	{
-		TF_PROFILE_FUNCTION();
-
-		m_Count = count;
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(uint32_t), indices, GL_STATIC_DRAW);
 	}
 
 	void OpenGLIndexBuffer::Bind() const
