@@ -45,7 +45,7 @@ namespace Timefall
 			TF_PROFILE_SCOPE("glfwInit()");
 
 			int success = glfwInit();
-			TF_CORE_ASSERT(success, "Could not intialize GLFW!");
+			TF_CORE_ASSERT(success, "Could not initialize GLFW!");
 			glfwSetErrorCallback(GLFWErrorCallback);
 		}
 
