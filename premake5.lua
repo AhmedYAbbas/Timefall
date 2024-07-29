@@ -69,7 +69,8 @@ project "Timefall"
 	defines
 	{
 		"_CRT_SECURE_NO_WARNINGS",
-		"_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING"
+		"_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING",
+		"GLFW_INCLUDE_NONE"
 	}
 
 	links
@@ -82,12 +83,6 @@ project "Timefall"
 	
 	filter "system:windows"
 		systemversion "latest"
-
-		defines
-		{
-			"TF_BUILD_DLL",
-			"GLFW_INCLUDE_NONE"
-		}
 
 	filter "configurations:Debug"
 		defines "TF_DEBUG"

@@ -43,13 +43,24 @@
 	#error "Unknown platform!"
 #endif // End of platform detection
 
-#if TF_DEBUG
+#ifdef TF_DEBUG
+	#if defined(TF_PLATFORM_WINDOWS)
+		#define	TF_DEBUGBREAK() __debugbreak()
+	#elif defined(TF_PLATFORM_LINUX)
+		#include <signal.h>
+		#define TF_DEBUGBREAK() raise(SIGTRAP)
+	#else
+		#error "Platform doesn't support debugbreak yet!"
+	#endif
 	#define TF_ENABLE_ASSERTS
+#else
+	#define TF_DEBUGBREAK()
 #endif
 
+// TODO: Modify the assertion to have an if-else case + add static assertion
 #ifdef TF_ENABLE_ASSERTS
-	#define TF_ASSERT(x, ...) { if (!(x)) { TF_ERROR("Assertion failed: {0}", __VA_ARGS__); __debugbreak(); } }
-	#define TF_CORE_ASSERT(x, ...) { if (!(x)) { TF_CORE_ERROR("Assertion failed: {0}", __VA_ARGS__); __debugbreak(); } } 
+	#define TF_ASSERT(x, ...) { if (!(x)) { TF_ERROR("Assertion failed: {0}", __VA_ARGS__); TF_DEBUGBREAK(); } }
+	#define TF_CORE_ASSERT(x, ...) { if (!(x)) { TF_CORE_ERROR("Assertion failed: {0}", __VA_ARGS__); TF_DEBUGBREAK(); } } 
 #else
 	#define TF_ASSERT(x, ...) 
 	#define TF_CORE_ASSERT(x, ...)

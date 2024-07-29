@@ -6,7 +6,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 Sandbox2D::Sandbox2D()
-	: Layer("Sandbox2D"), m_CameraController(1280.0f / 720.0f)
+	: Layer("Sandbox2D"), m_CameraController(1280.0f / 720.0f), m_QuadColor({0.2f, 0.2f, 0.8f, 1.0f})
 {
 }
 
@@ -48,7 +48,7 @@ void Sandbox2D::OnUpdate(Timefall::Timestep ts)
 		Timefall::Renderer2D::DrawQuad(m_CheckerboardTexture, {-2.0f, 0.0f, 0.0f}, rotation, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, 10.0f);
 		Timefall::Renderer2D::DrawQuad({0.0f, 0.0f, 0.0f}, 45.0f, {1.0f, 1.0f}, {0.8f, 0.2f, 0.3f, 1.0f});
 		Timefall::Renderer2D::DrawQuad({1.0f, 1.0f, 0.0f}, 45.0f, {2.0f, 0.5f}, {0.2f, 0.2f, 0.8f, 1.0f});
-		Timefall::Renderer2D::DrawQuad({-3.0f, -1.0f, 0.0f}, 0.0f, {2.0f, 0.5f}, {0.2f, 0.2f, 0.8f, 1.0f});
+		Timefall::Renderer2D::DrawQuad({-3.0f, -1.0f, 0.0f}, 0.0f, {2.0f, 0.5f}, m_QuadColor);
 		Timefall::Renderer2D::DrawQuad({1.0f, 0.5f, 0.0f}, 0.0f, {1.0f, 1.0f}, {1.0f, 1.0f, 0.0f, 1.0f});
 
 		for (float y = -5.0f; y < 5.0f; y += 0.5f)
@@ -81,6 +81,9 @@ void Sandbox2D::OnImGuiRender()
 	ImGui::Text("Quads: %d", stats.QuadCount);
 	ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
 	ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
-	//ImGui::ColorEdit4("Square Color", glm::value_ptr(m_SqaureColor));
+
+	ImGui::Separator();
+	ImGui::ColorEdit4("Square Color", glm::value_ptr(m_QuadColor));
+
 	ImGui::End();
 }

@@ -23,5 +23,5 @@ private:
 
 	Timefall::Ref<Timefall::Texture2D> m_CheckerboardTexture;
 
-	glm::vec4 m_SqaureColor = {0.2f, 0.3f, 0.8f, 1.0f};
+	glm::vec4 m_QuadColor = {0.2f, 0.3f, 0.8f, 1.0f};
 };
