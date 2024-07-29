@@ -217,9 +217,9 @@ namespace Timefall
 	#endif // OLD_PATH
 	}
 
-	void Renderer2D::DrawQuad(const Ref<Texture2D>& texture, const glm::vec2& position, float rotation, const glm::vec2& size, const glm::vec4& tint, float tiling)
+	void Renderer2D::DrawQuad(const Ref<Texture2D>& texture, const glm::vec2& position, float rotation, const glm::vec2& size, const glm::vec4& tintColor, float tiling)
 	{
-		DrawQuad(texture, {position.x, position.y, 0.0f}, rotation, size, tint, tiling);
+		DrawQuad(texture, {position.x, position.y, 0.0f}, rotation, size, tintColor, tiling);
 	}
 
 	void Renderer2D::DrawQuad(const Ref<Texture2D>& texture, const glm::vec3& position, float rotation, const glm::vec2& size, const glm::vec4& tint, float tilingFactor)
@@ -271,7 +271,7 @@ namespace Timefall
 
 	#if OLD_PATH
 		s_Data.TextureShader->Bind();
-		s_Data.TextureShader->SetFloat4("u_Color", tint);
+		s_Data.TextureShader->SetFloat4("u_Color", tintColor);
 		s_Data.TextureShader->SetFloat("u_Tiling", tiling);
 
 		texture->Bind();
