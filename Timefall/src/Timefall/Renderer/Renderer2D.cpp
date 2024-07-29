@@ -240,8 +240,11 @@ namespace Timefall
 			}
 		}
 
-		if (textureIndex <= 0.0f)
+		if (textureIndex == 0.0f)
 		{
+			if (s_Data.TextureSlotIndex >= Renderer2DData::MaxTextureSlots)
+				FlushAndReset();
+
 			textureIndex = (float)s_Data.TextureSlotIndex;
 			s_Data.TextureSlots[s_Data.TextureSlotIndex++] = texture;
 		}
