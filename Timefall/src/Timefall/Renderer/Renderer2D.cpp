@@ -120,6 +120,8 @@ namespace Timefall
 	void Renderer2D::Shutdown()
 	{
 		TF_PROFILE_FUNCTION();
+
+		delete[] s_Data.QuadVertexBufferBase;
 	}
 
 	void Renderer2D::BeginScene(const OrthographicCamera& camera)
