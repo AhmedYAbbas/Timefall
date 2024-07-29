@@ -149,6 +149,9 @@ namespace Timefall
 
 	void Renderer2D::Flush()
 	{
+		if (s_Data.QuadIndexCount == 0)
+			return; // Nothing to draw
+
 		for (uint32_t i = 0; i < s_Data.TextureSlotIndex; ++i)
 			s_Data.TextureSlots[i]->Bind(i);
 
