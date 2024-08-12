@@ -2,9 +2,13 @@
 Welcome to the repository for my game engine project! This README will provide an overview of the project, and its current status.
 
 ## Overview
- Timefall Enigne is a work in progress inspired by <a href="https://www.youtube.com/playlist?list=PLlrATfBNZ98dC-V-N3m0Go4deliWHPFwT">The Cherno's tutorial series</a>. The goal of this project is to create a powerful and flexible game engine that can be used to develop a wide range of games.
+ Timefall Enigne is a work in progress inspired by [The Cherno's Game Engine Series](https://www.youtube.com/playlist?list=PLlrATfBNZ98dC-V-N3m0Go4deliWHPFwT). The goal of this project is to create a powerful and flexible game engine that can be used to develop a wide range of games.
 
 ## Current Status
+
+[![Watch the video](https://img.youtube.com/vi/q7pRwjHe2cw/hqdefault.jpg)](https://www.youtube.com/embed/q7pRwjHe2cw)
+
+
 As mentioned earlier, this project is in its early work-in-progress stage. I have successfully implemented some fundamental components, including:
 
 - **Events:** Including MouseEvents, KeyboardEvents, WindowEvents.
