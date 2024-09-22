@@ -2,12 +2,12 @@
 	path = Timefall/vendor/spdlog
 	url = https://github.com/gabime/spdlog
 	branch = v1.x
-[submodule "Timefall/vendor/GLFW"]
-	path = Timefall/vendor/GLFW
-	url = https://github.com/AhmedYAbbas/glfw
 [submodule "Timefall/vendor/imgui"]
 	path = Timefall/vendor/imgui
 	url = https://github.com/AhmedYAbbas/imgui
 [submodule "Timefall/vendor/glm"]
 	path = Timefall/vendor/glm
 	url = https://github.com/g-truc/glm
+[submodule "Timefall/vendor/GLFW"]
+	path = Timefall/vendor/GLFW
+	url = https://github.com/AhmedYAbbas/glfw
