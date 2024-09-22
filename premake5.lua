@@ -27,7 +27,7 @@ IncludeDir["stb_image"] = "Timefall/vendor/stb_image"
 group "Dependencies"
 	include "Timefall/vendor/GLFW"
 	include "Timefall/vendor/Glad"
-	include "Timefall/vendor/ImGui"
+	include "Timefall/vendor/imgui"
 
 group ""
 
@@ -120,7 +120,8 @@ project "Sandbox"
 		"Timefall/vendor/spdlog/include",
 		"Timefall/src",
 		"Timefall/vendor",
-		"%{IncludeDir.glm}"
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.ImGui}"
 	}
 
 	defines

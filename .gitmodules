@@ -5,12 +5,9 @@
 [submodule "Timefall/vendor/GLFW"]
 	path = Timefall/vendor/GLFW
 	url = https://github.com/AhmedYAbbas/glfw
-	branch = master
 [submodule "Timefall/vendor/imgui"]
 	path = Timefall/vendor/imgui
 	url = https://github.com/AhmedYAbbas/imgui
-	branch = docking
 [submodule "Timefall/vendor/glm"]
 	path = Timefall/vendor/glm
 	url = https://github.com/g-truc/glm
-	branch = master
