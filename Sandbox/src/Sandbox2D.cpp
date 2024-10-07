@@ -15,6 +15,11 @@ void Sandbox2D::OnAttach()
 	TF_PROFILE_FUNCTION();
 
 	m_CheckerboardTexture = Timefall::Texture2D::Create("assets/textures/Checkerboard.png");
+	m_SpriteSheet = Timefall::Texture2D::Create("assets/Game/Textures/tilemap_packed.png");
+
+	m_LadderTexture = Timefall::SubTexture2D::Create(m_SpriteSheet, {11, 4}, {16, 16});
+	m_CactusTexture = Timefall::SubTexture2D::Create(m_SpriteSheet, {15, 6}, {16, 16});
+	m_ForestTexture = Timefall::SubTexture2D::Create(m_SpriteSheet, {10, 5}, {16, 16}, {3, 3});
 }
 
 void Sandbox2D::OnDetach()
@@ -36,6 +41,7 @@ void Sandbox2D::OnUpdate(Timefall::Timestep ts)
 		Timefall::RenderCommand::Clear({0.1f, 0.1f, 0.1f, 1.0f});
 	}
 
+#if 0
 	{
 		TF_PROFILE_SCOPE("Renderer Draw");
 
@@ -62,6 +68,13 @@ void Sandbox2D::OnUpdate(Timefall::Timestep ts)
 
 		Timefall::Renderer2D::EndScene();
 	}
+#endif
+
+	Timefall::Renderer2D::BeginScene(m_CameraController.GetCamera());
+	Timefall::Renderer2D::DrawQuad(m_LadderTexture, {0.0f, 0.0f, 0.0f});
+	Timefall::Renderer2D::DrawQuad(m_CactusTexture, {1.0f, 0.0f, 0.0f});
+	Timefall::Renderer2D::DrawQuad(m_ForestTexture, {-2.0f, 0.0f, 0.0f}, 0.0f, {3, 3});
+	Timefall::Renderer2D::EndScene();
 }
 
 void Sandbox2D::OnEvent(Timefall::Event& e)

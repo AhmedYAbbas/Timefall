@@ -25,6 +25,7 @@
 #include "Timefall/Renderer/VertexArray.h"
 #include "Timefall/Renderer/Shader.h"
 #include "Timefall/Renderer/Texture.h"
+#include "Timefall/Renderer/SubTexture2D.h"
 #include "Timefall/Renderer/Buffer.h"
 
 #include "Timefall/Renderer/Camera.h"

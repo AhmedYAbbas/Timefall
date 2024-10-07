@@ -22,6 +22,8 @@ private:
 	Timefall::Ref<Timefall::VertexArray> m_SquareVA;
 
 	Timefall::Ref<Timefall::Texture2D> m_CheckerboardTexture;
+	Timefall::Ref<Timefall::Texture2D> m_SpriteSheet;
+	Timefall::Ref<Timefall::SubTexture2D> m_LadderTexture, m_CactusTexture, m_ForestTexture;
 
 	glm::vec4 m_QuadColor = {0.2f, 0.3f, 0.8f, 1.0f};
 };
