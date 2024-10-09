@@ -5,6 +5,24 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+static const uint32_t s_MapWidth = 24;
+static const char* s_TileMap =
+"GGGGGGGGGGGRGGGGGGGGGGGG"
+"GGGGGGGGGGGRGGGGGGGGGGGG"
+"GGGGGGGGGGGRGGGGGGGGGGGG"
+"GGGGGGGGGGGRGGGGGGGGGGGG"
+"GGGGGGGGGGGRRRRRRRRRRRRR"
+"GGGGGGGGGGGRGGGGGGGGGGGG"
+"GGGGGGGGGGGRGGGGGGGGGGGG"
+"GGGGGGGGGGRGGGGGGGGGGGGG"
+"GGGGGGGGGRGGGGGGGGGGGGGG"
+"GGGGGGGGRGGGGGGGGGGGGGGG"
+"GGGGGGGRGGGGGGGGGGGGGGGG"
+"GGGGGGRGGGGGGGGGGGGGGGGG"
+"RRRRRRGGGGGGGGGGGGGGGGGG"
+"GGGGGGGGGGGGGGGGGGGGGGGG"
+"RRRRRRRRRRRRRRRRRRRRRRRR";
+
 Sandbox2D::Sandbox2D()
 	: Layer("Sandbox2D"), m_CameraController(1280.0f / 720.0f), m_QuadColor({0.2f, 0.2f, 0.8f, 1.0f})
 {
@@ -20,6 +38,14 @@ void Sandbox2D::OnAttach()
 	m_LadderTexture = Timefall::SubTexture2D::Create(m_SpriteSheet, {11, 4}, {16, 16});
 	m_CactusTexture = Timefall::SubTexture2D::Create(m_SpriteSheet, {15, 6}, {16, 16});
 	m_ForestTexture = Timefall::SubTexture2D::Create(m_SpriteSheet, {10, 5}, {16, 16}, {3, 3});
+
+	m_MapWidth = s_MapWidth;
+	m_MapHeight = strlen(s_TileMap) / m_MapWidth;
+
+	m_TileMap['G'] = Timefall::SubTexture2D::Create(m_SpriteSheet, {2, 6}, {16, 16});
+	m_TileMap['R'] = Timefall::SubTexture2D::Create(m_SpriteSheet, {2, 2}, {16, 16});
+
+	m_CameraController.SetZoomLevel(5.0f);
 }
 
 void Sandbox2D::OnDetach()
@@ -71,9 +97,26 @@ void Sandbox2D::OnUpdate(Timefall::Timestep ts)
 #endif
 
 	Timefall::Renderer2D::BeginScene(m_CameraController.GetCamera());
-	Timefall::Renderer2D::DrawQuad(m_LadderTexture, {0.0f, 0.0f, 0.0f});
+
+	for (uint32_t y = 0; y < m_MapHeight; ++y)
+	{
+		for (uint32_t x = 0; x < m_MapWidth; ++x)
+		{
+			char tileType = s_TileMap[x + y * m_MapWidth];
+			Timefall::Ref<Timefall::SubTexture2D> texture;
+			if (m_TileMap.find(tileType) != m_TileMap.end())
+				texture = m_TileMap[tileType];
+			else
+				texture = m_CactusTexture;
+
+			Timefall::Renderer2D::DrawQuad(texture, {x - m_MapWidth / 2.0f, m_MapHeight - y - m_MapHeight / 2.0f, 0.0f});
+		}
+	}
+
+	/*Timefall::Renderer2D::DrawQuad(m_LadderTexture, {0.0f, 0.0f, 0.0f});
 	Timefall::Renderer2D::DrawQuad(m_CactusTexture, {1.0f, 0.0f, 0.0f});
-	Timefall::Renderer2D::DrawQuad(m_ForestTexture, {-2.0f, 0.0f, 0.0f}, 0.0f, {3, 3});
+	Timefall::Renderer2D::DrawQuad(m_ForestTexture, {-2.0f, 0.0f, 0.0f}, 0.0f, {3, 3});*/
+
 	Timefall::Renderer2D::EndScene();
 }
 

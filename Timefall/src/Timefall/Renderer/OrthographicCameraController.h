@@ -19,6 +19,11 @@ namespace Timefall
 		bool OnMouseScrolled(MouseScrolledEvent& e);
 		bool OnWindowResized(WindowResizeEvent& e);
 
+		void SetZoomLevel(float zoomLevel);
+		const float GetZoomLevel() const { return m_ZoomLevel; }
+
+		void CalculateView();
+
 		OrthographicCamera& GetCamera() { return m_Camera; }
 		const OrthographicCamera& GetCamera() const { return m_Camera; }
 	private:
