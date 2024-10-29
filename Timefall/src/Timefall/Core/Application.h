@@ -21,6 +21,7 @@ namespace Timefall
 
 		void PushLayer(Layer* layer);
 		void PushOverlay(Layer* overlay);
+		void Shutdown();
 
 		static Application& Get() { return *s_Instance; }
 		Window& GetWindow() const { return *m_Window; }

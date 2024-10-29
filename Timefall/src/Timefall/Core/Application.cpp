@@ -51,6 +51,11 @@ namespace Timefall
 		overlay->OnAttach();
 	}
 
+	void Application::Shutdown()
+	{
+		m_Running = false;
+	}
+
 	void Application::OnEvent(Event& e)
 	{
 		TF_PROFILE_FUNCTION();
