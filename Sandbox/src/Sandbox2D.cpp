@@ -32,6 +32,11 @@ void Sandbox2D::OnAttach()
 {
 	TF_PROFILE_FUNCTION();
 
+	Timefall::FramebufferSpecification fbSpec;
+	fbSpec.Width = 1280;
+	fbSpec.Height = 720;
+	m_Framebuffer = Timefall::Framebuffer::Create(fbSpec);
+
 	m_CheckerboardTexture = Timefall::Texture2D::Create("assets/textures/Checkerboard.png");
 	m_SpriteSheet = Timefall::Texture2D::Create("assets/Game/Textures/tilemap_packed.png");
 
@@ -64,10 +69,11 @@ void Sandbox2D::OnUpdate(Timefall::Timestep ts)
 	Timefall::Renderer2D::ResetStats();
 	{
 		TF_PROFILE_SCOPE("Renderer Prep");
+		m_Framebuffer->Bind();
 		Timefall::RenderCommand::Clear({0.1f, 0.1f, 0.1f, 1.0f});
 	}
 
-#if 0
+
 	{
 		TF_PROFILE_SCOPE("Renderer Draw");
 
@@ -93,9 +99,10 @@ void Sandbox2D::OnUpdate(Timefall::Timestep ts)
 		}
 
 		Timefall::Renderer2D::EndScene();
+		m_Framebuffer->Unbind();
 	}
-#endif
 
+#if 0
 	Timefall::Renderer2D::BeginScene(m_CameraController.GetCamera());
 
 	for (uint32_t y = 0; y < m_MapHeight; ++y)
@@ -118,6 +125,7 @@ void Sandbox2D::OnUpdate(Timefall::Timestep ts)
 	Timefall::Renderer2D::DrawQuad(m_ForestTexture, {-2.0f, 0.0f, 0.0f}, 0.0f, {3, 3});*/
 
 	Timefall::Renderer2D::EndScene();
+#endif
 }
 
 void Sandbox2D::OnEvent(Timefall::Event& e)
@@ -207,10 +215,9 @@ void Sandbox2D::OnImGuiRender()
 	ImGui::Separator();
 	ImGui::ColorEdit4("Square Color", glm::value_ptr(m_QuadColor));
 
-	uint32_t textureID = m_CheckerboardTexture->GetRendererID();
-	ImGui::Image((void*)textureID, ImVec2(256.0f, 256.0f));
+	uint32_t textureID = m_Framebuffer->GetColorAttachmentRendererID();
+	ImGui::Image((void*)textureID, ImVec2(1280.0f, 720.0f));
 
-	ImGui::End();
-	
+    ImGui::End();
     ImGui::End();
 }

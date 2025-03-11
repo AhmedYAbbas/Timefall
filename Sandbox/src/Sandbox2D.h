@@ -20,6 +20,7 @@ private:
 	// Temp
 	Timefall::Ref<Timefall::Shader> m_FlatColorShader;
 	Timefall::Ref<Timefall::VertexArray> m_SquareVA;
+	Timefall::Ref<Timefall::Framebuffer> m_Framebuffer;
 
 	Timefall::Ref<Timefall::Texture2D> m_CheckerboardTexture;
 	Timefall::Ref<Timefall::Texture2D> m_SpriteSheet;
