@@ -151,3 +151,56 @@ project "Sandbox"
 		defines "TF_DIST"
 		runtime "Release"
 		optimize "on"
+
+project "Timefall-Editor"
+	location "Timefall-Editor"
+	kind "ConsoleApp"
+	language "C++"
+	cppdialect "C++20"
+	staticruntime "on"
+
+	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+	objdir ("int/" .. outputdir .. "/%{prj.name}")
+
+	files
+	{
+		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.cpp"
+	}
+	
+	includedirs
+	{
+		"Timefall/vendor/spdlog/include",
+		"Timefall/src",
+		"Timefall/vendor",
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.ImGui}"
+	}
+
+	defines
+	{
+		"_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING"
+	}
+
+	links
+	{
+		"Timefall"
+	}
+	
+	filter "system:windows"
+		systemversion "latest"
+
+	filter "configurations:Debug"
+		defines "TF_DEBUG"
+		runtime "Debug"
+		symbols "on"
+
+	filter "configurations:Release"
+		defines "TF_RELEASE"
+		runtime "Release"
+		optimize "on"
+
+	filter "configurations:Dist"
+		defines "TF_DIST"
+		runtime "Release"
+		optimize "on"

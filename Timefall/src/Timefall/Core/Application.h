@@ -13,7 +13,7 @@ namespace Timefall
 	class Application
 	{
 	public:
-		Application();
+		Application(const std::string& name = "Timefall App");
 		virtual ~Application();
 
 

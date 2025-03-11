@@ -11,14 +11,14 @@ namespace Timefall
 {
 	Application* Application::s_Instance = nullptr;
 
-	Application::Application()
+	Application::Application(const std::string& name)
 	{
 		TF_PROFILE_FUNCTION();
 
 		TF_CORE_ASSERT(!s_Instance, "Application already exists!");
 		s_Instance = this;
 
-		m_Window = Window::Create();
+		m_Window = Window::Create(WindowProps(name));
 		m_Window->SetEventCallBack(TF_BIND_EVENT_FN(&Application::OnEvent));
 		m_Window->SetVsync(true);
 
