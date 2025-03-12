@@ -216,11 +216,23 @@ namespace Timefall
 
 		ImGui::Separator();
 		ImGui::ColorEdit4("Square Color", glm::value_ptr(m_QuadColor));
+		ImGui::End();
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
+		ImGui::Begin("Viewport");
+		ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+		if (m_ViewportSize != *((glm::vec2*)&viewportSize))
+		{
+			m_ViewportSize = { viewportSize.x, viewportSize.y };
+			m_Framebuffer->Resize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+			m_CameraController.OnResize(viewportSize.x, viewportSize.y);
+		}
 
 		uint32_t textureID = m_Framebuffer->GetColorAttachmentRendererID();
-		ImGui::Image((void*)textureID, ImVec2(1280.0f, 720.0f), ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
-
+		ImGui::Image((void*)textureID, viewportSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 		ImGui::End();
+		ImGui::PopStyleVar();
+
 		ImGui::End();
 	}
 

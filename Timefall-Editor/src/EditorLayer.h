@@ -32,6 +32,8 @@ namespace Timefall
 		uint32_t m_MapWidth, m_MapHeight;
 		std::unordered_map<char, Ref<SubTexture2D>> m_TileMap;
 
+		glm::vec2 m_ViewportSize = { 0.0f, 0.0f };
+
 		glm::vec4 m_QuadColor = { 0.2f, 0.3f, 0.8f, 1.0f };
 	};
 }

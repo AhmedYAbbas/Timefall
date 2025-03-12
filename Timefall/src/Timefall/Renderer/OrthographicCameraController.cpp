@@ -6,12 +6,12 @@
 
 namespace Timefall
 {
-	Timefall::OrthographicCameraController::OrthographicCameraController(float aspectRatio, bool rotation)
+	OrthographicCameraController::OrthographicCameraController(float aspectRatio, bool rotation)
 		: m_AspectRatio(aspectRatio), m_Camera(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel), m_Rotation(rotation)
 	{
 	}
 
-	void Timefall::OrthographicCameraController::OnUpdate(Timestep ts)
+	void OrthographicCameraController::OnUpdate(Timestep ts)
 	{
 		TF_PROFILE_FUNCTION();
 
@@ -56,7 +56,7 @@ namespace Timefall
 		m_CameraTranslationSpeed = m_ZoomLevel;
 	}
 
-	void Timefall::OrthographicCameraController::OnEvent(Event& e)
+	void OrthographicCameraController::OnEvent(Event& e)
 	{
 		TF_PROFILE_FUNCTION();
 
@@ -79,7 +79,7 @@ namespace Timefall
 	{
 		TF_PROFILE_FUNCTION();
 
-		m_AspectRatio = (float)e.GetWidth() / (float)e.GetHeight();
+		OnResize((float)e.GetWidth(), (float)e.GetHeight());
 		CalculateView();
 		return false;
 	}
@@ -93,6 +93,12 @@ namespace Timefall
 	void OrthographicCameraController::CalculateView()
 	{
 		m_Camera.SetProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
+	}
+
+	void OrthographicCameraController::OnResize(float width, float height)
+	{
+		m_AspectRatio = width / height;
+		CalculateView();
 	}
 }
 
