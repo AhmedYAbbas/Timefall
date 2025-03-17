@@ -13,6 +13,8 @@ namespace Timefall
 	class Framebuffer
 	{
 	public:
+		virtual ~Framebuffer() = default;
+
 		virtual const FramebufferSpecification& GetSpecification() const = 0;
 		virtual uint32_t GetColorAttachmentRendererID() const = 0;
 
