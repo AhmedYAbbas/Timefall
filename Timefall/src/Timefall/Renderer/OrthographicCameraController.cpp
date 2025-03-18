@@ -71,7 +71,7 @@ namespace Timefall
 
 		m_ZoomLevel -= e.GetYOffset() * 0.25f;
 		m_ZoomLevel = std::max(m_ZoomLevel, 0.25f);
-		CalculateView();
+		m_Camera.SetProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
 		return false;
 	}
 
@@ -79,26 +79,24 @@ namespace Timefall
 	{
 		TF_PROFILE_FUNCTION();
 
-		OnResize((float)e.GetWidth(), (float)e.GetHeight());
-		CalculateView();
+		// I added a scene viewport to the editor layer, so I don't need to resize the camera here?
+		//OnResize((float)e.GetWidth(), (float)e.GetHeight());
 		return false;
 	}
 
 	void OrthographicCameraController::SetZoomLevel(float zoomLevel)
 	{
 		m_ZoomLevel = zoomLevel;
-		CalculateView();
-	}
-
-	void OrthographicCameraController::CalculateView()
-	{
 		m_Camera.SetProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
 	}
 
 	void OrthographicCameraController::OnResize(float width, float height)
 	{
+		if (width == 0.0f || height == 0.0f)
+			return;
+
 		m_AspectRatio = width / height;
-		CalculateView();
+		m_Camera.SetProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
 	}
 }
 
