@@ -23,6 +23,7 @@ IncludeDir["Glad"] = "Timefall/vendor/Glad/include"
 IncludeDir["ImGui"] = "Timefall/vendor/imgui"
 IncludeDir["glm"] = "Timefall/vendor/glm"
 IncludeDir["stb_image"] = "Timefall/vendor/stb_image"
+IncludeDir["entt"] = "Timefall/vendor/entt/include"
 
 group "Dependencies"
 	include "Timefall/vendor/GLFW"
@@ -63,7 +64,8 @@ project "Timefall"
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.ImGui}/backends",
 		"%{IncludeDir.glm}",
-		"%{IncludeDir.stb_image}"
+		"%{IncludeDir.stb_image}",
+		"%{IncludeDir.entt}"
 	}
 
 	defines
@@ -121,7 +123,8 @@ project "Sandbox"
 		"Timefall/src",
 		"Timefall/vendor",
 		"%{IncludeDir.glm}",
-		"%{IncludeDir.ImGui}"
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.entt}"
 	}
 
 	defines
@@ -174,7 +177,8 @@ project "Timefall-Editor"
 		"Timefall/src",
 		"Timefall/vendor",
 		"%{IncludeDir.glm}",
-		"%{IncludeDir.ImGui}"
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.entt}"
 	}
 
 	defines

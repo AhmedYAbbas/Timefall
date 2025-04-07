@@ -25,6 +25,9 @@ namespace Timefall
 		Ref<VertexArray> m_SquareVA;
 		Ref<Framebuffer> m_Framebuffer;
 
+		Ref<Scene> m_ActiveScene;
+		entt::entity m_SquareEntity;
+
 		Ref<Texture2D> m_CheckerboardTexture;
 		Ref<Texture2D> m_SpriteSheet;
 		Ref<SubTexture2D> m_LadderTexture, m_CactusTexture, m_ForestTexture;

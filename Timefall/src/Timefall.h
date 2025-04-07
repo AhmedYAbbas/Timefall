@@ -30,6 +30,9 @@
 #include "Timefall/Renderer/Buffer.h"
 
 #include "Timefall/Renderer/Camera.h"
+
+#include "Timefall/Scene/Scene.h"
+#include "Timefall/Scene/Components.h"
 // ------------------------------------
 
 // ------------ImGui--------------

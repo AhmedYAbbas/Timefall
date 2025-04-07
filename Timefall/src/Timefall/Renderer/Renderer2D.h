@@ -17,12 +17,14 @@ namespace Timefall
 		static void Flush();
 
 		// Primitives
-		static void DrawQuad(const glm::vec2& position = glm::vec2(1), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1), const glm::vec4& color = glm::vec4(1));
-		static void DrawQuad(const glm::vec3& position = glm::vec3(1), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1), const glm::vec4& color = glm::vec4(1));
-		static void DrawQuad(const Ref<Texture2D>& texture, const glm::vec2& position = glm::vec2(0), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1), const glm::vec4& tintColor = glm::vec4(1), float tiling = 1.0f);
-		static void DrawQuad(const Ref<Texture2D>& texture, const glm::vec3& position = glm::vec3(0), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1), const glm::vec4& tintColor = glm::vec4(1), float tiling = 1.0f);
-		static void DrawQuad(const Ref<SubTexture2D>& subTexture, const glm::vec2& position = glm::vec2(0), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1), const glm::vec4& tintColor = glm::vec4(1), float tiling = 1.0f);
-		static void DrawQuad(const Ref<SubTexture2D>& subTexture, const glm::vec3& position = glm::vec3(0), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1), const glm::vec4& tintColor = glm::vec4(1), float tiling = 1.0f);
+		static void DrawQuad(const glm::mat4& transform = glm::mat4(1.0f), const glm::vec4& color = glm::vec4(1.0f));
+		static void DrawQuad(const glm::vec2& position = glm::vec2(1.0f), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& color = glm::vec4(1.0f));
+		static void DrawQuad(const glm::vec3& position = glm::vec3(1.0f), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& color = glm::vec4(1.0f));
+		static void DrawQuad(const Ref<Texture2D>& texture, const glm::vec2& position = glm::vec2(0), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
+		static void DrawQuad(const Ref<Texture2D>& texture, const glm::mat4& transform = glm::mat4(1.0f), const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
+		static void DrawQuad(const Ref<Texture2D>& texture, const glm::vec3& position = glm::vec3(0), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
+		static void DrawQuad(const Ref<SubTexture2D>& subTexture, const glm::vec2& position = glm::vec2(0), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
+		static void DrawQuad(const Ref<SubTexture2D>& subTexture, const glm::vec3& position = glm::vec3(0), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
 
 		struct Statistics
 		{
