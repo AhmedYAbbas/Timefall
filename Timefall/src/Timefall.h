@@ -11,8 +11,9 @@
 #include "Timefall/Core/Timestep.h"
 #include "Timefall/Renderer/OrthographicCameraController.h"
 
-#include "Timefall/Renderer/Camera.h"
+#include "Timefall/Renderer/OrthographicCamera.h"
 
+// ------------Scene--------------
 #include "Timefall/Scene/Scene.h"
 #include "Timefall/Scene/Entity.h"
 #include "Timefall/Scene/Components.h"

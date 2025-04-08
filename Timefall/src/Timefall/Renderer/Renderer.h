@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Timefall/Renderer/RendererAPI.h"
-#include "Timefall/Renderer/Camera.h"
+#include "Timefall/Renderer/OrthographicCamera.h"
 #include "Timefall/Renderer/Shader.h"
 
 #include "Timefall/Core/Core.h"

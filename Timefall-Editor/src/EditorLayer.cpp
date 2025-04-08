@@ -29,6 +29,13 @@ namespace Timefall
 
 		m_SquareEntity = m_ActiveScene->CreateEntity();
 		m_SquareEntity.AddComponent<SpriteRendererComponent>(glm::vec4{0.0f, 1.0f, 0.0f, 1.0f});
+
+		m_PrimaryCamera = m_ActiveScene->CreateEntity("Main Camera");
+		m_PrimaryCamera.AddComponent<CameraComponent>(glm::ortho(-16.0f, 16.0f, -9.0f, 9.0f, -1.0f, 1.0f));
+
+		m_SecondaryCamera = m_ActiveScene->CreateEntity("Secondary Camera");
+		auto& cc = m_SecondaryCamera.AddComponent<CameraComponent>(glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f));
+		cc.Primary = false;
 	}
 
 	void EditorLayer::OnDetach()
@@ -49,11 +56,8 @@ namespace Timefall
 		m_Framebuffer->Bind();
 		RenderCommand::Clear({ 0.1f, 0.1f, 0.1f, 1.0f });
 
-		Renderer2D::BeginScene(m_CameraController.GetCamera());
-
 		m_ActiveScene->OnUpdate(ts);
 
-		Renderer2D::EndScene();
 		m_Framebuffer->Unbind();
 	}
 
@@ -150,6 +154,16 @@ namespace Timefall
 			auto& squareColor = m_SquareEntity.GetComponent<SpriteRendererComponent>().Color;
 			ImGui::ColorEdit4("Square Color", glm::value_ptr(squareColor));
 			ImGui::Separator();
+		}
+
+		{
+			ImGui::DragFloat3("Camera Position", glm::value_ptr(m_PrimaryCamera.GetComponent<TransformComponent>().Transform[3]), 0.1f);
+
+			if (ImGui::Checkbox("Primary Camera", &m_IsPrimaryCamera))
+			{
+				m_PrimaryCamera.GetComponent<CameraComponent>().Primary = m_IsPrimaryCamera;
+				m_SecondaryCamera.GetComponent<CameraComponent>().Primary = !m_IsPrimaryCamera;
+			}
 		}
 
 		ImGui::End();

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Timefall/Renderer/Camera.h"
+#include "Timefall/Renderer/OrthographicCamera.h"
 #include "Timefall/Core/Timestep.h"
 
 #include "Timefall/Events/ApplicationEvent.h"

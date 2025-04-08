@@ -19,7 +19,7 @@ namespace Timefall
 		s_Instance = this;
 
 		m_Window = Window::Create(WindowProps(name));
-		m_Window->SetEventCallBack(TF_BIND_EVENT_FN(&Application::OnEvent));
+		m_Window->SetEventCallBack(TF_BIND_EVENT_FN(Application::OnEvent));
 		m_Window->SetVsync(true);
 
 		Renderer::Init();
@@ -61,8 +61,8 @@ namespace Timefall
 		TF_PROFILE_FUNCTION();
 
 		EventDispatcher dispatcher(e);
-		dispatcher.Dispatch<WindowCloseEvent>(TF_BIND_EVENT_FN(&Application::OnWindowClose));
-		dispatcher.Dispatch<WindowResizeEvent>(TF_BIND_EVENT_FN(&Application::OnWindowResize));
+		dispatcher.Dispatch<WindowCloseEvent>(TF_BIND_EVENT_FN(Application::OnWindowClose));
+		dispatcher.Dispatch<WindowResizeEvent>(TF_BIND_EVENT_FN(Application::OnWindowResize));
 
 		for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it)
 		{

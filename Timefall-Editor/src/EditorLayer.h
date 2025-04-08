@@ -25,6 +25,10 @@ namespace Timefall
 
 		Ref<Scene> m_ActiveScene;
 		Entity m_SquareEntity;
+		Entity m_PrimaryCamera;
+		Entity m_SecondaryCamera;
+
+		bool m_IsPrimaryCamera = true;
 
 		glm::vec2 m_ViewportSize = { 0.0f, 0.0f };
 		bool m_ViewportFocused = false, m_ViewportHovered = false;
