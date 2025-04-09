@@ -47,6 +47,23 @@ namespace Timefall
 		}
 	}
 
+	void Scene::OnViewportResize(uint32_t width, uint32_t height)
+	{
+		m_ViewportWidth = width;
+		m_ViewportHeight = height;
+
+		// Resize non-fixed aspect ratio cameras
+		auto view = m_Registry.view<CameraComponent>();
+		for (auto entity : view)
+		{
+			auto& camera = view.get<CameraComponent>(entity);
+			if (!camera.FixedAspectRatio)
+			{
+				camera.Camera.SetViewportSize(width, height);
+			}
+		}
+	}
+
 	Entity Scene::CreateEntity(const std::string tag)
 	{
 		Entity e = { m_Registry.create(), this };

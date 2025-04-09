@@ -13,10 +13,12 @@ namespace Timefall
 		{
 		}
 
+		virtual ~Camera() = default;
+
 		glm::mat4& GetProjection() { return m_Projection; }
 		const glm::mat4& GetProjection() const { return m_Projection; }
 
-	private:
+	protected:
 		glm::mat4 m_Projection;
 	};
 }
