@@ -68,6 +68,8 @@ namespace Timefall
 
 		m_PrimaryCamera.AddComponent<NativeScriptComponent>().Bind<CameraController>();
 		m_SecondaryCamera.AddComponent<NativeScriptComponent>().Bind<CameraController>();
+
+		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
 	}
 
 	void EditorLayer::OnDetach()
@@ -176,6 +178,8 @@ namespace Timefall
 
 			ImGui::EndMenuBar();
 		}
+
+		m_SceneHierarchyPanel.OnImGuiRender();
 
 		ImGui::Begin("Stats");
 

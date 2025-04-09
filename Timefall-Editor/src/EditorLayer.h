@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Timefall.h"
+#include "Panels/SceneHierarchyPanel.h"
 
 namespace Timefall
 {
@@ -32,5 +33,7 @@ namespace Timefall
 
 		glm::vec2 m_ViewportSize = { 0.0f, 0.0f };
 		bool m_ViewportFocused = false, m_ViewportHovered = false;
+
+		SceneHierarchyPanel m_SceneHierarchyPanel;
 	};
 }
