@@ -23,15 +23,12 @@ namespace Timefall
 			{
 				if (!nsc)
 				{
-					nsc.InstantiateFunction();
+					nsc.Instance = nsc.InstantiateScript();
 					nsc.Instance->m_Entity = Entity{ entity, this };
-
-					if (nsc.OnCreateFunction)
-						nsc.OnCreateFunction();
+					nsc.Instance->OnCreate();
 				}
 
-				if (nsc.OnUpdateFunction)
-					nsc.OnUpdateFunction(ts);
+				nsc.Instance->OnUpdate(ts);
 			});
 		}
 

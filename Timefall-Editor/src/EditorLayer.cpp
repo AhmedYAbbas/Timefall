@@ -40,16 +40,17 @@ namespace Timefall
 		class CameraController : public ScriptableEntity
 		{
 		public:
-			void OnCreate()
+			virtual void OnCreate() override
 			{
-				std::cout << "CameraController::OnCreate()" << std::endl;
+				auto& transform = GetComponent<TransformComponent>().Transform;
+				transform[3].x = rand() % 10 - 5.0f;
 			}
 
-			void OnDestroy()
+			virtual void OnDestroy() override
 			{
 			}
 
-			void OnUpdate(Timestep ts)
+			virtual void OnUpdate(Timestep ts) override
 			{
 				auto& transform = GetComponent<TransformComponent>().Transform;
 				float speed = 5.0f;
@@ -66,6 +67,7 @@ namespace Timefall
 		};
 
 		m_PrimaryCamera.AddComponent<NativeScriptComponent>().Bind<CameraController>();
+		m_SecondaryCamera.AddComponent<NativeScriptComponent>().Bind<CameraController>();
 	}
 
 	void EditorLayer::OnDetach()
