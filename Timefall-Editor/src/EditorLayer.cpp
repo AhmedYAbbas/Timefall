@@ -36,6 +36,36 @@ namespace Timefall
 		m_SecondaryCamera = m_ActiveScene->CreateEntity("Secondary Camera");
 		auto& cc = m_SecondaryCamera.AddComponent<CameraComponent>();
 		cc.Primary = false;
+
+		class CameraController : public ScriptableEntity
+		{
+		public:
+			void OnCreate()
+			{
+				std::cout << "CameraController::OnCreate()" << std::endl;
+			}
+
+			void OnDestroy()
+			{
+			}
+
+			void OnUpdate(Timestep ts)
+			{
+				auto& transform = GetComponent<TransformComponent>().Transform;
+				float speed = 5.0f;
+
+				if (Input::IsKeyPressed(KeyCode::A))
+					transform[3].x -= speed * ts;
+				if (Input::IsKeyPressed(KeyCode::D))
+					transform[3].x += speed * ts;
+				if (Input::IsKeyPressed(KeyCode::W))
+					transform[3].y += speed * ts;
+				if (Input::IsKeyPressed(KeyCode::S))
+					transform[3].y -= speed * ts;
+			}
+		};
+
+		m_PrimaryCamera.AddComponent<NativeScriptComponent>().Bind<CameraController>();
 	}
 
 	void EditorLayer::OnDetach()

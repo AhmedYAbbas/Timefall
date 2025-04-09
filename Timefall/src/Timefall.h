@@ -15,7 +15,9 @@
 
 // ------------Scene--------------
 #include "Timefall/Scene/Scene.h"
+#include "Timefall/Scene/SceneCamera.h"
 #include "Timefall/Scene/Entity.h"
+#include "Timefall/Scene/ScriptableEntity.h"
 #include "Timefall/Scene/Components.h"
 
 // ------------Input--------------

@@ -17,6 +17,24 @@ namespace Timefall
 
 	void Scene::OnUpdate(Timestep ts)
 	{
+		// Update scripts
+		{
+			m_Registry.view<NativeScriptComponent>().each([=](auto entity, NativeScriptComponent& nsc)
+			{
+				if (!nsc)
+				{
+					nsc.InstantiateFunction();
+					nsc.Instance->m_Entity = Entity{ entity, this };
+
+					if (nsc.OnCreateFunction)
+						nsc.OnCreateFunction();
+				}
+
+				if (nsc.OnUpdateFunction)
+					nsc.OnUpdateFunction(ts);
+			});
+		}
+
 		Camera* mainCamera = nullptr;
 		glm::mat4* cameraTransform = nullptr;
 		{
