@@ -139,5 +139,15 @@ namespace Timefall
 				ImGui::TreePop();
 			}
 		}
+
+		if (entity.HasComponent<SpriteRendererComponent>())
+		{
+			auto& spriteRendererComponent = entity.GetComponent<SpriteRendererComponent>();
+			if (ImGui::TreeNodeEx((void*)typeid(SpriteRendererComponent).hash_code(), ImGuiTreeNodeFlags_DefaultOpen, "Sprite Renderer"))
+			{
+				ImGui::ColorEdit4("Color", glm::value_ptr(spriteRendererComponent.Color));
+				ImGui::TreePop();
+			}
+		}
 	}
 }

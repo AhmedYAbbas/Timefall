@@ -193,34 +193,6 @@ namespace Timefall
 		ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
 		ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
 
-		if (m_SquareEntity)
-		{
-			ImGui::Separator();
-			auto& tag = m_SquareEntity.GetComponent<TagComponent>().Tag;
-			ImGui::Text("Tag: %s", tag.c_str());
-
-			auto& squareColor = m_SquareEntity.GetComponent<SpriteRendererComponent>().Color;
-			ImGui::ColorEdit4("Square Color", glm::value_ptr(squareColor));
-			ImGui::Separator();
-		}
-
-		{
-			ImGui::DragFloat3("Camera Position", glm::value_ptr(m_PrimaryCamera.GetComponent<TransformComponent>().Transform[3]), 0.1f);
-
-			if (ImGui::Checkbox("Primary Camera", &m_IsPrimaryCamera))
-			{
-				m_PrimaryCamera.GetComponent<CameraComponent>().Primary = m_IsPrimaryCamera;
-				m_SecondaryCamera.GetComponent<CameraComponent>().Primary = !m_IsPrimaryCamera;
-			}
-		}
-
-		{
-			auto& camera = m_SecondaryCamera.GetComponent<CameraComponent>().Camera;
-			float orthoSize = camera.GetOrthographicSize();
-			if (ImGui::DragFloat("Second Camera Ortho Size", &orthoSize))
-				camera.SetOrthographicSize(orthoSize);
-		}
-
 		ImGui::End();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
