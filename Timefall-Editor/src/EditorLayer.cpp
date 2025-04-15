@@ -45,8 +45,8 @@ namespace Timefall
 		public:
 			virtual void OnCreate() override
 			{
-				auto& transform = GetComponent<TransformComponent>().Transform;
-				transform[3].x = rand() % 10 - 5.0f;
+				auto position = GetComponent<TransformComponent>().Position;
+				position.x = rand() % 10 - 5.0f;
 			}
 
 			virtual void OnDestroy() override
@@ -55,17 +55,17 @@ namespace Timefall
 
 			virtual void OnUpdate(Timestep ts) override
 			{
-				auto& transform = GetComponent<TransformComponent>().Transform;
+				auto& position = GetComponent<TransformComponent>().Position;
 				float speed = 5.0f;
 
 				if (Input::IsKeyPressed(KeyCode::A))
-					transform[3].x -= speed * ts;
+					position.x -= speed * ts;
 				if (Input::IsKeyPressed(KeyCode::D))
-					transform[3].x += speed * ts;
+					position.x += speed * ts;
 				if (Input::IsKeyPressed(KeyCode::W))
-					transform[3].y += speed * ts;
+					position.y += speed * ts;
 				if (Input::IsKeyPressed(KeyCode::S))
-					transform[3].y -= speed * ts;
+					position.y -= speed * ts;
 			}
 		};
 

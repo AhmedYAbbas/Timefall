@@ -39,7 +39,7 @@ namespace Timefall
 		void RecalculateProjection();
 
 	private:
-		ProjectionType m_ProjectionType = ProjectionType::Perspective;
+		ProjectionType m_ProjectionType = ProjectionType::Orthographic;
 
 		float m_PerspectiveVerticalFOV = glm::radians(45.0f);
 		float m_PerspectiveNearClip = 0.01f, m_PerspectiveFarClip = 1000.0f;
