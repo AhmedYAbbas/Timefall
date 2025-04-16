@@ -91,4 +91,9 @@ namespace Timefall
 
 		return e;
 	}
+
+	void Scene::DestroyEntity(Entity entity)
+	{
+		m_Registry.destroy(entity);
+	}
 }

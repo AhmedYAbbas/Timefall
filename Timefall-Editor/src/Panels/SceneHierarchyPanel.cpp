@@ -28,6 +28,17 @@ namespace Timefall
 		if (Input::IsMouseButtonPressed(MouseCode::Button0) && ImGui::IsWindowHovered())
 			m_SelectionContext = {};
 
+		// Right-click to open context menu on empty space
+		if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
+		{
+			if (ImGui::MenuItem("Create Empty Entity"))
+			{
+				m_Context->CreateEntity("Empty Entity");
+			}
+
+			ImGui::EndPopup();
+		}
+
 		ImGui::End();
 
 		ImGui::Begin("Properties");
@@ -48,8 +59,27 @@ namespace Timefall
 		if (ImGui::IsItemClicked())
 			m_SelectionContext = entity;
 
+		if (ImGui::BeginPopupContextItem())
+		{
+			if (ImGui::MenuItem("Delete Entity"))
+			{
+				m_Context->DestroyEntity(entity);
+				if (m_SelectionContext == entity)
+					m_SelectionContext = {};
+			}
+
+			ImGui::EndPopup();
+		}
+
 		if (opened)
+		{
+			ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
+			bool opened = ImGui::TreeNodeEx((void*)9817239, flags, tag.c_str());
+			if (opened)
+				ImGui::TreePop();
+
 			ImGui::TreePop();
+		}
 	}
 
 	static void DrawVec3Control(const std::string& label, glm::vec3& values, float resetValue = 0.0f, float columnWidth = 100.0f)

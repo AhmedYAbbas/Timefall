@@ -15,6 +15,7 @@ namespace Timefall
 		~Scene();
 
 		Entity CreateEntity(const std::string tag = "");
+		void DestroyEntity(Entity entity);
 
 		void OnUpdate(Timestep ts);
 		void OnViewportResize(uint32_t width, uint32_t height);
