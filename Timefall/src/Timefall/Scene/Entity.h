@@ -23,7 +23,10 @@ namespace Timefall
 		T& AddComponent(Args&&... args)
 		{
 			TF_CORE_ASSERT(!HasComponent<T>(), "Entity already has the component you're trying to add!");
-			return m_Scene->m_Registry.emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
+			T& component = m_Scene->m_Registry.emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
+			m_Scene->OnComponentAdded<T>(*this, component);
+
+			return component;
 		}
 
 		template<typename T>

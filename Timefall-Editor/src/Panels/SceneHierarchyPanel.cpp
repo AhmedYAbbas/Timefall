@@ -44,7 +44,29 @@ namespace Timefall
 		ImGui::Begin("Properties");
 
 		if (m_SelectionContext)
+		{
 			DrawComponents(m_SelectionContext);
+
+			if (ImGui::Button("Add Component"))
+				ImGui::OpenPopup("AddComponent");
+
+			if (ImGui::BeginPopup("AddComponent"))
+			{
+				if (ImGui::MenuItem("Camera"))
+				{
+					m_SelectionContext.AddComponent<CameraComponent>();
+					ImGui::CloseCurrentPopup();
+				}
+
+				if (ImGui::MenuItem("Sprite Renderer"))
+				{
+					m_SelectionContext.AddComponent<SpriteRendererComponent>();
+					ImGui::CloseCurrentPopup();
+				}
+
+				ImGui::EndPopup();
+			}
+		}
 
 		ImGui::End();
 	}
@@ -59,11 +81,12 @@ namespace Timefall
 		if (ImGui::IsItemClicked())
 			m_SelectionContext = entity;
 
+		bool entityMarkedForDeletion = false;
 		if (ImGui::BeginPopupContextItem())
 		{
 			if (ImGui::MenuItem("Delete Entity"))
 			{
-				m_Context->DestroyEntity(entity);
+				entityMarkedForDeletion = true;
 				if (m_SelectionContext == entity)
 					m_SelectionContext = {};
 			}
@@ -80,6 +103,9 @@ namespace Timefall
 
 			ImGui::TreePop();
 		}
+
+		if (entityMarkedForDeletion)
+			m_Context->DestroyEntity(entity);
 	}
 
 	static void DrawVec3Control(const std::string& label, glm::vec3& values, float resetValue = 0.0f, float columnWidth = 100.0f)
@@ -152,10 +178,12 @@ namespace Timefall
 				tag = std::string(buffer);
 		}
 
+		const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap;
+
 		if (entity.HasComponent<TransformComponent>())
 		{
 			auto& transformComponent = entity.GetComponent<TransformComponent>();
-			if (ImGui::TreeNodeEx((void*)typeid(TransformComponent).hash_code(), ImGuiTreeNodeFlags_DefaultOpen, "Transform"))
+			if (ImGui::TreeNodeEx((void*)typeid(TransformComponent).hash_code(), treeNodeFlags, "Transform"))
 			{
 				DrawVec3Control("Position", transformComponent.Position);
 
@@ -173,7 +201,7 @@ namespace Timefall
 			auto& cameraComponent = entity.GetComponent<CameraComponent>();
 			auto& camera = cameraComponent.Camera;
 
-			if (ImGui::TreeNodeEx((void*)typeid(CameraComponent).hash_code(), ImGuiTreeNodeFlags_DefaultOpen, "Camera"))
+			if (ImGui::TreeNodeEx((void*)typeid(CameraComponent).hash_code(), treeNodeFlags, "Camera"))
 			{
 				const char* projectionTypeStrings[] = { "Perspective", "Orthographic" };
 				const char* currentProjectionTypeString = projectionTypeStrings[(int)camera.GetProjectionType()];
@@ -236,12 +264,32 @@ namespace Timefall
 
 		if (entity.HasComponent<SpriteRendererComponent>())
 		{
-			auto& spriteRendererComponent = entity.GetComponent<SpriteRendererComponent>();
-			if (ImGui::TreeNodeEx((void*)typeid(SpriteRendererComponent).hash_code(), ImGuiTreeNodeFlags_DefaultOpen, "Sprite Renderer"))
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 4, 4 });
+			bool open = ImGui::TreeNodeEx((void*)typeid(SpriteRendererComponent).hash_code(), treeNodeFlags, "Sprite Renderer");
+			ImGui::SameLine(ImGui::GetWindowWidth() - 25.0f);
+			if (ImGui::Button("+", ImVec2{ 20, 20 }))
+				ImGui::OpenPopup("ComponentSettings");
+
+			ImGui::PopStyleVar();
+
+			bool componentMarkedForRemoval = false;
+			if (ImGui::BeginPopup("ComponentSettings"))
 			{
+				if (ImGui::MenuItem("Remove Component"))
+					componentMarkedForRemoval = true;
+				
+				ImGui::EndPopup();
+			}
+
+			if (open)
+			{
+				auto& spriteRendererComponent = entity.GetComponent<SpriteRendererComponent>();
 				ImGui::ColorEdit4("Color", glm::value_ptr(spriteRendererComponent.Color));
 				ImGui::TreePop();
 			}
+
+			if (componentMarkedForRemoval)
+				entity.RemoveComponent<SpriteRendererComponent>();
 		}
 	}
 }
