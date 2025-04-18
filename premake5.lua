@@ -24,11 +24,13 @@ IncludeDir["ImGui"] = "Timefall/vendor/imgui"
 IncludeDir["glm"] = "Timefall/vendor/glm"
 IncludeDir["stb_image"] = "Timefall/vendor/stb_image"
 IncludeDir["entt"] = "Timefall/vendor/entt/include"
+IncludeDir["yaml_cpp"] = "Timefall/vendor/yaml-cpp/include"
 
 group "Dependencies"
 	include "Timefall/vendor/GLFW"
 	include "Timefall/vendor/Glad"
 	include "Timefall/vendor/imgui"
+	include "Timefall/vendor/yaml-cpp"
 
 group ""
 
@@ -65,14 +67,16 @@ project "Timefall"
 		"%{IncludeDir.ImGui}/backends",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.stb_image}",
-		"%{IncludeDir.entt}"
+		"%{IncludeDir.entt}",
+		"%{IncludeDir.yaml_cpp}"
 	}
 
 	defines
 	{
 		"_CRT_SECURE_NO_WARNINGS",
 		"_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING",
-		"GLFW_INCLUDE_NONE"
+		"GLFW_INCLUDE_NONE",
+		"YAML_CPP_STATIC_DEFINE"
 	}
 
 	links
@@ -80,6 +84,7 @@ project "Timefall"
 		"GLFW",
 		"Glad",
 		"ImGui",
+		"yaml-cpp",
 		"opengl32.lib"
 	}
 	

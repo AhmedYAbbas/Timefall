@@ -7,6 +7,8 @@
 
 #include "Timefall/Scene/Scene.h"
 
+#include "Timefall/Scene/SceneSerializer.h"
+
 namespace Timefall
 {
 	EditorLayer::EditorLayer()
@@ -27,6 +29,7 @@ namespace Timefall
 
 		m_ActiveScene = CreateRef<Scene>();
 
+#if 0
 		m_SquareEntity = m_ActiveScene->CreateEntity("Green Square");
 		m_SquareEntity.AddComponent<SpriteRendererComponent>(glm::vec4{0.0f, 1.0f, 0.0f, 1.0f});
 		
@@ -71,7 +74,7 @@ namespace Timefall
 
 		m_PrimaryCamera.AddComponent<NativeScriptComponent>().Bind<CameraController>();
 		m_SecondaryCamera.AddComponent<NativeScriptComponent>().Bind<CameraController>();
-
+#endif
 		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
 	}
 
@@ -176,6 +179,18 @@ namespace Timefall
 		{
 			if (ImGui::BeginMenu("File"))
 			{
+				if (ImGui::MenuItem("Serialize", NULL, false))
+				{
+					SceneSerializer serializer(m_ActiveScene);
+					serializer.SerializeText("assets/scenes/Scene.yaml");
+				}
+
+				if (ImGui::MenuItem("Deserialize", NULL, false))
+				{
+					SceneSerializer serializer(m_ActiveScene);
+					serializer.DeserializeText("assets/scenes/Scene.yaml");
+				}
+
 				if (ImGui::MenuItem("Exit", NULL, false))
 				{
 					dockspaceOpen = false;

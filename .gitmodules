@@ -11,3 +11,6 @@
 [submodule "Timefall/vendor/GLFW"]
 	path = Timefall/vendor/GLFW
 	url = https://github.com/AhmedYAbbas/glfw
+[submodule "Timefall/vendor/yaml-cpp"]
+	path = Timefall/vendor/yaml-cpp
+	url = https://github.com/AhmedYAbbas/yaml-cpp
