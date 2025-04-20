@@ -14,3 +14,6 @@
 [submodule "Timefall/vendor/yaml-cpp"]
 	path = Timefall/vendor/yaml-cpp
 	url = https://github.com/AhmedYAbbas/yaml-cpp
+[submodule "Timefall/vendor/ImGuizmo"]
+	path = Timefall/vendor/ImGuizmo
+	url = https://github.com/AhmedYAbbas/ImGuizmo

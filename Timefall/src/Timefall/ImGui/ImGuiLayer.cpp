@@ -7,6 +7,8 @@
 
 #include "Timefall/Core/Application.h"
 
+#include "ImGuizmo.h"
+
 // TEMPORARY
 #include <GLFW/glfw3.h>
 
@@ -75,6 +77,7 @@ namespace Timefall
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+        ImGuizmo::BeginFrame();
     }
 
     void ImGuiLayer::End()
