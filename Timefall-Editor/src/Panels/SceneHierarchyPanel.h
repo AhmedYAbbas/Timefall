@@ -13,7 +13,7 @@ namespace Timefall
 		SceneHierarchyPanel() = default;
 		SceneHierarchyPanel(const Ref<Scene>& context);
 
-		void SetContext(const Ref<Scene> context) { m_Context = context; }
+		void SetContext(const Ref<Scene> context);
 
 		void OnImGuiRender();
 

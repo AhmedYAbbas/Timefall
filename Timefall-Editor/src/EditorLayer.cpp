@@ -8,6 +8,7 @@
 #include "Timefall/Scene/Scene.h"
 
 #include "Timefall/Scene/SceneSerializer.h"
+#include "Timefall/Utils/PlatformUtils.h"
 
 namespace Timefall
 {
@@ -115,6 +116,9 @@ namespace Timefall
 		TF_PROFILE_FUNCTION();
 
 		m_CameraController.OnEvent(e);
+
+		EventDispatcher dispatcher(e);
+		dispatcher.Dispatch<KeyPressedEvent>(TF_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
 	}
 
 	void EditorLayer::OnImGuiRender()
@@ -179,17 +183,14 @@ namespace Timefall
 		{
 			if (ImGui::BeginMenu("File"))
 			{
-				if (ImGui::MenuItem("Serialize", NULL, false))
-				{
-					SceneSerializer serializer(m_ActiveScene);
-					serializer.SerializeText("assets/scenes/Scene.yaml");
-				}
+				if (ImGui::MenuItem("New", "Ctrl + N"))
+					NewScene();
 
-				if (ImGui::MenuItem("Deserialize", NULL, false))
-				{
-					SceneSerializer serializer(m_ActiveScene);
-					serializer.DeserializeText("assets/scenes/Scene.yaml");
-				}
+				if (ImGui::MenuItem("Open...", "Ctrl + O"))
+					OpenScene();
+				
+				if (ImGui::MenuItem("Save As...", "Ctrl + Shift + S"))
+					SaveSceneAs();
 
 				if (ImGui::MenuItem("Exit", NULL, false))
 				{
@@ -232,6 +233,73 @@ namespace Timefall
 		ImGui::PopStyleVar();
 
 		ImGui::End();
+	}
+
+	bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
+	{
+		if (e.GetRepeatCount() > 0)
+			return false;
+
+		bool control = Input::IsKeyPressed(KeyCode::LeftControl) || Input::IsKeyPressed(KeyCode::RightControl);
+		bool shift = Input::IsKeyPressed(KeyCode::LeftShift) || Input::IsKeyPressed(KeyCode::RightShift);
+
+		switch (e.GetKeyCode())
+		{
+			case KeyCode::S:
+			{
+				if (control && shift)
+					SaveSceneAs();
+
+				break;
+			}	
+			case KeyCode::N:
+			{
+				if (control)
+					NewScene();
+
+				break;
+			}
+			case KeyCode::O:
+			{
+				if (control)
+					OpenScene();
+
+				break;
+			}
+		}
+
+		return true;
+	}
+
+	void EditorLayer::NewScene()
+	{
+		m_ActiveScene = CreateRef<Scene>();
+		m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+	}
+
+	void EditorLayer::OpenScene()
+	{
+		auto path = FileDialogs::OpenFile("Timefall Scene (*.timefall)\0*.timefall\0");
+		if (!path.empty())
+		{
+			m_ActiveScene = CreateRef<Scene>();
+			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+			m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+
+			SceneSerializer serializer(m_ActiveScene);
+			serializer.DeserializeText(path);
+		}
+	}
+
+	void EditorLayer::SaveSceneAs()
+	{
+		auto path = FileDialogs::SaveFile("Timefall Scene (*.timefall)\0*.timefall\0");
+		if (!path.empty())
+		{
+			SceneSerializer serializer(m_ActiveScene);
+			serializer.SerializeText(path);
+		}
 	}
 
 }
