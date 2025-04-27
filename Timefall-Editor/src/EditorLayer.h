@@ -36,6 +36,8 @@ namespace Timefall
 		Entity m_PrimaryCamera;
 		Entity m_SecondaryCamera;
 
+		EditorCamera m_EditorCamera;
+
 		bool m_IsPrimaryCamera = true;
 
 		glm::vec2 m_ViewportSize = { 0.0f, 0.0f };
