@@ -25,7 +25,7 @@ namespace Timefall
 		TF_PROFILE_FUNCTION();
 
 		FramebufferSpecification fbSpec;
-		fbSpec.Attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::DEPTH };
+		fbSpec.Attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::DEPTH };
 		fbSpec.Width = 1280;
 		fbSpec.Height = 720;
 		m_Framebuffer = Framebuffer::Create(fbSpec);
@@ -116,6 +116,20 @@ namespace Timefall
 		RenderCommand::Clear({ 0.1f, 0.1f, 0.1f, 1.0f });
 
 		m_ActiveScene->OnUpdateEditor(ts, m_EditorCamera);
+
+		auto [mx, my] = ImGui::GetMousePos();
+		mx -= m_ViewportBounds[0].x;
+		my -= m_ViewportBounds[0].y;
+		glm::vec2 viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
+		my = viewportSize.y - my;
+		int mouseX = (int)mx;
+		int mouseY = (int)my;
+
+		if (mouseX >= 0 && mouseX <= viewportSize.x && mouseY >= 0 && mouseY <= viewportSize.y)
+		{
+			int data = m_Framebuffer->ReadPixel(1, mouseX, mouseY);
+			TF_CORE_WARN("Pixel Color: {0}", data);
+		}
 
 		m_Framebuffer->Unbind();
 	}
@@ -229,6 +243,8 @@ namespace Timefall
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
 		ImGui::Begin("Viewport");
 
+		auto viewportOffset = ImGui::GetCursorPos(); // Accounts for the tab bar
+
 		m_ViewportFocused = ImGui::IsWindowFocused();
 		m_ViewportHovered = ImGui::IsWindowHovered();
 
@@ -237,8 +253,17 @@ namespace Timefall
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 		m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
 
-		uint32_t textureID = m_Framebuffer->GetColorAttachmentRendererID(1);
+		uint32_t textureID = m_Framebuffer->GetColorAttachmentRendererID();
 		ImGui::Image((void*)textureID, viewportPanelSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+
+		auto windowSize = ImGui::GetWindowSize();
+		auto minBound = ImGui::GetWindowPos();
+		minBound.x += viewportOffset.x;
+		minBound.y += viewportOffset.y;
+
+		ImVec2 maxBound = { minBound.x + windowSize.x, minBound.y + windowSize.y };
+		m_ViewportBounds[0] = { minBound.x, minBound.y };
+		m_ViewportBounds[1] = { maxBound.x, maxBound.y };
 
 		// Gizmos
 		Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();

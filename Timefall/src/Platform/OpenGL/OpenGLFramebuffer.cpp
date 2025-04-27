@@ -34,7 +34,7 @@ namespace Timefall {
 			glBindRenderbuffer(GL_RENDERBUFFER, id);
 		}
 
-		static void AttachColorTexture(uint32_t id, int samples, GLenum internalFormat, uint32_t width, uint32_t height, int index)
+		static void AttachColorTexture(uint32_t id, int samples, GLenum internalFormat, GLenum format, uint32_t width, uint32_t height, int index)
 		{
 			bool multisampled = samples > 1;
 			if (multisampled)
@@ -43,7 +43,7 @@ namespace Timefall {
 			}
 			else
 			{
-				glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+				glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
 
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -132,7 +132,10 @@ namespace Timefall {
 				switch (m_ColorAttachmentSpecifications[i].TextureFormat)
 				{
 					case FramebufferTextureFormat::RGBA8:
-						Utils::AttachColorTexture(m_ColorAttachments[i], m_Specification.Samples, GL_RGBA8, m_Specification.Width, m_Specification.Height, (int)i);
+						Utils::AttachColorTexture(m_ColorAttachments[i], m_Specification.Samples, GL_RGBA8, GL_RGBA, m_Specification.Width, m_Specification.Height, (int)i);
+						break;
+					case FramebufferTextureFormat::RED_INTEGER:
+						Utils::AttachColorTexture(m_ColorAttachments[i], m_Specification.Samples, GL_R32I, GL_RED_INTEGER, m_Specification.Width, m_Specification.Height, (int)i);
 						break;
 					default:
 						TF_CORE_ASSERT(false, "Unknown Framebuffer Color Texture Format!");
@@ -203,6 +206,17 @@ namespace Timefall {
 		m_Specification.Height = height;
 
 		Invalidate();
+	}
+
+	int OpenGLFramebuffer::ReadPixel(uint32_t attachmentIndex, int x, int y)
+	{
+		TF_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(), "index is greater than the color attachments size");
+		glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIndex);
+
+		int pixelData;
+		glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, &pixelData);
+
+		return pixelData;
 	}
 
 }
