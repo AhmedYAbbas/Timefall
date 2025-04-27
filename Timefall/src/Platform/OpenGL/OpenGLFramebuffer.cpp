@@ -79,6 +79,18 @@ namespace Timefall {
 
 			return false;
 		}
+
+		static GLenum TimefallFBTextureFormatToGL(FramebufferTextureFormat format)
+		{
+			switch (format)
+			{
+				case FramebufferTextureFormat::RGBA8:		return GL_RGBA8;
+				case FramebufferTextureFormat::RED_INTEGER: return GL_RED_INTEGER;
+			}
+
+			TF_CORE_ASSERT(false, "Unknown Framebuffer Texture Format!");
+			return 0;
+		}
 	}
 
 	OpenGLFramebuffer::OpenGLFramebuffer(const FramebufferSpecification& spec)
@@ -217,6 +229,16 @@ namespace Timefall {
 		glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, &pixelData);
 
 		return pixelData;
+	}
+
+	void OpenGLFramebuffer::ClearColorAttachment(uint32_t attachmentIndex, int value)
+	{
+		TF_CORE_ASSERT(attachmentIndex < m_ColorAttachments.size(), "index is greater than the color attachments size");
+
+		auto& spec = m_ColorAttachmentSpecifications[attachmentIndex];
+		GLenum format = Utils::TimefallFBTextureFormatToGL(spec.TextureFormat);
+
+		glClearTexImage(m_ColorAttachments[attachmentIndex], 0, format, GL_INT, &value);
 	}
 
 }

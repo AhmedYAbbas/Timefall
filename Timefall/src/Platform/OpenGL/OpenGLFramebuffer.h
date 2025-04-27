@@ -20,6 +20,7 @@ namespace Timefall {
 
 		virtual void Resize(uint32_t width, uint32_t height) override;
 		virtual int ReadPixel(uint32_t attachmentIndex, int x, int y) override;
+		virtual void ClearColorAttachment(uint32_t attachmentIndex, int value) override;
 
 	private:
 		uint32_t m_RendererID = 0;

@@ -115,6 +115,8 @@ namespace Timefall
 		m_Framebuffer->Bind();
 		RenderCommand::Clear({ 0.1f, 0.1f, 0.1f, 1.0f });
 
+		m_Framebuffer->ClearColorAttachment(1, -1);
+
 		m_ActiveScene->OnUpdateEditor(ts, m_EditorCamera);
 
 		auto [mx, my] = ImGui::GetMousePos();
