@@ -25,6 +25,7 @@ namespace Timefall
 
 		void NewScene();
 		void OpenScene();
+		void OpenScene(const std::filesystem::path& filepath);
 		void SaveSceneAs();
 
 	private:
