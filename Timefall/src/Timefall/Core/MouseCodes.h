@@ -14,10 +14,10 @@ namespace Timefall
 		Button6					= 6,
 		Button7					= 7,
 
-		ButtonLast				= Button7,
-		ButtonLeft				= Button0,
-		ButtonRight				= Button1,
-		ButtonMiddle			= Button2
+		LastButton				= Button7,
+		LeftButton				= Button0,
+		RightButton				= Button1,
+		MiddleButton			= Button2
 	} Mouse;
 
 	inline std::ostream& operator<<(std::ostream& os, MouseCode mouseCode)
@@ -35,7 +35,7 @@ namespace Timefall
 #define TF_MOUSE_BUTTON_5      ::Timefall::Mouse::Button5
 #define TF_MOUSE_BUTTON_6      ::Timefall::Mouse::Button6
 #define TF_MOUSE_BUTTON_7      ::Timefall::Mouse::Button7
-#define TF_MOUSE_BUTTON_LAST   ::Timefall::Mouse::ButtonLast
-#define TF_MOUSE_BUTTON_LEFT   ::Timefall::Mouse::ButtonLeft
-#define TF_MOUSE_BUTTON_RIGHT  ::Timefall::Mouse::ButtonRight
-#define TF_MOUSE_BUTTON_MIDDLE ::Timefall::Mouse::ButtonMiddle
+#define TF_MOUSE_BUTTON_LAST   ::Timefall::Mouse::LastButton
+#define TF_MOUSE_BUTTON_LEFT   ::Timefall::Mouse::LeftButton
+#define TF_MOUSE_BUTTON_RIGHT  ::Timefall::Mouse::RightButton
+#define TF_MOUSE_BUTTON_MIDDLE ::Timefall::Mouse::MiddleButton

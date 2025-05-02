@@ -2,6 +2,7 @@
 
 #include "Timefall.h"
 #include "Panels/SceneHierarchyPanel.h"
+#include "Panels/ContentBrowserPanel.h"
 
 namespace Timefall
 {
@@ -20,6 +21,7 @@ namespace Timefall
 
 	private:
 		bool OnKeyPressed(KeyPressedEvent& e);
+		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
 
 		void NewScene();
 		void OpenScene();
@@ -37,6 +39,7 @@ namespace Timefall
 		Entity m_SecondaryCamera;
 
 		EditorCamera m_EditorCamera;
+		Entity m_HoveredEntity;
 
 		bool m_IsPrimaryCamera = true;
 
@@ -45,7 +48,9 @@ namespace Timefall
 
 		bool m_ViewportFocused = false, m_ViewportHovered = false;
 
-		SceneHierarchyPanel m_SceneHierarchyPanel;
 		int m_GizmoType = -1;
+
+		SceneHierarchyPanel m_SceneHierarchyPanel;
+		ContentBrowserPanel m_ContentBrowserPanel;
 	};
 }

@@ -17,6 +17,9 @@ namespace Timefall
 		glm::vec2 TexCoords;
 		float TexIndex;
 		float TilingFactor;
+
+		// Editor Only
+		int EntityID;
 	};
 
 	struct Renderer2DData
@@ -67,7 +70,8 @@ namespace Timefall
 			{ ShaderDataType::Float4, "a_Color" },
 			{ ShaderDataType::Float2, "a_TexCoord" },
 			{ ShaderDataType::Float, "a_TexIndex" },
-			{ ShaderDataType::Float, "a_TilingFactor" }
+			{ ShaderDataType::Float, "a_TilingFactor" },
+			{ ShaderDataType::Int, "a_EntityID" }
 		});
 		s_Data.QuadVertexArray->AddVertexBuffer(s_Data.QuadVertexBuffer);
 
@@ -396,6 +400,34 @@ namespace Timefall
 		s_Data.QuadVertexArray->Bind();
 		RenderCommand::DrawIndexed(s_Data.QuadVertexArray);
 	#endif // OLD_PATH
+	}
+
+	void Renderer2D::DrawSprite(const glm::mat4& transform, SpriteRendererComponent src, int entityID)
+	{
+		TF_PROFILE_FUNCTION();
+
+		if (s_Data.QuadIndexCount >= Renderer2DData::MaxIndices)
+			FlushAndReset();
+
+		constexpr size_t quadVertexCount = 4;
+		constexpr float textureIndex = 0.0f; // White texture
+		constexpr glm::vec2 textureCoords[4] = { { 0.0f, 0.0f }, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f} };
+		constexpr float tilingFactor = 1.0f;
+
+		for (size_t i = 0; i < quadVertexCount; ++i)
+		{
+			s_Data.QuadVertexBufferPtr->Position = transform * s_Data.QuadVertexPositions[i];
+			s_Data.QuadVertexBufferPtr->Color = src.Color;
+			s_Data.QuadVertexBufferPtr->TexCoords = textureCoords[i];
+			s_Data.QuadVertexBufferPtr->TexIndex = textureIndex;
+			s_Data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
+			s_Data.QuadVertexBufferPtr->EntityID = entityID;
+			s_Data.QuadVertexBufferPtr++;
+		}
+
+		s_Data.QuadIndexCount += 6;
+
+		s_Data.Stats.QuadCount++;
 	}
 
 	Renderer2D::Statistics& Renderer2D::GetStats()

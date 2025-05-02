@@ -5,6 +5,7 @@
 #include "Timefall/Renderer/Texture.h"
 #include "Timefall/Renderer/SubTexture2D.h"
 #include "Timefall/Renderer/EditorCamera.h"
+#include "Timefall/Scene/Components.h"
 
 namespace Timefall
 {
@@ -29,6 +30,8 @@ namespace Timefall
 		static void DrawQuad(const Ref<Texture2D>& texture, const glm::vec3& position = glm::vec3(0), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
 		static void DrawQuad(const Ref<SubTexture2D>& subTexture, const glm::vec2& position = glm::vec2(0), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
 		static void DrawQuad(const Ref<SubTexture2D>& subTexture, const glm::vec3& position = glm::vec3(0), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
+
+		static void DrawSprite(const glm::mat4& transform, SpriteRendererComponent src, int entityID = -1);
 
 		struct Statistics
 		{
