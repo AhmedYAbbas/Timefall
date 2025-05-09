@@ -27,13 +27,14 @@ namespace Timefall
 	{
 		TF_PROFILE_FUNCTION();
 
+		m_PlayIcon = Texture2D::Create("resources/icons/PlayButton.png");
+		m_StopIcon = Texture2D::Create("resources/icons/StopButton.png");
+
 		FramebufferSpecification fbSpec;
 		fbSpec.Attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::DEPTH };
 		fbSpec.Width = 1280;
 		fbSpec.Height = 720;
 		m_Framebuffer = Framebuffer::Create(fbSpec);
-
-		m_CameraController.SetZoomLevel(5.0f);
 
 		m_ActiveScene = CreateRef<Scene>();
 
@@ -102,25 +103,30 @@ namespace Timefall
 			(spec.Width != m_ViewportSize.x || spec.Height != m_ViewportSize.y))
 		{
 			m_Framebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
-			m_CameraController.OnResize(m_ViewportSize.x, m_ViewportSize.y);
 			m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
 			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		}
-
-		// Update
-		if (m_ViewportFocused)
-			m_CameraController.OnUpdate(ts);
-
-		m_EditorCamera.OnUpdate(ts);
 
 		// Render
 		Renderer2D::ResetStats();
 		m_Framebuffer->Bind();
 		RenderCommand::Clear({ 0.1f, 0.1f, 0.1f, 1.0f });
-
 		m_Framebuffer->ClearColorAttachment(1, -1);
 
-		m_ActiveScene->OnUpdateEditor(ts, m_EditorCamera);
+		switch (m_SceneState)
+		{
+			case SceneState::Edit:
+			{
+				m_EditorCamera.OnUpdate(ts);
+				m_ActiveScene->OnUpdateEditor(ts, m_EditorCamera);
+				break;
+			}
+			case SceneState::Play:
+			{
+				m_ActiveScene->OnUpdateRuntime(ts);
+				break;
+			}
+		}
 
 		auto [mx, my] = ImGui::GetMousePos();
 		mx -= m_ViewportBounds[0].x;
@@ -332,6 +338,41 @@ namespace Timefall
 		ImGui::End();
 		ImGui::PopStyleVar();
 
+		UI_Toolbar();
+
+		ImGui::End();
+	}
+
+	void EditorLayer::UI_Toolbar()
+	{
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 2 });
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 0, 0 });
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2{ 0, 0 });
+
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+		auto& color = ImGui::GetStyle().Colors;
+		const auto& buttonHovered = color[ImGuiCol_ButtonHovered];
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f });
+		const auto& buttonActive = color[ImGuiCol_ButtonActive];
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ buttonActive.x, buttonActive.y, buttonActive.z, 0.5f });
+
+		ImGui::Begin("##Toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+		Ref<Texture2D> icon = m_SceneState == SceneState::Edit ? m_PlayIcon : m_StopIcon;
+		std::string id = std::to_string(icon->GetRendererID());
+		float size = ImGui::GetWindowHeight() - 4.0f;
+		ImGui::SetCursorPosX(ImGui::GetContentRegionMax().x * 0.5f - size * 0.5f);
+		if (ImGui::ImageButton(id.c_str(), (ImTextureID)icon->GetRendererID(), ImVec2(size, size)))
+		{
+			if (m_SceneState == SceneState::Edit)
+				OnScenePlay();
+			else if (m_SceneState == SceneState::Play)
+				OnSceneStop();
+		}
+
+		ImGui::PopStyleVar(3);
+		ImGui::PopStyleColor(3);
+
 		ImGui::End();
 	}
 
@@ -434,4 +475,13 @@ namespace Timefall
 		}
 	}
 
+	void EditorLayer::OnScenePlay()
+	{
+		m_SceneState = SceneState::Play;
+	}
+
+	void EditorLayer::OnSceneStop()
+	{
+		m_SceneState = SceneState::Edit;
+	}
 }

@@ -28,6 +28,11 @@ namespace Timefall
 		void OpenScene(const std::filesystem::path& filepath);
 		void SaveSceneAs();
 
+		void UI_Toolbar();
+
+		void OnScenePlay();
+		void OnSceneStop();
+
 	private:
 		OrthographicCameraController m_CameraController;
 
@@ -50,6 +55,14 @@ namespace Timefall
 		bool m_ViewportFocused = false, m_ViewportHovered = false;
 
 		int m_GizmoType = -1;
+
+		Ref<Texture2D> m_PlayIcon, m_StopIcon;
+
+		enum class SceneState
+		{
+			Edit = 0, Play = 1
+		};
+		SceneState m_SceneState = SceneState::Edit;
 
 		SceneHierarchyPanel m_SceneHierarchyPanel;
 		ContentBrowserPanel m_ContentBrowserPanel;

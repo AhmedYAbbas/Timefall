@@ -406,13 +406,34 @@ namespace Timefall
 	{
 		TF_PROFILE_FUNCTION();
 
+		float textureIndex = 0.0f; // White texture
+		float tilingFactor = src.TilingFactor;
+		constexpr glm::vec2 textureCoords[4] = { { 0.0f, 0.0f }, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f} };
+		constexpr size_t quadVertexCount = 4;
+
+		if (src.Texture)
+		{
+			for (uint32_t i = 1; i < s_Data.TextureSlotIndex; ++i)
+			{
+				if (*s_Data.TextureSlots[i].get() == *src.Texture.get())
+				{
+					textureIndex = (float)i;
+					break;
+				}
+			}
+
+			if (textureIndex == 0.0f)
+			{
+				if (s_Data.TextureSlotIndex >= Renderer2DData::MaxTextureSlots)
+					FlushAndReset();
+
+				textureIndex = (float)s_Data.TextureSlotIndex;
+				s_Data.TextureSlots[s_Data.TextureSlotIndex++] = src.Texture;
+			}
+		}
+
 		if (s_Data.QuadIndexCount >= Renderer2DData::MaxIndices)
 			FlushAndReset();
-
-		constexpr size_t quadVertexCount = 4;
-		constexpr float textureIndex = 0.0f; // White texture
-		constexpr glm::vec2 textureCoords[4] = { { 0.0f, 0.0f }, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f} };
-		constexpr float tilingFactor = 1.0f;
 
 		for (size_t i = 0; i < quadVertexCount; ++i)
 		{
