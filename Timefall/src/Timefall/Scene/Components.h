@@ -5,8 +5,8 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
 
-#include "SceneCamera.h"
-#include "ScriptableEntity.h"
+#include "Timefall/Scene/SceneCamera.h"
+#include "Timefall/Scene/ScriptableEntity.h"
 #include "Timefall/Renderer/Texture.h"
 
 namespace Timefall
@@ -66,6 +66,35 @@ namespace Timefall
 
 		CameraComponent() = default;
 		CameraComponent(const CameraComponent&) = default;
+	};
+
+	// Physics
+	struct Rigidbody2DComponent
+	{
+		enum class BodyType
+		{
+			Static = 0,
+			Kinematic = 1,
+			Dynamic = 2
+		};
+
+		BodyType Type = BodyType::Static;
+		bool FixedRotation = false;
+
+		Rigidbody2DComponent() = default;
+		Rigidbody2DComponent(const Rigidbody2DComponent&) = default;
+	};
+
+	struct BoxCollider2DComponent
+	{
+		glm::vec2 Offset{ 0.0f };
+		glm::vec2 Size{ 0.5f };
+		float Density = 1.0f;
+		float Friction = 0.5f;
+		float Restitution = 0.0f;
+
+		BoxCollider2DComponent() = default;
+		BoxCollider2DComponent(const BoxCollider2DComponent&) = default;
 	};
 
 	struct NativeScriptComponent

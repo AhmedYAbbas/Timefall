@@ -1,9 +1,11 @@
 #include "tfpch.h"
 
-#include "Scene.h"
-#include "Entity.h"
-#include "Components.h"
+#include "Timefall/Scene/Scene.h"
+#include "Timefall/Scene/Entity.h"
+#include "Timefall/Scene/Components.h"
 #include "Timefall/Renderer/Renderer2D.h"
+
+#include <box2d/box2d.h>
 
 namespace Timefall
 {
@@ -13,6 +15,49 @@ namespace Timefall
 
 	Scene::~Scene()
 	{
+	}
+
+	void Scene::OnRuntimeStart()
+	{
+		b2Vec2 gravity{ 0.0f, -9.81f };
+		b2WorldDef worldDef = b2DefaultWorldDef();
+		worldDef.gravity = gravity;
+		worldDef.restitutionThreshold = m_RestitutionThreshold;
+		m_PhysicsWorld = b2CreateWorld(&worldDef);
+
+		auto view = m_Registry.view<Rigidbody2DComponent>();
+		for (auto e : view)
+		{
+			Entity entity = { e, this };
+			auto& transform = entity.GetComponent<TransformComponent>();
+			auto& rb2d = entity.GetComponent<Rigidbody2DComponent>();
+
+			b2BodyDef bodyDef = b2DefaultBodyDef();
+			bodyDef.type = (b2BodyType)rb2d.Type;
+			bodyDef.position = b2Vec2(transform.Position.x, transform.Position.y);
+			bodyDef.rotation = b2MakeRot(transform.Rotation.z);
+			bodyDef.fixedRotation = rb2d.FixedRotation;
+
+			b2BodyId body = b2CreateBody(m_PhysicsWorld, &bodyDef);
+			m_PhysicsBodiesMap[entity] = body;
+
+			if (entity.HasComponent<BoxCollider2DComponent>())
+			{
+				auto& bc2d = entity.GetComponent<BoxCollider2DComponent>();
+
+				b2Polygon boxShape = b2MakeBox(bc2d.Size.x * transform.Scale.x, bc2d.Size.y * transform.Scale.y);
+				b2ShapeDef shapeDef = b2DefaultShapeDef();
+				shapeDef.density = bc2d.Density;
+				shapeDef.material.friction = bc2d.Friction;
+				shapeDef.material.restitution = bc2d.Restitution;
+				b2CreatePolygonShape(body, &shapeDef, &boxShape);
+			}
+		}
+	}
+
+	void Scene::OnRuntimeStop()
+	{
+		b2DestroyWorld(m_PhysicsWorld);
 	}
 
 	void Scene::OnUpdateRuntime(Timestep ts)
@@ -30,6 +75,29 @@ namespace Timefall
 
 				nsc.Instance->OnUpdate(ts);
 			});
+		}
+
+		// Physics
+		{
+			b2World_Step(m_PhysicsWorld, m_PhysicsTimeStep, m_PhysicsSubStepCount);
+
+			// Retrieve transform from Box2D
+			auto view = m_Registry.view<Rigidbody2DComponent>();
+			for (auto e : view)
+			{
+				Entity entity = { e, this };
+				auto& transform = entity.GetComponent<TransformComponent>();
+				auto& rb2d = entity.GetComponent<Rigidbody2DComponent>();
+
+				if (m_PhysicsBodiesMap.contains(entity))
+				{
+					b2BodyId body = m_PhysicsBodiesMap[entity];
+					const auto& position = b2Body_GetPosition(body);
+					transform.Position.x = position.x;
+					transform.Position.y = position.y;
+					transform.Rotation.z = b2Rot_GetAngle(b2Body_GetRotation(body));
+				}
+			}
 		}
 
 		Camera* mainCamera = nullptr;
@@ -153,6 +221,16 @@ namespace Timefall
 
 	template<>
 	void Scene::OnComponentAdded<NativeScriptComponent>(Entity entity, NativeScriptComponent& component)
+	{
+	}
+
+	template<>
+	void Scene::OnComponentAdded<Rigidbody2DComponent>(Entity entity, Rigidbody2DComponent& component)
+	{
+	}
+
+	template<>
+	void Scene::OnComponentAdded<BoxCollider2DComponent>(Entity entity, BoxCollider2DComponent& component)
 	{
 	}
 }

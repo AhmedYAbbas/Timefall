@@ -1,9 +1,10 @@
 #pragma once
 
-#include <entt.hpp>
-
 #include "Timefall/Core/Timestep.h"
 #include "Timefall/Renderer/EditorCamera.h"
+
+#include <entt.hpp>
+#include <box2d/id.h>
 
 namespace Timefall 
 {
@@ -18,9 +19,16 @@ namespace Timefall
 		Entity CreateEntity(const std::string tag = "");
 		void DestroyEntity(Entity entity);
 
+		void OnRuntimeStart();
+		void OnRuntimeStop();
+
 		void OnUpdateRuntime(Timestep ts);
 		void OnUpdateEditor(Timestep ts, EditorCamera& camera);
 		void OnViewportResize(uint32_t width, uint32_t height);
+
+		// TODO: Remove
+		void SetRestitutionThreshold(float restitutionThreshold) { m_RestitutionThreshold = restitutionThreshold; }
+		float GetRestitutionThreshold() const { return m_RestitutionThreshold; }
 
 		Entity GetPrimaryCameraEntity();
 
@@ -31,6 +39,13 @@ namespace Timefall
 	private:
 		entt::registry m_Registry;
 		uint32_t m_ViewportWidth = 0, m_ViewportHeight = 0;
+
+		// Physics
+		b2WorldId m_PhysicsWorld;
+		std::unordered_map<entt::entity, b2BodyId> m_PhysicsBodiesMap;
+		float m_RestitutionThreshold = 0.5f;
+		float m_PhysicsTimeStep = 1.0f / 60.0f;
+		int m_PhysicsSubStepCount = 4;
 
 		friend class Entity;
 		friend class SceneSerializer;

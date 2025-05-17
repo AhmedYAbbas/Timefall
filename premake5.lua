@@ -1,6 +1,6 @@
 workspace "Timefall"
 	architecture "x86_64"
-	startproject "Sandbox"
+	startproject "Timefall-Editor"
 
 	configurations
 	{
@@ -26,12 +26,14 @@ IncludeDir["stb_image"] = "Timefall/vendor/stb_image"
 IncludeDir["entt"] = "Timefall/vendor/entt/include"
 IncludeDir["yaml_cpp"] = "Timefall/vendor/yaml-cpp/include"
 IncludeDir["ImGuizmo"] = "Timefall/vendor/ImGuizmo"
+IncludeDir["box2d"] = "Timefall/vendor/box2d/include"
 
 group "Dependencies"
 	include "Timefall/vendor/GLFW"
 	include "Timefall/vendor/Glad"
 	include "Timefall/vendor/imgui"
 	include "Timefall/vendor/yaml-cpp"
+	include "Timefall/vendor/box2d"
 
 group ""
 
@@ -73,7 +75,8 @@ project "Timefall"
 		"%{IncludeDir.stb_image}",
 		"%{IncludeDir.entt}",
 		"%{IncludeDir.yaml_cpp}",
-		"%{IncludeDir.ImGuizmo}"
+		"%{IncludeDir.ImGuizmo}",
+		"%{IncludeDir.box2d}"
 	}
 
 	defines
@@ -90,6 +93,7 @@ project "Timefall"
 		"Glad",
 		"ImGui",
 		"yaml-cpp",
+		"box2d",
 		"opengl32.lib"
 	}
 
@@ -192,7 +196,8 @@ project "Timefall-Editor"
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.entt}",
-		"%{IncludeDir.ImGuizmo}"
+		"%{IncludeDir.ImGuizmo}",
+		"%{IncludeDir.box2d}",
 	}
 
 	defines

@@ -17,3 +17,6 @@
 [submodule "Timefall/vendor/ImGuizmo"]
 	path = Timefall/vendor/ImGuizmo
 	url = https://github.com/AhmedYAbbas/ImGuizmo
+[submodule "Timefall/vendor/box2d"]
+	path = Timefall/vendor/box2d
+	url = https://github.com/AhmedYAbbas/box2d
