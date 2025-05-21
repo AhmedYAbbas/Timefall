@@ -15,7 +15,13 @@ namespace Timefall
 		virtual uint32_t GetHeight() const override { return m_Height; };
 		virtual uint32_t GetRendererID() const override { return m_RendererID; };
 
+		virtual uint32_t GetInternalFormat() const override { return m_InternalFormat; }
+		virtual uint32_t GetDataFormat() const override { return m_DataFormat; }
+
+		virtual std::vector<uint8_t> GetData() const override;
+
 		virtual void SetData(void* data, uint32_t size) override;
+		virtual void SetData(const std::vector<uint8_t>& data, uint32_t dataFormat) override;
 
 		virtual void Bind(int slot = 0) const override;
 

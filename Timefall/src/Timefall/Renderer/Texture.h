@@ -12,8 +12,14 @@ namespace Timefall
 		virtual uint32_t GetWidth() const = 0;
 		virtual uint32_t GetHeight() const = 0;
 		virtual uint32_t GetRendererID() const = 0;
+		
+		// OpenGL specific?
+		virtual uint32_t GetInternalFormat() const = 0;
+		virtual uint32_t GetDataFormat() const = 0;
 
+		virtual std::vector<uint8_t> GetData() const = 0;
 		virtual void SetData(void* data, uint32_t size) = 0;
+		virtual void SetData(const std::vector<uint8_t>& data, uint32_t dataFormat) = 0;
 
 		virtual void Bind(int slot = 0) const = 0;
 

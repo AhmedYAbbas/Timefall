@@ -2,6 +2,33 @@ Scene: Timefall Scene
 Entities:
   - Entity: 12837192831273
     TagComponent:
+      Tag: Top
+    TransformComponent:
+      Position: [0, 0.5, 1.1641532e-10]
+      Rotation: [1.5707961, 0.78539824, -4.214685e-08]
+      Scale: [0.9999999, 0.9999993, 0.99999845]
+    SpriteRendererComponent:
+      Color: [1, 0.08880311, 0.86982906, 1]
+  - Entity: 12837192831273
+    TagComponent:
+      Tag: Left
+    TransformComponent:
+      Position: [-0.356, 0, 0.35000002]
+      Rotation: [0, -0.78539824, 0]
+      Scale: [1, 1, 1]
+    SpriteRendererComponent:
+      Color: [0.7876448, 0, 0.7116176, 1]
+  - Entity: 12837192831273
+    TagComponent:
+      Tag: Right
+    TransformComponent:
+      Position: [0.35, 0, 0.35]
+      Rotation: [0, 0.7853982, 0]
+      Scale: [1, 1, 1]
+    SpriteRendererComponent:
+      Color: [0.55984557, 0.0064847083, 0.5192516, 1]
+  - Entity: 12837192831273
+    TagComponent:
       Tag: Camera
     TransformComponent:
       Position: [-1.1, 4.3, 6.7]
@@ -18,30 +45,3 @@ Entities:
         OrthographicFar: 1
       Primary: true
       FixedAspectRatio: false
-  - Entity: 12837192831273
-    TagComponent:
-      Tag: Right
-    TransformComponent:
-      Position: [0.35, 0, 0.35]
-      Rotation: [0, 0.7853982, 0]
-      Scale: [1, 1, 1]
-    SpriteRendererComponent:
-      Color: [1, 1, 1, 1]
-  - Entity: 12837192831273
-    TagComponent:
-      Tag: Left
-    TransformComponent:
-      Position: [-0.356, 0, 0.35]
-      Rotation: [0, -0.78539824, 0]
-      Scale: [1, 1, 1]
-    SpriteRendererComponent:
-      Color: [1, 1, 1, 1]
-  - Entity: 12837192831273
-    TagComponent:
-      Tag: Top
-    TransformComponent:
-      Position: [0, 0.5, 0]
-      Rotation: [1.5707961, 0.78539824, -4.214685e-08]
-      Scale: [0.9999999, 0.9999993, 0.9999992]
-    SpriteRendererComponent:
-      Color: [1, 1, 1, 1]

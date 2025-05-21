@@ -19,7 +19,7 @@ namespace Timefall
 		glTextureStorage2D(m_RendererID, 1, m_InternalFormat, m_Width, m_Height);
 
 		glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -31,8 +31,8 @@ namespace Timefall
 		TF_PROFILE_FUNCTION();
 
 		int width, height, channels;
-		stbi_set_flip_vertically_on_load(1);
 		stbi_uc* data = nullptr;
+		stbi_set_flip_vertically_on_load(1);
 		{
 			TF_PROFILE_SCOPE("stbi_load() - OpenGLTexture2D::OpenGLTexture2D(const std::string& path)");
 			data = stbi_load(path.c_str(), &width, &height, &channels, 0);
@@ -62,7 +62,7 @@ namespace Timefall
 		glTextureStorage2D(m_RendererID, 1, internalFormat, m_Width, m_Height);
 
 		glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
@@ -78,6 +78,18 @@ namespace Timefall
 		glDeleteTextures(1, &m_RendererID);
 	}
 
+	std::vector<uint8_t> OpenGLTexture2D::GetData() const
+	{
+		uint32_t bpp = m_DataFormat == GL_RGBA ? 4 : 3;
+		uint32_t size = m_Width * m_Height * bpp;
+
+		std::vector<uint8_t> pixels(size);
+		glGetTextureImage(m_RendererID, 0, m_DataFormat, GL_UNSIGNED_BYTE, size, pixels.data());
+
+		TF_CORE_ASSERT(pixels.size() > 0, "Failed to get texture data!");
+		return pixels;
+	}
+
 	void OpenGLTexture2D::SetData(void* data, uint32_t size)
 	{
 		TF_PROFILE_FUNCTION();
@@ -85,6 +97,16 @@ namespace Timefall
 		uint32_t bpp = m_DataFormat == GL_RGBA ? 4 : 3;
 		TF_CORE_ASSERT(size == m_Width * m_Height * bpp, "Data must be entire texture");
 		glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, data);
+	}
+
+	void OpenGLTexture2D::SetData(const std::vector<uint8_t>& data, uint32_t dataFormat)
+	{
+		TF_PROFILE_FUNCTION();
+
+		uint32_t bpp = dataFormat == GL_RGBA ? 4 : 3;
+		TF_CORE_ASSERT(data.size() == m_Width * m_Height * bpp, "Data must be entire texture");
+		m_DataFormat = dataFormat;
+		glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, data.data());
 	}
 
 	void OpenGLTexture2D::Bind(int slot) const

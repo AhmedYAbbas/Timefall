@@ -1,10 +1,12 @@
 #include "tfpch.h"
 
-#include "SceneSerializer.h"
-#include "Entity.h"
-#include "Components.h"
+#include "Timefall/Core/Base64.h"
+#include "Timefall/Scene/SceneSerializer.h"
+#include "Timefall/Scene/Entity.h"
+#include "Timefall/Scene/Components.h"
 
 #include <yaml-cpp/yaml.h>
+#include <base64.hpp>
 
 namespace YAML
 {
@@ -42,6 +44,7 @@ namespace YAML
 			node.push_back(v.z);
 			return node;
 		}
+
 		static bool decode(const Node& node, glm::vec3& v)
 		{
 			if (!node.IsSequence() || node.size() != 3)
@@ -66,6 +69,7 @@ namespace YAML
 			node.push_back(v.w);
 			return node;
 		}
+
 		static bool decode(const Node& node, glm::vec4& v)
 		{
 			if (!node.IsSequence() || node.size() != 4)
@@ -98,6 +102,12 @@ namespace Timefall
 	{
 		out << YAML::Flow << YAML::BeginSeq << v.x << v.y << v.z << v.w << YAML::EndSeq;
 		return out;
+	}
+
+	static std::string TextureDataToString(const Ref<Texture> texture)
+	{
+		std::vector<uint8_t> data = texture->GetData();
+		return Base64::Encode(data);
 	}
 
 	static std::string RigidBody2DBodyTypeToString(Rigidbody2DComponent::BodyType bodyType)
@@ -189,6 +199,20 @@ namespace Timefall
 
 			auto& spriteRendererComponent = entity.GetComponent<SpriteRendererComponent>();
 			out << YAML::Key << "Color" << YAML::Value << spriteRendererComponent.Color;
+
+			if (spriteRendererComponent.Texture)
+			{
+				out << YAML::Key << "Texture";
+				out << YAML::BeginMap; // Texture
+				out << YAML::Key << "Width" << YAML::Value << spriteRendererComponent.Texture->GetWidth();
+				out << YAML::Key << "Height" << YAML::Value << spriteRendererComponent.Texture->GetHeight();
+				out << YAML::Key << "InternalFormat" << YAML::Value << spriteRendererComponent.Texture->GetInternalFormat();
+				out << YAML::Key << "DataFormat" << YAML::Value << spriteRendererComponent.Texture->GetDataFormat();
+				out << YAML::Key << "TextureData" << YAML::Value << TextureDataToString(spriteRendererComponent.Texture);
+				out << YAML::EndMap; // Texture
+
+				out << YAML::Key << "TilingFactor" << YAML::Value << spriteRendererComponent.TilingFactor;
+			}
 
 			out << YAML::EndMap; // SpriteRendererComponent
 		}
@@ -309,6 +333,20 @@ namespace Timefall
 				{
 					auto& src = deserializedEntity.AddComponent<SpriteRendererComponent>();
 					src.Color = spriteRendererComponent["Color"].as<glm::vec4>();
+
+					if (spriteRendererComponent["Texture"])
+					{
+						const auto textureDataStr = spriteRendererComponent["Texture"]["TextureData"].as<std::string>();
+						const auto width = spriteRendererComponent["Texture"]["Width"].as<uint32_t>();
+						const auto height = spriteRendererComponent["Texture"]["Height"].as<uint32_t>();
+						const auto dataFormat = spriteRendererComponent["Texture"]["DataFormat"].as<uint32_t>();
+						src.Texture = Texture2D::Create(width, height);
+						const auto textureData = Base64::Decode(textureDataStr);
+						src.Texture->SetData(textureData, dataFormat);
+					}
+
+					if (spriteRendererComponent["TilingFactor"])
+						src.TilingFactor = spriteRendererComponent["TilingFactor"].as<float>();
 				}
 
 				auto rigidbody2DComponent = entity["Rigidbody2DComponent"];

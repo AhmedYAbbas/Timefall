@@ -5,6 +5,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "Timefall/Core/Base64.h"
+
 #include "Timefall/Scene/Scene.h"
 
 #include "Timefall/Scene/SceneSerializer.h"
