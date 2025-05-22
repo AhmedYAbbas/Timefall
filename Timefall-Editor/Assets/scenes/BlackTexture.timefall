@@ -2,7 +2,7 @@ Scene: Timefall Scene
 Entities:
   - Entity: 12837192831273
     TagComponent:
-      Tag: Nada
+      Tag: Square
     TransformComponent:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -10,9 +10,9 @@ Entities:
     SpriteRendererComponent:
       Color: [1, 1, 1, 1]
       Texture:
-        Width: 4160
-        Height: 3113
+        Width: 64
+        Height: 64
         InternalFormat: 32849
         DataFormat: 6407
-        Path: assets\textures\Nada.jpg
+        Path: assets\textures\Black.jpg
       TilingFactor: 1

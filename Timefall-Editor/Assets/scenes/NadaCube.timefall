@@ -1,0 +1,50 @@
+Scene: Timefall Scene
+Entities:
+  - Entity: 12837192831273
+    TagComponent:
+      Tag: Right
+    TransformComponent:
+      Position: [0, -0.5, 0.5]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    SpriteRendererComponent:
+      Color: [1, 1, 1, 1]
+      Texture:
+        Width: 4160
+        Height: 3113
+        InternalFormat: 32849
+        DataFormat: 6407
+        Path: assets\textures\Nada.jpg
+      TilingFactor: 1
+  - Entity: 12837192831273
+    TagComponent:
+      Tag: Left
+    TransformComponent:
+      Position: [-0.5, -0.5, 5.3698546e-08]
+      Rotation: [0, -1.5707964, 0]
+      Scale: [0.9999871, 1, 0.9999871]
+    SpriteRendererComponent:
+      Color: [1, 1, 1, 1]
+      Texture:
+        Width: 4160
+        Height: 3113
+        InternalFormat: 32849
+        DataFormat: 6407
+        Path: assets\textures\Nada.jpg
+      TilingFactor: 1
+  - Entity: 12837192831273
+    TagComponent:
+      Tag: Top
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [-1.5707964, 0, 0]
+      Scale: [1, 1, 1]
+    SpriteRendererComponent:
+      Color: [1, 1, 1, 1]
+      Texture:
+        Width: 4160
+        Height: 3113
+        InternalFormat: 32849
+        DataFormat: 6407
+        Path: assets\textures\Nada.jpg
+      TilingFactor: 1

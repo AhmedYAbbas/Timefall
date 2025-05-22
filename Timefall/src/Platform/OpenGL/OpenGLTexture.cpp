@@ -25,7 +25,7 @@ namespace Timefall
 		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	}
 
-	OpenGLTexture2D::OpenGLTexture2D(const std::string& path)
+	OpenGLTexture2D::OpenGLTexture2D(const std::filesystem::path& path)
 		: m_Path(path)
 	{
 		TF_PROFILE_FUNCTION();
@@ -35,7 +35,7 @@ namespace Timefall
 		stbi_set_flip_vertically_on_load(1);
 		{
 			TF_PROFILE_SCOPE("stbi_load() - OpenGLTexture2D::OpenGLTexture2D(const std::string& path)");
-			data = stbi_load(path.c_str(), &width, &height, &channels, 0);
+			data = stbi_load(path.string().c_str(), &width, &height, &channels, 0);
 		}
 		TF_CORE_ASSERT(data, "Failed to load image!");
 		m_Width = width;

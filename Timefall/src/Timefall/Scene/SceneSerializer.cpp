@@ -6,7 +6,6 @@
 #include "Timefall/Scene/Components.h"
 
 #include <yaml-cpp/yaml.h>
-#include <base64.hpp>
 
 namespace YAML
 {
@@ -208,7 +207,7 @@ namespace Timefall
 				out << YAML::Key << "Height" << YAML::Value << spriteRendererComponent.Texture->GetHeight();
 				out << YAML::Key << "InternalFormat" << YAML::Value << spriteRendererComponent.Texture->GetInternalFormat();
 				out << YAML::Key << "DataFormat" << YAML::Value << spriteRendererComponent.Texture->GetDataFormat();
-				out << YAML::Key << "TextureData" << YAML::Value << TextureDataToString(spriteRendererComponent.Texture);
+				out << YAML::Key << "Path" << YAML::Value << spriteRendererComponent.Texture->GetPath().string();
 				out << YAML::EndMap; // Texture
 
 				out << YAML::Key << "TilingFactor" << YAML::Value << spriteRendererComponent.TilingFactor;
@@ -336,13 +335,11 @@ namespace Timefall
 
 					if (spriteRendererComponent["Texture"])
 					{
-						const auto textureDataStr = spriteRendererComponent["Texture"]["TextureData"].as<std::string>();
 						const auto width = spriteRendererComponent["Texture"]["Width"].as<uint32_t>();
 						const auto height = spriteRendererComponent["Texture"]["Height"].as<uint32_t>();
 						const auto dataFormat = spriteRendererComponent["Texture"]["DataFormat"].as<uint32_t>();
-						src.Texture = Texture2D::Create(width, height);
-						const auto textureData = Base64::Decode(textureDataStr);
-						src.Texture->SetData(textureData, dataFormat);
+						const auto path = spriteRendererComponent["Texture"]["Path"].as<std::string>();
+						src.Texture = Texture2D::Create(path);
 					}
 
 					if (spriteRendererComponent["TilingFactor"])
