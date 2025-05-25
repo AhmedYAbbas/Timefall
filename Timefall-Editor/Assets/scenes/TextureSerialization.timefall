@@ -1,0 +1,50 @@
+Scene: Timefall Scene
+Entities:
+  - Entity: 14702183396492488433
+    TagComponent:
+      Tag: Top
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [-1.5707964, 0, 0]
+      Scale: [1, 0.9999982, 0.9999982]
+    SpriteRendererComponent:
+      Color: [1, 1, 1, 1]
+      Texture:
+        Width: 3395
+        Height: 1387
+        InternalFormat: 32856
+        DataFormat: 6408
+        Path: assets\textures\Fish.png
+      TilingFactor: 1
+  - Entity: 3127688246813529524
+    TagComponent:
+      Tag: Left
+    TransformComponent:
+      Position: [-0.5, -0.5, 5.2154064e-08]
+      Rotation: [0, -1.5707964, 0]
+      Scale: [0.9999866, 1, 0.9999866]
+    SpriteRendererComponent:
+      Color: [1, 1, 1, 1]
+      Texture:
+        Width: 660
+        Height: 394
+        InternalFormat: 32849
+        DataFormat: 6407
+        Path: assets\textures\Rainbow.jpeg
+      TilingFactor: 1
+  - Entity: 3668666736508799489
+    TagComponent:
+      Tag: Right
+    TransformComponent:
+      Position: [0, -0.5, 0.5]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    SpriteRendererComponent:
+      Color: [1, 1, 1, 1]
+      Texture:
+        Width: 64
+        Height: 64
+        InternalFormat: 32849
+        DataFormat: 6407
+        Path: assets\textures\Checkerboard.png
+      TilingFactor: 1

@@ -1,16 +1,28 @@
 #pragma once
 
+#include "Timefall/Core/UUID.h"
+#include "Timefall/Scene/SceneCamera.h"
+#include "Timefall/Renderer/Texture.h"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
 
-#include "Timefall/Scene/SceneCamera.h"
-#include "Timefall/Scene/ScriptableEntity.h"
-#include "Timefall/Renderer/Texture.h"
-
 namespace Timefall
 {
+	struct IDComponent
+	{
+		UUID ID;
+
+		IDComponent() = default;
+		IDComponent(const IDComponent&) = default;
+		IDComponent(const UUID& uuid)
+			: ID(uuid)
+		{
+		}
+	};
+
 	struct TagComponent
 	{
 		std::string Tag;
@@ -97,6 +109,8 @@ namespace Timefall
 		BoxCollider2DComponent(const BoxCollider2DComponent&) = default;
 	};
 
+
+	class ScriptableEntity;
 	struct NativeScriptComponent
 	{
 		ScriptableEntity* Instance = nullptr;

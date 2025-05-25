@@ -1,11 +1,11 @@
 Scene: Timefall Scene
 Entities:
-  - Entity: 12837192831273
+  - Entity: 12140648604693631428
     TagComponent:
-      Tag: Right
+      Tag: Top
     TransformComponent:
-      Position: [0, -0.5, 0.5]
-      Rotation: [0, 0, 0]
+      Position: [0, 0, 0]
+      Rotation: [-1.5707964, 0, 0]
       Scale: [1, 1, 1]
     SpriteRendererComponent:
       Color: [1, 1, 1, 1]
@@ -16,7 +16,7 @@ Entities:
         DataFormat: 6407
         Path: assets\textures\Nada.jpg
       TilingFactor: 1
-  - Entity: 12837192831273
+  - Entity: 12038506425736300305
     TagComponent:
       Tag: Left
     TransformComponent:
@@ -32,12 +32,12 @@ Entities:
         DataFormat: 6407
         Path: assets\textures\Nada.jpg
       TilingFactor: 1
-  - Entity: 12837192831273
+  - Entity: 16625061926853455865
     TagComponent:
-      Tag: Top
+      Tag: Right
     TransformComponent:
-      Position: [0, 0, 0]
-      Rotation: [-1.5707964, 0, 0]
+      Position: [0, -0.5, 0.5]
+      Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     SpriteRendererComponent:
       Color: [1, 1, 1, 1]

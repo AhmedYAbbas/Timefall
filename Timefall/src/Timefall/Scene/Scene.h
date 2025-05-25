@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Timefall/Core/UUID.h"
 #include "Timefall/Core/Timestep.h"
 #include "Timefall/Renderer/EditorCamera.h"
 
@@ -17,6 +18,7 @@ namespace Timefall
 		~Scene();
 
 		Entity CreateEntity(const std::string tag = "");
+		Entity CreateEntityWithUUID(const UUID& uuid, const std::string tag = "");
 		void DestroyEntity(Entity entity);
 
 		void OnRuntimeStart();

@@ -1,8 +1,9 @@
 #pragma once
 
-#include <entt.hpp>
+#include "Timefall/Scene/Scene.h"
+#include "Timefall/Scene/Components.h"
 
-#include "Scene.h"
+#include <entt.hpp>
 
 namespace Timefall
 {
@@ -47,6 +48,12 @@ namespace Timefall
 		operator uint32_t() const { return (uint32_t)m_EntityHandle; }
 		operator entt::entity() const { return m_EntityHandle; }
 
+		UUID GetUUID()
+		{
+			TF_CORE_ASSERT(HasComponent<IDComponent>(), "Entity does not have a UUID component!");
+			return GetComponent<IDComponent>().ID;
+		}
+		
 		// TODO: Remove
 		Scene* GetScene() const { return m_Scene; }
 

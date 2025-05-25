@@ -2,6 +2,7 @@
 
 #include "Timefall/Scene/Scene.h"
 #include "Timefall/Scene/Entity.h"
+#include "Timefall/Scene/ScriptableEntity.h"
 #include "Timefall/Scene/Components.h"
 #include "Timefall/Renderer/Renderer2D.h"
 
@@ -179,7 +180,13 @@ namespace Timefall
 
 	Entity Scene::CreateEntity(const std::string tag)
 	{
+		return CreateEntityWithUUID(UUID(), tag);
+	}
+
+	Entity Scene::CreateEntityWithUUID(const UUID& uuid, const std::string tag)
+	{
 		Entity e = { m_Registry.create(), this };
+		e.AddComponent<IDComponent>(uuid);
 		e.AddComponent<TransformComponent>();
 		TagComponent& tagComp = e.AddComponent<TagComponent>();
 		tagComp.Tag = tag.empty() ? "Entity" : tag;
@@ -196,6 +203,11 @@ namespace Timefall
 	void Scene::OnComponentAdded(Entity entity, T& component)
 	{
 		static_assert(false);
+	}
+
+	template<>
+	void Scene::OnComponentAdded<IDComponent>(Entity entity, IDComponent& component)
+	{
 	}
 
 	template<>
