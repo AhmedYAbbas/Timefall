@@ -1,5 +1,23 @@
 Scene: Timefall Scene
 Entities:
+  - Entity: 7505845761197710784
+    TagComponent:
+      Tag: Camera
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    CameraComponent:
+      Camera:
+        ProjectionType: 1
+        PerspectiveFOV: 45
+        PerspectiveNear: 0.01
+        PerspectiveFar: 1000
+        OrthographicSize: 10
+        OrthographicNear: -1
+        OrthographicFar: 1
+      Primary: true
+      FixedAspectRatio: false
   - Entity: 432310961663549271
     TagComponent:
       Tag: Square

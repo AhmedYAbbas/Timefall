@@ -30,6 +30,12 @@ namespace Timefall
 
 	void SceneCamera::SetViewportSize(uint32_t width, uint32_t height)
 	{
+		if (width == 0 || height == 0)
+		{
+			TF_CORE_ERROR("Attempted to set viewport size to zero dimensions: {0}x{1}", width, height);
+			return;
+		}
+
 		m_AspectRatio = (float)width / (float)height;
 		RecalculateProjection();
 	}

@@ -18,6 +18,60 @@ namespace Timefall
 	{
 	}
 
+	template<typename T>
+	static void CopyComponent(entt::registry& dst, const entt::registry& src, const std::unordered_map<UUID, entt::entity>& enttMap)
+	{
+		auto view = src.view<T>();
+		for (auto srcEntity : view)
+		{
+			UUID uuid = src.get<IDComponent>(srcEntity).ID;
+			TF_CORE_ASSERT(enttMap.find(uuid) != enttMap.end(), "The map does not contain an entity with the requested uuid");
+			entt::entity dstEnttID = enttMap.at(uuid);
+
+			auto& component = src.get<T>(srcEntity);
+			dst.emplace_or_replace<T>(dstEnttID, component);
+		}
+	}
+
+	template<typename T>
+	static void CopyComponentIfExists(Entity dst, Entity src)
+	{
+		if (src.HasComponent<T>())
+			dst.AddOrReplaceComponent<T>(src.GetComponent<T>());
+	}
+
+	Ref<Scene> Scene::Copy(const Ref<Scene>& srcScene)
+	{
+		Ref<Scene> dstScene = CreateRef<Scene>();
+
+		dstScene->m_ViewportWidth = srcScene->m_ViewportWidth;
+		dstScene->m_ViewportHeight = srcScene->m_ViewportHeight;
+
+		auto& srcSceneRegistry = srcScene->m_Registry;
+		auto& dstSceneRegistry = dstScene->m_Registry;
+		std::unordered_map<UUID, entt::entity> enttMap;
+
+		// Create entities in new scene
+		auto idView = srcSceneRegistry.view<IDComponent>();
+		for (auto e : idView)
+		{
+			UUID uuid = srcSceneRegistry.get<IDComponent>(e).ID;
+			const auto& name = srcSceneRegistry.get<TagComponent>(e).Tag;
+			Entity newEntity = dstScene->CreateEntityWithUUID(uuid, name);
+			enttMap[uuid] = (entt::entity)newEntity;
+		}
+
+		// Copy components (except IDComponent and TagComponent)
+		CopyComponent<TransformComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<SpriteRendererComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<CameraComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<NativeScriptComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<Rigidbody2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<BoxCollider2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+
+		return dstScene;
+	}
+
 	void Scene::OnRuntimeStart()
 	{
 		b2Vec2 gravity{ 0.0f, -9.81f };
@@ -197,6 +251,19 @@ namespace Timefall
 	void Scene::DestroyEntity(Entity entity)
 	{
 		m_Registry.destroy(entity);
+	}
+
+	void Scene::DuplicateEntity(Entity entity)
+	{
+		std::string name = entity.GetName(); // Get the name as a value because having a reference to the entity's name might lead to dangling references after duplication
+		Entity newEntity = CreateEntity(name);
+
+		CopyComponentIfExists<TransformComponent>(newEntity, entity);
+		CopyComponentIfExists<SpriteRendererComponent>(newEntity, entity);
+		CopyComponentIfExists<CameraComponent>(newEntity, entity);
+		CopyComponentIfExists<NativeScriptComponent>(newEntity, entity);
+		CopyComponentIfExists<Rigidbody2DComponent>(newEntity, entity);
+		CopyComponentIfExists<BoxCollider2DComponent>(newEntity, entity);
 	}
 
 	template<typename T>

@@ -26,7 +26,11 @@ namespace Timefall
 		void NewScene();
 		void OpenScene();
 		void OpenScene(const std::filesystem::path& filepath);
+		void SaveScene();
 		void SaveSceneAs();
+		void DuplicateEntity();
+
+		void SerializeScene(const Ref<Scene>& scene, const std::filesystem::path& filepath);
 
 		void UI_Toolbar();
 
@@ -40,6 +44,9 @@ namespace Timefall
 		Ref<Framebuffer> m_Framebuffer;
 
 		Ref<Scene> m_ActiveScene;
+		Ref<Scene> m_EditorScene;
+		std::filesystem::path m_EditorScenePath;
+
 		Entity m_SquareEntity;
 		Entity m_PrimaryCamera;
 		Entity m_SecondaryCamera;

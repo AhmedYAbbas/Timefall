@@ -17,9 +17,12 @@ namespace Timefall
 		Scene();
 		~Scene();
 
+		static Ref<Scene> Copy(const Ref<Scene>& srcScene);
+
 		Entity CreateEntity(const std::string tag = "");
 		Entity CreateEntityWithUUID(const UUID& uuid, const std::string tag = "");
 		void DestroyEntity(Entity entity);
+		void DuplicateEntity(Entity entity);
 
 		void OnRuntimeStart();
 		void OnRuntimeStop();

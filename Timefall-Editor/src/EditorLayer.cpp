@@ -393,11 +393,23 @@ namespace Timefall
 		{
 			case KeyCode::S:
 			{
-				if (control && shift)
-					SaveSceneAs();
+				if (control)
+				{
+					if (shift)
+						SaveSceneAs();
+					else
+						SaveScene();
+				}
 
 				break;
-			}	
+			}
+			case KeyCode::D:
+			{
+				if (control)
+					DuplicateEntity();
+
+				break;
+			}
 			case KeyCode::N:
 			{
 				if (control)
@@ -451,6 +463,8 @@ namespace Timefall
 		m_ActiveScene = CreateRef<Scene>();
 		m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+
+		m_EditorScenePath = std::filesystem::path();
 	}
 
 	void EditorLayer::OpenScene()
@@ -462,33 +476,73 @@ namespace Timefall
 
 	void EditorLayer::OpenScene(const std::filesystem::path& filepath)
 	{
-		m_ActiveScene = CreateRef<Scene>();
-		m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
-		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+		if (m_SceneState != SceneState::Edit)
+			OnSceneStop();
 
-		SceneSerializer serializer(m_ActiveScene);
-		serializer.DeserializeText(filepath);
+		Ref<Scene> newScene = CreateRef<Scene>();
+		SceneSerializer serializer(newScene);
+		if (serializer.DeserializeText(filepath))
+		{
+			m_EditorScene = newScene;
+			m_EditorScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+			m_SceneHierarchyPanel.SetContext(m_EditorScene);
+
+			m_ActiveScene = m_EditorScene;
+			m_EditorScenePath = filepath;
+		}
+	}
+
+	void EditorLayer::SaveScene()
+	{
+		if (!m_EditorScenePath.empty())
+			SerializeScene(m_ActiveScene, m_EditorScenePath);
+		else
+			SaveSceneAs();
 	}
 
 	void EditorLayer::SaveSceneAs()
 	{
-		auto path = FileDialogs::SaveFile("Timefall Scene (*.timefall)\0*.timefall\0");
-		if (!path.empty())
+		auto filepath = FileDialogs::SaveFile("Timefall Scene (*.timefall)\0*.timefall\0");
+		if (!filepath.empty())
 		{
-			SceneSerializer serializer(m_ActiveScene);
-			serializer.SerializeText(path);
+			SerializeScene(m_ActiveScene, filepath);
+			m_EditorScenePath = filepath;
 		}
+	}
+
+	void EditorLayer::DuplicateEntity()
+	{
+		if (m_SceneState != SceneState::Edit)
+			return;
+
+		Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();
+		if (selectedEntity)
+			m_EditorScene->DuplicateEntity(selectedEntity);
+	}
+
+	void EditorLayer::SerializeScene(const Ref<Scene>& scene, const std::filesystem::path& filepath)
+	{
+		SceneSerializer serializer(scene);
+		serializer.SerializeText(filepath);
 	}
 
 	void EditorLayer::OnScenePlay()
 	{
 		m_SceneState = SceneState::Play;
+
+		m_ActiveScene = Scene::Copy(m_EditorScene);
 		m_ActiveScene->OnRuntimeStart();
+
+		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
 	}
 
 	void EditorLayer::OnSceneStop()
 	{
 		m_SceneState = SceneState::Edit;
+
 		m_ActiveScene->OnRuntimeStop();
+		m_ActiveScene = m_EditorScene;
+
+		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
 	}
 }

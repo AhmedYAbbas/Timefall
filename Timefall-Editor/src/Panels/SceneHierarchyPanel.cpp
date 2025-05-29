@@ -25,24 +25,27 @@ namespace Timefall
 	{
 		ImGui::Begin("Scene Hierarchy");
 
-		m_Context->m_Registry.view<entt::entity>().each([&](auto entity)
+		if (m_Context)
 		{
-			Entity e = { entity, m_Context.get() };
-			DrawEntityNode(e);
-		});
+			m_Context->m_Registry.view<entt::entity>().each([&](auto entity)
+				{
+					Entity e = { entity, m_Context.get() };
+					DrawEntityNode(e);
+				});
 
-		if (Input::IsMouseButtonPressed(MouseCode::Button0) && ImGui::IsWindowHovered())
-			m_SelectionContext = {};
+			if (Input::IsMouseButtonPressed(MouseCode::Button0) && ImGui::IsWindowHovered())
+				m_SelectionContext = {};
 
-		// Right-click to open context menu on empty space
-		if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
-		{
-			if (ImGui::MenuItem("Create Empty Entity"))
+			// Right-click to open context menu on empty space
+			if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
 			{
-				m_Context->CreateEntity("Empty Entity");
-			}
+				if (ImGui::MenuItem("Create Empty Entity"))
+				{
+					m_Context->CreateEntity("Empty Entity");
+				}
 
-			ImGui::EndPopup();
+				ImGui::EndPopup();
+			}
 		}
 
 		ImGui::End();
@@ -383,7 +386,7 @@ namespace Timefall
 		DrawComponent<BoxCollider2DComponent>("Box Collider 2D", entity, [this](auto& component)
 		{
 			ImGui::DragFloat2("Offset", glm::value_ptr(component.Offset));
-			ImGui::DragFloat2("Size", glm::value_ptr(component.Offset));
+			ImGui::DragFloat2("Size", glm::value_ptr(component.Size));
 			ImGui::DragFloat("Density", &component.Density, 0.01f, 0.0f, 1.0f);
 			ImGui::DragFloat("Friction", &component.Friction, 0.01f, 0.0f, 1.0f);
 			ImGui::DragFloat("Restitution", &component.Restitution, 0.01f, 0.0f, 1.0f);

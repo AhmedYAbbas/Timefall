@@ -1,12 +1,12 @@
 Scene: Timefall Scene
 Entities:
-  - Entity: 9207990595640943279
+  - Entity: 10271717649536576168
     TagComponent:
       Tag: Ground
     TransformComponent:
-      Position: [0, -5.7458854, 0]
-      Rotation: [0, 0, 0]
-      Scale: [26.865505, 1, 1]
+      Position: [-6.7300344, -10.922728, 0]
+      Rotation: [0, 0, -0.3660998]
+      Scale: [26.865524, 0.99999994, 1]
     SpriteRendererComponent:
       Color: [1, 0.55598456, 0, 1]
     Rigidbody2DComponent:
@@ -19,6 +19,24 @@ Entities:
       Friction: 0.5
       Restitution: 0
       RestitutionThreshold: 0.47
+  - Entity: 9728078465746292828
+    TagComponent:
+      Tag: Camera
+    TransformComponent:
+      Position: [0, 0, 81.21]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    CameraComponent:
+      Camera:
+        ProjectionType: 0
+        PerspectiveFOV: 45
+        PerspectiveNear: 0.01
+        PerspectiveFar: 1000
+        OrthographicSize: 10
+        OrthographicNear: -1
+        OrthographicFar: 1
+      Primary: true
+      FixedAspectRatio: false
   - Entity: 5722967266416677241
     TagComponent:
       Tag: Square
@@ -38,21 +56,22 @@ Entities:
       Friction: 0.5
       Restitution: 0.56
       RestitutionThreshold: 0.47
-  - Entity: 9728078465746292828
+  - Entity: 9207990595640943279
     TagComponent:
-      Tag: Camera
+      Tag: Ground
     TransformComponent:
-      Position: [0, 0, 20.51]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    CameraComponent:
-      Camera:
-        ProjectionType: 0
-        PerspectiveFOV: 45
-        PerspectiveNear: 0.01
-        PerspectiveFar: 1000
-        OrthographicSize: 10
-        OrthographicNear: -1
-        OrthographicFar: 1
-      Primary: true
-      FixedAspectRatio: false
+      Position: [10.118591, 0.56045437, 0]
+      Rotation: [0, 0, 0.5408414]
+      Scale: [26.865513, 0.99999976, 1]
+    SpriteRendererComponent:
+      Color: [1, 0.55598456, 0, 1]
+    Rigidbody2DComponent:
+      BodyType: Static
+      FixedRotation: false
+    BoxCollider2DComponent:
+      Offset: [0, 0]
+      Size: [0.5, 0.5]
+      Density: 1
+      Friction: 0.5
+      Restitution: 0
+      RestitutionThreshold: 0.47

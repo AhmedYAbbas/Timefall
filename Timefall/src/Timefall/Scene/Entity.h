@@ -29,6 +29,15 @@ namespace Timefall
 
 			return component;
 		}
+		
+		template<typename T, typename... Args>
+		T& AddOrReplaceComponent(Args&&... args)
+		{
+			T& component = m_Scene->m_Registry.emplace_or_replace	<T>(m_EntityHandle, std::forward<Args>(args)...);
+			m_Scene->OnComponentAdded<T>(*this, component);
+
+			return component;
+		}
 
 		template<typename T>
 		T& GetComponent()
@@ -52,6 +61,12 @@ namespace Timefall
 		{
 			TF_CORE_ASSERT(HasComponent<IDComponent>(), "Entity does not have a UUID component!");
 			return GetComponent<IDComponent>().ID;
+		}
+
+		const std::string& GetName()
+		{
+			TF_CORE_ASSERT(HasComponent<TagComponent>(), "Entity does not have a Tag component!");
+			return GetComponent<TagComponent>().Tag;
 		}
 		
 		// TODO: Remove
