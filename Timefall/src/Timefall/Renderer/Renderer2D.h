@@ -31,12 +31,15 @@ namespace Timefall
 		static void DrawQuad(const Ref<SubTexture2D>& subTexture, const glm::vec2& position = glm::vec2(0), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
 		static void DrawQuad(const Ref<SubTexture2D>& subTexture, const glm::vec3& position = glm::vec3(0), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
 
+		static void DrawCircle(const glm::mat4& transform = glm::mat4(1.0f), const glm::vec4& color = glm::vec4(1.0f), float thickness = 1.0f, float fade = 0.005f, int entityID = -1);
+
 		static void DrawSprite(const glm::mat4& transform, SpriteRendererComponent src, int entityID = -1);
 
 		struct Statistics
 		{
 			uint32_t DrawCalls = 0;
 			uint32_t QuadCount = 0;
+			uint32_t CircleCount = 0;
 
 			uint32_t GetTotalVertexCount() { return QuadCount * 4; }
 			uint32_t GetTotalIndexCount() { return QuadCount * 6; }

@@ -22,7 +22,6 @@ namespace Timefall
 	EditorLayer::EditorLayer()
 		: Layer("EditorLayer"), m_CameraController(1280.0f / 720.0f)
 	{
-		m_GizmoType = ImGuizmo::OPERATION::TRANSLATE;
 	}
 
 	void EditorLayer::OnAttach()
@@ -38,7 +37,8 @@ namespace Timefall
 		fbSpec.Height = 720;
 		m_Framebuffer = Framebuffer::Create(fbSpec);
 
-		m_ActiveScene = CreateRef<Scene>();
+		m_EditorScene = CreateRef<Scene>();
+		m_ActiveScene = m_EditorScene;
 
 		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
 
@@ -141,7 +141,7 @@ namespace Timefall
 		if (mouseX >= 0 && mouseX < viewportSize.x && mouseY >= 0 && mouseY < viewportSize.y)
 		{
 			int data = m_Framebuffer->ReadPixel(1, mouseX, mouseY);
-			data == -1 ? m_HoveredEntity = Entity() : m_HoveredEntity = Entity{ (entt::entity)data, m_ActiveScene.get() };
+			m_HoveredEntity = data == -1 ?  Entity() : Entity{ (entt::entity)data, m_ActiveScene.get() };
 		}
 
 		m_Framebuffer->Unbind();
@@ -152,7 +152,9 @@ namespace Timefall
 		TF_PROFILE_FUNCTION();
 
 		m_CameraController.OnEvent(e);
-		m_EditorCamera.OnEvent(e);
+
+		if (m_SceneState == SceneState::Edit)
+			m_EditorCamera.OnEvent(e);
 
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<KeyPressedEvent>(TF_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
@@ -317,7 +319,7 @@ namespace Timefall
 				// Snapping
 				bool snap = Input::IsKeyPressed(Key::LeftControl);
 				float snapValue = 0.5f; // Snap to 0.5m for translation/scale
-				// Snap to 45 degrees for rotation
+				// Snap to 5 degrees for rotation
 				if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
 					snapValue = 5.0f;
 

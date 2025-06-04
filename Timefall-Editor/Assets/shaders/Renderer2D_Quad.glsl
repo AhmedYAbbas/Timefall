@@ -1,3 +1,8 @@
+//--------------------------
+// - Timefall -
+// Renderer2D Quad Shader
+// --------------------------
+
 #type vertex
 #version 330 core
 		
