@@ -32,8 +32,15 @@ namespace Timefall
 		static void DrawQuad(const Ref<SubTexture2D>& subTexture, const glm::vec3& position = glm::vec3(0), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
 
 		static void DrawCircle(const glm::mat4& transform = glm::mat4(1.0f), const glm::vec4& color = glm::vec4(1.0f), float thickness = 1.0f, float fade = 0.005f, int entityID = -1);
+		static void DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color = glm::vec4(1.0f), int entityID = -1);
+
+		static void DrawRect(const glm::vec3& position = glm::vec3(1.0f), const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& color = glm::vec4(1.0f), int entityID = -1);
+		static void DrawRect(const glm::mat4& transform = glm::mat4(1.0f), const glm::vec4& color = glm::vec4(1.0f), int entityID = -1);
 
 		static void DrawSprite(const glm::mat4& transform, SpriteRendererComponent src, int entityID = -1);
+
+		static float GetLineWidth();
+		static void SetLineWidth(float width);
 
 		struct Statistics
 		{
