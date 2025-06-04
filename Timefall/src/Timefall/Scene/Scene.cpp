@@ -69,6 +69,7 @@ namespace Timefall
 		CopyComponent<NativeScriptComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<Rigidbody2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<BoxCollider2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<CircleCollider2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 
 		return dstScene;
 	}
@@ -107,6 +108,18 @@ namespace Timefall
 				shapeDef.material.friction = bc2d.Friction;
 				shapeDef.material.restitution = bc2d.Restitution;
 				b2CreatePolygonShape(body, &shapeDef, &boxShape);
+			}
+			
+			if (entity.HasComponent<CircleCollider2DComponent>())
+			{
+				auto& cc2d = entity.GetComponent<CircleCollider2DComponent>();
+
+				b2Circle circleShape{{cc2d.Offset.x, cc2d.Offset.y}, cc2d.Radius};
+				b2ShapeDef shapeDef = b2DefaultShapeDef();
+				shapeDef.density = cc2d.Density;
+				shapeDef.material.friction = cc2d.Friction;
+				shapeDef.material.restitution = cc2d.Restitution;
+				b2CreateCircleShape(body, &shapeDef, &circleShape);
 			}
 		}
 	}
@@ -223,9 +236,6 @@ namespace Timefall
 			}
 		}
 
-		Renderer2D::DrawLine(glm::vec3(0.0f), glm::vec3(5.0f), glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
-		Renderer2D::DrawRect(glm::vec3(0.0f));
-
 		Renderer2D::EndScene();
 	}
 
@@ -295,6 +305,7 @@ namespace Timefall
 		CopyComponentIfExists<NativeScriptComponent>(newEntity, entity);
 		CopyComponentIfExists<Rigidbody2DComponent>(newEntity, entity);
 		CopyComponentIfExists<BoxCollider2DComponent>(newEntity, entity);
+		CopyComponentIfExists<CircleCollider2DComponent>(newEntity, entity);
 	}
 
 	template<typename T>
@@ -346,6 +357,11 @@ namespace Timefall
 
 	template<>
 	void Scene::OnComponentAdded<BoxCollider2DComponent>(Entity entity, BoxCollider2DComponent& component)
+	{
+	}
+
+	template<>
+	void Scene::OnComponentAdded<CircleCollider2DComponent>(Entity entity, CircleCollider2DComponent& component)
 	{
 	}
 }
