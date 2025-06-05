@@ -23,6 +23,8 @@ namespace Timefall
 		bool OnKeyPressed(KeyPressedEvent& e);
 		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
 
+		void OnOverlayRender();
+
 		void NewScene();
 		void OpenScene();
 		void OpenScene(const std::filesystem::path& filepath);
@@ -62,6 +64,8 @@ namespace Timefall
 		bool m_ViewportFocused = false, m_ViewportHovered = false;
 
 		int m_GizmoType = -1;
+
+		bool m_ShowPhysicsColliders = false;
 
 		Ref<Texture2D> m_PlayIcon, m_StopIcon;
 
