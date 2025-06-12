@@ -27,7 +27,11 @@ namespace Timefall
 		void OnRuntimeStart();
 		void OnRuntimeStop();
 
+		void OnSimulationStart();
+		void OnSimulationStop();
+
 		void OnUpdateRuntime(Timestep ts);
+		void OnUpdateSimulation(Timestep ts, EditorCamera& camera);
 		void OnUpdateEditor(Timestep ts, EditorCamera& camera);
 		void OnViewportResize(uint32_t width, uint32_t height);
 
@@ -53,12 +57,17 @@ namespace Timefall
 		template<typename T>
 		void OnComponentAdded(Entity entity, T& component);
 
+		void OnPhysics2DStart();
+		void OnPhysics2DStop();
+
+		void RenderScene(EditorCamera& camera);
+
 	private:
 		entt::registry m_Registry;
 		uint32_t m_ViewportWidth = 0, m_ViewportHeight = 0;
 
 		// Physics
-		b2WorldId m_PhysicsWorld;
+		b2WorldId m_PhysicsWorld = b2_nullWorldId;
 		std::unordered_map<entt::entity, b2BodyId> m_PhysicsBodiesMap;
 		float m_RestitutionThreshold = 0.5f;
 		float m_PhysicsTimeStep = 1.0f / 60.0f;

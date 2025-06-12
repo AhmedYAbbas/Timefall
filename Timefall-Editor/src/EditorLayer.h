@@ -37,6 +37,7 @@ namespace Timefall
 		void UI_Toolbar();
 
 		void OnScenePlay();
+		void OnSceneSimulate();
 		void OnSceneStop();
 
 	private:
@@ -67,11 +68,11 @@ namespace Timefall
 
 		bool m_ShowPhysicsColliders = false;
 
-		Ref<Texture2D> m_PlayIcon, m_StopIcon;
+		Ref<Texture2D> m_PlayIcon, m_SimulateIcon, m_StopIcon;
 
 		enum class SceneState
 		{
-			Edit = 0, Play = 1
+			Edit = 0, Play = 1, Simulate = 2
 		};
 		SceneState m_SceneState = SceneState::Edit;
 
