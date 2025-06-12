@@ -12,7 +12,7 @@ namespace Timefall
 	{
 		const auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
 		const auto state = glfwGetKey(window, static_cast<int32_t>(key));
-		return state == GLFW_PRESS || state == GLFW_REPEAT;
+		return state == GLFW_PRESS;
 	}
 
 	bool Input::IsMouseButtonPressed(MouseCode button)
