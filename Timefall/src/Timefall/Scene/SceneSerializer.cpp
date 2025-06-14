@@ -304,11 +304,23 @@ namespace Timefall
 
 	bool SceneSerializer::DeserializeText(const std::filesystem::path& filepath)
 	{
+
 		std::ifstream stream(filepath);
 		std::stringstream strStream;
 		strStream << stream.rdbuf();
 
-		YAML::Node data = YAML::Load(strStream.str());
+		YAML::Node data;
+		
+		try 
+		{
+			data = YAML::Load(strStream.str());
+		}
+		catch (const YAML::ParserException& e)
+		{
+			TF_CORE_ERROR("Failed to parse scene file '{0}': {1}", filepath.string(), e.what());
+			return false;
+		}
+		
 		if (!data["Scene"])
 			return false;
 
