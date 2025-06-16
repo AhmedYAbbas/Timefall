@@ -308,7 +308,7 @@ namespace Timefall
 			{
 				auto& bc2d = entity.GetComponent<BoxCollider2DComponent>();
 
-				b2Polygon boxShape = b2MakeBox(bc2d.Size.x * transform.Scale.x, bc2d.Size.y * transform.Scale.y);
+				b2Polygon boxShape = b2MakeOffsetBox(bc2d.Size.x * transform.Scale.x, bc2d.Size.y * transform.Scale.y, b2Vec2(bc2d.Offset.x, bc2d.Offset.y), b2MakeRot(0));
 				b2ShapeDef shapeDef = b2DefaultShapeDef();
 				shapeDef.density = bc2d.Density;
 				shapeDef.material.friction = bc2d.Friction;
