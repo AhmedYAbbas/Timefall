@@ -47,6 +47,10 @@ layout(location = 1) out int o_EntityID;
 
 void main()
 {
-	o_Color = texture(u_Textures[int(v_TexIndex)], v_TexCoord * v_TilingFactor) * v_Color;
+	vec4 textureColor = texture(u_Textures[int(v_TexIndex)], v_TexCoord * v_TilingFactor);
+	if (textureColor.a == 0.0)
+		discard;
+
+	o_Color = textureColor * v_Color;
 	o_EntityID = v_EntityID;
 }
