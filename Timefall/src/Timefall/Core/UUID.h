@@ -1,6 +1,6 @@
 #pragma once
 
-#include <xhash>
+struct hash;
 
 namespace Timefall
 {
@@ -30,7 +30,7 @@ namespace std
 	{
 		size_t operator()(const Timefall::UUID& uuid) const
 		{
-			return hash<uint64_t>()((uint64_t)uuid);
+			return (uint64_t)uuid;
 		}
 	};
 }
