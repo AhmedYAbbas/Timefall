@@ -38,8 +38,7 @@ namespace Timefall
 		for (const auto& directoryEntry : std::filesystem::directory_iterator(m_CurrentDirectory))
 		{
 			const auto& path = directoryEntry.path();
-			const auto& relativePath = std::filesystem::relative(path, g_AssetPath);
-			std::string filenameString = relativePath.filename().string();
+			std::string filenameString = path.filename().string();
 
 			Ref<Texture2D> icon = directoryEntry.is_directory() ? m_DirectoryIcon : m_FileIcon;
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
@@ -47,6 +46,7 @@ namespace Timefall
 
 			if (ImGui::BeginDragDropSource())
 			{
+				const auto& relativePath = std::filesystem::relative(path, g_AssetPath);
 				ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", path.string().c_str(), path.string().size() + 1);
 				ImGui::EndDragDropSource();
 			}
