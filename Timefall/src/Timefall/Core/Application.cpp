@@ -4,6 +4,7 @@
 #include "Timefall/Core/Input.h"
 #include "Timefall/Core/Timestep.h"
 #include "Timefall/Renderer/Renderer.h"
+#include "Timefall/Scripting/ScriptEngine.h"
 
 #include <GLFW/glfw3.h>
 
@@ -23,6 +24,7 @@ namespace Timefall
 		m_Window->SetVsync(true);
 
 		Renderer::Init();
+		ScriptEngine::Init();
 
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
@@ -33,6 +35,7 @@ namespace Timefall
 		TF_PROFILE_FUNCTION();
 
 		Renderer::Shutdown();
+		ScriptEngine::Shutdown();
 	}
 
 	void Application::PushLayer(Layer* layer)
