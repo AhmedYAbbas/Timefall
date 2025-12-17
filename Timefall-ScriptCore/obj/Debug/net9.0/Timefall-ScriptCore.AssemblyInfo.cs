@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Timefall-ScriptCore")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e72af601336ed49c17363548c02d802ccf410662")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1195b464d11889b656571749b8eb224dddcc840d")]
 [assembly: System.Reflection.AssemblyProductAttribute("Timefall-ScriptCore")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Timefall-ScriptCore")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
