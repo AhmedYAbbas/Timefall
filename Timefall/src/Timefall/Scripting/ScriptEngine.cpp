@@ -63,7 +63,8 @@ namespace Timefall
 		auto loader = LoadDotNetAssembly(runtime_config);
 
 		// Prepare to load assembly and get function pointer
-		const char_t* assembly_path = L"C:/Ahmed/Dev/Timefall/Timefall-ScriptCore/bin/Debug/net9.0/Timefall-ScriptCore.dll";
+		//const char_t* assembly_path = L"C:/Ahmed/Dev/Timefall/Timefall-ScriptCore/bin/Debug/net9.0/Timefall-ScriptCore.dll";
+		const char_t* assembly_path = L"Timefall-ScriptCore.dll";
 		const char_t* type_name = L"MyNamespace.TestClass, Timefall-ScriptCore";
 		
 

@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace MyNamespace
 {
@@ -16,8 +16,11 @@ namespace MyNamespace
         public int value;
     }
 
-    public class TestClass
+    public partial class TestClass
     {
+        [LibraryImport("Timefall-Native")]
+        private static partial int CppFunc();
+
         public int m_Value;
 
         public TestClass()
@@ -65,7 +68,7 @@ namespace MyNamespace
         {
             Console.WriteLine($"Managed PrintInt: {value}");
         }
-        
+
         public static void PrintInts(int value1, int value2)
         {
             Console.WriteLine($"Managed PrintInts: {value1} and {value2}");
@@ -74,7 +77,10 @@ namespace MyNamespace
         public static void PrintString(IntPtr message)
         {
             string msg = Marshal.PtrToStringAnsi(message);
-            Console.WriteLine($"Managed PrintString: {msg}");
+            Console.WriteLine($"Managed PrintString C#: {msg}");
+
+            CppFunc();
         }
     }
 }
+
