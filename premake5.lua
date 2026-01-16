@@ -45,6 +45,7 @@ group ""
 group "Core"
 	include "Timefall"
 	--include "Timefall-ScriptCore"
+	include "Timefall-Native"
 group ""
 
 group "Tools"

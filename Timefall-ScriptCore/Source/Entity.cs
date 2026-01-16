@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace MyNamespace
+namespace Timefall
 {
     public delegate void PrintIntDelegate(int value);
     public delegate void PrintIntsDelegate(int value1, int value2);
@@ -16,19 +16,41 @@ namespace MyNamespace
         public int value;
     }
 
-    public partial class TestClass
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Vector3
     {
-        [LibraryImport("Timefall-Native")]
-        private static partial int CppFunc();
+        public float X, Y, Z;
 
+        public Vector3(float x, float y, float z)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+        }
+    }
+
+    public static partial class InternalCalls
+    {
+        [LibraryImport("Timefall-Native", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void NativeLog(string str, int parameter);
+
+        [LibraryImport("Timefall-Native")]
+        internal static partial void NativeLog_Vector(ref Vector3 parameter, out Vector3 result);
+
+        [LibraryImport("Timefall-Native")]
+        internal static partial float NativeLog_VectorDot(ref Vector3 parameter);
+    }
+
+    public class Entity
+    {
         public int m_Value;
 
-        public TestClass()
+        public Entity()
         {
             Console.WriteLine("Managed TestClass Parameterless Constructor");
         }
 
-        public TestClass(int value)
+        public Entity(int value)
         {
             m_Value = value;
             Console.WriteLine($"Managed TestClass Parameterized Constructor: value is {m_Value}");
@@ -36,14 +58,14 @@ namespace MyNamespace
 
         public static IntPtr CreateInstance()
         {
-            TestClass instance = new TestClass();
+            Entity instance = new Entity();
             GCHandle handle = GCHandle.Alloc(instance);
             return GCHandle.ToIntPtr(handle);
         }
 
         public static IntPtr CreateIntInstance(int value)
         {
-            TestClass instance = new TestClass(value);
+            Entity instance = new Entity(value);
             GCHandle handle = GCHandle.Alloc(instance);
             return GCHandle.ToIntPtr(handle);
         }
@@ -79,8 +101,23 @@ namespace MyNamespace
             string msg = Marshal.PtrToStringAnsi(message);
             Console.WriteLine($"Managed PrintString C#: {msg}");
 
-            CppFunc();
+            Log("Soska", 1753);
+
+            Vector3 vec = new Vector3(5.0f, 2.5f, 1.0f);
+            Vector3 result = Log(vec);
+            Console.WriteLine($"Managed Log Vector3 Result: X={result.X}, Y={result.Y}, Z={result.Z}");
+            Console.WriteLine("{0}", InternalCalls.NativeLog_VectorDot(ref vec));
+        }
+
+        private static void Log(string text, int parameter)
+        {
+            InternalCalls.NativeLog(text, parameter);
+        }
+
+        private static Vector3 Log(Vector3 parameter)
+        {
+            InternalCalls.NativeLog_Vector(ref parameter, out Vector3 result);
+            return result;
         }
     }
 }
-
