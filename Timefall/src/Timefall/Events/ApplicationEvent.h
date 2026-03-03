@@ -5,7 +5,7 @@
 
 namespace Timefall
 {
-	class WindowResizeEvent : public Event
+	class TF_API WindowResizeEvent : public Event
 	{
 	public:
 		WindowResizeEvent(unsigned int width, unsigned int height)
@@ -30,7 +30,7 @@ namespace Timefall
 		unsigned int m_Width, m_Height;
 	};
 
-	class WindowCloseEvent : public Event
+	class TF_API WindowCloseEvent : public Event
 	{
 	public:
 		WindowCloseEvent() = default;
@@ -39,7 +39,7 @@ namespace Timefall
 		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	};
 
-	class AppTickEvent : public Event
+	class TF_API AppTickEvent : public Event
 	{
 	public:
 		AppTickEvent() = default;
@@ -48,7 +48,7 @@ namespace Timefall
 		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	};
 
-	class AppUpdateEvent : public Event
+	class TF_API AppUpdateEvent : public Event
 	{
 	public:
 		AppUpdateEvent() = default;
@@ -57,7 +57,7 @@ namespace Timefall
 		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	};
 
-	class AppRenderEvent : public Event
+	class TF_API AppRenderEvent : public Event
 	{
 	public:
 		AppRenderEvent() = default;

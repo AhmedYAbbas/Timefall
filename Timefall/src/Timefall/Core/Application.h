@@ -10,7 +10,7 @@ int main(int argc, char** argv);
 
 namespace Timefall
 {
-	class Application
+	class TF_API Application
 	{
 	public:
 		Application(const std::string& name = "Timefall App");

@@ -80,6 +80,28 @@ namespace YAML
 			return true;
 		}
 	};
+
+	template<>
+	struct convert<std::wstring>
+	{
+		static Node encode(const std::wstring& wstr)
+		{
+			Node node;
+			std::string str(wstr.begin(), wstr.end());
+			node = str;
+			return node;
+		}
+
+		static bool decode(const Node& node, std::wstring& wstr)
+		{
+			if (!node.IsScalar())
+				return false;
+
+			std::string str = node.as<std::string>();
+			wstr = std::wstring(str.begin(), str.end());
+			return true;
+		}
+	};
 }
 
 namespace Timefall
@@ -100,6 +122,13 @@ namespace Timefall
 	YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec4& v)
 	{
 		out << YAML::Flow << YAML::BeginSeq << v.x << v.y << v.z << v.w << YAML::EndSeq;
+		return out;
+	}
+
+	YAML::Emitter& operator<<(YAML::Emitter& out, const std::wstring& wstr)
+	{
+		std::string str(wstr.begin(), wstr.end());
+		out << str;
 		return out;
 	}
 
@@ -129,7 +158,6 @@ namespace Timefall
 		if (bodyTypeString == "Kinematic") return Rigidbody2DComponent::BodyType::Kinematic;
 
 		TF_CORE_ASSERT(false, "Unknown body type");
-		return Rigidbody2DComponent::BodyType::Static;
 	}
 
 	SceneSerializer::SceneSerializer(const Ref<Scene>& scene)
@@ -159,7 +187,7 @@ namespace Timefall
 			out << YAML::BeginMap; // TransformComponent
 
 			auto& tc = entity.GetComponent<TransformComponent>();
-			out << YAML::Key << "Position" << YAML::Value << tc.Position;
+			out << YAML::Key << "Position" << YAML::Value << tc.Translation;
 			out << YAML::Key << "Rotation" << YAML::Value << tc.Rotation;
 			out << YAML::Key << "Scale" << YAML::Value << tc.Scale;
 
@@ -189,6 +217,17 @@ namespace Timefall
 			out << YAML::Key << "FixedAspectRatio" << YAML::Value << cameraComponent.FixedAspectRatio;
 
 			out << YAML::EndMap; // CameraComponent
+		}
+
+		if (entity.HasComponent<ScriptComponent>())
+		{
+			out << YAML::Key << "ScriptComponent";
+			out << YAML::BeginMap; // ScriptComponent
+
+			auto& scriptComponent = entity.GetComponent<ScriptComponent>();
+			out << YAML::Key << "ModuleName" << YAML::Value << scriptComponent.ModuleName;
+
+			out << YAML::EndMap; // ScriptComponent
 		}
 
 		if (entity.HasComponent<SpriteRendererComponent>())
@@ -304,7 +343,6 @@ namespace Timefall
 
 	bool SceneSerializer::DeserializeText(const std::filesystem::path& filepath)
 	{
-
 		std::ifstream stream(filepath);
 		std::stringstream strStream;
 		strStream << stream.rdbuf();
@@ -345,7 +383,7 @@ namespace Timefall
 				{
 					// Entities always have transforms
 					auto& tc = deserializedEntity.GetComponent<TransformComponent>();
-					tc.Position = transformComponent["Position"].as<glm::vec3>();
+					tc.Translation = transformComponent["Position"].as<glm::vec3>();
 					tc.Rotation = transformComponent["Rotation"].as<glm::vec3>();
 					tc.Scale = transformComponent["Scale"].as<glm::vec3>();
 				}
@@ -367,6 +405,12 @@ namespace Timefall
 
 					cc.Primary = cameraComponent["Primary"].as<bool>();
 					cc.FixedAspectRatio = cameraComponent["FixedAspectRatio"].as<bool>();
+				}
+
+				if (auto scriptComponent = entity["ScriptComponent"])
+				{
+					auto& sc = deserializedEntity.AddComponent<ScriptComponent>();
+					sc.ModuleName = scriptComponent["ModuleName"].as<std::wstring>();
 				}
 
 				if (auto spriteRendererComponent = entity["SpriteRendererComponent"])

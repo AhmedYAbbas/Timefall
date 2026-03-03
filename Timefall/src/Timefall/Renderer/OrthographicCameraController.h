@@ -8,7 +8,7 @@
 
 namespace Timefall
 {
-	class OrthographicCameraController
+	class TF_API OrthographicCameraController
 	{
 	public:
 		OrthographicCameraController(float aspectRatio, bool rotation = false);

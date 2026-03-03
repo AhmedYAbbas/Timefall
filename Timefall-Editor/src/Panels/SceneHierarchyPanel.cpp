@@ -2,6 +2,7 @@
 
 #include "Timefall/Scene/Components.h"
 #include "Timefall/Core/Input.h"
+#include "Timefall/Scripting/ScriptEngine.h"
 
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
@@ -226,6 +227,7 @@ namespace Timefall
 		if (ImGui::BeginPopup("AddComponent"))
 		{
 			DisplayAddComponentEntry<CameraComponent>("Camera");
+			DisplayAddComponentEntry<ScriptComponent>("Script");
 			DisplayAddComponentEntry<SpriteRendererComponent>("Sprite Renderer");
 			DisplayAddComponentEntry<CircleRendererComponent>("Circle Renderer");
 			DisplayAddComponentEntry<Rigidbody2DComponent>("Rigidbody 2D");
@@ -239,7 +241,7 @@ namespace Timefall
 
 		DrawComponent<TransformComponent>("Transform", entity, [](auto& component)
 		{
-			DrawVec3Control("Position", component.Position);
+			DrawVec3Control("Position", component.Translation);
 
 			glm::vec3 rotation = glm::degrees(component.Rotation);
 			DrawVec3Control("Rotation", rotation);
@@ -306,6 +308,29 @@ namespace Timefall
 
 				ImGui::Checkbox("Fixed Aspect Ratio", &component.FixedAspectRatio);
 			}
+		});
+
+		DrawComponent<ScriptComponent>("Script", entity, [](auto& component)
+		{
+			bool scriptClassExists = ScriptEngine::EntityClassExists(component.ModuleName);
+
+			static char moduleBuffer[256];
+			std::wcstombs(moduleBuffer, component.ModuleName.c_str(), sizeof(moduleBuffer));
+
+			if (!scriptClassExists)
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 0.9f, 0.2f, 0.3f, 1.0f });
+
+			if (ImGui::InputText("Class", moduleBuffer, sizeof(moduleBuffer)))
+			{
+				std::wstring wstr;
+				size_t len = std::strlen(moduleBuffer);
+				wstr.resize(len);
+				std::mbstowcs(&wstr[0], moduleBuffer, len);
+				component.ModuleName = wstr;
+			}
+
+			if (!scriptClassExists)
+				ImGui::PopStyleColor();
 		});
 
 		DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](auto& component)

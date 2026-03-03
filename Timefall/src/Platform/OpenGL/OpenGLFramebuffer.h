@@ -4,7 +4,7 @@
 
 namespace Timefall {
 	
-	class OpenGLFramebuffer : public Framebuffer
+	class TF_API OpenGLFramebuffer : public Framebuffer
 	{
 	public:
 		OpenGLFramebuffer(const FramebufferSpecification& spec);

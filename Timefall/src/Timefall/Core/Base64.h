@@ -4,7 +4,7 @@
 
 namespace Timefall
 {
-	class Base64
+	class TF_API Base64
 	{
 	public:
 		static std::string Encode(const std::vector<uint8_t>& data);

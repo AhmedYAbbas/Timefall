@@ -5,7 +5,7 @@
 
 namespace Timefall 
 {
-	class VertexArray
+	class TF_API VertexArray
 	{
 	public:
 		virtual ~VertexArray() = default;

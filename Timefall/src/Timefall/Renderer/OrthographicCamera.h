@@ -4,7 +4,7 @@
 
 namespace Timefall
 {
-	class OrthographicCamera
+	class TF_API OrthographicCamera
 	{
 	public:
 		OrthographicCamera(float left, float right, float bottom, float top, float zNear = -1, float zFar = 1);

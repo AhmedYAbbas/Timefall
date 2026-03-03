@@ -5,7 +5,7 @@
 
 namespace Timefall
 {
-	class RenderCommand 
+	class TF_API RenderCommand
 	{
 	public:
 		inline static void Init()

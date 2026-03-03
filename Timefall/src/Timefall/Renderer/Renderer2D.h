@@ -9,7 +9,7 @@
 
 namespace Timefall
 {
-	class Renderer2D
+	class TF_API Renderer2D
 	{
 	public:
 		static void Init();

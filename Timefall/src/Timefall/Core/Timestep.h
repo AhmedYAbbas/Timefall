@@ -2,7 +2,7 @@
 
 namespace Timefall
 {
-	class Timestep
+	class TF_API Timestep
 	{
 	public:
 		Timestep(float time = 0.0f)

@@ -6,7 +6,7 @@
 
 namespace Timefall
 {
-	class SubTexture2D
+	class TF_API SubTexture2D
 	{
 	public:
 		SubTexture2D(const Ref<Texture2D>& texture, const glm::vec2& min, const glm::vec2& max);

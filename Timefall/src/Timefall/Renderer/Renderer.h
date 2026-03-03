@@ -10,7 +10,7 @@
 
 namespace Timefall
 {
-	class Renderer
+	class TF_API Renderer
 	{
 	public:
 		static void Init();

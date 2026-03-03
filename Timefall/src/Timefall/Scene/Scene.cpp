@@ -5,6 +5,7 @@
 #include "Timefall/Scene/ScriptableEntity.h"
 #include "Timefall/Scene/Components.h"
 #include "Timefall/Renderer/Renderer2D.h"
+#include "Timefall/Scripting/ScriptEngine.h"
 
 #include <box2d/box2d.h>
 
@@ -66,6 +67,7 @@ namespace Timefall
 		CopyComponent<SpriteRendererComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<CircleRendererComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<CameraComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<ScriptComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<NativeScriptComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<Rigidbody2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<BoxCollider2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
@@ -77,11 +79,25 @@ namespace Timefall
 	void Scene::OnRuntimeStart()
 	{
 		OnPhysics2DStart();
+
+		// Scripting
+		{
+			ScriptEngine::OnRuntimeStart(this);
+
+			auto view = m_Registry.view<ScriptComponent>();
+			for (auto e : view)
+			{
+				Entity entity{ e, this };
+				ScriptEngine::OnCreateEntity(entity);
+			}
+		}
 	}
 
 	void Scene::OnRuntimeStop()
 	{
 		OnPhysics2DStop();
+
+		ScriptEngine::OnRuntimeStop();
 	}
 
 	void Scene::OnSimulationStart()
@@ -98,6 +114,16 @@ namespace Timefall
 	{
 		// Update scripts
 		{
+			// C# Entity OnUpdate
+			{
+				auto view = m_Registry.view<ScriptComponent>();
+				for (auto e : view)
+				{
+					Entity entity{ e, this };
+					ScriptEngine::OnUpdateEntity(entity, ts);
+				}
+			}
+
 			m_Registry.view<NativeScriptComponent>().each([=](auto entity, NativeScriptComponent& nsc)
 			{
 				if (!nsc)
@@ -127,8 +153,8 @@ namespace Timefall
 				{
 					b2BodyId body = m_PhysicsBodiesMap[entity];
 					const auto& position = b2Body_GetPosition(body);
-					transform.Position.x = position.x;
-					transform.Position.y = position.y;
+					transform.Translation.x = position.x;
+					transform.Translation.y = position.y;
 					transform.Rotation.z = b2Rot_GetAngle(b2Body_GetRotation(body));
 				}
 			}
@@ -195,8 +221,8 @@ namespace Timefall
 				{
 					b2BodyId body = m_PhysicsBodiesMap[entity];
 					const auto& position = b2Body_GetPosition(body);
-					transform.Position.x = position.x;
-					transform.Position.y = position.y;
+					transform.Translation.x = position.x;
+					transform.Translation.y = position.y;
 					transform.Rotation.z = b2Rot_GetAngle(b2Body_GetRotation(body));
 				}
 			}
@@ -251,18 +277,21 @@ namespace Timefall
 
 	Entity Scene::CreateEntityWithUUID(const UUID& uuid, const std::string tag)
 	{
-		Entity e = { m_Registry.create(), this };
-		e.AddComponent<IDComponent>(uuid);
-		e.AddComponent<TransformComponent>();
-		TagComponent& tagComp = e.AddComponent<TagComponent>();
+		Entity entity = { m_Registry.create(), this };
+		entity.AddComponent<IDComponent>(uuid);
+		entity.AddComponent<TransformComponent>();
+		TagComponent& tagComp = entity.AddComponent<TagComponent>();
 		tagComp.Tag = tag.empty() ? "Entity" : tag;
 
-		return e;
+		m_EntityMap[uuid] = entity;
+
+		return entity;
 	}
 
 	void Scene::DestroyEntity(Entity entity)
 	{
 		m_Registry.destroy(entity);
+		m_EntityMap.erase(entity.GetUUID());
 	}
 
 	void Scene::DuplicateEntity(Entity entity)
@@ -270,14 +299,24 @@ namespace Timefall
 		std::string name = entity.GetName(); // Get the name as a value because having a reference to the entity's name might lead to dangling references after duplication
 		Entity newEntity = CreateEntity(name);
 
+		// Important for scene serialization for some reason
 		CopyComponentIfExists<TransformComponent>(newEntity, entity);
 		CopyComponentIfExists<SpriteRendererComponent>(newEntity, entity);
 		CopyComponentIfExists<CircleRendererComponent>(newEntity, entity);
 		CopyComponentIfExists<CameraComponent>(newEntity, entity);
+		CopyComponentIfExists<ScriptComponent>(newEntity, entity);
 		CopyComponentIfExists<NativeScriptComponent>(newEntity, entity);
 		CopyComponentIfExists<Rigidbody2DComponent>(newEntity, entity);
 		CopyComponentIfExists<BoxCollider2DComponent>(newEntity, entity);
 		CopyComponentIfExists<CircleCollider2DComponent>(newEntity, entity);
+	}
+
+	Entity Scene::GetEntityByUUID(const UUID& uuid)
+	{
+		if (m_EntityMap.find(uuid) != m_EntityMap.end())
+			return Entity{ m_EntityMap.at(uuid), this };
+
+		return {};
 	}
 
 	void Scene::OnPhysics2DStart()
@@ -297,7 +336,7 @@ namespace Timefall
 
 			b2BodyDef bodyDef = b2DefaultBodyDef();
 			bodyDef.type = (b2BodyType)rb2d.Type;
-			bodyDef.position = b2Vec2(transform.Position.x, transform.Position.y);
+			bodyDef.position = b2Vec2(transform.Translation.x, transform.Translation.y);
 			bodyDef.rotation = b2MakeRot(transform.Rotation.z);
 			bodyDef.fixedRotation = rb2d.FixedRotation;
 
@@ -363,59 +402,64 @@ namespace Timefall
 	}
 
 	template<typename T>
-	void Scene::OnComponentAdded(Entity entity, T& component)
+	TF_API void Scene::OnComponentAdded(Entity entity, T& component)
 	{
 		//static_assert(false);
 	}
 
 	template<>
-	void Scene::OnComponentAdded<IDComponent>(Entity entity, IDComponent& component)
+	TF_API void Scene::OnComponentAdded<IDComponent>(Entity entity, IDComponent& component)
 	{
 	}
 
 	template<>
-	void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformComponent& component)
+	TF_API void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformComponent& component)
 	{
 	}
 
 	template<>
-	void Scene::OnComponentAdded<CameraComponent>(Entity entity, CameraComponent& component)
+	TF_API void Scene::OnComponentAdded<CameraComponent>(Entity entity, CameraComponent& component)
 	{
 		component.Camera.SetViewportSize(m_ViewportWidth, m_ViewportHeight);
 	}
 
 	template<>
-	void Scene::OnComponentAdded<SpriteRendererComponent>(Entity entity, SpriteRendererComponent& component)
+	TF_API void Scene::OnComponentAdded<ScriptComponent>(Entity entity, ScriptComponent& component)
+	{
+	}
+
+	template<>
+	TF_API void Scene::OnComponentAdded<SpriteRendererComponent>(Entity entity, SpriteRendererComponent& component)
 	{
 	}
 	
 	template<>
-	void Scene::OnComponentAdded<CircleRendererComponent>(Entity entity, CircleRendererComponent& component)
+	TF_API void Scene::OnComponentAdded<CircleRendererComponent>(Entity entity, CircleRendererComponent& component)
 	{
 	}
 
 	template<>
-	void Scene::OnComponentAdded<TagComponent>(Entity entity, TagComponent& component)
+	TF_API void Scene::OnComponentAdded<TagComponent>(Entity entity, TagComponent& component)
 	{
 	}
 
 	template<>
-	void Scene::OnComponentAdded<NativeScriptComponent>(Entity entity, NativeScriptComponent& component)
+	TF_API void Scene::OnComponentAdded<NativeScriptComponent>(Entity entity, NativeScriptComponent& component)
 	{
 	}
 
 	template<>
-	void Scene::OnComponentAdded<Rigidbody2DComponent>(Entity entity, Rigidbody2DComponent& component)
+	TF_API void Scene::OnComponentAdded<Rigidbody2DComponent>(Entity entity, Rigidbody2DComponent& component)
 	{
 	}
 
 	template<>
-	void Scene::OnComponentAdded<BoxCollider2DComponent>(Entity entity, BoxCollider2DComponent& component)
+	TF_API void Scene::OnComponentAdded<BoxCollider2DComponent>(Entity entity, BoxCollider2DComponent& component)
 	{
 	}
 
 	template<>
-	void Scene::OnComponentAdded<CircleCollider2DComponent>(Entity entity, CircleCollider2DComponent& component)
+	TF_API void Scene::OnComponentAdded<CircleCollider2DComponent>(Entity entity, CircleCollider2DComponent& component)
 	{
 	}
 }

@@ -1,0 +1,14 @@
+C:\Ahmed\Dev\Timefall\Timefall-ScriptCore\bin\Debug\Timefall-ScriptCore.deps.json
+C:\Ahmed\Dev\Timefall\Timefall-ScriptCore\bin\Debug\Timefall-ScriptCore.runtimeconfig.json
+C:\Ahmed\Dev\Timefall\Timefall-ScriptCore\bin\Debug\Timefall-ScriptCore.dll
+C:\Ahmed\Dev\Timefall\Timefall-ScriptCore\bin\Debug\Timefall-ScriptCore.pdb
+C:\Ahmed\Dev\Timefall\Timefall-ScriptCore\obj\Debug\Timefall-ScriptCore.GeneratedMSBuildEditorConfig.editorconfig
+C:\Ahmed\Dev\Timefall\Timefall-ScriptCore\obj\Debug\Timefall-ScriptCore.AssemblyInfoInputs.cache
+C:\Ahmed\Dev\Timefall\Timefall-ScriptCore\obj\Debug\Timefall-ScriptCore.AssemblyInfo.cs
+C:\Ahmed\Dev\Timefall\Timefall-ScriptCore\obj\Debug\Timefall-ScriptCore.csproj.CoreCompileInputs.cache
+C:\Ahmed\Dev\Timefall\Timefall-ScriptCore\obj\Debug\Timefall-ScriptCore.sourcelink.json
+C:\Ahmed\Dev\Timefall\Timefall-ScriptCore\obj\Debug\Timefall-ScriptCore.dll
+C:\Ahmed\Dev\Timefall\Timefall-ScriptCore\obj\Debug\refint\Timefall-ScriptCore.dll
+C:\Ahmed\Dev\Timefall\Timefall-ScriptCore\obj\Debug\Timefall-ScriptCore.pdb
+C:\Ahmed\Dev\Timefall\Timefall-ScriptCore\obj\Debug\Timefall-ScriptCore.genruntimeconfig.cache
+C:\Ahmed\Dev\Timefall\Timefall-ScriptCore\obj\Debug\ref\Timefall-ScriptCore.dll

@@ -70,7 +70,7 @@ namespace Timefall
 		}
 	};
 
-	class BufferLayout 
+	class TF_API BufferLayout
 	{
 	public:
 		BufferLayout() = default;
@@ -107,7 +107,7 @@ namespace Timefall
 		uint32_t m_Stride = 0;
 	};
 
-	class VertexBuffer
+	class TF_API VertexBuffer
 	{
 	public:
 		virtual ~VertexBuffer() = default;
@@ -123,7 +123,7 @@ namespace Timefall
 		static Ref<VertexBuffer> Create(float* vertcies, uint32_t size);
 	};
 
-	class IndexBuffer
+	class TF_API IndexBuffer
 	{
 	public:
 		virtual ~IndexBuffer() = default;

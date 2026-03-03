@@ -4,7 +4,7 @@
 
 namespace Timefall
 {
-	class ScriptableEntity
+	class TF_API ScriptableEntity
 	{
 	public:
 		virtual ~ScriptableEntity() = default;

@@ -1,8 +1,7 @@
 project "Timefall"
-	kind "StaticLib"
+	kind "SharedLib"
 	language "C++"
 	cppdialect "C++20"
-	staticruntime "on"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("int/" .. outputdir .. "/%{prj.name}")
@@ -19,6 +18,12 @@ project "Timefall"
 		"vendor/glm/glm/**.hpp",
 		"vendor/glm/glm/**.inl",
 
+		"vendor/imgui/imgui.cpp",
+		"vendor/imgui/imgui_widgets.cpp",
+		"vendor/imgui/imgui_draw.cpp",
+		"vendor/imgui/imgui_tables.cpp",
+		"vendor/imgui/imgui_demo.cpp",
+		
 		"vendor/ImGuizmo/ImGuizmo.h",
 		"vendor/ImGuizmo/ImGuizmo.cpp",
 
@@ -45,17 +50,21 @@ project "Timefall"
 
 	defines
 	{
+		"TF_BUILD_DLL",
+
 		"_CRT_SECURE_NO_WARNINGS",
 		"_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING",
 		"GLFW_INCLUDE_NONE",
-		"YAML_CPP_STATIC_DEFINE"
+		"YAML_CPP_STATIC_DEFINE",
+
+		"IMGUI_API=__declspec(dllexport)"
 	}
 
 	links
 	{
 		"GLFW",
 		"Glad",
-		"ImGui",
+		--"ImGui",
 		"yaml-cpp",
 		"box2d",
 		"opengl32.lib",
@@ -74,8 +83,11 @@ project "Timefall"
 	}
 
 	filter "files:vendor/ImGuizmo/**.cpp"
-		flags { "NoPCH" }
-	
+		enablepch "Off"
+
+	filter "files:vendor/imgui/**.cpp"
+		enablepch "Off"
+
 	filter "system:windows"
 		systemversion "latest"
 

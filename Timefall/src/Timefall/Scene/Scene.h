@@ -11,7 +11,7 @@ namespace Timefall
 {
 	class Entity;
 
-	class Scene 
+	class TF_API Scene
 	{
 	public:
 		Scene();
@@ -23,6 +23,8 @@ namespace Timefall
 		Entity CreateEntityWithUUID(const UUID& uuid, const std::string tag = "");
 		void DestroyEntity(Entity entity);
 		void DuplicateEntity(Entity entity);
+
+		Entity GetEntityByUUID(const UUID& uuid);
 
 		void OnRuntimeStart();
 		void OnRuntimeStop();
@@ -55,7 +57,7 @@ namespace Timefall
 
 	private:
 		template<typename T>
-		void OnComponentAdded(Entity entity, T& component);
+		TF_API void OnComponentAdded(Entity entity, T& component);
 
 		void OnPhysics2DStart();
 		void OnPhysics2DStop();
@@ -72,6 +74,8 @@ namespace Timefall
 		float m_RestitutionThreshold = 0.5f;
 		float m_PhysicsTimeStep = 1.0f / 60.0f;
 		int m_PhysicsSubStepCount = 4;
+
+		std::unordered_map<UUID, entt::entity> m_EntityMap;
 
 		friend class Entity;
 		friend class SceneSerializer;

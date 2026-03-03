@@ -4,7 +4,7 @@
 
 namespace Timefall
 {
-	class FileDialogs
+	class TF_API FileDialogs
 	{
 	public:
 		static std::filesystem::path OpenFile(const char* filter);

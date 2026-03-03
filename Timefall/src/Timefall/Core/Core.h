@@ -2,6 +2,12 @@
 
 #include <memory>
 
+#ifdef TF_BUILD_DLL
+	#define TF_API __declspec(dllexport)
+#else
+	#define TF_API __declspec(dllimport)
+#endif
+
 // Platform detection using predefined macros
 #ifdef _WIN32
 	/* Windows x64/x86 */

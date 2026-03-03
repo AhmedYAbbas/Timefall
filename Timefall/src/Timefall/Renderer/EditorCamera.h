@@ -10,7 +10,7 @@
 namespace Timefall
 {
 
-    class EditorCamera : public Camera
+    class TF_API EditorCamera : public Camera
     {
     public:
         EditorCamera() = default;

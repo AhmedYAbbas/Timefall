@@ -11,7 +11,7 @@
 
 namespace Timefall
 {
-	class Layer
+	class TF_API Layer
 	{
 	public:
 		Layer(const std::string& debugName = "Layer");

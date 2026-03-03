@@ -6,7 +6,7 @@
 
 namespace Timefall
 {
-	class OpenGLRendererAPI : public RendererAPI
+	class TF_API OpenGLRendererAPI : public RendererAPI
 	{
 	public:
 		virtual void Init() override;

@@ -12,7 +12,7 @@
 
 namespace Timefall
 {
-	class Log
+	class TF_API Log
 	{
 	public:
 		static void Init();

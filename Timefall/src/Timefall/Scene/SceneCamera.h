@@ -4,7 +4,7 @@
 
 namespace Timefall
 {
-	class SceneCamera : public Camera
+	class TF_API SceneCamera : public Camera
 	{
 	public:
 		enum class ProjectionType { Perspective = 0, Orthographic = 1};

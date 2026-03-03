@@ -5,7 +5,7 @@
 
 namespace Timefall
 {
-	class KeyEvent : public Event
+	class TF_API KeyEvent : public Event
 	{
 	public:
 		inline KeyCode GetKeyCode() const { return m_KeyCode; }
@@ -22,7 +22,7 @@ namespace Timefall
 		KeyCode m_KeyCode;
 	};
 
-	class KeyPressedEvent : public KeyEvent
+	class TF_API KeyPressedEvent : public KeyEvent
 	{
 	public:
 		KeyPressedEvent(KeyCode keycode, bool isRepeat = false)
@@ -45,7 +45,7 @@ namespace Timefall
 		bool m_IsRepeat;
 	};
 
-	class KeyReleasedEvent : public KeyEvent
+	class TF_API KeyReleasedEvent : public KeyEvent
 	{
 	public:
 		KeyReleasedEvent(KeyCode keycode)
@@ -63,7 +63,7 @@ namespace Timefall
 		EVENT_CLASS_TYPE(KeyReleased)
 	};
 
-	class KeyTypedEvent : public KeyEvent
+	class TF_API KeyTypedEvent : public KeyEvent
 	{
 	public:
 		KeyTypedEvent(KeyCode keycode)

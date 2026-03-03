@@ -6,7 +6,7 @@
 
 namespace Timefall
 {
-	class Input
+	class TF_API Input
 	{
 	public:
 		static bool IsKeyPressed(KeyCode key);

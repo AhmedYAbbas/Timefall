@@ -4,7 +4,7 @@
 
 namespace Timefall
 {
-	class ImGuiLayer : public Layer
+	class TF_API ImGuiLayer : public Layer
 	{
 	public:
 		ImGuiLayer();

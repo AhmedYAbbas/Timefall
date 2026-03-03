@@ -6,7 +6,7 @@
 
 namespace Timefall
 {
-	class SceneSerializer
+	class TF_API SceneSerializer
 	{
 	public:
 		SceneSerializer(const Ref<Scene>& scene);

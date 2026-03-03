@@ -9,7 +9,7 @@ typedef unsigned int GLenum;
 
 namespace Timefall
 {
-	class OpenGLShader : public Shader
+	class TF_API OpenGLShader : public Shader
 	{
 	public:
 		OpenGLShader(const std::string& filepath);

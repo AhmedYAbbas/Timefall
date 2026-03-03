@@ -4,7 +4,7 @@
 
 namespace Timefall
 {
-	class OpenGLVertexBuffer : public VertexBuffer
+	class TF_API OpenGLVertexBuffer : public VertexBuffer
 	{
 	public:
 		OpenGLVertexBuffer(uint32_t size);

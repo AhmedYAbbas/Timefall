@@ -7,7 +7,7 @@
 
 namespace Timefall
 {
-	class LayerStack
+	class TF_API LayerStack
 	{
 	public:
 		LayerStack() = default;

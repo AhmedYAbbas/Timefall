@@ -7,7 +7,7 @@ struct GLFWwindow;
 namespace Timefall
 {
 
-	class OpenGLContext : public GraphicsContext
+	class TF_API OpenGLContext : public GraphicsContext
 	{
 	public:
 		OpenGLContext(GLFWwindow* windowHandle);

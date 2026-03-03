@@ -346,7 +346,7 @@ namespace Timefall
 					Math::DecomposeTransform(transform, translation, rotation, scale);
 
 					glm::vec3 deltaRotation = rotation - tc.Rotation;
-					tc.Position = translation;
+					tc.Translation = translation;
 					tc.Rotation += deltaRotation;
 					tc.Scale = scale;
 				}
@@ -522,7 +522,7 @@ namespace Timefall
 
 					glm::vec3 scale = tc.Scale * glm::vec3(bc2d.Size * 2.0f, 1.0f);
 
-					glm::mat4 transform = glm::translate(glm::mat4(1.0f), tc.Position)
+					glm::mat4 transform = glm::translate(glm::mat4(1.0f), tc.Translation)
 						* glm::rotate(glm::mat4(1.0f), tc.Rotation.z, glm::vec3(0.0f, 0.0f, 1.0f))
 						* glm::translate(glm::mat4(1.0f), glm::vec3(bc2d.Offset, 0.001f)) // Center the box collider
 						* glm::scale(glm::mat4(1.0f), scale);
@@ -544,7 +544,7 @@ namespace Timefall
 
 					glm::vec3 scale = tc.Scale * glm::vec3(cc2d.Radius * 2.0f);
 
-					glm::mat4 transform = glm::translate(glm::mat4(1.0f), tc.Position)
+					glm::mat4 transform = glm::translate(glm::mat4(1.0f), tc.Translation)
 						* glm::rotate(glm::mat4(1.0f), tc.Rotation.z, glm::vec3(0.0f, 0.0f, 1.0f))
 						* glm::translate(glm::mat4(1.0f), glm::vec3(cc2d.Offset, -projectionCollider.z)) // Center the circle collider
 						* glm::scale(glm::mat4(1.0f), scale);

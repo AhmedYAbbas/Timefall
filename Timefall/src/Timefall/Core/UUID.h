@@ -4,7 +4,7 @@ struct hash;
 
 namespace Timefall
 {
-	class UUID
+	class TF_API UUID
 	{
 	public:
 		UUID();

@@ -4,7 +4,7 @@
 
 namespace Timefall
 {
-	class Camera
+	class TF_API Camera
 	{
 	public:
 		Camera() = default;

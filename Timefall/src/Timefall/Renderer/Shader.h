@@ -7,7 +7,7 @@
 
 namespace Timefall
 {
-	class Shader
+	class TF_API Shader
 	{
 	public:
 		virtual ~Shader() = default;
@@ -29,7 +29,7 @@ namespace Timefall
 		static Ref<Shader> Create(const std::string& name, const std::string& vertexSrc, const std::string& fragmentSrc);
 	};
 
-	class ShaderLibrary
+	class TF_API ShaderLibrary
 	{
 	public:
 		void Add(const std::string& name, const Ref<Shader>& shader);

@@ -7,7 +7,7 @@
 
 namespace Timefall
 {
-	class Entity
+	class TF_API Entity
 	{
 	public:
 		Entity() = default;

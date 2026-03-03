@@ -6,7 +6,7 @@
 
 namespace Timefall
 {
-	class RendererAPI
+	class TF_API RendererAPI
 	{
 	public:
 		enum class API

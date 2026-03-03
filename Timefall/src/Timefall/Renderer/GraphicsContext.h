@@ -2,7 +2,7 @@
 
 namespace Timefall
 {
-	class GraphicsContext
+	class TF_API GraphicsContext
 	{
 	public:
 		virtual ~GraphicsContext() = default;

@@ -49,7 +49,7 @@ namespace Timefall
 		bool SwapChainTarget = false;
 	};
 
-	class Framebuffer
+	class TF_API Framebuffer
 	{
 	public:
 		virtual ~Framebuffer() = default;

@@ -4,7 +4,7 @@
 
 namespace Timefall
 {
-	class OpenGLVertexArray : public VertexArray
+	class TF_API OpenGLVertexArray : public VertexArray
 	{
 	public:
 		OpenGLVertexArray();

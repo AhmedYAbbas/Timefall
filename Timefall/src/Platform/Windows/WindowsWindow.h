@@ -7,7 +7,7 @@
 
 namespace Timefall
 {
-	class WindowsWindow : public Window
+	class TF_API WindowsWindow : public Window
 	{
 	public:
 		WindowsWindow(const WindowProps& props);

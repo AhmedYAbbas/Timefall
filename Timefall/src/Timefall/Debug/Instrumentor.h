@@ -25,7 +25,7 @@ namespace Timefall
         std::string Name;
     };
 
-    class Instrumentor
+    class TF_API Instrumentor
     {
     public:
         Instrumentor()
@@ -131,7 +131,7 @@ namespace Timefall
         std::ofstream m_OutputStream;
     };
 
-    class InstrumentationTimer
+    class TF_API InstrumentationTimer
     {
     public:
         InstrumentationTimer(const char* name)

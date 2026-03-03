@@ -9,6 +9,7 @@ int/
 # Visual Studio files and folders
 .vs/
 *.sln
+*.slnx
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user

@@ -2,7 +2,6 @@ project "Timefall-Editor"
 	kind "ConsoleApp"
 	language "C++"
 	cppdialect "C++20"
-	staticruntime "on"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("int/" .. outputdir .. "/%{prj.name}")
@@ -11,6 +10,8 @@ project "Timefall-Editor"
 	{
 		"src/**.h",
 		"src/**.cpp"
+		--"%{wks.location}/Timefall/%{IncludeDir.ImGuizmo}/ImGuizmo.h",
+		--"%{wks.location}/Timefall/%{IncludeDir.ImGuizmo}/ImGuizmo.cpp"
 	}
 	
 	includedirs
@@ -27,7 +28,8 @@ project "Timefall-Editor"
 
 	defines
 	{
-		"_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING"
+		"_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING",
+		"IMGUI_API=__declspec(dllimport)"
 	}
 
 	links
@@ -37,6 +39,12 @@ project "Timefall-Editor"
 	
 	filter "system:windows"
 		systemversion "latest"
+
+		-- Copy Timefall.dll to Timefall-Editor bin folder after build
+		postbuildcommands
+		{
+			"{COPYFILE} \"%{wks.location}Timefall/bin/" .. outputdir .. "/Timefall/Timefall.dll\" \"%{cfg.targetdir}\""
+		}
 
 	filter "configurations:Debug"
 		defines "TF_DEBUG"
