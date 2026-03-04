@@ -1,19 +1,8 @@
-﻿using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.JavaScript;
-using System.Runtime.InteropServices.Marshalling;
+﻿using System.Runtime.InteropServices;
 
 namespace Timefall
 {
-    public delegate void PrintIntDelegate(int value);
-    public delegate void PrintIntsDelegate(int value1, int value2);
-    public delegate void PrintStringDelegate(IntPtr message);
-    public delegate IntPtr CreateInstanceDelegate();
-    public delegate IntPtr CreateIntInstanceDelegate(int value);
     public delegate void DestroyInstanceDelegate(IntPtr instance);
-
-    public delegate void OnCreateDelegate();
-    public delegate void OnUpdateDelegate(float ts);
 
     // Delegates for invoking instance methods via handle
     public delegate void InvokeOnCreateDelegate(IntPtr instance);
@@ -22,69 +11,7 @@ namespace Timefall
     // Delegates for creating instances of derived types by name
     public delegate IntPtr CreateTypedInstanceDelegate(IntPtr typeName);
     public delegate IntPtr CreateTypedInstanceWithIDDelegate(IntPtr typeName, ulong entityID);
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-    public struct NativeArgs
-    {
-        public IntPtr msg;
-        public int value;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct Vector3
-    {
-        public float X, Y, Z;
-
-        public static Vector3 Zero = new Vector3(0.0f);
-
-        public Vector3(float scalar)
-        {
-            X = scalar;
-            Y = scalar;
-            Z = scalar;
-        }
-
-        public Vector3(float x, float y, float z)
-        {
-            X = x;
-            Y = y;
-            Z = z;
-        }
-
-        public static Vector3 operator +(Vector3 a, Vector3 b)
-        {
-            return new Vector3(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
-        }
-
-        public static Vector3 operator*(Vector3 vector, float scalar)
-        {
-            return new Vector3(vector.X * scalar, vector.Y * scalar, vector.Z * scalar);
-        }
-    }
-
-    public static partial class InternalCalls
-    {
-        [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf8)]
-        internal static partial void NativeLog(string str, int parameter);
-
-        [LibraryImport("Timefall")]
-        internal static partial void NativeLog_Vector(ref Vector3 parameter, out Vector3 result);
-
-        [LibraryImport("Timefall")]
-        internal static partial float NativeLog_VectorDot(ref Vector3 parameter);
-
-        [LibraryImport("Timefall")]
-        internal static partial void Entity_GetTranslation(ulong entityID, out Vector3 translation);
-
-        [LibraryImport("Timefall")]
-        internal static partial void Entity_SetTranslation(ulong entityID, ref Vector3 translation);
-
-        // Explicitly specify marshalling for the bool return to resolve SYSLIB1051.
-        // Use UnmanagedType.U1 to marshal a 1-byte C-style bool.
-        [LibraryImport("Timefall")]
-        [return: MarshalAs(UnmanagedType.U1)]
-        internal static partial bool Input_IsKeyDown(KeyCode keycode);
-    }
+    
 
     public class Entity
     {
