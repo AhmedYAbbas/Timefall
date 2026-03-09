@@ -4,14 +4,25 @@ namespace Timefall
 {
     public static partial class InternalCalls
     {
-        [LibraryImport("Timefall")]
-        internal static partial void Entity_GetTranslation(ulong entityID, out Vector3 translation);
+        [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf16)]
+        internal static partial void Native_RegisterEntityTypes(string? typeName, string? assemblyName);
+
+        [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf8)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        internal static partial bool Entity_HasComponent(ulong entityID, string? componentTypeFullName);
 
         [LibraryImport("Timefall")]
-        internal static partial void Entity_SetTranslation(ulong entityID, ref Vector3 translation);
+        internal static partial void TransformComponent_GetTranslation(ulong entityID, out Vector3 translation);
 
-        // Explicitly specify marshalling for the bool return to resolve SYSLIB1051.
-        // Use UnmanagedType.U1 to marshal a 1-byte C-style bool.
+        [LibraryImport("Timefall")]
+        internal static partial void TransformComponent_SetTranslation(ulong entityID, ref Vector3 translation);
+
+        [LibraryImport("Timefall")]
+        internal static partial void Rigidbody2DComponent_ApplyLinearImpulse(ulong entityID, ref Vector2 impulse, ref Vector2 point, [MarshalAs(UnmanagedType.U1)] bool wake);
+        
+        [LibraryImport("Timefall")]
+        internal static partial void Rigidbody2DComponent_ApplyLinearImpulseToCenter(ulong entityID, ref Vector2 impulse, [MarshalAs(UnmanagedType.U1)] bool wake);
+
         [LibraryImport("Timefall")]
         [return: MarshalAs(UnmanagedType.U1)]
         internal static partial bool Input_IsKeyDown(KeyCode keycode);

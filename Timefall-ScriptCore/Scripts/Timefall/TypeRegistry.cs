@@ -6,12 +6,6 @@ namespace Timefall
 {
     public delegate void BuildEntityRegistryDelegate(IntPtr assemblyName);
 
-    public static partial class TypeRegistryInternalCalls
-    {
-        [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf16)]
-        internal static partial void Native_RegisterEntityTypes(string? typeName, string? assemblyName);
-    }
-
     public class TypeRegistry
     {
         public static void BuildEntityRegistry(IntPtr assemblyName)
@@ -33,7 +27,7 @@ namespace Timefall
                 if (type.IsAssignableTo(typeof(Entity)) && type != typeof(Entity))
                 {
                     Console.WriteLine($"Registering Entity Type: {type.FullName} from Assembly: {asm.GetName().Name}");
-                    TypeRegistryInternalCalls.Native_RegisterEntityTypes(type.FullName, asm.GetName().Name);
+                    InternalCalls.Native_RegisterEntityTypes(type.FullName, asm.GetName().Name);
                 }
             }
         }

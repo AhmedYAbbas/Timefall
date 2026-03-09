@@ -11,7 +11,7 @@ namespace Timefall
     // Delegates for creating instances of derived types by name
     public delegate IntPtr CreateTypedInstanceDelegate(IntPtr typeName);
     public delegate IntPtr CreateTypedInstanceWithIDDelegate(IntPtr typeName, ulong entityID);
-    
+
 
     public class Entity
     {
@@ -21,12 +21,12 @@ namespace Timefall
         {
             get
             {
-                InternalCalls.Entity_GetTranslation(ID, out Vector3 translation);
+                InternalCalls.TransformComponent_GetTranslation(ID, out Vector3 translation);
                 return translation;
             }
             set
             {
-                InternalCalls.Entity_SetTranslation(ID, ref value);
+                InternalCalls.TransformComponent_SetTranslation(ID, ref value);
             }
         }
 
@@ -134,6 +134,19 @@ namespace Timefall
             GCHandle handle = GCHandle.FromIntPtr(instancePtr);
             handle.Free();
             Console.WriteLine("Managed Entity Instance Destroyed");
+        }
+        
+        public bool HasComponent<T>() where T : Component, new()
+        {
+            return InternalCalls.Entity_HasComponent(ID, typeof(T).FullName);
+        }
+
+        public T GetComponent<T>() where T : Component, new()
+        {
+            if (!HasComponent<T>())
+                return null;
+
+            return new T() { Entity = this };
         }
     }
 }

@@ -1,5 +1,7 @@
 #include "tfpch.h"
 #include "Timefall/Scripting/ScriptEngine.h"
+
+#include "Timefall/Scripting/ScriptGlue.h"
 #include "Timefall/Scene/Scene.h"
 #include "Timefall/Scene/Entity.h"
 
@@ -11,9 +13,9 @@
 
 namespace Timefall
 {
-	static constexpr const wchar_t* kScriptsPath = L"Resources\\Scripts\\";
-	static constexpr const wchar_t* kScriptCoreDll = L"Resources\\Scripts\\Timefall-ScriptCore.dll";
-	static constexpr const char* kScriptCoreRuntimeConfig = "Resources/Scripts/Timefall-ScriptCore.runtimeconfig.json";
+	static constexpr const wchar_t* SCRIPTS_PATH = L"Resources\\Scripts\\";
+	static constexpr const wchar_t* SCRIPT_CORE_DLL_PATH = L"Resources\\Scripts\\Timefall-ScriptCore.dll";
+	static constexpr const char* SCRIPT_CORE_RUNTIME_CONFIG_PATH = "Resources/Scripts/Timefall-ScriptCore.runtimeconfig.json";
 
 	struct ScriptEngineData
 	{
@@ -90,13 +92,14 @@ namespace Timefall
 			return;
 		}
 
-		LoadAssembly(kScriptCoreRuntimeConfig);
+		LoadAssembly(SCRIPT_CORE_RUNTIME_CONFIG_PATH);
 
-		s_ScriptEngineData->EntityClass = ScriptClass(kScriptCoreDll, L"Timefall.Entity, Timefall-ScriptCore");
-		s_ScriptEngineData->TypeRegistryClass = ScriptClass(kScriptCoreDll, L"Timefall.TypeRegistry, Timefall-ScriptCore");
+		s_ScriptEngineData->EntityClass = ScriptClass(SCRIPT_CORE_DLL_PATH, L"Timefall.Entity, Timefall-ScriptCore");
+		s_ScriptEngineData->TypeRegistryClass = ScriptClass(SCRIPT_CORE_DLL_PATH, L"Timefall.TypeRegistry, Timefall-ScriptCore");
 
 		s_ScriptEngineData->EntityClasses.clear();
 		s_ScriptEngineData->TypeRegistryClass.InvokeMethod<void(*)(const char*)>(L"BuildEntityRegistry", L"Timefall.BuildEntityRegistryDelegate, Timefall-ScriptCore", "Resources/Scripts/Timefall-ScriptCore.dll");
+		ScriptGlue::RegisterComponents();
 
 		// Cache invoker methods from base Entity class
 		s_ScriptEngineData->CreateTypedInstanceFn = s_ScriptEngineData->EntityClass.GetMethod<void*(*)(const wchar_t*)>(L"CreateTypedInstance", L"Timefall.CreateTypedInstanceDelegate, Timefall-ScriptCore");
@@ -196,12 +199,12 @@ namespace Timefall
 	void ScriptEngine::RegisterEntityTypes(const wchar_t* typeName, const wchar_t* assemblyName)
 	{
 		// Build assembly path: Resources\Scripts\{assemblyName}.dll
-		std::wstring assemblyPath = std::format(L"{}{}.dll", kScriptsPath, assemblyName);
+		std::wstring assemblyPath = std::format(L"{}{}.dll", SCRIPTS_PATH, assemblyName);
 
 		// Build fully qualified type name: {typeName}, {assemblyName}
 		std::wstring qualifiedTypeName = std::format(L"{}, {}", typeName, assemblyName);
 
-		s_ScriptEngineData->EntityClasses.emplace(typeName, CreateRef<ScriptClass>(std::move(assemblyPath), std::move(qualifiedTypeName)));
+		s_ScriptEngineData->EntityClasses.emplace(typeName, CreateRef<ScriptClass>(assemblyPath, qualifiedTypeName));
 	}
 
 	Scene* ScriptEngine::GetSceneContext()

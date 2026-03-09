@@ -38,8 +38,9 @@ namespace Timefall
 		void OnViewportResize(uint32_t width, uint32_t height);
 
 		// TODO: Remove
-		void SetRestitutionThreshold(float restitutionThreshold) { m_RestitutionThreshold = restitutionThreshold; }
-		float GetRestitutionThreshold() const { return m_RestitutionThreshold; }
+		inline void SetRestitutionThreshold(float restitutionThreshold) { m_RestitutionThreshold = restitutionThreshold; }
+		inline const float GetRestitutionThreshold() const { return m_RestitutionThreshold; }
+		inline std::unordered_map<entt::entity, b2BodyId>& GetPhysicsBodiesMap() { return m_PhysicsBodiesMap; }
 
 		Entity GetPrimaryCameraEntity();
 

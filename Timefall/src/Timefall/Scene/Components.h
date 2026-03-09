@@ -169,4 +169,21 @@ namespace Timefall
 
 		operator bool() const { return Instance; }
 	};
+
+	template<typename... T>
+	struct ComponentGroup
+	{
+
+	};
+
+	using AllComponents = ComponentGroup<
+		TransformComponent,
+		SpriteRendererComponent,
+		CircleRendererComponent,
+		CameraComponent,
+		ScriptComponent,
+		Rigidbody2DComponent,
+		BoxCollider2DComponent,
+		CircleCollider2DComponent,
+		NativeScriptComponent>;
 }

@@ -333,7 +333,6 @@ namespace Timefall
 			Entity entity = { e, this };
 			auto& transform = entity.GetComponent<TransformComponent>();
 			auto& rb2d = entity.GetComponent<Rigidbody2DComponent>();
-
 			b2BodyDef bodyDef = b2DefaultBodyDef();
 			bodyDef.type = (b2BodyType)rb2d.Type;
 			bodyDef.position = b2Vec2(transform.Translation.x, transform.Translation.y);
