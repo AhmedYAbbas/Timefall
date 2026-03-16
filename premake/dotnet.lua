@@ -22,6 +22,7 @@ function dotnet.project(name)
         packages = {},
         properties = {},
         copyOutputTo = {},
+        excludeFiles = {},
     }
 
     table.insert(dotnet.projects, prj)
@@ -154,6 +155,19 @@ function dotnet.generateProject(prj)
             file:write('    <Copy SourceFiles="$(OutputPath)$(AssemblyName).runtimeconfig.json" DestinationFolder="' .. dest .. '" ContinueOnError="true" />\n')
         end
         file:write('  </Target>\n')
+    end
+
+    -- Explicitly excluded files
+    if #prj.excludeFiles > 0 then
+        file:write('\n')
+        file:write('  <ItemGroup>\n')
+        for _, f in ipairs(prj.excludeFiles) do
+            file:write('    <None Remove="' .. f .. '" />\n')
+            file:write('    <Content Remove="' .. f .. '" />\n')
+            file:write('    <Compile Remove="' .. f .. '" />\n')
+            file:write('    <EmbeddedResource Remove="' .. f .. '" />\n')
+        end
+        file:write('  </ItemGroup>\n')
     end
 
     file:write('\n')

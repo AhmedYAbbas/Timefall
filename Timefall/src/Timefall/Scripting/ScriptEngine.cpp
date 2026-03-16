@@ -15,6 +15,7 @@ namespace Timefall
 {
 	static constexpr const wchar_t* SCRIPTS_PATH = L"Resources\\Scripts\\";
 	static constexpr const wchar_t* SCRIPT_CORE_DLL_PATH = L"Resources\\Scripts\\Timefall-ScriptCore.dll";
+	static constexpr const wchar_t* SCRIPT_APP_DLL_PATH = L"Resources\\Scripts\\Sandbox.dll";
 	static constexpr const char* SCRIPT_CORE_RUNTIME_CONFIG_PATH = "Resources/Scripts/Timefall-ScriptCore.runtimeconfig.json";
 
 	struct ScriptEngineData
@@ -94,11 +95,16 @@ namespace Timefall
 
 		LoadAssembly(SCRIPT_CORE_RUNTIME_CONFIG_PATH);
 
+		// Base class types, not actual instances of these types will be created, but we need them to get the invoker function pointers for the virtual method calls
+		// Loaded from the core assembly since that's where Entity and the TypeRegistry live, and we need them to be available before loading any app assemblies that might contain user-defined entity types
 		s_ScriptEngineData->EntityClass = ScriptClass(SCRIPT_CORE_DLL_PATH, L"Timefall.Entity, Timefall-ScriptCore");
 		s_ScriptEngineData->TypeRegistryClass = ScriptClass(SCRIPT_CORE_DLL_PATH, L"Timefall.TypeRegistry, Timefall-ScriptCore");
 
+		// App assembly specific
+		// App assemblies will call back into the TypeRegistry to register their entity types
+		// EntityClasses relate to app assemblies, not the core assembly
 		s_ScriptEngineData->EntityClasses.clear();
-		s_ScriptEngineData->TypeRegistryClass.InvokeMethod<void(*)(const char*)>(L"BuildEntityRegistry", L"Timefall.BuildEntityRegistryDelegate, Timefall-ScriptCore", "Resources/Scripts/Timefall-ScriptCore.dll");
+		s_ScriptEngineData->TypeRegistryClass.InvokeMethod<void(*)(const char*)>(L"BuildEntityRegistry", L"Timefall.BuildEntityRegistryDelegate, Timefall-ScriptCore", "Resources\\Scripts\\Sandbox.dll");
 		ScriptGlue::RegisterComponents();
 
 		// Cache invoker methods from base Entity class
