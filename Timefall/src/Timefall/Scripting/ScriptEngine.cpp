@@ -13,6 +13,63 @@
 
 namespace Timefall
 {
+	static std::unordered_map<std::wstring, ScriptFieldType> s_ScriptFieldTypeMap =
+	{
+		{ L"System.Single", Timefall::ScriptFieldType::Float },
+		{ L"System.Double", Timefall::ScriptFieldType::Double },
+		{ L"System.Boolean", Timefall::ScriptFieldType::Bool },
+		{ L"System.Char", Timefall::ScriptFieldType::Char },
+		{ L"System.Int16", Timefall::ScriptFieldType::Int16 },
+		{ L"System.Int32", Timefall::ScriptFieldType::Int32 },
+		{ L"System.Int64", Timefall::ScriptFieldType::Int64 },
+		{ L"System.Byte", Timefall::ScriptFieldType::Byte },
+		{ L"System.UInt16", Timefall::ScriptFieldType::UInt16 },
+		{ L"System.UInt32", Timefall::ScriptFieldType::UInt32 },
+		{ L"System.UInt64", Timefall::ScriptFieldType::UInt64 },
+
+		{ L"Timefall.Vector2", Timefall::ScriptFieldType::Vector2 },
+		{ L"Timefall.Vector3", Timefall::ScriptFieldType::Vector3 },
+		{ L"Timefall.Vector4", Timefall::ScriptFieldType::Vector4 },
+
+		{ L"Timefall.Entity", Timefall::ScriptFieldType::Entity }
+	};
+
+	namespace Utils
+	{
+		ScriptFieldType DotNetTypeToScriptFieldType(const std::wstring& typeName)
+		{
+			auto it = s_ScriptFieldTypeMap.find(typeName);
+			if (it != s_ScriptFieldTypeMap.end())
+				return it->second;
+
+			return ScriptFieldType::None;
+		}
+
+		const char* ScriptFieldTypeToString(Timefall::ScriptFieldType type)
+		{
+			switch (type)
+			{
+			case Timefall::ScriptFieldType::None:		return "None";
+			case Timefall::ScriptFieldType::Float:		return "Float";
+			case Timefall::ScriptFieldType::Double:		return "Double";
+			case Timefall::ScriptFieldType::Bool:		return "Bool";
+			case Timefall::ScriptFieldType::Char:		return "Char";
+			case Timefall::ScriptFieldType::Int16:		return "Int16";
+			case Timefall::ScriptFieldType::Int32:		return "Int32";
+			case Timefall::ScriptFieldType::Int64:		return "Int64";
+			case Timefall::ScriptFieldType::Byte:		return "Byte";
+			case Timefall::ScriptFieldType::UInt16:		return "UInt16";
+			case Timefall::ScriptFieldType::UInt32:		return "UInt32";
+			case Timefall::ScriptFieldType::UInt64:		return "UInt64";
+			case Timefall::ScriptFieldType::Vector2:	return "Vector2";
+			case Timefall::ScriptFieldType::Vector3:	return "Vector3";
+			case Timefall::ScriptFieldType::Vector4:	return "Vector4";
+			case Timefall::ScriptFieldType::Entity:		return "Entity";
+			default:									return "Unknown";
+			}
+		}
+	}
+
 	static constexpr const wchar_t* SCRIPTS_PATH = L"Resources\\Scripts\\";
 	static constexpr const wchar_t* SCRIPT_CORE_DLL_PATH = L"Resources\\Scripts\\Timefall-ScriptCore.dll";
 	static constexpr const wchar_t* SCRIPT_APP_DLL_PATH = L"Resources\\Scripts\\Sandbox.dll";
@@ -40,6 +97,8 @@ namespace Timefall
 		void (*InvokeOnCreateFn)(void* instance) = nullptr;
 		void (*InvokeOnUpdateFn)(void* instance, float ts) = nullptr;
 		void (*DestroyInstanceFn)(void* instance) = nullptr;
+		void (*GetFieldValueFn)(void* instance, const wchar_t* fieldName, void* outValue) = nullptr;
+		void (*SetFieldValueFn)(void* instance, const wchar_t* fieldName, void* value) = nullptr;
 
 		// Runtime
 		Scene* SceneContext = nullptr;
@@ -113,6 +172,8 @@ namespace Timefall
 		s_ScriptEngineData->InvokeOnCreateFn = s_ScriptEngineData->EntityClass.GetMethod<void(*)(void*)>(L"InvokeOnCreate", L"Timefall.InvokeOnCreateDelegate, Timefall-ScriptCore");
 		s_ScriptEngineData->InvokeOnUpdateFn = s_ScriptEngineData->EntityClass.GetMethod<void(*)(void*, float)>(L"InvokeOnUpdate", L"Timefall.InvokeOnUpdateDelegate, Timefall-ScriptCore");
 		s_ScriptEngineData->DestroyInstanceFn = s_ScriptEngineData->EntityClass.GetMethod<void(*)(void*)>(L"DestroyInstance", L"Timefall.DestroyInstanceDelegate, Timefall-ScriptCore");
+		s_ScriptEngineData->GetFieldValueFn = s_ScriptEngineData->TypeRegistryClass.GetMethod<void(*)(void*, const wchar_t*, void*)>(L"GetFieldValue", L"Timefall.GetFieldValueDelegate, Timefall-ScriptCore");
+		s_ScriptEngineData->SetFieldValueFn = s_ScriptEngineData->TypeRegistryClass.GetMethod<void(*)(void*, const wchar_t*, void*)>(L"SetFieldValue", L"Timefall.SetFieldValueDelegate, Timefall-ScriptCore");
 
 		TF_CORE_ASSERT(s_ScriptEngineData->CreateTypedInstanceFn, "Failed to get CreateTypedInstanceParameterless from Entity class");
 		TF_CORE_ASSERT(s_ScriptEngineData->CreateTypedInstanceWithIDFn, "Failed to get CreateTypedInstanceWithID from Entity class");
@@ -202,7 +263,7 @@ namespace Timefall
 		s_ScriptEngineData->LoadAssemblyAndGetFunctionPointerFn = LoadDotNetAssembly(runtimeConfigPath);
 	}
 
-	void ScriptEngine::RegisterEntityTypes(const wchar_t* typeName, const wchar_t* assemblyName)
+	void ScriptEngine::RegisterEntityTypes(const wchar_t* typeName, const wchar_t* assemblyName, const wchar_t** fieldNames, const wchar_t** fieldTypeNames, int fieldCount)
 	{
 		// Build assembly path: Resources\Scripts\{assemblyName}.dll
 		std::wstring assemblyPath = std::format(L"{}{}.dll", SCRIPTS_PATH, assemblyName);
@@ -210,7 +271,12 @@ namespace Timefall
 		// Build fully qualified type name: {typeName}, {assemblyName}
 		std::wstring qualifiedTypeName = std::format(L"{}, {}", typeName, assemblyName);
 
-		s_ScriptEngineData->EntityClasses.emplace(typeName, CreateRef<ScriptClass>(assemblyPath, qualifiedTypeName));
+		Ref<ScriptClass> scriptClass = CreateRef<ScriptClass>(assemblyPath, qualifiedTypeName);
+
+		for (int i = 0; i < fieldCount; i++)
+			scriptClass->m_Fields.emplace(fieldNames[i], ScriptField{ fieldNames[i], Utils::DotNetTypeToScriptFieldType(fieldTypeNames[i]) });
+
+		s_ScriptEngineData->EntityClasses.emplace(typeName, scriptClass);
 	}
 
 	Scene* ScriptEngine::GetSceneContext()
@@ -221,6 +287,15 @@ namespace Timefall
 	const std::unordered_map<std::wstring, Ref<class ScriptClass>>& ScriptEngine::GetEntityClasses()
 	{
 		return s_ScriptEngineData->EntityClasses;
+	}
+
+	Ref<ScriptInstance> ScriptEngine::GetScriptInstance(UUID entityID)
+	{
+		auto it = s_ScriptEngineData->EntityInstances.find(entityID);
+		if (it != s_ScriptEngineData->EntityInstances.end())
+			return it->second;
+
+		return nullptr;
 	}
 
 	bool ScriptEngine::LoadHostFxr()
@@ -319,5 +394,17 @@ namespace Timefall
 	{
 		if (m_Instance && s_ScriptEngineData->InvokeOnUpdateFn)
 			s_ScriptEngineData->InvokeOnUpdateFn(m_Instance, ts);
+	}
+
+	void ScriptInstance::GetFieldValueRaw(const std::wstring& fieldName, void* outValue)
+	{
+		if (m_Instance && s_ScriptEngineData->GetFieldValueFn)
+			s_ScriptEngineData->GetFieldValueFn(m_Instance, fieldName.c_str(), outValue);
+	}
+	
+	void ScriptInstance::SetFieldValueRaw(const std::wstring& fieldName, void* value)
+	{
+		if (m_Instance && s_ScriptEngineData->SetFieldValueFn)
+			s_ScriptEngineData->SetFieldValueFn(m_Instance, fieldName.c_str(), value);
 	}
 }

@@ -310,7 +310,7 @@ namespace Timefall
 			}
 		});
 
-		DrawComponent<ScriptComponent>("Script", entity, [](auto& component)
+		DrawComponent<ScriptComponent>("Script", entity, [entity](auto& component) mutable
 		{
 			bool scriptClassExists = ScriptEngine::EntityClassExists(component.ModuleName);
 
@@ -322,11 +322,28 @@ namespace Timefall
 
 			if (ImGui::InputText("Class", moduleBuffer, sizeof(moduleBuffer)))
 			{
-				std::wstring wstr;
 				size_t len = std::strlen(moduleBuffer);
-				wstr.resize(len);
-				std::mbstowcs(&wstr[0], moduleBuffer, len);
-				component.ModuleName = wstr;
+				component.ModuleName.resize(len);
+				std::mbstowcs(component.ModuleName.data(), moduleBuffer, len);
+			}
+
+			Ref<ScriptInstance> scriptInstance = ScriptEngine::GetScriptInstance(entity.GetUUID());
+			if (scriptInstance)
+			{
+				const auto& fields = scriptInstance->GetScriptClass()->GetFields();
+				for (const auto& [fieldName, field] : fields)
+				{
+					if (field.Type == ScriptFieldType::Float)
+					{
+						float data = scriptInstance->GetFieldValue<float>(fieldName);
+						char nameBuffer[256];
+						std::wcstombs(nameBuffer, fieldName.c_str(), sizeof(nameBuffer));
+						if (ImGui::DragFloat(nameBuffer, &data))
+						{
+							scriptInstance->SetFieldValue(fieldName, data);
+						}
+					}
+				}
 			}
 
 			if (!scriptClassExists)

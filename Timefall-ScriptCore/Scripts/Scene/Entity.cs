@@ -21,12 +21,12 @@ namespace Timefall
         {
             get
             {
-                InternalCalls.TransformComponent_GetTranslation(ID, out Vector3 translation);
+                NativeCalls.TransformComponent_GetTranslation(ID, out Vector3 translation);
                 return translation;
             }
             set
             {
-                InternalCalls.TransformComponent_SetTranslation(ID, ref value);
+                NativeCalls.TransformComponent_SetTranslation(ID, ref value);
             }
         }
 
@@ -138,7 +138,7 @@ namespace Timefall
         
         public bool HasComponent<T>() where T : Component, new()
         {
-            return InternalCalls.Entity_HasComponent(ID, typeof(T).FullName);
+            return NativeCalls.Entity_HasComponent(ID, typeof(T).FullName);
         }
 
         public T GetComponent<T>() where T : Component, new()

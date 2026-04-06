@@ -7,6 +7,9 @@ namespace Sandbox
         private TransformComponent m_Transform;
         private Rigidbody2DComponent m_Rigidbody;
 
+        private static int s_Velocity = 1;
+        public float Speed;
+        public float Time;
         public override void OnCreate()
         {
             Console.WriteLine($"Sandbox.Player OnCreate called! - {ID}");
@@ -18,6 +21,7 @@ namespace Sandbox
         public override void OnUpdate(float ts)
         {
             //Console.WriteLine($"Sandbox.Player OnUpdate called with timestep: {ts}");
+            Time += ts;
 
             float speed = 0.5f;
             Vector3 velocity = Vector3.Zero;
@@ -32,7 +36,7 @@ namespace Sandbox
             else if (Input.IsKeyDown(KeyCode.D))
                 velocity.X += 1f;
 
-            velocity *= speed;
+            velocity *= Speed;
 
             m_Rigidbody.ApplyLinearImpulse(velocity.XY, true);
 

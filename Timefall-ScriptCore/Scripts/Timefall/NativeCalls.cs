@@ -2,10 +2,10 @@
 
 namespace Timefall
 {
-    public static partial class InternalCalls
+    public static partial class NativeCalls
     {
         [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf16)]
-        internal static partial void Native_RegisterEntityTypes(string? typeName, string? assemblyName);
+        internal static partial void Native_RegisterEntityTypes(string? typeName, string? assemblyName, string[] fieldNames, string[] fieldTypeNames, int fieldCount);
 
         [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf8)]
         [return: MarshalAs(UnmanagedType.U1)]

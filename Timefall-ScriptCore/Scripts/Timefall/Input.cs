@@ -4,7 +4,7 @@
     {
         public static bool IsKeyDown(KeyCode keycode)
         {
-            return InternalCalls.Input_IsKeyDown(keycode);
+            return NativeCalls.Input_IsKeyDown(keycode);
         }
     }
 }

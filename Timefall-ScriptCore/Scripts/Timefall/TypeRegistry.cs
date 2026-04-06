@@ -5,6 +5,8 @@ using System.Runtime.Loader;
 namespace Timefall
 {
     public delegate void BuildEntityRegistryDelegate(IntPtr assemblyName);
+    public delegate void GetFieldValueDelegate(IntPtr instanceHandle, IntPtr fieldName, IntPtr outValue);
+    public delegate void SetFieldValueDelegate(IntPtr instanceHandle, IntPtr fieldName, IntPtr value);
 
     public class TypeRegistry
     {
@@ -31,9 +33,61 @@ namespace Timefall
                 if (type.IsAssignableTo(typeof(Entity)) && type != typeof(Entity))
                 {
                     Console.WriteLine($"Registering Entity Type: {type.FullName} from Assembly: {asm.GetName().Name}");
-                    InternalCalls.Native_RegisterEntityTypes(type.FullName, asm.GetName().Name);
+                    FieldInfo[] fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public);
+                    Console.WriteLine($"  Found {fields.Length} fields:");
+                    foreach (FieldInfo field in fields)
+                    {
+                        Console.WriteLine($"  Field: {field.Name} of Type: {field.FieldType.FullName}");
+                    }
+                    string[] fieldNames = fields.Select(f => f.Name).ToArray();
+                    string[] fieldTypeNames = fields.Select(f => f.FieldType.FullName ?? string.Empty).ToArray();
+                    NativeCalls.Native_RegisterEntityTypes(type.FullName, asm.GetName().Name, fieldNames, fieldTypeNames, fields.Length);
                 }
             }
+        }
+
+        public static void GetFieldValue(IntPtr instanceHandle, IntPtr fieldNamePtr, IntPtr outValue)
+        {
+            GCHandle handle = GCHandle.FromIntPtr(instanceHandle);
+            object? instance = handle.Target;
+            if (instance == null)
+                return;
+
+            string? fieldName = Marshal.PtrToStringUni(fieldNamePtr);
+            if (fieldName == null)
+                return;
+
+            FieldInfo? field = instance.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public);
+            if (field == null)
+                return;
+
+            object? value = field.GetValue(instance);
+            if (value == null)
+                return;
+
+            Marshal.StructureToPtr(value, outValue, false);
+        }
+        
+        public static void SetFieldValue(IntPtr instanceHandle, IntPtr fieldNamePtr, IntPtr value)
+        {
+            GCHandle handle = GCHandle.FromIntPtr(instanceHandle);
+            object? instance = handle.Target;
+            if (instance == null)
+                return;
+
+            string? fieldName = Marshal.PtrToStringUni(fieldNamePtr);
+            if (fieldName == null)
+                return;
+
+            FieldInfo? field = instance.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public);
+            if (field == null)
+                return;
+
+            object? boxedValue = Marshal.PtrToStructure(value, field.FieldType);
+            if (boxedValue == null)
+                return;
+
+            field.SetValue(instance, boxedValue);
         }
 
         private static string ResolveAssemblyPath(IntPtr assemblyName)

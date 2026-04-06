@@ -117,9 +117,9 @@ namespace Timefall
 		}
 
 		__declspec(dllexport)
-		void Native_RegisterEntityTypes(const wchar_t* typeName, const wchar_t* assemblyName)
+		void Native_RegisterEntityTypes(const wchar_t* typeName, const wchar_t* assemblyName, const wchar_t** fieldNames, const wchar_t** fieldTypeNames, int fieldCount)
 		{
-			ScriptEngine::RegisterEntityTypes(typeName, assemblyName);
+			ScriptEngine::RegisterEntityTypes(typeName, assemblyName, fieldNames, fieldTypeNames, fieldCount);
 		}
 	}
 

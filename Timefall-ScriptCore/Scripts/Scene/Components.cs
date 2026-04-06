@@ -11,12 +11,12 @@
         {
             get
             {
-                InternalCalls.TransformComponent_GetTranslation(Entity.ID, out Vector3 translation);
+                NativeCalls.TransformComponent_GetTranslation(Entity.ID, out Vector3 translation);
                 return translation;
             }
             set
             {
-                InternalCalls.TransformComponent_SetTranslation(Entity.ID, ref value);
+                NativeCalls.TransformComponent_SetTranslation(Entity.ID, ref value);
             }
         }
     }
@@ -25,12 +25,12 @@
     {
         public void ApplyLinearImpulse(Vector2 impulse, Vector2 worldPosition, bool wake = true)
         {
-            InternalCalls.Rigidbody2DComponent_ApplyLinearImpulse(Entity.ID, ref impulse, ref worldPosition, wake);
+            NativeCalls.Rigidbody2DComponent_ApplyLinearImpulse(Entity.ID, ref impulse, ref worldPosition, wake);
         }
 
         public void ApplyLinearImpulse(Vector2 impulse, bool wake = true)
         {
-            InternalCalls.Rigidbody2DComponent_ApplyLinearImpulseToCenter(Entity.ID, ref impulse, wake);
+            NativeCalls.Rigidbody2DComponent_ApplyLinearImpulseToCenter(Entity.ID, ref impulse, wake);
         }
     }
 }
