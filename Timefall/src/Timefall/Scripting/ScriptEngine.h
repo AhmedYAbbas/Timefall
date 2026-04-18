@@ -24,6 +24,39 @@ namespace Timefall
 		ScriptFieldType Type;
 	};
 
+	// ScriptField + data storage
+	struct ScriptFieldInstance
+	{
+		ScriptField Field;
+
+		ScriptFieldInstance()
+		{
+			memset(m_Buffer, 0, sizeof(m_Buffer));
+		}
+
+		template<typename T>
+		T GetValue()
+		{
+			static_assert(sizeof(T) <= 8, "Type too large!");
+			return *(T*)m_Buffer;
+		}
+
+		template<typename T>
+		void SetValue(T value)
+		{
+			static_assert(sizeof(T) <= 8, "Type too large!");
+			memcpy(m_Buffer, &value, sizeof(T));
+		}
+	private:
+		uint8_t m_Buffer[8];
+
+		friend class ScriptEngine;
+		friend class ScriptInstance;
+	};
+
+
+	using ScriptFieldMap = std::unordered_map<std::wstring, ScriptFieldInstance>; // entityID -> (fieldName -> field instance)
+
 	class Scene;
 	class Entity;
 
@@ -109,12 +142,15 @@ namespace Timefall
 		}
 
 		void GetFieldValueRaw(const std::wstring& fieldName, void* outValue);
-		void SetFieldValueRaw(const std::wstring& fieldName, void* value);
+		void SetFieldValueRaw(const std::wstring& fieldName, const void* value);
 
 	private:
 		Ref<ScriptClass> m_ScriptClass;
 
 		void* m_Instance = nullptr; // GCHandle to the managed instance
+
+		friend class ScriptEngine;
+		friend struct ScriptFieldInstance;
 	};
 
 	class TF_API ScriptEngine
@@ -134,8 +170,11 @@ namespace Timefall
 		static void RegisterEntityTypes(const wchar_t* typeName, const wchar_t* assemblyName, const wchar_t** fieldNames, const wchar_t** fieldTypeNames, int fieldCount);
 
 		static Scene* GetSceneContext();
-		static const std::unordered_map<std::wstring, Ref<class ScriptClass>>& GetEntityClasses();
-		static Ref<ScriptInstance> GetScriptInstance(UUID entityID);
+		static Ref<ScriptClass> GetEntityScriptClass(const std::wstring& name);
+		static const std::unordered_map<std::wstring, Ref<class ScriptClass>>& GetEntityScriptClasses();
+		static ScriptFieldMap& GetEntityScriptFields(Entity entity);
+
+		static Ref<ScriptInstance> GetEntityScriptInstance(UUID entityID);
 
 	private:
 		static bool LoadHostFxr();

@@ -310,7 +310,7 @@ namespace Timefall
 			}
 		});
 
-		DrawComponent<ScriptComponent>("Script", entity, [entity](auto& component) mutable
+		DrawComponent<ScriptComponent>("Script", entity, [entity, scene = m_Context](auto& component) mutable
 		{
 			bool scriptClassExists = ScriptEngine::EntityClassExists(component.ModuleName);
 
@@ -327,24 +327,72 @@ namespace Timefall
 				std::mbstowcs(component.ModuleName.data(), moduleBuffer, len);
 			}
 
-			Ref<ScriptInstance> scriptInstance = ScriptEngine::GetScriptInstance(entity.GetUUID());
-			if (scriptInstance)
+			// Fields
+			bool sceneRunning = scene->IsRunning();
+			if (sceneRunning)
 			{
-				const auto& fields = scriptInstance->GetScriptClass()->GetFields();
-				for (const auto& [fieldName, field] : fields)
+				Ref<ScriptInstance> scriptInstance = ScriptEngine::GetEntityScriptInstance(entity.GetUUID());
+				if (scriptInstance)
 				{
-					if (field.Type == ScriptFieldType::Float)
+					const auto& fields = scriptInstance->GetScriptClass()->GetFields();
+					for (const auto& [fieldName, field] : fields)
 					{
-						float data = scriptInstance->GetFieldValue<float>(fieldName);
-						char nameBuffer[256];
-						std::wcstombs(nameBuffer, fieldName.c_str(), sizeof(nameBuffer));
-						if (ImGui::DragFloat(nameBuffer, &data))
+						if (field.Type == ScriptFieldType::Float)
 						{
-							scriptInstance->SetFieldValue(fieldName, data);
+							float data = scriptInstance->GetFieldValue<float>(fieldName);
+							char nameBuffer[256];
+							std::wcstombs(nameBuffer, fieldName.c_str(), sizeof(nameBuffer));
+							if (ImGui::DragFloat(nameBuffer, &data))
+								scriptInstance->SetFieldValue(fieldName, data);
 						}
 					}
 				}
 			}
+			else
+			{
+				if (scriptClassExists)
+				{
+					Ref<ScriptClass> entityClass = ScriptEngine::GetEntityScriptClass(component.ModuleName);
+					const auto& fields = entityClass->GetFields();
+
+					auto& entityFields = ScriptEngine::GetEntityScriptFields(entity);
+					for (const auto& [name, field] : fields)
+					{
+						// Field has been set in editor
+						if (entityFields.find(name) != entityFields.end())
+						{
+							ScriptFieldInstance& scriptField = entityFields.at(name);
+
+							// Display control to set it maybe
+							if (field.Type == ScriptFieldType::Float)
+							{
+								float data = scriptField.GetValue<float>();
+								char nameBuffer[256];
+								std::wcstombs(nameBuffer, name.c_str(), sizeof(nameBuffer));
+								if (ImGui::DragFloat(nameBuffer, &data))
+									scriptField.SetValue(data);
+							}
+						}
+						else
+						{
+							// Display control to set it maybe
+							if (field.Type == ScriptFieldType::Float)
+							{
+								float data = 0.0f;
+								char nameBuffer[256];
+								std::wcstombs(nameBuffer, name.c_str(), sizeof(nameBuffer));
+								if (ImGui::DragFloat(nameBuffer, &data))
+								{
+									ScriptFieldInstance& fieldInstance = entityFields[name];
+									fieldInstance.Field = field;
+									fieldInstance.SetValue(data);
+								}
+							}
+						}
+					}
+				}
+			}
+
 
 			if (!scriptClassExists)
 				ImGui::PopStyleColor();

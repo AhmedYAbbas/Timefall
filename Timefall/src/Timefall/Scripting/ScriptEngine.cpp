@@ -90,6 +90,7 @@ namespace Timefall
 
 		std::unordered_map<std::wstring, Ref<ScriptClass>> EntityClasses;
 		std::unordered_map<UUID, Ref<ScriptInstance>> EntityInstances;
+		std::unordered_map<UUID, ScriptFieldMap> EntityScriptFields;
 
 		// Cached invokers from base Entity class (static methods that take instance handle)
 		void* (*CreateTypedInstanceFn)(const wchar_t* typeName) = nullptr;
@@ -243,9 +244,18 @@ namespace Timefall
 		const auto& sc = entity.GetComponent<ScriptComponent>();
 		if (ScriptEngine::EntityClassExists(sc.ModuleName))
 		{
-			UUID uuid = entity.GetUUID();
-			Ref<ScriptInstance> instance = CreateRef<ScriptInstance>(s_ScriptEngineData->EntityClasses[sc.ModuleName], sc.ModuleName, uuid);
-			s_ScriptEngineData->EntityInstances[uuid] = instance;
+			UUID entityID = entity.GetUUID();
+			Ref<ScriptInstance> instance = CreateRef<ScriptInstance>(s_ScriptEngineData->EntityClasses[sc.ModuleName], sc.ModuleName, entityID);
+			s_ScriptEngineData->EntityInstances[entityID] = instance;
+
+			// Copy field values from the entity's components to the script instance
+			if (s_ScriptEngineData->EntityScriptFields.find(entityID) != s_ScriptEngineData->EntityScriptFields.end())
+			{
+				const ScriptFieldMap& fieldMap = s_ScriptEngineData->EntityScriptFields.at(entityID);
+				for (const auto& [fieldName, fieldInstance] : fieldMap)
+					instance->SetFieldValueRaw(fieldName, fieldInstance.m_Buffer);
+			}
+
 			instance->InvokeOnCreate();
 		}
 	}
@@ -284,12 +294,29 @@ namespace Timefall
 		return s_ScriptEngineData->SceneContext;
 	}
 
-	const std::unordered_map<std::wstring, Ref<class ScriptClass>>& ScriptEngine::GetEntityClasses()
+	Ref<ScriptClass> ScriptEngine::GetEntityScriptClass(const std::wstring& name)
+	{
+		auto it = s_ScriptEngineData->EntityClasses.find(name);
+		if (it == s_ScriptEngineData->EntityClasses.end())
+			return nullptr;
+
+		return it->second;
+	}
+
+	const std::unordered_map<std::wstring, Ref<ScriptClass>>& ScriptEngine::GetEntityScriptClasses()
 	{
 		return s_ScriptEngineData->EntityClasses;
 	}
 
-	Ref<ScriptInstance> ScriptEngine::GetScriptInstance(UUID entityID)
+	ScriptFieldMap& ScriptEngine::GetEntityScriptFields(Entity entity)
+	{
+		TF_CORE_ASSERT(entity, "Invalid entity");
+
+		UUID entityID = entity.GetUUID();
+		return s_ScriptEngineData->EntityScriptFields[entityID];
+	}
+
+	Ref<ScriptInstance> ScriptEngine::GetEntityScriptInstance(UUID entityID)
 	{
 		auto it = s_ScriptEngineData->EntityInstances.find(entityID);
 		if (it != s_ScriptEngineData->EntityInstances.end())
@@ -402,9 +429,9 @@ namespace Timefall
 			s_ScriptEngineData->GetFieldValueFn(m_Instance, fieldName.c_str(), outValue);
 	}
 	
-	void ScriptInstance::SetFieldValueRaw(const std::wstring& fieldName, void* value)
+	void ScriptInstance::SetFieldValueRaw(const std::wstring& fieldName, const void* value)
 	{
 		if (m_Instance && s_ScriptEngineData->SetFieldValueFn)
-			s_ScriptEngineData->SetFieldValueFn(m_Instance, fieldName.c_str(), value);
+			s_ScriptEngineData->SetFieldValueFn(m_Instance, fieldName.c_str(), (void*)value);
 	}
 }
