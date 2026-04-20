@@ -10,10 +10,29 @@ int main(int argc, char** argv);
 
 namespace Timefall
 {
+	struct ApplicationCommandLineArgs
+	{
+		int Count = 0;
+		char** Args = nullptr;
+
+		const char* operator[](int index) const
+		{
+			TF_CORE_ASSERT(index < Count, "Index out of bounds");
+			return Args[index];
+		}
+	};
+
+	struct ApplicationSpecification
+	{
+		std::string Name = "Timefall Application";
+		std::string WorkingDirectory;
+		ApplicationCommandLineArgs CommandLineArgs;
+	};
+
 	class TF_API Application
 	{
 	public:
-		Application(const std::string& name = "Timefall App");
+		Application(const ApplicationSpecification& specification);
 		virtual ~Application();
 
 
@@ -26,6 +45,8 @@ namespace Timefall
 		ImGuiLayer* GetImGuiLayer() { return m_ImGuiLayer; }
 
 		static Application& Get() { return *s_Instance; }
+		const ApplicationSpecification& GetSpecification() const { return m_Specification; }
+
 		Window& GetWindow() const { return *m_Window; }
 
 	private:
@@ -34,6 +55,7 @@ namespace Timefall
 		bool OnWindowResize(WindowResizeEvent& e);
 
 	private:
+		ApplicationSpecification m_Specification;
 		Scope<Window> m_Window;
 		ImGuiLayer* m_ImGuiLayer;
 		bool m_Running = true;
@@ -46,5 +68,5 @@ namespace Timefall
 		friend int ::main(int argc, char** argv);
 	};
 
-	Application* CreateApplication();
+	Application* CreateApplication(ApplicationCommandLineArgs args);
 }

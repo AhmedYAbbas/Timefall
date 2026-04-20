@@ -8,8 +8,8 @@ namespace Timefall
 	class TimefallEditor : public Application
 	{
 	public:
-		TimefallEditor()
-			: Application("Timefall Editor")
+		TimefallEditor(const ApplicationSpecification& spec)
+			: Application(spec)
 		{
 			PushLayer(new EditorLayer());
 		}
@@ -17,8 +17,12 @@ namespace Timefall
 		~TimefallEditor() = default;
 	};
 
-	Application* CreateApplication()
+	Application* CreateApplication(ApplicationCommandLineArgs args)
 	{
-		return new TimefallEditor();
+		ApplicationSpecification spec;
+		spec.Name = "Timefall Editor";
+		spec.CommandLineArgs = args;
+
+		return new TimefallEditor(spec);
 	}
 }

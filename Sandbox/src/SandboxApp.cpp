@@ -1,13 +1,12 @@
 #include <Timefall.h>
-#include <Timefall/Core/EntryPoint.h>
 
 #include "Sandbox2D.h"
-#include "ExampleLayer.h"
 
 class Sandbox : public Timefall::Application
 {
 public:
-	Sandbox()
+	Sandbox(const Timefall::ApplicationSpecification& spec)
+		: Timefall::Application(spec)
 	{
 		PushLayer(new Sandbox2D());
 	}
@@ -15,7 +14,12 @@ public:
 	~Sandbox() = default;
 };
 
-Timefall::Application* Timefall::CreateApplication()
+Timefall::Application* Timefall::CreateApplication(ApplicationCommandLineArgs args)
 {
-	return new Sandbox();
+	ApplicationSpecification spec;
+	spec.Name = "Sandbox";
+	spec.WorkingDirectory = "../TimefallEditor";
+	spec.CommandLineArgs = args;
+
+	return new Sandbox(spec);
 }

@@ -9,7 +9,7 @@ int main (int argc, char** argv)
 	Timefall::Log::Init();
 
 	TF_PROFILE_BEGIN_SESSION("Startup", "TimefallProfile-Startup.json");
-	const auto app = Timefall::CreateApplication();
+	const auto app = Timefall::CreateApplication({argc, argv});
 	TF_PROFILE_END_SESSION();
 
 	TF_PROFILE_BEGIN_SESSION("Runtime", "TimefallProfile-Runtime.json");

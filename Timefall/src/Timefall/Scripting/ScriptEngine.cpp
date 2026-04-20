@@ -15,58 +15,34 @@ namespace Timefall
 {
 	static std::unordered_map<std::wstring, ScriptFieldType> s_ScriptFieldTypeMap =
 	{
-		{ L"System.Single", Timefall::ScriptFieldType::Float },
-		{ L"System.Double", Timefall::ScriptFieldType::Double },
-		{ L"System.Boolean", Timefall::ScriptFieldType::Bool },
-		{ L"System.Char", Timefall::ScriptFieldType::Char },
-		{ L"System.Int16", Timefall::ScriptFieldType::Int16 },
-		{ L"System.Int32", Timefall::ScriptFieldType::Int32 },
-		{ L"System.Int64", Timefall::ScriptFieldType::Int64 },
-		{ L"System.Byte", Timefall::ScriptFieldType::Byte },
-		{ L"System.UInt16", Timefall::ScriptFieldType::UInt16 },
-		{ L"System.UInt32", Timefall::ScriptFieldType::UInt32 },
-		{ L"System.UInt64", Timefall::ScriptFieldType::UInt64 },
+		{ L"System.Single",    Timefall::ScriptFieldType::Float },
+		{ L"System.Double",    Timefall::ScriptFieldType::Double },
+		{ L"System.Boolean",   Timefall::ScriptFieldType::Bool },
+		{ L"System.Char",      Timefall::ScriptFieldType::Char },
+		{ L"System.SByte",     Timefall::ScriptFieldType::SByte },
+		{ L"System.Int16",     Timefall::ScriptFieldType::Int16 },
+		{ L"System.Int32",     Timefall::ScriptFieldType::Int32 },
+		{ L"System.Int64",     Timefall::ScriptFieldType::Int64 },
+		{ L"System.Byte",      Timefall::ScriptFieldType::Byte },
+		{ L"System.UInt16",    Timefall::ScriptFieldType::UInt16 },
+		{ L"System.UInt32",    Timefall::ScriptFieldType::UInt32 },
+		{ L"System.UInt64",    Timefall::ScriptFieldType::UInt64 },
 
 		{ L"Timefall.Vector2", Timefall::ScriptFieldType::Vector2 },
 		{ L"Timefall.Vector3", Timefall::ScriptFieldType::Vector3 },
 		{ L"Timefall.Vector4", Timefall::ScriptFieldType::Vector4 },
 
-		{ L"Timefall.Entity", Timefall::ScriptFieldType::Entity }
+		{ L"Timefall.Entity",  Timefall::ScriptFieldType::Entity }
 	};
 
 	namespace Utils
 	{
 		ScriptFieldType DotNetTypeToScriptFieldType(const std::wstring& typeName)
 		{
-			auto it = s_ScriptFieldTypeMap.find(typeName);
-			if (it != s_ScriptFieldTypeMap.end())
-				return it->second;
+			if (s_ScriptFieldTypeMap.contains(typeName))
+				return s_ScriptFieldTypeMap[typeName];
 
 			return ScriptFieldType::None;
-		}
-
-		const char* ScriptFieldTypeToString(Timefall::ScriptFieldType type)
-		{
-			switch (type)
-			{
-			case Timefall::ScriptFieldType::None:		return "None";
-			case Timefall::ScriptFieldType::Float:		return "Float";
-			case Timefall::ScriptFieldType::Double:		return "Double";
-			case Timefall::ScriptFieldType::Bool:		return "Bool";
-			case Timefall::ScriptFieldType::Char:		return "Char";
-			case Timefall::ScriptFieldType::Int16:		return "Int16";
-			case Timefall::ScriptFieldType::Int32:		return "Int32";
-			case Timefall::ScriptFieldType::Int64:		return "Int64";
-			case Timefall::ScriptFieldType::Byte:		return "Byte";
-			case Timefall::ScriptFieldType::UInt16:		return "UInt16";
-			case Timefall::ScriptFieldType::UInt32:		return "UInt32";
-			case Timefall::ScriptFieldType::UInt64:		return "UInt64";
-			case Timefall::ScriptFieldType::Vector2:	return "Vector2";
-			case Timefall::ScriptFieldType::Vector3:	return "Vector3";
-			case Timefall::ScriptFieldType::Vector4:	return "Vector4";
-			case Timefall::ScriptFieldType::Entity:		return "Entity";
-			default:									return "Unknown";
-			}
 		}
 	}
 
