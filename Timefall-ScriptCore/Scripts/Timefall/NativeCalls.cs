@@ -7,9 +7,14 @@ namespace Timefall
         [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf16)]
         internal static partial void Native_RegisterEntityTypes(string? typeName, string? assemblyName, string[] fieldNames, string[] fieldTypeNames, int fieldCount);
 
+        [LibraryImport("Timefall")]
+        internal static partial IntPtr GetScriptInstance(ulong entityID);
+
         [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf8)]
         [return: MarshalAs(UnmanagedType.U1)]
         internal static partial bool Entity_HasComponent(ulong entityID, string? componentTypeFullName);
+        [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial ulong Entity_FindEntityByName(string name);
 
         [LibraryImport("Timefall")]
         internal static partial void TransformComponent_GetTranslation(ulong entityID, out Vector3 translation);

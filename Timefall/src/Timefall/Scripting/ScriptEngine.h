@@ -125,6 +125,7 @@ namespace Timefall
 		void InvokeOnUpdate(float ts);
 
 		Ref<ScriptClass> GetScriptClass() const { return m_ScriptClass; }
+		void* GetManagedInstance() const { return m_Instance; }
 
 		template<typename T>
 		T GetFieldValue(const std::wstring& fieldName)
@@ -174,6 +175,8 @@ namespace Timefall
 		static ScriptFieldMap& GetEntityScriptFields(Entity entity);
 
 		static Ref<ScriptInstance> GetEntityScriptInstance(UUID entityID);
+
+		static void* GetManagedInstance(UUID uuid);
 
 	private:
 		static bool LoadHostFxr();

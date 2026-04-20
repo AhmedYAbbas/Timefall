@@ -301,6 +301,12 @@ namespace Timefall
 		return nullptr;
 	}
 
+	void* ScriptEngine::GetManagedInstance(UUID uuid)
+	{
+		TF_CORE_ASSERT(s_ScriptEngineData->EntityInstances.find(uuid) != s_ScriptEngineData->EntityInstances.end(), "Entity does not exist");
+		return s_ScriptEngineData->EntityInstances.at(uuid)->GetManagedInstance();
+	}
+
 	bool ScriptEngine::LoadHostFxr()
 	{
 		// Pre-allocate a large buffer for the path to hostfxr

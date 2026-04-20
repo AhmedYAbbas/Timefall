@@ -42,13 +42,17 @@ Entities:
       RestitutionThreshold: 0.47
   - Entity: 5722967266416677241
     TagComponent:
-      Tag: Square
+      Tag: Player
     TransformComponent:
       Position: [-5.9043703, 5.805495, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     ScriptComponent:
       ModuleName: Sandbox.Player
+      ScriptFields:
+        - Name: Speed
+          Type: Float
+          Data: 25
     SpriteRendererComponent:
       Color: [1, 1, 1, 1]
     Rigidbody2DComponent:
@@ -81,6 +85,10 @@ Entities:
       FixedAspectRatio: false
     ScriptComponent:
       ModuleName: Sandbox.Camera
+      ScriptFields:
+        - Name: DistanceFromPlayer
+          Type: Float
+          Data: 35
   - Entity: 10271717649536576168
     TagComponent:
       Tag: Ground

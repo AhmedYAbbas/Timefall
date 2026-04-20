@@ -135,7 +135,7 @@ namespace Timefall
             handle.Free();
             Console.WriteLine("Managed Entity Instance Destroyed");
         }
-        
+
         public bool HasComponent<T>() where T : Component, new()
         {
             return NativeCalls.Entity_HasComponent(ID, typeof(T).FullName);
@@ -147,6 +147,24 @@ namespace Timefall
                 return null;
 
             return new T() { Entity = this };
+        }
+
+        public Entity FindEntityByName(string name)
+        {
+            ulong foundID = NativeCalls.Entity_FindEntityByName(name);
+            if (foundID == 0)
+                return null;
+
+            return new Entity(foundID);
+        }
+
+        public T As<T>() where T : Entity, new()
+        {
+            IntPtr ptr = NativeCalls.GetScriptInstance(ID);
+            if (ptr == IntPtr.Zero)
+                return null;
+
+            return GCHandle.FromIntPtr(ptr).Target as T;
         }
     }
 }

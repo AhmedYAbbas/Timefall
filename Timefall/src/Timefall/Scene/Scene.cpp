@@ -243,7 +243,7 @@ namespace Timefall
 
 	void Scene::OnViewportResize(uint32_t width, uint32_t height)
 	{
-		if (width == 0 || height == 0)
+		if (width == 0 && height == 0)
 			return;
 
 		m_ViewportWidth = width;
@@ -313,6 +313,18 @@ namespace Timefall
 		CopyComponentIfExists<Rigidbody2DComponent>(newEntity, entity);
 		CopyComponentIfExists<BoxCollider2DComponent>(newEntity, entity);
 		CopyComponentIfExists<CircleCollider2DComponent>(newEntity, entity);
+	}
+
+	Entity Scene::FindEntityByName(const std::string_view& name)
+	{
+		auto view = m_Registry.view<TagComponent>();
+		for (auto entity : view)
+		{
+			const TagComponent& tc = view.get<TagComponent>(entity);
+			if (tc.Tag == name)
+				return Entity{ entity, this };
+		}
+		return {};
 	}
 
 	Entity Scene::GetEntityByUUID(const UUID& uuid)

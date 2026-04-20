@@ -1,32 +1,12 @@
 Scene: Timefall Scene
 Entities:
-  - Entity: 11391402092972990053
+  - Entity: 12140648604693631428
     TagComponent:
-      Tag: Camera
+      Tag: Top
     TransformComponent:
-      Position: [-1.8, 0.9, 2.6]
-      Rotation: [-0.4956735, -0.689405, 0]
+      Position: [0, 0, 0]
+      Rotation: [-1.5707964, 0, 0]
       Scale: [1, 1, 1]
-    CameraComponent:
-      Camera:
-        ProjectionType: 0
-        PerspectiveFOV: 45
-        PerspectiveNear: 0.01
-        PerspectiveFar: 1000
-        OrthographicSize: 10
-        OrthographicNear: -1
-        OrthographicFar: 1
-      Primary: true
-      FixedAspectRatio: false
-  - Entity: 16625061926853455865
-    TagComponent:
-      Tag: Right
-    TransformComponent:
-      Position: [0, -0.5, 0.5]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ScriptComponent:
-      ModuleName: Sandbox.Player
     SpriteRendererComponent:
       Color: [1, 1, 1, 1]
       Texture:
@@ -52,12 +32,12 @@ Entities:
         DataFormat: 6407
         Path: assets\textures\Nada.jpg
       TilingFactor: 1
-  - Entity: 12140648604693631428
+  - Entity: 16625061926853455865
     TagComponent:
-      Tag: Top
+      Tag: Right
     TransformComponent:
-      Position: [0, 0, 0]
-      Rotation: [-1.5707964, 0, 0]
+      Position: [0, -0.5, 0.5]
+      Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     SpriteRendererComponent:
       Color: [1, 1, 1, 1]
@@ -68,3 +48,21 @@ Entities:
         DataFormat: 6407
         Path: assets\textures\Nada.jpg
       TilingFactor: 1
+  - Entity: 11391402092972990053
+    TagComponent:
+      Tag: Camera
+    TransformComponent:
+      Position: [-1.8, 0.9, 2.6]
+      Rotation: [-0.4956735, -0.689405, 0]
+      Scale: [1, 1, 1]
+    CameraComponent:
+      Camera:
+        ProjectionType: 0
+        PerspectiveFOV: 45
+        PerspectiveNear: 0.01
+        PerspectiveFar: 1000
+        OrthographicSize: 10
+        OrthographicNear: -1
+        OrthographicFar: 1
+      Primary: true
+      FixedAspectRatio: false

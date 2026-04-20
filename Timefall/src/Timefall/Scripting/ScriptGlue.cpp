@@ -38,6 +38,12 @@ namespace Timefall
 		}
 
 		__declspec(dllexport)
+		void* GetScriptInstance(UUID entityID)
+		{
+			return ScriptEngine::GetManagedInstance(entityID);
+		}
+
+		__declspec(dllexport)
 		bool Entity_HasComponent(UUID entityID, const char* componentTypeFullName)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
@@ -47,6 +53,19 @@ namespace Timefall
 
 			TF_CORE_ASSERT(s_EntityHasComponentFuncs.find(componentTypeFullName) != s_EntityHasComponentFuncs.end(), "Component type not registered");
 			return s_EntityHasComponentFuncs[componentTypeFullName](entity);
+		}
+
+		__declspec(dllexport)
+		uint64_t Entity_FindEntityByName(const char* name)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->FindEntityByName(name);
+
+			if (!entity)
+				return 0;
+
+			return entity.GetUUID();
 		}
 		
 		__declspec(dllexport)

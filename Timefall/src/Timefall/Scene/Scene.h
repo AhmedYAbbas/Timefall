@@ -24,6 +24,7 @@ namespace Timefall
 		void DestroyEntity(Entity entity);
 		void DuplicateEntity(Entity entity);
 
+		Entity FindEntityByName(const std::string_view& name);
 		Entity GetEntityByUUID(const UUID& uuid);
 
 		void OnRuntimeStart();
