@@ -7,7 +7,7 @@ namespace Sandbox
         private TransformComponent m_Transform;
         private Rigidbody2DComponent m_Rigidbody;
 
-        public float Speed;
+        public float Speed = 40f;
         public float Time;
         public override void OnCreate()
         {

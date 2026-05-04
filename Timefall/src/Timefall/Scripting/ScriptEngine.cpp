@@ -51,6 +51,18 @@ namespace Timefall
 	static constexpr const wchar_t* SCRIPT_APP_DLL_PATH = L"Resources\\Scripts\\Sandbox.dll";
 	static constexpr const char* SCRIPT_CORE_RUNTIME_CONFIG_PATH = "Resources/Scripts/Timefall-ScriptCore.runtimeconfig.json";
 
+	// Copy a DLL to %TEMP%\Timefall\ and return the shadow path.
+	// This keeps the original file unlocked so dotnet build can overwrite it while the editor runs.
+	static std::wstring ShadowCopyDll(const wchar_t* sourcePath)
+	{
+		std::filesystem::path src(sourcePath);
+		std::filesystem::path tempDir = std::filesystem::temp_directory_path() / L"Timefall";
+		std::filesystem::create_directories(tempDir);
+		std::filesystem::path dst = tempDir / src.filename();
+		std::filesystem::copy_file(src, dst, std::filesystem::copy_options::overwrite_existing);
+		return dst.wstring();
+	}
+
 	struct ScriptEngineData
 	{
 		hostfxr_close_fn CloseFn = nullptr;
@@ -131,16 +143,19 @@ namespace Timefall
 
 		LoadAssembly(SCRIPT_CORE_RUNTIME_CONFIG_PATH);
 
-		// Base class types, not actual instances of these types will be created, but we need them to get the invoker function pointers for the virtual method calls
-		// Loaded from the core assembly since that's where Entity and the TypeRegistry live, and we need them to be available before loading any app assemblies that might contain user-defined entity types
-		s_ScriptEngineData->EntityClass = ScriptClass(SCRIPT_CORE_DLL_PATH, L"Timefall.Entity, Timefall-ScriptCore");
-		s_ScriptEngineData->TypeRegistryClass = ScriptClass(SCRIPT_CORE_DLL_PATH, L"Timefall.TypeRegistry, Timefall-ScriptCore");
+		// Shadow-copy ScriptCore so the original file stays unlocked during editor runtime,
+		// allowing dotnet build to overwrite it without needing to close the editor.
+		std::wstring shadowCorePath = ShadowCopyDll(SCRIPT_CORE_DLL_PATH);
+
+		// Base class types — not instantiated directly, but needed to cache invoker function pointers.
+		s_ScriptEngineData->EntityClass = ScriptClass(shadowCorePath, L"Timefall.Entity, Timefall-ScriptCore");
+		s_ScriptEngineData->TypeRegistryClass = ScriptClass(shadowCorePath, L"Timefall.TypeRegistry, Timefall-ScriptCore");
 
 		// App assembly specific
 		// App assemblies will call back into the TypeRegistry to register their entity types
 		// EntityClasses relate to app assemblies, not the core assembly
 		s_ScriptEngineData->EntityClasses.clear();
-		s_ScriptEngineData->TypeRegistryClass.InvokeMethod<void(*)(const char*)>(L"BuildEntityRegistry", L"Timefall.BuildEntityRegistryDelegate, Timefall-ScriptCore", "Resources\\Scripts\\Sandbox.dll");
+		s_ScriptEngineData->TypeRegistryClass.InvokeMethod<void(*)(const wchar_t*)>(L"BuildEntityRegistry", L"Timefall.BuildEntityRegistryDelegate, Timefall-ScriptCore", SCRIPT_APP_DLL_PATH);
 		ScriptGlue::RegisterComponents();
 
 		// Cache invoker methods from base Entity class
@@ -197,6 +212,29 @@ namespace Timefall
 	{
 		ShutdownHostFxr();
 		delete s_ScriptEngineData;
+	}
+
+	void ScriptEngine::ReloadAssembly()
+	{
+		// Free GCHandles for any live instances so the managed side can unload the old ALC.
+		if (s_ScriptEngineData->DestroyInstanceFn)
+		{
+			for (auto& [uuid, instance] : s_ScriptEngineData->EntityInstances)
+			{
+				if (instance && instance->m_Instance)
+					s_ScriptEngineData->DestroyInstanceFn(instance->m_Instance);
+			}
+		}
+
+		s_ScriptEngineData->EntityClasses.clear();
+		s_ScriptEngineData->EntityInstances.clear();
+		s_ScriptEngineData->EntityScriptFields.clear();
+
+		// The .NET runtime and ScriptCore function pointers are still valid — only the app
+		// assembly (Sandbox.dll) is being reloaded. Just ask the managed TypeRegistry to
+		// rebuild its registry from the new DLL on disk.
+		s_ScriptEngineData->TypeRegistryClass.InvokeMethod<void(*)(const wchar_t*)>(
+			L"BuildEntityRegistry", L"Timefall.BuildEntityRegistryDelegate, Timefall-ScriptCore", SCRIPT_APP_DLL_PATH);
 	}
 
 	void ScriptEngine::OnRuntimeStart(Scene* scene)

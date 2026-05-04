@@ -11,6 +11,7 @@
 
 #include "Timefall/Scene/SceneSerializer.h"
 #include "Timefall/Utils/PlatformUtils.h"
+#include "Timefall/Scripting/ScriptEngine.h"
 
 #include "ImGuizmo.h"
 #include "Timefall/Math/Math.h"
@@ -261,6 +262,14 @@ namespace Timefall
 				ImGui::EndMenu();
 			}
 
+			if (ImGui::BeginMenu("Script"))
+			{
+				if (ImGui::MenuItem("Reload Assembly", "Ctrl + R"))
+					ScriptEngine::ReloadAssembly();
+
+				ImGui::EndMenu();
+			}
+
 			ImGui::EndMenuBar();
 		}
 
@@ -486,8 +495,15 @@ namespace Timefall
 					m_GizmoType = ImGuizmo::OPERATION::ROTATE;
 				break;
 			case Key::R:
-				if (!ImGuizmo::IsUsing())
-					m_GizmoType = ImGuizmo::OPERATION::SCALE;
+				if (control)
+				{
+					ScriptEngine::ReloadAssembly();
+				}
+				else
+				{
+					if (!ImGuizmo::IsUsing())
+						m_GizmoType = ImGuizmo::OPERATION::SCALE;
+				}
 				break;
 		}
 

@@ -11,22 +11,55 @@ namespace Timefall
     public class TypeRegistry
     {
         // Directories the resolver will probe when the runtime can't find a dependency by name.
-        // Populated each time we load a new assembly, so future loads benefit too.
         private static readonly HashSet<string> s_ProbingPaths = new();
-        private static bool s_ResolverRegistered = false;
+        private static bool s_DefaultResolverRegistered = false;
 
-        public static void BuildEntityRegistry(IntPtr assemblyName)
+        // Collectible ALC for app assemblies — replaced on each hot-reload.
+        private static AssemblyLoadContext? s_AppLoadContext = null;
+
+        // Fast type lookup by fully-qualified name, rebuilt on every BuildEntityRegistry call.
+        private static readonly Dictionary<string, Type> s_RegisteredTypes = new();
+
+        public static Type? FindType(string typeName)
         {
-            string resolvedPath = ResolveAssemblyPath(assemblyName);
+            s_RegisteredTypes.TryGetValue(typeName, out Type? type);
+            return type;
+        }
+
+        public static void BuildEntityRegistry(IntPtr assemblyNamePtr)
+        {
+            string resolvedPath = ResolveAssemblyPath(assemblyNamePtr);
             if (string.IsNullOrEmpty(resolvedPath))
             {
                 Console.WriteLine("BuildRegistry: resolved path is null or empty");
                 return;
             }
 
-            var asm = LoadOrGetAssembly(resolvedPath);
+            // Drop previously registered types and unload old collectible ALC.
+            s_RegisteredTypes.Clear();
+            if (s_AppLoadContext != null)
+            {
+                s_AppLoadContext.Unload();
+                s_AppLoadContext = null;
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
+
+            string assemblyDir = Path.GetDirectoryName(Path.GetFullPath(resolvedPath))!;
+            s_ProbingPaths.Add(assemblyDir);
+            EnsureDefaultResolverRegistered();
+
+            // Load into a new collectible ALC so the next reload can unload this one.
+            // Use LoadFromStream so the source file is not locked — the bytes are read into
+            // memory and the file handle is released before we return.
+            s_AppLoadContext = new AssemblyLoadContext("AppAssembly", isCollectible: true);
+            s_AppLoadContext.Resolving += ResolveForAppContext;
+
+            byte[] assemblyBytes = File.ReadAllBytes(resolvedPath);
+            using var assemblyStream = new MemoryStream(assemblyBytes);
+            var asm = s_AppLoadContext.LoadFromStream(assemblyStream);
             Console.WriteLine($"Loaded: {asm.FullName}");
-            Console.WriteLine($"Loaded assembly path: {asm.Location}");
+            Console.WriteLine($"Loaded assembly path: {resolvedPath}");
 
             foreach (var type in asm.GetTypes())
             {
@@ -36,9 +69,10 @@ namespace Timefall
                     FieldInfo[] fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public);
                     Console.WriteLine($"  Found {fields.Length} fields:");
                     foreach (FieldInfo field in fields)
-                    {
                         Console.WriteLine($"  Field: {field.Name} of Type: {field.FieldType.FullName}");
-                    }
+
+                    s_RegisteredTypes[type.FullName!] = type;
+
                     string[] fieldNames = fields.Select(f => f.Name).ToArray();
                     string[] fieldTypeNames = fields.Select(f => f.FieldType.FullName ?? string.Empty).ToArray();
                     NativeCalls.Native_RegisterEntityTypes(type.FullName, asm.GetName().Name, fieldNames, fieldTypeNames, fields.Length);
@@ -90,9 +124,28 @@ namespace Timefall
             field.SetValue(instance, boxedValue);
         }
 
+        private static Assembly? ResolveForAppContext(AssemblyLoadContext ctx, AssemblyName name)
+        {
+            // Prefer already-loaded assemblies (e.g. ScriptCore) to keep type identity consistent.
+            foreach (var loaded in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                if (AssemblyName.ReferenceMatchesDefinition(loaded.GetName(), name))
+                    return loaded;
+            }
+
+            foreach (var dir in s_ProbingPaths)
+            {
+                string candidate = Path.Combine(dir, name.Name + ".dll");
+                if (File.Exists(candidate))
+                    return AssemblyLoadContext.Default.LoadFromAssemblyPath(candidate);
+            }
+
+            return null;
+        }
+
         private static string ResolveAssemblyPath(IntPtr assemblyName)
         {
-            string? assemblyPath = Marshal.PtrToStringUTF8(assemblyName);
+            string? assemblyPath = Marshal.PtrToStringUni(assemblyName);
 
             if (string.IsNullOrEmpty(assemblyPath))
             {
@@ -110,57 +163,21 @@ namespace Timefall
             return resolvedPath;
         }
 
-        /// <summary>
-        /// Returns an already-loaded assembly if one matches by name,
-        /// otherwise loads it from disk into the Default ALC.
-        /// </summary>
-        private static Assembly LoadOrGetAssembly(string path)
+        private static void EnsureDefaultResolverRegistered()
         {
-            var assemblyName = AssemblyName.GetAssemblyName(path);
-
-            // If an assembly with this name is already loaded (e.g. by hostfxr), reuse it
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                if (AssemblyName.ReferenceMatchesDefinition(asm.GetName(), assemblyName))
-                    return asm;
-            }
-
-            // Add the directory to probing paths so the resolver can find sibling DLLs
-            string assemblyDir = Path.GetDirectoryName(Path.GetFullPath(path))!;
-            s_ProbingPaths.Add(assemblyDir);
-
-            EnsureResolverRegistered();
-
-            return AssemblyLoadContext.Default.LoadFromAssemblyPath(path);
-        }
-
-        /// <summary>
-        /// Registers a one-time handler on the Default ALC's Resolving event.
-        ///
-        /// This event fires when the runtime cannot find a dependency through its
-        /// normal resolution (deps.json, framework dirs, probing paths). Our handler:
-        ///   1. Checks if the assembly is already loaded (avoids duplicate type identity)
-        ///   2. Probes registered directories for the DLL on disk
-        /// </summary>
-        private static void EnsureResolverRegistered()
-        {
-            if (s_ResolverRegistered)
+            if (s_DefaultResolverRegistered)
                 return;
 
-            s_ResolverRegistered = true;
+            s_DefaultResolverRegistered = true;
 
             AssemblyLoadContext.Default.Resolving += (context, name) =>
             {
-                // 1. If the assembly is already in memory, return it.
-                //    This is critical: loading a second copy from disk would create
-                //    duplicate types that are incompatible with the originals.
                 foreach (var loaded in AppDomain.CurrentDomain.GetAssemblies())
                 {
                     if (AssemblyName.ReferenceMatchesDefinition(loaded.GetName(), name))
                         return loaded;
                 }
 
-                // 2. Probe the directories of previously loaded assemblies
                 foreach (var dir in s_ProbingPaths)
                 {
                     string candidate = Path.Combine(dir, name.Name + ".dll");

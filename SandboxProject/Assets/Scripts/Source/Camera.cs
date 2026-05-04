@@ -4,7 +4,7 @@ namespace Sandbox
 {
     public class Camera : Entity
     {
-        public float DistanceFromPlayer = 5.0f;
+        public float DistanceFromPlayer = 20.0f;
 
         private Entity m_Player;
 
@@ -32,6 +32,7 @@ namespace Sandbox
                 velocity.X += 1f;
 
             velocity *= speed;
+            //DistanceFromPlayer += ts;
 
             Vector3 translation = Translation;
             translation += velocity * ts;

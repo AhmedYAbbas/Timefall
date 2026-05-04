@@ -62,22 +62,13 @@ namespace Timefall
                 return IntPtr.Zero;
             }
 
-            // Find the type in loaded assemblies
-            Type? type = null;
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                type = asm.GetType(typeName);
-                if (type != null)
-                    break;
-            }
-
+            Type? type = TypeRegistry.FindType(typeName);
             if (type == null)
             {
                 Console.WriteLine($"CreateTypedInstance: Type '{typeName}' not found");
                 return IntPtr.Zero;
             }
 
-            // Create instance using parameterless constructor
             Entity? instance = Activator.CreateInstance(type) as Entity;
             if (instance == null)
             {
@@ -89,8 +80,7 @@ namespace Timefall
             return GCHandle.ToIntPtr(handle);
         }
 
-        // Factory method that creates an instance of a derived type by fully qualified name
-        // Entity ID (ulong) from C++
+        // Factory method that creates an instance of a derived type by fully qualified name with an entity ID
         public static IntPtr CreateTypedInstanceWithID(IntPtr typeNamePtr, ulong entityID)
         {
             string? typeName = Marshal.PtrToStringAuto(typeNamePtr);
@@ -100,15 +90,7 @@ namespace Timefall
                 return IntPtr.Zero;
             }
 
-            // Find the type in loaded assemblies
-            Type? type = null;
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                type = asm.GetType(typeName);
-                if (type != null)
-                    break;
-            }
-
+            Type? type = TypeRegistry.FindType(typeName);
             if (type == null)
             {
                 Console.WriteLine($"CreateTypedInstanceWithID: Type '{typeName}' not found");

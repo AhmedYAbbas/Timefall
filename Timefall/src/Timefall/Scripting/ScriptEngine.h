@@ -159,6 +159,8 @@ namespace Timefall
 		static void Init();
 		static void Shutdown();
 
+		static void ReloadAssembly();
+
 		static void OnRuntimeStart(Scene* scene);
 		static void OnRuntimeStop();
 
