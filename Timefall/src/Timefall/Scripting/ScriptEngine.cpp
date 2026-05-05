@@ -1,7 +1,10 @@
 #include "tfpch.h"
 #include "Timefall/Scripting/ScriptEngine.h"
-
 #include "Timefall/Scripting/ScriptGlue.h"
+
+#include "FileWatch.h"
+#include "Timefall/Core/Application.h"
+
 #include "Timefall/Scene/Scene.h"
 #include "Timefall/Scene/Entity.h"
 
@@ -80,6 +83,9 @@ namespace Timefall
 		std::unordered_map<UUID, Ref<ScriptInstance>> EntityInstances;
 		std::unordered_map<UUID, ScriptFieldMap> EntityScriptFields;
 
+		Scope<filewatch::FileWatch<std::wstring>> AppAssemblyFileWatcher;
+		bool AssemblyReloadPending = false;
+
 		// Cached invokers from base Entity class (static methods that take instance handle)
 		void* (*CreateTypedInstanceFn)(const wchar_t* typeName) = nullptr;
 		void* (*CreateTypedInstanceWithIDFn)(const wchar_t* typeName, UUID entityID) = nullptr;
@@ -97,6 +103,20 @@ namespace Timefall
 
 	static ScriptEngineData* GetData (){
 		return s_ScriptEngineData;
+	}
+
+	static void OnAppAssemblyFileSystemEvent(const std::wstring& path, const filewatch::Event change_type)
+	{
+		if (!s_ScriptEngineData->AssemblyReloadPending && change_type == filewatch::Event::modified)
+		{
+			s_ScriptEngineData->AssemblyReloadPending = true;
+
+			Application::Get().SubmitToMainThread([]()
+				{
+					s_ScriptEngineData->AppAssemblyFileWatcher.reset();
+					ScriptEngine::ReloadAssembly();
+				});
+		}
 	}
 
 	static load_assembly_and_get_function_pointer_fn LoadDotNetAssembly(const std::filesystem::path& runtimeConfigPath)
@@ -154,9 +174,7 @@ namespace Timefall
 		// App assembly specific
 		// App assemblies will call back into the TypeRegistry to register their entity types
 		// EntityClasses relate to app assemblies, not the core assembly
-		s_ScriptEngineData->EntityClasses.clear();
-		s_ScriptEngineData->TypeRegistryClass.InvokeMethod<void(*)(const wchar_t*)>(L"BuildEntityRegistry", L"Timefall.BuildEntityRegistryDelegate, Timefall-ScriptCore", SCRIPT_APP_DLL_PATH);
-		ScriptGlue::RegisterComponents();
+		BuildTypeRegistry();
 
 		// Cache invoker methods from base Entity class
 		s_ScriptEngineData->CreateTypedInstanceFn = s_ScriptEngineData->EntityClass.GetMethod<void*(*)(const wchar_t*)>(L"CreateTypedInstance", L"Timefall.CreateTypedInstanceDelegate, Timefall-ScriptCore");
@@ -226,15 +244,14 @@ namespace Timefall
 			}
 		}
 
-		s_ScriptEngineData->EntityClasses.clear();
 		s_ScriptEngineData->EntityInstances.clear();
 		s_ScriptEngineData->EntityScriptFields.clear();
 
 		// The .NET runtime and ScriptCore function pointers are still valid — only the app
 		// assembly (Sandbox.dll) is being reloaded. Just ask the managed TypeRegistry to
 		// rebuild its registry from the new DLL on disk.
-		s_ScriptEngineData->TypeRegistryClass.InvokeMethod<void(*)(const wchar_t*)>(
-			L"BuildEntityRegistry", L"Timefall.BuildEntityRegistryDelegate, Timefall-ScriptCore", SCRIPT_APP_DLL_PATH);
+		s_ScriptEngineData->EntityClasses.clear();
+		BuildTypeRegistry();
 	}
 
 	void ScriptEngine::OnRuntimeStart(Scene* scene)
@@ -384,6 +401,16 @@ namespace Timefall
 			FreeLibrary(s_ScriptEngineData->HostFxrLib);
 			s_ScriptEngineData->HostFxrLib = nullptr;
 		}
+	}
+
+	void ScriptEngine::BuildTypeRegistry()
+	{
+		s_ScriptEngineData->EntityClasses.clear();
+		s_ScriptEngineData->TypeRegistryClass.InvokeMethod<void(*)(const wchar_t*)>(L"BuildEntityRegistry", L"Timefall.BuildEntityRegistryDelegate, Timefall-ScriptCore", SCRIPT_APP_DLL_PATH);
+		ScriptGlue::RegisterComponents();
+
+		s_ScriptEngineData->AppAssemblyFileWatcher = CreateScope<filewatch::FileWatch<std::wstring>>(SCRIPT_APP_DLL_PATH, OnAppAssemblyFileSystemEvent);
+		s_ScriptEngineData->AssemblyReloadPending = false;
 	}
 
 	bool ScriptClass::TryGetFunctionPointer(const wchar_t* methodName, const wchar_t* delegateTypeName, void** out) const

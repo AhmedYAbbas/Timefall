@@ -9,7 +9,8 @@ project "Timefall-Editor"
 	files
 	{
 		"src/**.h",
-		"src/**.cpp"
+		"src/**.cpp",
+		"%{wks.location}/Timefall/%{IncludeDir.filewatch}/FileWatch.h"
 		--"%{wks.location}/Timefall/%{IncludeDir.ImGuizmo}/ImGuizmo.h",
 		--"%{wks.location}/Timefall/%{IncludeDir.ImGuizmo}/ImGuizmo.cpp"
 	}
@@ -20,6 +21,7 @@ project "Timefall-Editor"
 		"%{wks.location}/Timefall/src",
 		"%{wks.location}/Timefall/vendor",
 		"%{wks.location}/Timefall/%{IncludeDir.glm}",
+		"%{wks.location}/Timefall/%{IncludeDir.filewatch}",
 		"%{wks.location}/Timefall/%{IncludeDir.ImGui}",
 		"%{wks.location}/Timefall/%{IncludeDir.entt}",
 		"%{wks.location}/Timefall/%{IncludeDir.ImGuizmo}",

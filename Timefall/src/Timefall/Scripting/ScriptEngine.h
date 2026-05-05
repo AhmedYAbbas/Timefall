@@ -183,6 +183,8 @@ namespace Timefall
 	private:
 		static bool LoadHostFxr();
 		static void ShutdownHostFxr();
+
+		static void BuildTypeRegistry();
 	};
 
 	namespace Utils
