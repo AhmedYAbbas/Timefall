@@ -30,7 +30,9 @@ namespace Timefall
 		TF_PROFILE_FUNCTION();
 
 		m_PlayIcon = Texture2D::Create("resources/icons/PlayButton.png");
+		m_PauseIcon = Texture2D::Create("resources/icons/PauseButton.png");
 		m_SimulateIcon = Texture2D::Create("resources/icons/SimulateButton.png");
+		m_StepIcon = Texture2D::Create("resources/icons/StepButton.png");
 		m_StopIcon = Texture2D::Create("resources/icons/StopButton.png");
 
 		FramebufferSpecification fbSpec;
@@ -401,12 +403,17 @@ namespace Timefall
 			tintColor.w = 0.5f;
 
 		float size = ImGui::GetWindowHeight() - 4.0f;
+		ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
+
+		bool hasPlayButton = m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play;
+		bool hasSimulateButton = m_SceneState == SceneState::Edit || m_SceneState == SceneState::Simulate;
+		bool hasPauseButton = m_SceneState != SceneState::Edit;
 
 		// Play
+		if (hasPlayButton)
 		{
 			Ref<Texture2D> icon = (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Simulate) ? m_PlayIcon : m_StopIcon;
 			std::string id = std::to_string(icon->GetRendererID());
-			ImGui::SetCursorPosX(ImGui::GetContentRegionMax().x * 0.5f - size * 0.5f);
 			if (ImGui::ImageButton(id.c_str(), (ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled)
 			{
 				if (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Simulate)
@@ -416,10 +423,12 @@ namespace Timefall
 			}
 		}
 
-		ImGui::SameLine();
-
 		// Simulate
+		if (hasSimulateButton)
 		{
+			if (hasPlayButton)
+				ImGui::SameLine();
+
 			Ref<Texture2D> icon = (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play) ? m_SimulateIcon : m_StopIcon;
 			std::string id = std::to_string(icon->GetRendererID());
 			if (ImGui::ImageButton(id.c_str(), (ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled)
@@ -428,6 +437,30 @@ namespace Timefall
 					OnSceneSimulate();
 				else if (m_SceneState == SceneState::Simulate)
 					OnSceneStop();
+			}
+		}
+
+		if (hasPauseButton)
+		{
+			bool isPaused = m_ActiveScene->IsPaused();
+			ImGui::SameLine();
+			{
+				Ref<Texture2D> icon = m_PauseIcon;
+				std::string id = std::to_string(icon->GetRendererID());
+				if (ImGui::ImageButton(id.c_str(), (ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled)
+					m_ActiveScene->SetPaused(!isPaused);
+			}
+
+			// Step button
+			if (isPaused)
+			{
+				ImGui::SameLine();
+				{
+					Ref<Texture2D> icon = m_StepIcon;
+					std::string id = std::to_string(icon->GetRendererID());
+					if (ImGui::ImageButton(id.c_str(), (ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled)
+						m_ActiveScene->Step();
+				}
 			}
 		}
 
@@ -698,5 +731,13 @@ namespace Timefall
 		m_ActiveScene = m_EditorScene;
 
 		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+	}
+
+	void EditorLayer::OnScenePause()
+	{
+		if (m_SceneState == SceneState::Edit)
+			return;
+
+		m_ActiveScene->SetPaused(true);
 	}
 }

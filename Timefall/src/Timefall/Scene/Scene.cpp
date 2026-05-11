@@ -116,50 +116,53 @@ namespace Timefall
 
 	void Scene::OnUpdateRuntime(Timestep ts)
 	{
-		// Update scripts
+		if (!m_IsPaused || m_StepFrames-- > 0)
 		{
-			// C# Entity OnUpdate
+			// Update scripts
 			{
-				auto view = m_Registry.view<ScriptComponent>();
-				for (auto e : view)
+				// C# Entity OnUpdate
 				{
-					Entity entity{ e, this };
-					ScriptEngine::OnUpdateEntity(entity, ts);
+					auto view = m_Registry.view<ScriptComponent>();
+					for (auto e : view)
+					{
+						Entity entity{ e, this };
+						ScriptEngine::OnUpdateEntity(entity, ts);
+					}
 				}
+
+				m_Registry.view<NativeScriptComponent>().each([=](auto entity, NativeScriptComponent& nsc)
+					{
+						if (!nsc)
+						{
+							nsc.Instance = nsc.InstantiateScript();
+							nsc.Instance->m_Entity = Entity{ entity, this };
+							nsc.Instance->OnCreate();
+						}
+
+						nsc.Instance->OnUpdate(ts);
+					});
 			}
 
-			m_Registry.view<NativeScriptComponent>().each([=](auto entity, NativeScriptComponent& nsc)
+			// Physics
 			{
-				if (!nsc)
+				b2World_Step(m_PhysicsWorld, m_PhysicsTimeStep, m_PhysicsSubStepCount);
+
+				// Retrieve transform from Box2D
+				auto view = m_Registry.view<Rigidbody2DComponent>();
+				for (auto e : view)
 				{
-					nsc.Instance = nsc.InstantiateScript();
-					nsc.Instance->m_Entity = Entity{ entity, this };
-					nsc.Instance->OnCreate();
-				}
+					Entity entity = { e, this };
+					auto& transform = entity.GetComponent<TransformComponent>();
+					auto& rb2d = entity.GetComponent<Rigidbody2DComponent>();
 
-				nsc.Instance->OnUpdate(ts);
-			});
-		}
-
-		// Physics
-		{
-			b2World_Step(m_PhysicsWorld, m_PhysicsTimeStep, m_PhysicsSubStepCount);
-
-			// Retrieve transform from Box2D
-			auto view = m_Registry.view<Rigidbody2DComponent>();
-			for (auto e : view)
-			{
-				Entity entity = { e, this };
-				auto& transform = entity.GetComponent<TransformComponent>();
-				auto& rb2d = entity.GetComponent<Rigidbody2DComponent>();
-
-				if (m_PhysicsBodiesMap.contains(entity))
-				{
-					b2BodyId body = m_PhysicsBodiesMap[entity];
-					const auto& position = b2Body_GetPosition(body);
-					transform.Translation.x = position.x;
-					transform.Translation.y = position.y;
-					transform.Rotation.z = b2Rot_GetAngle(b2Body_GetRotation(body));
+					if (m_PhysicsBodiesMap.contains(entity))
+					{
+						b2BodyId body = m_PhysicsBodiesMap[entity];
+						const auto& position = b2Body_GetPosition(body);
+						transform.Translation.x = position.x;
+						transform.Translation.y = position.y;
+						transform.Rotation.z = b2Rot_GetAngle(b2Body_GetRotation(body));
+					}
 				}
 			}
 		}
@@ -209,25 +212,28 @@ namespace Timefall
 
 	void Scene::OnUpdateSimulation(Timestep ts, EditorCamera& camera)
 	{
-		// Physics
+		if (!m_IsPaused || m_StepFrames-- > 0)
 		{
-			b2World_Step(m_PhysicsWorld, m_PhysicsTimeStep, m_PhysicsSubStepCount);
-
-			// Retrieve transform from Box2D
-			auto view = m_Registry.view<Rigidbody2DComponent>();
-			for (auto e : view)
+			// Physics
 			{
-				Entity entity = { e, this };
-				auto& transform = entity.GetComponent<TransformComponent>();
-				auto& rb2d = entity.GetComponent<Rigidbody2DComponent>();
+				b2World_Step(m_PhysicsWorld, m_PhysicsTimeStep, m_PhysicsSubStepCount);
 
-				if (m_PhysicsBodiesMap.contains(entity))
+				// Retrieve transform from Box2D
+				auto view = m_Registry.view<Rigidbody2DComponent>();
+				for (auto e : view)
 				{
-					b2BodyId body = m_PhysicsBodiesMap[entity];
-					const auto& position = b2Body_GetPosition(body);
-					transform.Translation.x = position.x;
-					transform.Translation.y = position.y;
-					transform.Rotation.z = b2Rot_GetAngle(b2Body_GetRotation(body));
+					Entity entity = { e, this };
+					auto& transform = entity.GetComponent<TransformComponent>();
+					auto& rb2d = entity.GetComponent<Rigidbody2DComponent>();
+
+					if (m_PhysicsBodiesMap.contains(entity))
+					{
+						b2BodyId body = m_PhysicsBodiesMap[entity];
+						const auto& position = b2Body_GetPosition(body);
+						transform.Translation.x = position.x;
+						transform.Translation.y = position.y;
+						transform.Rotation.z = b2Rot_GetAngle(b2Body_GetRotation(body));
+					}
 				}
 			}
 		}

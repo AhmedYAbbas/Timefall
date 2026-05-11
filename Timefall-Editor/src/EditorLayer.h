@@ -39,6 +39,7 @@ namespace Timefall
 		void OnScenePlay();
 		void OnSceneSimulate();
 		void OnSceneStop();
+		void OnScenePause();
 
 	private:
 		OrthographicCameraController m_CameraController;
@@ -68,7 +69,7 @@ namespace Timefall
 
 		bool m_ShowPhysicsColliders = false;
 
-		Ref<Texture2D> m_PlayIcon, m_SimulateIcon, m_StopIcon;
+		Ref<Texture2D> m_PlayIcon, m_PauseIcon, m_StepIcon, m_SimulateIcon, m_StopIcon;
 
 		enum class SceneState
 		{

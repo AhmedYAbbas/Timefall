@@ -46,6 +46,11 @@ namespace Timefall
 		Entity GetPrimaryCameraEntity();
 
 		inline bool IsRunning() const { return m_IsRunning; }
+		inline bool IsPaused() const { return m_IsPaused; }
+
+		inline void SetPaused(bool paused) { m_IsPaused = paused; }
+
+		inline void Step(int frames = 1) { m_StepFrames = frames;}
 
 		template<typename... Components>
 		auto GetAllEntitiesWithUsingOwningGroup() 
@@ -72,6 +77,8 @@ namespace Timefall
 		entt::registry m_Registry;
 		uint32_t m_ViewportWidth = 0, m_ViewportHeight = 0;
 		bool m_IsRunning = false;
+		bool m_IsPaused = false;
+		int m_StepFrames = 0;
 
 		// Physics
 		b2WorldId m_PhysicsWorld = b2_nullWorldId;
