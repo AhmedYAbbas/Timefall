@@ -161,7 +161,12 @@ namespace Timefall
 			return;
 		}
 
-		LoadAssembly(SCRIPT_CORE_RUNTIME_CONFIG_PATH);
+		bool status = LoadAssembly(SCRIPT_CORE_RUNTIME_CONFIG_PATH);
+		if (!status)
+		{
+			TF_CORE_ERROR("[ScriptEngine] Could not load Timefall-ScriptCore assembly.");
+			return;
+		}
 
 		// Shadow-copy ScriptCore so the original file stays unlocked during editor runtime,
 		// allowing dotnet build to overwrite it without needing to close the editor.
@@ -294,14 +299,24 @@ namespace Timefall
 	void ScriptEngine::OnUpdateEntity(Entity entity, Timestep ts)
 	{
 		UUID uuid = entity.GetUUID();
-		TF_CORE_ASSERT(s_ScriptEngineData->EntityInstances.find(uuid) != s_ScriptEngineData->EntityInstances.end(), "Entity does not exist");
-		s_ScriptEngineData->EntityInstances[uuid]->InvokeOnUpdate(ts);
+		if (s_ScriptEngineData->EntityInstances.find(uuid) != s_ScriptEngineData->EntityInstances.end())
+		{
+			s_ScriptEngineData->EntityInstances[uuid]->InvokeOnUpdate(ts);
+		}
+		else
+		{
+			TF_CORE_ERROR("Could not find ScriptInstance for entity");
+		}
 	}
 
-	void ScriptEngine::LoadAssembly(const std::filesystem::path& runtimeConfigPath)
+	bool ScriptEngine::LoadAssembly(const std::filesystem::path& runtimeConfigPath)
 	{
 		// Point to the managed component's runtimeconfig.json produced by dotnet build/publish
 		s_ScriptEngineData->LoadAssemblyAndGetFunctionPointerFn = LoadDotNetAssembly(runtimeConfigPath);
+		if (s_ScriptEngineData->LoadAssemblyAndGetFunctionPointerFn)
+			return true;
+
+		return false;
 	}
 
 	void ScriptEngine::RegisterEntityTypes(const wchar_t* typeName, const wchar_t* assemblyName, const wchar_t** fieldNames, const wchar_t** fieldTypeNames, int fieldCount)

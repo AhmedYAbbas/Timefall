@@ -168,7 +168,7 @@ namespace Timefall
 		static void OnCreateEntity(Entity entity);
 		static void OnUpdateEntity(Entity entity, Timestep ts);
 
-		static void LoadAssembly(const std::filesystem::path& runtimeConfigPath);
+		static bool LoadAssembly(const std::filesystem::path& runtimeConfigPath);
 		static void RegisterEntityTypes(const wchar_t* typeName, const wchar_t* assemblyName, const wchar_t** fieldNames, const wchar_t** fieldTypeNames, int fieldCount);
 
 		static Scene* GetSceneContext();

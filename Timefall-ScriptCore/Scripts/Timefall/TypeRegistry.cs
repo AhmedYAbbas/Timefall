@@ -31,7 +31,7 @@ namespace Timefall
             string resolvedPath = ResolveAssemblyPath(assemblyNamePtr);
             if (string.IsNullOrEmpty(resolvedPath))
             {
-                Console.WriteLine("BuildRegistry: resolved path is null or empty");
+                Console.WriteLine("BuildRegistry: resolved path is null or empty. Could not load App Assembly.");
                 return;
             }
 

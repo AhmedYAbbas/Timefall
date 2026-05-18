@@ -486,7 +486,6 @@ namespace Timefall
 						Ref<ScriptClass> entityClass = ScriptEngine::GetEntityScriptClass(sc.ModuleName);
 						if (entityClass)
 						{
-
 							const auto& fields = entityClass->GetFields();
 							auto& entityFields = ScriptEngine::GetEntityScriptFields(deserializedEntity);
 
@@ -498,11 +497,11 @@ namespace Timefall
 
 								ScriptFieldInstance& fieldInstance = entityFields[name];
 
-								// TODO: turn this assert into Timefall log warning
-								TF_CORE_ASSERT(fields.find(name) != fields.end(), "Script field not found");
-
 								if (fields.find(name) == fields.end())
+								{
+									TF_CORE_WARN("Script field not found");
 									continue;
+								}
 
 								fieldInstance.Field = fields.at(name);
 
