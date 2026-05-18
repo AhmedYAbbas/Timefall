@@ -484,44 +484,47 @@ namespace Timefall
 					if (scriptFields)
 					{
 						Ref<ScriptClass> entityClass = ScriptEngine::GetEntityScriptClass(sc.ModuleName);
-						TF_CORE_ASSERT(entityClass, "Entity script class not found");
-						const auto& fields = entityClass->GetFields();
-						auto& entityFields = ScriptEngine::GetEntityScriptFields(deserializedEntity);
-
-						for (auto scriptField : scriptFields)
+						if (entityClass)
 						{
-							std::wstring name = scriptField["Name"].as<std::wstring>();
-							std::wstring typeString = scriptField["Type"].as<std::wstring>();
-							ScriptFieldType type = Utils::ScriptFieldTypeFromString(typeString);
 
-							ScriptFieldInstance& fieldInstance = entityFields[name];
+							const auto& fields = entityClass->GetFields();
+							auto& entityFields = ScriptEngine::GetEntityScriptFields(deserializedEntity);
 
-							// TODO: turn this assert into Timefall log warning
-							TF_CORE_ASSERT(fields.find(name) != fields.end(), "Script field not found");
-
-							if (fields.find(name) == fields.end())
-								continue;
-
-							fieldInstance.Field = fields.at(name);
-
-							switch (type)
+							for (auto scriptField : scriptFields)
 							{
-								READ_SCRIPT_FIELD(Float,   float);
-								READ_SCRIPT_FIELD(Double,  double);
-								READ_SCRIPT_FIELD(Bool,    bool);
-								READ_SCRIPT_FIELD(Char,    char);
-								READ_SCRIPT_FIELD(SByte,   int8_t);
-								READ_SCRIPT_FIELD(Int16,   int16_t);
-								READ_SCRIPT_FIELD(Int32,   int32_t);
-								READ_SCRIPT_FIELD(Int64,   int64_t);
-								READ_SCRIPT_FIELD(Byte,    uint8_t);
-								READ_SCRIPT_FIELD(UInt16,  uint16_t);
-								READ_SCRIPT_FIELD(UInt32,  uint32_t);
-								READ_SCRIPT_FIELD(UInt64,  uint64_t);
-								READ_SCRIPT_FIELD(Vector2, glm::vec2);
-								READ_SCRIPT_FIELD(Vector3, glm::vec3);
-								READ_SCRIPT_FIELD(Vector4, glm::vec4);
-								READ_SCRIPT_FIELD(Entity,  UUID);
+								std::wstring name = scriptField["Name"].as<std::wstring>();
+								std::wstring typeString = scriptField["Type"].as<std::wstring>();
+								ScriptFieldType type = Utils::ScriptFieldTypeFromString(typeString);
+
+								ScriptFieldInstance& fieldInstance = entityFields[name];
+
+								// TODO: turn this assert into Timefall log warning
+								TF_CORE_ASSERT(fields.find(name) != fields.end(), "Script field not found");
+
+								if (fields.find(name) == fields.end())
+									continue;
+
+								fieldInstance.Field = fields.at(name);
+
+								switch (type)
+								{
+									READ_SCRIPT_FIELD(Float, float);
+									READ_SCRIPT_FIELD(Double, double);
+									READ_SCRIPT_FIELD(Bool, bool);
+									READ_SCRIPT_FIELD(Char, char);
+									READ_SCRIPT_FIELD(SByte, int8_t);
+									READ_SCRIPT_FIELD(Int16, int16_t);
+									READ_SCRIPT_FIELD(Int32, int32_t);
+									READ_SCRIPT_FIELD(Int64, int64_t);
+									READ_SCRIPT_FIELD(Byte, uint8_t);
+									READ_SCRIPT_FIELD(UInt16, uint16_t);
+									READ_SCRIPT_FIELD(UInt32, uint32_t);
+									READ_SCRIPT_FIELD(UInt64, uint64_t);
+									READ_SCRIPT_FIELD(Vector2, glm::vec2);
+									READ_SCRIPT_FIELD(Vector3, glm::vec3);
+									READ_SCRIPT_FIELD(Vector4, glm::vec4);
+									READ_SCRIPT_FIELD(Entity, UUID);
+								}
 							}
 						}
 					}
