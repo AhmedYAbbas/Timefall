@@ -8,7 +8,7 @@
 
 namespace Timefall
 {
-	enum class ScriptFieldType
+	enum class TF_API ScriptFieldType
 	{
 		None = 0,
 		Float, Double,
@@ -18,14 +18,14 @@ namespace Timefall
 		Entity
 	};
 
-	struct ScriptField
+	struct TF_API ScriptField
 	{
 		std::wstring Name;
 		ScriptFieldType Type;
 	};
 
 	// ScriptField + data storage
-	struct ScriptFieldInstance
+	struct TF_API ScriptFieldInstance
 	{
 		ScriptField Field;
 

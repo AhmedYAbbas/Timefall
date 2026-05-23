@@ -123,7 +123,7 @@ namespace Timefall
             return NativeCalls.Entity_HasComponent(ID, typeof(T).FullName);
         }
 
-        public T GetComponent<T>() where T : Component, new()
+        public T? GetComponent<T>() where T : Component, new()
         {
             if (!HasComponent<T>())
                 return null;
@@ -131,7 +131,7 @@ namespace Timefall
             return new T() { Entity = this };
         }
 
-        public Entity FindEntityByName(string name)
+        public Entity? FindEntityByName(string name)
         {
             ulong foundID = NativeCalls.Entity_FindEntityByName(name);
             if (foundID == 0)
@@ -140,7 +140,7 @@ namespace Timefall
             return new Entity(foundID);
         }
 
-        public T As<T>() where T : Entity, new()
+        public T? As<T>() where T : Entity, new()
         {
             IntPtr ptr = NativeCalls.GetScriptInstance(ID);
             if (ptr == IntPtr.Zero)

@@ -28,6 +28,12 @@ workspace "Timefall"
 
 	multiprocessorcompile "On"
 
+	disablewarnings
+	{
+		"4251", -- 'class needs to have dll-interface to be used by clients of class'
+		"4068"  -- 'unknown pragma' (e.g. #pragma mark from vendor headers)
+	}
+
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 -- Include directories relative to Timefall folder (Timefall project directory)

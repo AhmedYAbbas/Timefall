@@ -1,12 +1,14 @@
 #pragma once
 
 #include "Timefall/Core/Buffer.h"
+#include "Timefall/Core/Core.h"
+
 #include <filesystem>
 
 namespace Timefall
 {
 
-	class FileSystem
+	class TF_API FileSystem
 	{
 	public:
 		// TODO: move to FileSystem class

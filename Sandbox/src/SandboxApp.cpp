@@ -1,4 +1,5 @@
 #include <Timefall.h>
+#include <Timefall/Core/EntryPoint.h>
 
 #include "Sandbox2D.h"
 

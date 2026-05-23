@@ -2,7 +2,7 @@
 {
     public abstract class Component
     {
-        public Entity Entity { get; internal set; }
+        public Entity Entity { get; internal set; } = null!;
     }
 
     public class TransformComponent : Component

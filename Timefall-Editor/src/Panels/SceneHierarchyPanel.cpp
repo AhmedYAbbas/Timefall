@@ -315,7 +315,7 @@ namespace Timefall
 			bool scriptClassExists = ScriptEngine::EntityClassExists(component.ModuleName);
 
 			static char moduleBuffer[256];
-			std::wcstombs(moduleBuffer, component.ModuleName.c_str(), sizeof(moduleBuffer));
+			wcstombs_s(nullptr, moduleBuffer, sizeof(moduleBuffer), component.ModuleName.c_str(), _TRUNCATE);
 
 			if (!scriptClassExists)
 				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 0.9f, 0.2f, 0.3f, 1.0f });
@@ -324,7 +324,7 @@ namespace Timefall
 			{
 				size_t len = std::strlen(moduleBuffer);
 				component.ModuleName.resize(len);
-				std::mbstowcs(component.ModuleName.data(), moduleBuffer, len);
+				mbstowcs_s(nullptr, component.ModuleName.data(), len + 1, moduleBuffer, _TRUNCATE);
 			}
 
 			// Fields
@@ -341,7 +341,7 @@ namespace Timefall
 						{
 							float data = scriptInstance->GetFieldValue<float>(fieldName);
 							char nameBuffer[256];
-							std::wcstombs(nameBuffer, fieldName.c_str(), sizeof(nameBuffer));
+							wcstombs_s(nullptr, nameBuffer, sizeof(nameBuffer), fieldName.c_str(), _TRUNCATE);
 							if (ImGui::DragFloat(nameBuffer, &data))
 								scriptInstance->SetFieldValue(fieldName, data);
 						}
@@ -368,7 +368,7 @@ namespace Timefall
 							{
 								float data = scriptField.GetValue<float>();
 								char nameBuffer[256];
-								std::wcstombs(nameBuffer, name.c_str(), sizeof(nameBuffer));
+								wcstombs_s(nullptr, nameBuffer, sizeof(nameBuffer), name.c_str(), _TRUNCATE);
 								if (ImGui::DragFloat(nameBuffer, &data))
 									scriptField.SetValue(data);
 							}
@@ -380,7 +380,7 @@ namespace Timefall
 							{
 								float data = 0.0f;
 								char nameBuffer[256];
-								std::wcstombs(nameBuffer, name.c_str(), sizeof(nameBuffer));
+								wcstombs_s(nullptr, nameBuffer, sizeof(nameBuffer), name.c_str(), _TRUNCATE);
 								if (ImGui::DragFloat(nameBuffer, &data))
 								{
 									ScriptFieldInstance& fieldInstance = entityFields[name];

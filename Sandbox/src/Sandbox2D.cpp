@@ -40,7 +40,7 @@ void Sandbox2D::OnAttach()
 	m_ForestTexture = Timefall::SubTexture2D::Create(m_SpriteSheet, {10, 5}, {16, 16}, {3, 3});
 
 	m_MapWidth = s_MapWidth;
-	m_MapHeight = strlen(s_TileMap) / m_MapWidth;
+	m_MapHeight = (uint32_t)(strlen(s_TileMap) / m_MapWidth);
 
 	m_TileMap['G'] = Timefall::SubTexture2D::Create(m_SpriteSheet, {2, 6}, {16, 16});
 	m_TileMap['R'] = Timefall::SubTexture2D::Create(m_SpriteSheet, {2, 2}, {16, 16});

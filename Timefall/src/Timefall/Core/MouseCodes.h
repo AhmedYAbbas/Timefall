@@ -2,7 +2,7 @@
 
 namespace Timefall
 {
-	typedef enum class MouseCode : uint16_t
+	typedef enum class TF_API MouseCode : uint16_t
 	{
 		// From glfw3.h
 		Button0					= 0,

@@ -4,7 +4,7 @@
 
 namespace Timefall
 {
-	struct WindowProps
+	struct TF_API WindowProps
 	{
 		std::string Title;
 		uint32_t Width, Height;
