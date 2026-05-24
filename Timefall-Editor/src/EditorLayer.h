@@ -27,6 +27,7 @@ namespace Timefall
 		void OnOverlayRender();
 
 		void NewProject();
+		bool OpenProject();
 		void OpenProject(const std::filesystem::path& filepath);
 		void SaveProject();
 

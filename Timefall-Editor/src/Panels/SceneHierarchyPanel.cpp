@@ -3,6 +3,7 @@
 #include "Timefall/Scene/Components.h"
 #include "Timefall/Core/Input.h"
 #include "Timefall/Scripting/ScriptEngine.h"
+#include "Timefall/UI/UI.h"
 
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
@@ -317,14 +318,14 @@ namespace Timefall
 			static char moduleBuffer[256];
 			wcstombs_s(nullptr, moduleBuffer, sizeof(moduleBuffer), component.ModuleName.c_str(), _TRUNCATE);
 
-			if (!scriptClassExists)
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 0.9f, 0.2f, 0.3f, 1.0f });
+			Timefall::UI::ScopedStyleColor textColor(ImGuiCol_Text, ImVec4{ 0.9f, 0.2f, 0.3f, 1.0f }, !scriptClassExists);
 
 			if (ImGui::InputText("Class", moduleBuffer, sizeof(moduleBuffer)))
 			{
 				size_t len = std::strlen(moduleBuffer);
 				component.ModuleName.resize(len);
 				mbstowcs_s(nullptr, component.ModuleName.data(), len + 1, moduleBuffer, _TRUNCATE);
+				return;
 			}
 
 			// Fields
@@ -392,10 +393,6 @@ namespace Timefall
 					}
 				}
 			}
-
-
-			if (!scriptClassExists)
-				ImGui::PopStyleColor();
 		});
 
 		DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](auto& component)

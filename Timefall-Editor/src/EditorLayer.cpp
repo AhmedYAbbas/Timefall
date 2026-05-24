@@ -52,7 +52,10 @@ namespace Timefall
 		else
 		{
 			// TODO: Prompt the user to select a directory
-			NewProject();
+			// NewProject();
+
+			if (!OpenProject())
+				Application::Get().Shutdown();
 		}
 
 		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
@@ -247,17 +250,21 @@ namespace Timefall
 		{
 			if (ImGui::BeginMenu("File"))
 			{
-				if (ImGui::MenuItem("New", "Ctrl + N"))
+				if (ImGui::MenuItem("Open Project...", "Ctrl + O"))
+					OpenProject();
+
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("New Scene", "Ctrl + N"))
 					NewScene();
 
-				if (ImGui::MenuItem("Open...", "Ctrl + O"))
-					OpenScene();
-				
-				if (ImGui::MenuItem("Save", "Ctrl + S"))
+				if (ImGui::MenuItem("Save Scene", "Ctrl + S"))
 					SaveScene();
 				
-				if (ImGui::MenuItem("Save As...", "Ctrl + Shift + S"))
+				if (ImGui::MenuItem("Save Scene As...", "Ctrl + Shift + S"))
 					SaveSceneAs();
+
+				ImGui::Separator();
 
 				if (ImGui::MenuItem("Exit", NULL, false))
 				{
@@ -512,7 +519,7 @@ namespace Timefall
 			case KeyCode::O:
 			{
 				if (control)
-					OpenScene();
+					OpenProject();
 
 				break;
 			}
@@ -629,6 +636,15 @@ namespace Timefall
 	void EditorLayer::NewProject()
 	{
 		Project::New();
+	}
+
+	bool EditorLayer::OpenProject()
+	{
+		auto filepath = FileDialogs::OpenFile("Timefall Project (*.tproj)\0*.tproj\0");
+		if (!filepath.empty())
+			OpenProject(filepath);
+
+		return !filepath.empty();
 	}
 
 	void EditorLayer::OpenProject(const std::filesystem::path& filepath)
