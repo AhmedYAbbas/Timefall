@@ -20,6 +20,8 @@
 #include "Timefall/Scene/ScriptableEntity.h"
 #include "Timefall/Scene/Components.h"
 
+#include "Timefall/Project/Project.h"
+
 // ------------Input--------------
 #include "Timefall/Core/Input.h"
 #include "Timefall/Core/Keycodes.h"

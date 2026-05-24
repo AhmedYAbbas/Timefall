@@ -1,14 +1,14 @@
 #include "tfpch.h"
 #include "ContentBrowserPanel.h"
 
+#include "Timefall/Project/Project.h"
+
 #include <imgui.h>
 
 namespace Timefall
 {
-	extern const std::filesystem::path g_AssetPath = "assets";
-
 	ContentBrowserPanel::ContentBrowserPanel()
-		: m_CurrentDirectory(g_AssetPath)
+		: m_BaseDirectory(Project::GetAssetDirectory()), m_CurrentDirectory(m_BaseDirectory)
 	{
 		m_DirectoryIcon = Texture2D::Create("resources/icons/content_browser/DirectoryIcon.png");
 		m_FileIcon = Texture2D::Create("resources/icons/content_browser/FileIcon.png");
@@ -18,7 +18,7 @@ namespace Timefall
 	{
 		ImGui::Begin("Content Browser");
 
-		if (m_CurrentDirectory != g_AssetPath)
+		if (m_CurrentDirectory != m_BaseDirectory)
 		{
 			if (ImGui::Button("<-"))
 				m_CurrentDirectory = m_CurrentDirectory.parent_path();
@@ -46,8 +46,8 @@ namespace Timefall
 
 			if (ImGui::BeginDragDropSource())
 			{
-				const auto& relativePath = std::filesystem::relative(path, g_AssetPath);
-				ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", path.string().c_str(), path.string().size() + 1);
+				std::filesystem::path relativePath(path);
+				ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", relativePath.string().c_str(), relativePath.string().size() + 1);
 				ImGui::EndDragDropSource();
 			}
 

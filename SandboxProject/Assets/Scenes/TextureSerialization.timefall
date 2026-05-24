@@ -14,7 +14,7 @@ Entities:
         Height: 1387
         InternalFormat: 32856
         DataFormat: 6408
-        Path: assets\textures\Fish.png
+        Path: Textures\Fish.png
       TilingFactor: 1
   - Entity: 3127688246813529524
     TagComponent:
@@ -30,7 +30,7 @@ Entities:
         Height: 394
         InternalFormat: 32849
         DataFormat: 6407
-        Path: assets\textures\Rainbow.jpeg
+        Path: Textures\Rainbow.jpeg
       TilingFactor: 1
   - Entity: 3668666736508799489
     TagComponent:
@@ -46,5 +46,5 @@ Entities:
         Height: 64
         InternalFormat: 32849
         DataFormat: 6407
-        Path: assets\textures\Checkerboard.png
+        Path: Textures\Checkerboard.png
       TilingFactor: 1

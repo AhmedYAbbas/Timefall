@@ -32,5 +32,5 @@ Entities:
         Height: 64
         InternalFormat: 32849
         DataFormat: 6407
-        Path: assets\textures\Black.jpg
+        Path: Textures\Black.jpg
       TilingFactor: 1

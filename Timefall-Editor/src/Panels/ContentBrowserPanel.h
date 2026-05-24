@@ -14,6 +14,7 @@ namespace Timefall
 		void OnImGuiRender();
 
 	private:
+		std::filesystem::path m_BaseDirectory;
 		std::filesystem::path m_CurrentDirectory;
 
 		Ref<Texture2D> m_DirectoryIcon;

@@ -1,33 +1,33 @@
 Scene: Timefall Scene
 Entities:
-  - Entity: 9300667551457169843
+  - Entity: 272064173565485054
     TagComponent:
-      Tag: Circle
+      Tag: Cyan Circle
     TransformComponent:
-      Position: [4.6141186, -3.267004, 0]
+      Position: [9.549679, 1.4289552, 0]
       Rotation: [0, 0, 0]
-      Scale: [5.56, 5.56, 2.78]
+      Scale: [1, 1, 1]
     CircleRendererComponent:
-      Color: [1, 0, 0, 1]
-      Thickness: 0.1
+      Color: [0, 1, 0.7335906, 1]
+      Thickness: 1
       Fade: 0.005
     Rigidbody2DComponent:
-      BodyType: Static
+      BodyType: Dynamic
       FixedRotation: false
     CircleCollider2DComponent:
       Offset: [0, 0]
-      Radius: 1.04
+      Radius: 0.5
       Density: 1
       Friction: 0.5
       Restitution: 0
       RestitutionThreshold: 0.47
-  - Entity: 9207990595640943279
+  - Entity: 10271717649536576168
     TagComponent:
       Tag: Ground
     TransformComponent:
-      Position: [11.316574, -0.7230787, 0]
-      Rotation: [0, 0, 0.5408414]
-      Scale: [26.865513, 0.99999976, 1]
+      Position: [-6.6016865, -3.9488778, 0]
+      Rotation: [0, 0, 0]
+      Scale: [26.865524, 0.99999994, 1]
     SpriteRendererComponent:
       Color: [1, 0.55598456, 0, 1]
     Rigidbody2DComponent:
@@ -39,31 +39,6 @@ Entities:
       Density: 1
       Friction: 0.5
       Restitution: 0
-      RestitutionThreshold: 0.47
-  - Entity: 5722967266416677241
-    TagComponent:
-      Tag: Player
-    TransformComponent:
-      Position: [-5.9043703, 5.805495, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    ScriptComponent:
-      ModuleName: Sandbox.Player
-      ScriptFields:
-        - Name: Speed
-          Type: Float
-          Data: 25
-    SpriteRendererComponent:
-      Color: [1, 1, 1, 1]
-    Rigidbody2DComponent:
-      BodyType: Dynamic
-      FixedRotation: false
-    BoxCollider2DComponent:
-      Offset: [0, 0]
-      Size: [0.5, 0.5]
-      Density: 1
-      Friction: 0.5
-      Restitution: 0.56
       RestitutionThreshold: 0.47
   - Entity: 9728078465746292828
     TagComponent:
@@ -89,13 +64,38 @@ Entities:
         - Name: DistanceFromPlayer
           Type: Float
           Data: 35
-  - Entity: 10271717649536576168
+  - Entity: 5722967266416677241
+    TagComponent:
+      Tag: Player
+    TransformComponent:
+      Position: [-5.9043703, 5.805495, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ScriptComponent:
+      ModuleName: Sandbox.Player
+      ScriptFields:
+        - Name: Speed
+          Type: Float
+          Data: 40
+    SpriteRendererComponent:
+      Color: [1, 1, 1, 1]
+    Rigidbody2DComponent:
+      BodyType: Dynamic
+      FixedRotation: false
+    BoxCollider2DComponent:
+      Offset: [0, 0]
+      Size: [0.5, 0.5]
+      Density: 1
+      Friction: 0.5
+      Restitution: 0.56
+      RestitutionThreshold: 0.47
+  - Entity: 9207990595640943279
     TagComponent:
       Tag: Ground
     TransformComponent:
-      Position: [-6.6016865, -3.9488778, 0]
-      Rotation: [0, 0, 0]
-      Scale: [26.865524, 0.99999994, 1]
+      Position: [11.316574, -0.7230787, 0]
+      Rotation: [0, 0, 0.5408414]
+      Scale: [26.865513, 0.99999976, 1]
     SpriteRendererComponent:
       Color: [1, 0.55598456, 0, 1]
     Rigidbody2DComponent:
@@ -108,23 +108,23 @@ Entities:
       Friction: 0.5
       Restitution: 0
       RestitutionThreshold: 0.47
-  - Entity: 272064173565485054
+  - Entity: 9300667551457169843
     TagComponent:
-      Tag: Cyan Circle
+      Tag: Circle
     TransformComponent:
-      Position: [9.549679, 1.4289552, 0]
+      Position: [4.6141186, -3.267004, 0]
       Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Scale: [5.56, 5.56, 2.78]
     CircleRendererComponent:
-      Color: [0, 1, 0.7335906, 1]
-      Thickness: 1
+      Color: [1, 0, 0, 1]
+      Thickness: 0.1
       Fade: 0.005
     Rigidbody2DComponent:
-      BodyType: Dynamic
+      BodyType: Static
       FixedRotation: false
     CircleCollider2DComponent:
       Offset: [0, 0]
-      Radius: 0.5
+      Radius: 1.04
       Density: 1
       Friction: 0.5
       Restitution: 0

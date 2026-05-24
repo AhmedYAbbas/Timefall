@@ -18,8 +18,6 @@
 
 namespace Timefall
 {
-	extern const std::filesystem::path g_AssetPath;
-
 	EditorLayer::EditorLayer()
 		: Layer("EditorLayer"), m_CameraController(1280.0f / 720.0f)
 	{
@@ -47,9 +45,14 @@ namespace Timefall
 		auto commandLineArgs = Application::Get().GetSpecification().CommandLineArgs;
 		if (commandLineArgs.Count > 1)
 		{
-			std::filesystem::path sceneFilePath = commandLineArgs[1];
-			if (std::filesystem::exists(sceneFilePath))
-				OpenScene(sceneFilePath);
+			std::filesystem::path projectFilePath = commandLineArgs[1];
+			if (std::filesystem::exists(projectFilePath))
+				OpenProject(projectFilePath);
+		}
+		else
+		{
+			// TODO: Prompt the user to select a directory
+			NewProject();
 		}
 
 		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
@@ -276,7 +279,7 @@ namespace Timefall
 		}
 
 		m_SceneHierarchyPanel.OnImGuiRender();
-		m_ContentBrowserPanel.OnImGuiRender();
+		m_ContentBrowserPanel->OnImGuiRender();
 
 		ImGui::Begin("Stats");
 
@@ -621,6 +624,26 @@ namespace Timefall
 		}
 
 		Renderer2D::EndScene();
+	}
+
+	void EditorLayer::NewProject()
+	{
+		Project::New();
+	}
+
+	void EditorLayer::OpenProject(const std::filesystem::path& filepath)
+	{
+		if (Project::Load(filepath))
+		{
+			auto startScenePath = Project::GetAssetFileSystemPath(Project::GetActive()->GetConfig().StartScene);
+			OpenScene(startScenePath);
+			m_ContentBrowserPanel = CreateScope<ContentBrowserPanel>();
+		}
+	}
+
+	void EditorLayer::SaveProject()
+	{
+		// Project::SaveActive();
 	}
 
 	void EditorLayer::NewScene()

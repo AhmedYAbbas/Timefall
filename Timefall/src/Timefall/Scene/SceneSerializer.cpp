@@ -5,6 +5,7 @@
 #include "Timefall/Scene/Components.h"
 #include "Timefall/Scripting/ScriptEngine.h"
 #include "Timefall/Core/UUID.h"
+#include "Timefall/Project/Project.h"
 
 #include <yaml-cpp/yaml.h>
 
@@ -540,8 +541,10 @@ namespace Timefall
 						const auto width = spriteRendererComponent["Texture"]["Width"].as<uint32_t>();
 						const auto height = spriteRendererComponent["Texture"]["Height"].as<uint32_t>();
 						const auto dataFormat = spriteRendererComponent["Texture"]["DataFormat"].as<uint32_t>();
-						const auto path = spriteRendererComponent["Texture"]["Path"].as<std::string>();
-						src.Texture = Texture2D::Create(path);
+						const auto texturePath = spriteRendererComponent["Texture"]["Path"].as<std::string>();
+
+						auto path = Project::GetAssetFileSystemPath(texturePath);
+						src.Texture = Texture2D::Create(path.string());
 					}
 
 					if (spriteRendererComponent["TilingFactor"])

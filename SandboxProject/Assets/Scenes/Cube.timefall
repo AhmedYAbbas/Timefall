@@ -14,7 +14,7 @@ Entities:
         Height: 3113
         InternalFormat: 32849
         DataFormat: 6407
-        Path: assets\textures\Nada.jpg
+        Path: Textures\Nada.jpg
       TilingFactor: 1
   - Entity: 12038506425736300305
     TagComponent:
@@ -30,7 +30,7 @@ Entities:
         Height: 3113
         InternalFormat: 32849
         DataFormat: 6407
-        Path: assets\textures\Nada.jpg
+        Path: Textures\Nada.jpg
       TilingFactor: 1
   - Entity: 16625061926853455865
     TagComponent:
@@ -46,7 +46,7 @@ Entities:
         Height: 3113
         InternalFormat: 32849
         DataFormat: 6407
-        Path: assets\textures\Nada.jpg
+        Path: Textures\Nada.jpg
       TilingFactor: 1
   - Entity: 11391402092972990053
     TagComponent:

@@ -1,0 +1,5 @@
+Project:
+  Name: "Untitled"
+  StartScene: "Scenes/PhysicsSandbox.timefall"
+  AssetDirectory: "Assets"
+  ScriptModulePath: "Scripts/bin/Debug/Sandbox.dll"

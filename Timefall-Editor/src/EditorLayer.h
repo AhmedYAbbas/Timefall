@@ -3,6 +3,7 @@
 #include "Timefall.h"
 #include "Panels/SceneHierarchyPanel.h"
 #include "Panels/ContentBrowserPanel.h"
+#include <filesystem>
 
 namespace Timefall
 {
@@ -24,6 +25,10 @@ namespace Timefall
 		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
 
 		void OnOverlayRender();
+
+		void NewProject();
+		void OpenProject(const std::filesystem::path& filepath);
+		void SaveProject();
 
 		void NewScene();
 		void OpenScene();
@@ -78,6 +83,6 @@ namespace Timefall
 		SceneState m_SceneState = SceneState::Edit;
 
 		SceneHierarchyPanel m_SceneHierarchyPanel;
-		ContentBrowserPanel m_ContentBrowserPanel;
+		Scope<ContentBrowserPanel> m_ContentBrowserPanel;
 	};
 }
