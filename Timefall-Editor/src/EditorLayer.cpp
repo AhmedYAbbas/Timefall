@@ -653,7 +653,7 @@ namespace Timefall
 
 	bool EditorLayer::OpenProject()
 	{
-		auto filepath = FileDialogs::OpenFile("Timefall Project (*.tproj)\0*.tproj\0");
+		auto filepath = FileDialogs::OpenFile("Timefall Project (*.tfproj)\0*.tfproj\0");
 		if (!filepath.empty())
 			OpenProject(filepath);
 
