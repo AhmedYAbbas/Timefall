@@ -5,13 +5,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "Timefall/Core/Base64.h"
-
 #include "Timefall/Scene/Scene.h"
 
 #include "Timefall/Scene/SceneSerializer.h"
 #include "Timefall/Utils/PlatformUtils.h"
 #include "Timefall/Scripting/ScriptEngine.h"
+#include "Timefall/Renderer/Font.h"
 
 #include "ImGuizmo.h"
 #include "Timefall/Math/Math.h"
@@ -21,6 +20,7 @@ namespace Timefall
 	EditorLayer::EditorLayer()
 		: Layer("EditorLayer"), m_CameraController(1280.0f / 720.0f)
 	{
+		Font font("assets/fonts/OpenSans/static/OpenSans-Regular.ttf");
 	}
 
 	void EditorLayer::OnAttach()

@@ -41,6 +41,8 @@ project "Timefall"
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.ImGui}/backends",
 		"%{IncludeDir.glm}",
+		"%{IncludeDir.msdfgen}",
+		"%{IncludeDir.msdf_atlas_gen}",
 		"%{IncludeDir.stb_image}",
 		"%{IncludeDir.entt}",
 		"%{IncludeDir.yaml_cpp}",
@@ -69,6 +71,8 @@ project "Timefall"
 		"yaml-cpp",
 		"box2d",
 		"opengl32.lib",
+
+		"msdf-atlas-gen",
 
 		"%{LibraryDir.hostfxr}/hostfxr.lib",
 		"%{LibraryDir.hostfxr}/hostpolicy.lib",
