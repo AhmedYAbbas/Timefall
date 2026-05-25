@@ -1,0 +1,5 @@
+Project:
+  Name: "TetrisClone"
+  StartScene: "Scenes/PhysicsSandbox.timefall"
+  AssetDirectory: "Assets"
+  ScriptModulePath: "Scripts/bin/Debug/TetrisClone.dll"

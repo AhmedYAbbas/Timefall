@@ -29,7 +29,6 @@ namespace Timefall
 		m_Window->SetVsync(true);
 
 		Renderer::Init();
-		ScriptEngine::Init();
 
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);

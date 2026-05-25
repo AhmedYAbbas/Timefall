@@ -1,0 +1,56 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>TetrisClone</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Configurations>Debug;Release;Dist</Configurations>
+    <Platforms>AnyCPU</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <Optimize>false</Optimize>
+    <DebugType>full</DebugType>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <OutputPath>bin\Debug\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <DefineConstants>RELEASE;TRACE</DefineConstants>
+    <OutputPath>bin\Release\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dist|AnyCPU'">
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <DefineConstants>DIST;TRACE</DefineConstants>
+    <OutputPath>bin\Dist\</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="C:\Ahmed\Dev\Timefall/Timefall-ScriptCore/Timefall-ScriptCore.csproj" />
+  </ItemGroup>
+
+  <Target Name="CopyToDestinations" AfterTargets="Build">
+    <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="C:\Ahmed\Dev\Timefall/Timefall-Editor/Resources/Scripts" />
+    <Copy SourceFiles="$(OutputPath)$(AssemblyName).runtimeconfig.json" DestinationFolder="C:\Ahmed\Dev\Timefall/Timefall-Editor/Resources/Scripts" ContinueOnError="true" />
+  </Target>
+
+  <ItemGroup>
+    <None Remove="premake5.lua" />
+    <Content Remove="premake5.lua" />
+    <Compile Remove="premake5.lua" />
+    <EmbeddedResource Remove="premake5.lua" />
+    <None Remove="Win-GenProjects.bat" />
+    <Content Remove="Win-GenProjects.bat" />
+    <Compile Remove="Win-GenProjects.bat" />
+    <EmbeddedResource Remove="Win-GenProjects.bat" />
+  </ItemGroup>
+
+</Project>

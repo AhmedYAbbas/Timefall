@@ -173,7 +173,6 @@ namespace Timefall
 	template<typename... T>
 	struct ComponentGroup
 	{
-
 	};
 
 	using AllComponents = ComponentGroup<

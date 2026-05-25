@@ -18,15 +18,19 @@ namespace Timefall
 
         [LibraryImport("Timefall")]
         internal static partial void TransformComponent_GetTranslation(ulong entityID, out Vector3 translation);
-
         [LibraryImport("Timefall")]
         internal static partial void TransformComponent_SetTranslation(ulong entityID, ref Vector3 translation);
 
         [LibraryImport("Timefall")]
         internal static partial void Rigidbody2DComponent_ApplyLinearImpulse(ulong entityID, ref Vector2 impulse, ref Vector2 point, [MarshalAs(UnmanagedType.U1)] bool wake);
-        
         [LibraryImport("Timefall")]
         internal static partial void Rigidbody2DComponent_ApplyLinearImpulseToCenter(ulong entityID, ref Vector2 impulse, [MarshalAs(UnmanagedType.U1)] bool wake);
+        [LibraryImport("Timefall")]
+        internal static partial void Rigidbody2DComponent_GetLinearVelocity(ulong entityID, out Vector2 velocity);
+        [LibraryImport("Timefall")]
+        internal static partial Rigidbody2DComponent.BodyType Rigidbody2DComponent_GetBodyType(ulong entityID);
+        [LibraryImport("Timefall")]
+        internal static partial void Rigidbody2DComponent_SetBodyType(ulong entityID, Rigidbody2DComponent.BodyType type);
 
         [LibraryImport("Timefall")]
         [return: MarshalAs(UnmanagedType.U1)]

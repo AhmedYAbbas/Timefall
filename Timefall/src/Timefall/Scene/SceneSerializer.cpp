@@ -6,6 +6,7 @@
 #include "Timefall/Scripting/ScriptEngine.h"
 #include "Timefall/Core/UUID.h"
 #include "Timefall/Project/Project.h"
+#include "Timefall/Physics/Physics2D.h"
 
 #include <yaml-cpp/yaml.h>
 
@@ -162,29 +163,6 @@ namespace Timefall
 		std::string str(wstr.begin(), wstr.end());
 		out << str;
 		return out;
-	}
-
-	static std::string RigidBody2DBodyTypeToString(Rigidbody2DComponent::BodyType bodyType)
-	{
-		switch (bodyType)
-		{
-		case Rigidbody2DComponent::BodyType::Static:    return "Static";
-		case Rigidbody2DComponent::BodyType::Dynamic:   return "Dynamic";
-		case Rigidbody2DComponent::BodyType::Kinematic: return "Kinematic";
-		}
-
-		TF_CORE_ASSERT(false, "Unknown body type");
-		return {};
-	}
-
-	static Rigidbody2DComponent::BodyType RigidBody2DBodyTypeFromString(const std::string& bodyTypeString)
-	{
-		if (bodyTypeString == "Static")    return Rigidbody2DComponent::BodyType::Static;
-		if (bodyTypeString == "Dynamic")   return Rigidbody2DComponent::BodyType::Dynamic;
-		if (bodyTypeString == "Kinematic") return Rigidbody2DComponent::BodyType::Kinematic;
-
-		TF_CORE_ASSERT(false, "Unknown body type");
-		return Rigidbody2DComponent::BodyType::Static;
 	}
 
 	SceneSerializer::SceneSerializer(const Ref<Scene>& scene)
@@ -344,7 +322,7 @@ namespace Timefall
 			out << YAML::BeginMap; // Rigidbody2DComponent
 
 			auto& rb2dComponent = entity.GetComponent<Rigidbody2DComponent>();
-			out << YAML::Key << "BodyType" << YAML::Value << RigidBody2DBodyTypeToString(rb2dComponent.Type);
+			out << YAML::Key << "BodyType" << YAML::Value << Utils::RigidBody2DBodyTypeToString(rb2dComponent.Type);
 			out << YAML::Key << "FixedRotation" << YAML::Value << rb2dComponent.FixedRotation;
 
 			out << YAML::EndMap; // Rigidbody2DComponent
@@ -563,7 +541,7 @@ namespace Timefall
 				if (rigidbody2DComponent)
 				{
 					auto& rb2d = deserializedEntity.AddComponent<Rigidbody2DComponent>();
-					rb2d.Type = RigidBody2DBodyTypeFromString(rigidbody2DComponent["BodyType"].as<std::string>());
+					rb2d.Type = Utils::RigidBody2DBodyTypeFromString(rigidbody2DComponent["BodyType"].as<std::string>());
 					rb2d.FixedRotation = rigidbody2DComponent["FixedRotation"].as<bool>();
 				}
 

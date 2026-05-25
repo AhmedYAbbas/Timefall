@@ -8,6 +8,8 @@
 #include "Timefall/Scene/Scene.h"
 #include "Timefall/Scene/Entity.h"
 
+#include "Timefall/Project/Project.h"
+
 #include <filesystem>
 
 #include <hostfxr/hostfxr.h>
@@ -51,7 +53,6 @@ namespace Timefall
 
 	static constexpr const wchar_t* SCRIPTS_PATH = L"Resources\\Scripts\\";
 	static constexpr const wchar_t* SCRIPT_CORE_DLL_PATH = L"Resources\\Scripts\\Timefall-ScriptCore.dll";
-	static constexpr const wchar_t* SCRIPT_APP_DLL_PATH = L"Resources\\Scripts\\Sandbox.dll";
 	static constexpr const char* SCRIPT_CORE_RUNTIME_CONFIG_PATH = "Resources/Scripts/Timefall-ScriptCore.runtimeconfig.json";
 
 	// Copy a DLL to %TEMP%\Timefall\ and return the shadow path.
@@ -420,11 +421,13 @@ namespace Timefall
 
 	void ScriptEngine::BuildTypeRegistry()
 	{
+		auto scriptModulePath = Project::GetAssetDirectory() / Project::GetActive()->GetConfig().ScriptModulePath;
+
 		s_ScriptEngineData->EntityClasses.clear();
-		s_ScriptEngineData->TypeRegistryClass.InvokeMethod<void(*)(const wchar_t*)>(L"BuildEntityRegistry", L"Timefall.BuildEntityRegistryDelegate, Timefall-ScriptCore", SCRIPT_APP_DLL_PATH);
+		s_ScriptEngineData->TypeRegistryClass.InvokeMethod<void(*)(const wchar_t*)>(L"BuildEntityRegistry", L"Timefall.BuildEntityRegistryDelegate, Timefall-ScriptCore", scriptModulePath.wstring().c_str());
 		ScriptGlue::RegisterComponents();
 
-		s_ScriptEngineData->AppAssemblyFileWatcher = CreateScope<filewatch::FileWatch<std::wstring>>(SCRIPT_APP_DLL_PATH, OnAppAssemblyFileSystemEvent);
+		s_ScriptEngineData->AppAssemblyFileWatcher = CreateScope<filewatch::FileWatch<std::wstring>>(scriptModulePath.wstring().c_str(), OnAppAssemblyFileSystemEvent);
 		s_ScriptEngineData->AssemblyReloadPending = false;
 	}
 

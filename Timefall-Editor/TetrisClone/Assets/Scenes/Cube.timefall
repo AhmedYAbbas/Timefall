@@ -1,0 +1,68 @@
+Scene: Timefall Scene
+Entities:
+  - Entity: 12140648604693631428
+    TagComponent:
+      Tag: Top
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [-1.5707964, 0, 0]
+      Scale: [1, 1, 1]
+    SpriteRendererComponent:
+      Color: [1, 1, 1, 1]
+      Texture:
+        Width: 4160
+        Height: 3113
+        InternalFormat: 32849
+        DataFormat: 6407
+        Path: Textures\Nada.jpg
+      TilingFactor: 1
+  - Entity: 12038506425736300305
+    TagComponent:
+      Tag: Left
+    TransformComponent:
+      Position: [-0.5, -0.5, 5.3698546e-08]
+      Rotation: [0, -1.5707964, 0]
+      Scale: [0.9999871, 1, 0.9999871]
+    SpriteRendererComponent:
+      Color: [1, 1, 1, 1]
+      Texture:
+        Width: 4160
+        Height: 3113
+        InternalFormat: 32849
+        DataFormat: 6407
+        Path: Textures\Nada.jpg
+      TilingFactor: 1
+  - Entity: 16625061926853455865
+    TagComponent:
+      Tag: Right
+    TransformComponent:
+      Position: [0, -0.5, 0.5]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    SpriteRendererComponent:
+      Color: [1, 1, 1, 1]
+      Texture:
+        Width: 4160
+        Height: 3113
+        InternalFormat: 32849
+        DataFormat: 6407
+        Path: Textures\Nada.jpg
+      TilingFactor: 1
+  - Entity: 11391402092972990053
+    TagComponent:
+      Tag: Camera
+    TransformComponent:
+      Position: [-1.8, 0.9, 2.6]
+      Rotation: [-0.4956735, -0.689405, 0]
+      Scale: [1, 1, 1]
+    CameraComponent:
+      Camera:
+        ProjectionType: 0
+        PerspectiveFOV: 45
+        PerspectiveNear: 0.01
+        PerspectiveFar: 1000
+        OrthographicSize: 10
+        OrthographicNear: -1
+        OrthographicFar: 1
+      Primary: true
+      FixedAspectRatio: false

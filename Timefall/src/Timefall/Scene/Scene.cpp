@@ -41,6 +41,12 @@ namespace Timefall
 			dst.AddOrReplaceComponent<T>(src.GetComponent<T>());
 	}
 
+	template<typename... Component>
+	static void CopyComponentIfExists(ComponentGroup<Component...>, Entity dst, Entity src)
+	{
+		(CopyComponentIfExists<Component>(dst, src), ...);
+	}
+
 	Ref<Scene> Scene::Copy(const Ref<Scene>& srcScene)
 	{
 		Ref<Scene> dstScene = CreateRef<Scene>();
@@ -285,7 +291,7 @@ namespace Timefall
 		return CreateEntityWithUUID(UUID(), tag);
 	}
 
-	Entity Scene::CreateEntityWithUUID(const UUID& uuid, const std::string tag)
+	Entity Scene::CreateEntityWithUUID(const UUID& uuid, const std::string& tag)
 	{
 		Entity entity = { m_Registry.create(), this };
 		entity.AddComponent<IDComponent>(uuid);
@@ -300,25 +306,18 @@ namespace Timefall
 
 	void Scene::DestroyEntity(Entity entity)
 	{
-		m_Registry.destroy(entity);
 		m_EntityMap.erase(entity.GetUUID());
+		m_Registry.destroy(entity);
 	}
 
-	void Scene::DuplicateEntity(Entity entity)
+	Entity Scene::DuplicateEntity(Entity entity)
 	{
 		std::string name = entity.GetName(); // Get the name as a value because having a reference to the entity's name might lead to dangling references after duplication
 		Entity newEntity = CreateEntity(name);
 
 		// Important for scene serialization for some reason
-		CopyComponentIfExists<TransformComponent>(newEntity, entity);
-		CopyComponentIfExists<SpriteRendererComponent>(newEntity, entity);
-		CopyComponentIfExists<CircleRendererComponent>(newEntity, entity);
-		CopyComponentIfExists<CameraComponent>(newEntity, entity);
-		CopyComponentIfExists<ScriptComponent>(newEntity, entity);
-		CopyComponentIfExists<NativeScriptComponent>(newEntity, entity);
-		CopyComponentIfExists<Rigidbody2DComponent>(newEntity, entity);
-		CopyComponentIfExists<BoxCollider2DComponent>(newEntity, entity);
-		CopyComponentIfExists<CircleCollider2DComponent>(newEntity, entity);
+		CopyComponentIfExists(AllComponents{}, newEntity, entity);
+		return newEntity;
 	}
 
 	Entity Scene::FindEntityByName(const std::string_view& name)

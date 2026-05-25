@@ -20,9 +20,9 @@ namespace Timefall
 		static Ref<Scene> Copy(const Ref<Scene>& srcScene);
 
 		Entity CreateEntity(const std::string tag = "");
-		Entity CreateEntityWithUUID(const UUID& uuid, const std::string tag = "");
+		Entity CreateEntityWithUUID(const UUID& uuid, const std::string& tag = "");
 		void DestroyEntity(Entity entity);
-		void DuplicateEntity(Entity entity);
+		Entity DuplicateEntity(Entity entity);
 
 		Entity FindEntityByName(const std::string_view& name);
 		Entity GetEntityByUUID(const UUID& uuid);
