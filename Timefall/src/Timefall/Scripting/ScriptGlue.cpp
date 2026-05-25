@@ -130,6 +130,61 @@ namespace Timefall
 		}
 
 		__declspec(dllexport)
+		void Rigidbody2DComponent_GetLinearVelocity(UUID entityID, glm::vec2* outLinearVelocity)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+
+			if (scene->GetPhysicsBodiesMap().find(entity) == scene->GetPhysicsBodiesMap().end())
+			{
+				TF_CORE_ERROR("Entity does not have a physics body!");
+				return;
+			}
+
+			b2BodyId body = scene->GetPhysicsBodiesMap()[entity];
+			const b2Vec2& linearVelocity = b2Body_GetLinearVelocity(body);
+			*outLinearVelocity = glm::vec2(linearVelocity.x, linearVelocity.y);
+		}
+
+		__declspec(dllexport)
+		Rigidbody2DComponent::BodyType Rigidbody2DComponent_GetBodyType(UUID entityID)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+
+			if (scene->GetPhysicsBodiesMap().find(entity) == scene->GetPhysicsBodiesMap().end())
+			{
+				TF_CORE_ERROR("Entity does not have a physics body!");
+				return Rigidbody2DComponent::BodyType::Static;
+			}
+
+			b2BodyId body = scene->GetPhysicsBodiesMap()[entity];
+			return (Rigidbody2DComponent::BodyType)b2Body_GetType(body);
+		}
+
+		__declspec(dllexport)
+		void Rigidbody2DComponent_SetBodyType(UUID entityID, Rigidbody2DComponent::BodyType bodyType)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+
+			if (scene->GetPhysicsBodiesMap().find(entity) == scene->GetPhysicsBodiesMap().end())
+			{
+				TF_CORE_ERROR("Entity does not have a physics body!");
+				return;
+			}
+
+			b2BodyId body = scene->GetPhysicsBodiesMap()[entity];
+			b2Body_SetType(body, (b2BodyType)bodyType);
+		}
+
+		__declspec(dllexport)
 		bool Input_IsKeyDown(KeyCode keycode)
 		{
 			return Input::IsKeyPressed(keycode);
