@@ -17,12 +17,12 @@
 
 namespace Timefall
 {
-	static Font* s_Font;
+	static Ref<Font> s_Font;
 
 	EditorLayer::EditorLayer()
 		: Layer("EditorLayer"), m_CameraController(1280.0f / 720.0f)
 	{
-		s_Font = new Font("assets/fonts/OpenSans/static/OpenSans-Regular.ttf");
+		s_Font = Font::GetDefault();
 	}
 
 	void EditorLayer::OnAttach()

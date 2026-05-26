@@ -5,6 +5,7 @@
 #include "Timefall/Renderer/Texture.h"
 #include "Timefall/Renderer/SubTexture2D.h"
 #include "Timefall/Renderer/EditorCamera.h"
+#include "Timefall/Renderer/Font.h"
 #include "Timefall/Scene/Components.h"
 
 namespace Timefall
@@ -38,6 +39,8 @@ namespace Timefall
 		static void DrawRect(const glm::mat4& transform = glm::mat4(1.0f), const glm::vec4& color = glm::vec4(1.0f), int entityID = -1);
 
 		static void DrawSprite(const glm::mat4& transform, SpriteRendererComponent src, int entityID = -1);
+
+		static void DrawString(const std::string& text, const Ref<Font>& font, const glm::mat4& transform, const glm::vec4& color, int entityID = -1);
 
 		static float GetLineWidth();
 		static void SetLineWidth(float width);
