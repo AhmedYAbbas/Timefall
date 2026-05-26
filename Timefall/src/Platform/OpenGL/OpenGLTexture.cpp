@@ -7,13 +7,44 @@
 
 namespace Timefall
 {
-	OpenGLTexture2D::OpenGLTexture2D(uint32_t width, uint32_t height)
-		: m_Width(width), m_Height(height)
+	namespace Utils
+	{
+		static GLenum TimefallImageFormatToGLDataFormat(ImageFormat format)
+		{
+			switch (format)
+			{
+				case ImageFormat::R8:		return GL_RED;
+				case ImageFormat::RGB8:		return GL_RGB;
+				case ImageFormat::RGBA8:	return GL_RGBA;
+				case ImageFormat::RGB32F:	return GL_RGB32F;
+			}
+
+			TF_CORE_ASSERT(false, "Unknown ImageFormat!");
+			return 0;
+		}
+
+		static GLenum TimefallImageFormatToGLInternalFormat(ImageFormat format)
+		{
+			switch (format)
+			{
+				case ImageFormat::R8:		return GL_R8;
+				case ImageFormat::RGB8:		return GL_RGB8;
+				case ImageFormat::RGBA8:	return GL_RGBA8;
+				case ImageFormat::RGB32F:	return GL_RGB32F;
+			}
+
+			TF_CORE_ASSERT(false, "Unknown ImageFormat!");
+			return 0;
+		}
+	}
+
+	OpenGLTexture2D::OpenGLTexture2D(const TextureSpecification& spec)
+		: m_Specification(spec), m_Width(spec.Width), m_Height(spec.Height)
 	{
 		TF_PROFILE_FUNCTION();
 
-		m_InternalFormat = GL_RGBA8;
-		m_DataFormat = GL_RGBA;
+		m_InternalFormat = Utils::TimefallImageFormatToGLInternalFormat(m_Specification.Format);
+		m_DataFormat = Utils::TimefallImageFormatToGLDataFormat(m_Specification.Format);
 
 		glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
 		glTextureStorage2D(m_RendererID, 1, m_InternalFormat, m_Width, m_Height);
