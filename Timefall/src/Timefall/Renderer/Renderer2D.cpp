@@ -714,7 +714,7 @@ namespace Timefall
 		s_Data.Stats.QuadCount++;
 	}
 
-	void Renderer2D::DrawString(const std::string& text, const Ref<Font>& font, const glm::mat4& transform, const glm::vec4& color, int entityID)
+	void Renderer2D::DrawString(const std::string& text, const Ref<Font>& font, const glm::mat4& transform, const TextParams& params, int entityID)
 	{
 		const auto& fontGeometry = font->GetMSDFData()->FontGeometry;
 		const auto& metrics = fontGeometry.getMetrics();
@@ -725,7 +725,8 @@ namespace Timefall
 		double x = 0.0;
 		double fsScale = 1.0 / (metrics.ascenderY - metrics.descenderY);
 		double y = 0.0;
-		float lineHeightOffset = 0.0f;
+
+		const float spaceGlyphAdvance = fontGeometry.getGlyph(' ')->getAdvance();
 
 		for (size_t i = 0; i < text.size(); i++)
 		{
@@ -736,17 +737,37 @@ namespace Timefall
 			if (character == '\n')
 			{
 				x = 0;
-				y -= fsScale * metrics.lineHeight + lineHeightOffset;
+				y -= fsScale * metrics.lineHeight + params.LineSpacing;
 				continue;
 			}
+
+			if (character == ' ')
+			{
+				float advance = spaceGlyphAdvance;
+				if (i < text.size() - 1)
+				{
+					char nextCharacter = text[i + 1];
+					double dAdvance;
+					fontGeometry.getAdvance(dAdvance, character, nextCharacter);
+					advance = (float)dAdvance;
+				}
+
+				x += fsScale * advance + params.Kerning;
+				continue;
+			}
+
+			if (character == '\t')
+			{
+				// NOTE: is this right?
+				x += 4.0f * (fsScale * spaceGlyphAdvance + params.Kerning);
+				continue;
+			}
+
 			auto glyph = fontGeometry.getGlyph(character);
 			if (!glyph)
 				glyph = fontGeometry.getGlyph('?');
 			if (!glyph)
 				return;
-
-			if (character == '\t')
-				glyph = fontGeometry.getGlyph(' ');
 
 			double al, ab, ar, at;
 			glyph->getQuadAtlasBounds(al, ab, ar, at);
@@ -769,27 +790,27 @@ namespace Timefall
 
 			// render here
 			s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMin, 0.0f, 1.0f);
-			s_Data.TextVertexBufferPtr->Color = color;
+			s_Data.TextVertexBufferPtr->Color = params.Color;
 			s_Data.TextVertexBufferPtr->TexCoords = texCoordMin;
-			s_Data.TextVertexBufferPtr->EntityID = 0; // TODO
+			s_Data.TextVertexBufferPtr->EntityID = entityID; // TODO
 			s_Data.TextVertexBufferPtr++;
 
 			s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMin.x, quadMax.y, 0.0f, 1.0f);
-			s_Data.TextVertexBufferPtr->Color = color;
+			s_Data.TextVertexBufferPtr->Color = params.Color;
 			s_Data.TextVertexBufferPtr->TexCoords = { texCoordMin.x, texCoordMax.y };
-			s_Data.TextVertexBufferPtr->EntityID = 0; // TODO
+			s_Data.TextVertexBufferPtr->EntityID = entityID; // TODO
 			s_Data.TextVertexBufferPtr++;
 
 			s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMax, 0.0f, 1.0f);
-			s_Data.TextVertexBufferPtr->Color = color;
+			s_Data.TextVertexBufferPtr->Color = params.Color;
 			s_Data.TextVertexBufferPtr->TexCoords = texCoordMax;
-			s_Data.TextVertexBufferPtr->EntityID = 0; // TODO
+			s_Data.TextVertexBufferPtr->EntityID = entityID; // TODO
 			s_Data.TextVertexBufferPtr++;
 
 			s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMax.x, quadMin.y, 0.0f, 1.0f);
-			s_Data.TextVertexBufferPtr->Color = color;
+			s_Data.TextVertexBufferPtr->Color = params.Color;
 			s_Data.TextVertexBufferPtr->TexCoords = { texCoordMax.x, texCoordMin.y };
-			s_Data.TextVertexBufferPtr->EntityID = 0; // TODO
+			s_Data.TextVertexBufferPtr->EntityID = entityID; // TODO
 			s_Data.TextVertexBufferPtr++;
 
 			s_Data.TextIndexCount += 6;
@@ -802,9 +823,14 @@ namespace Timefall
 				fontGeometry.getAdvance(advance, character, nextCharacter);
 
 				float kerningOffset = 0.0f;
-				x += fsScale * advance + kerningOffset;
+				x += fsScale * advance + params.Kerning;
 			}
 		}
+	}
+
+	void Renderer2D::DrawString(const std::string& text, const glm::mat4& transform, const TextComponent& component, int entityID)
+	{
+		DrawString(text, component.FontAsset, transform, {component.Color, component.Kerning, component.LineSpacing}, entityID);
 	}
 
 	float Renderer2D::GetLineWidth()

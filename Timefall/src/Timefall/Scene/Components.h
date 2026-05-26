@@ -3,6 +3,7 @@
 #include "Timefall/Core/UUID.h"
 #include "Timefall/Scene/SceneCamera.h"
 #include "Timefall/Renderer/Texture.h"
+#include "Timefall/Renderer/Font.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -11,7 +12,7 @@
 
 namespace Timefall
 {
-	struct IDComponent
+	struct TF_API IDComponent
 	{
 		UUID ID;
 
@@ -23,7 +24,7 @@ namespace Timefall
 		}
 	};
 
-	struct TagComponent
+	struct TF_API TagComponent
 	{
 		std::string Tag;
 
@@ -35,7 +36,7 @@ namespace Timefall
 		}
 	};
 
-	struct TransformComponent
+	struct TF_API TransformComponent
 	{
 		glm::vec3 Translation { 0.0f };
 		glm::vec3 Rotation { 0.0f };
@@ -56,7 +57,7 @@ namespace Timefall
 		}
 	};
 
-	struct SpriteRendererComponent
+	struct TF_API SpriteRendererComponent
 	{
 		glm::vec4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
 		Ref<Texture2D> Texture;
@@ -70,7 +71,7 @@ namespace Timefall
 		}
 	};
 	
-	struct CircleRendererComponent
+	struct TF_API CircleRendererComponent
 	{
 		glm::vec4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
 		float Thickness = 1.0f;
@@ -84,7 +85,7 @@ namespace Timefall
 		}
 	};
 
-	struct CameraComponent
+	struct TF_API CameraComponent
 	{
 		SceneCamera Camera;
 		bool Primary = true;
@@ -94,7 +95,7 @@ namespace Timefall
 		CameraComponent(const CameraComponent&) = default;
 	};
 
-	struct ScriptComponent
+	struct TF_API ScriptComponent
 	{
 		std::wstring ModuleName;
 
@@ -107,7 +108,7 @@ namespace Timefall
 	};
 
 	// Physics
-	struct Rigidbody2DComponent
+	struct TF_API Rigidbody2DComponent
 	{
 		enum class BodyType
 		{
@@ -123,7 +124,7 @@ namespace Timefall
 		Rigidbody2DComponent(const Rigidbody2DComponent&) = default;
 	};
 
-	struct BoxCollider2DComponent
+	struct TF_API BoxCollider2DComponent
 	{
 		glm::vec2 Offset{ 0.0f };
 		glm::vec2 Size{ 0.5f };
@@ -137,7 +138,7 @@ namespace Timefall
 		BoxCollider2DComponent(const BoxCollider2DComponent&) = default;
 	};
 
-	struct CircleCollider2DComponent
+	struct TF_API CircleCollider2DComponent
 	{
 		glm::vec2 Offset{ 0.0f };
 		float Radius = 0.5f;
@@ -150,10 +151,22 @@ namespace Timefall
 		CircleCollider2DComponent() = default;
 		CircleCollider2DComponent(const CircleCollider2DComponent&) = default;
 	};
+	
+	struct TF_API TextComponent
+	{
+		std::string Text;
+		Ref<Font> FontAsset = Font::GetDefault();
+		glm::vec4 Color{ 1.0f };
+		float Kerning = 0.0f;
+		float LineSpacing = 0.0f;
+
+		TextComponent() = default;
+		TextComponent(const TextComponent&) = default;
+	};
 
 
 	class ScriptableEntity;
-	struct NativeScriptComponent
+	struct TF_API NativeScriptComponent
 	{
 		ScriptableEntity* Instance = nullptr;
 
@@ -171,7 +184,7 @@ namespace Timefall
 	};
 
 	template<typename... T>
-	struct ComponentGroup
+	struct TF_API ComponentGroup
 	{
 	};
 
@@ -184,5 +197,6 @@ namespace Timefall
 		Rigidbody2DComponent,
 		BoxCollider2DComponent,
 		CircleCollider2DComponent,
+		TextComponent,
 		NativeScriptComponent>;
 }
