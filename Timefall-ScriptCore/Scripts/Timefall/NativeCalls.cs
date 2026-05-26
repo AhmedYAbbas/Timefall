@@ -35,5 +35,24 @@ namespace Timefall
         [LibraryImport("Timefall")]
         [return: MarshalAs(UnmanagedType.U1)]
         internal static partial bool Input_IsKeyDown(KeyCode keycode);
+
+        [LibraryImport("Timefall", EntryPoint = "TextComponent_GetText")]
+        internal static partial IntPtr TextComponent_GetText_Native(ulong entityID);
+        [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void TextComponent_SetText(ulong entityID, string? text);
+        [LibraryImport("Timefall")]
+        internal static partial void TextComponent_GetColor(ulong entityID, out Vector4 color);
+        [LibraryImport("Timefall")]
+        internal static partial void TextComponent_SetColor(ulong entityID, ref Vector4 color);
+        [LibraryImport("Timefall")]
+        internal static partial float TextComponent_GetKerning(ulong entityID);
+        [LibraryImport("Timefall")]
+        internal static partial void TextComponent_SetKerning(ulong entityID, float kerning);
+        [LibraryImport("Timefall")]
+        internal static partial float TextComponent_GetLineSpacing(ulong entityID);
+        [LibraryImport("Timefall")]
+        internal static partial void TextComponent_SetLineSpacing(ulong entityID, float lineSpacing);
+
+        internal static string? TextComponent_GetText(ulong entityID) => Marshal.PtrToStringUTF8(TextComponent_GetText_Native(entityID));
     }
 }

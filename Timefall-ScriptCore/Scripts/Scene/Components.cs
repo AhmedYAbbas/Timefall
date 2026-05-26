@@ -50,4 +50,41 @@
             NativeCalls.Rigidbody2DComponent_ApplyLinearImpulseToCenter(Entity.ID, ref impulse, wake);
         }
     }
+
+    public class TextComponent : Component
+    {
+
+        public string Text
+        {
+            get => NativeCalls.TextComponent_GetText(Entity.ID);
+            set => NativeCalls.TextComponent_SetText(Entity.ID, value);
+        }
+
+        public Vector4 Color
+        {
+            get
+            {
+                NativeCalls.TextComponent_GetColor(Entity.ID, out Vector4 color);
+                return color;
+            }
+
+            set
+            {
+                NativeCalls.TextComponent_SetColor(Entity.ID, ref value);
+            }
+        }
+
+        public float Kerning
+        {
+            get => NativeCalls.TextComponent_GetKerning(Entity.ID);
+            set => NativeCalls.TextComponent_SetKerning(Entity.ID, value);
+        }
+
+        public float LineSpacing
+        {
+            get => NativeCalls.TextComponent_GetLineSpacing(Entity.ID);
+            set => NativeCalls.TextComponent_SetLineSpacing(Entity.ID, value);
+        }
+
+    }
 }

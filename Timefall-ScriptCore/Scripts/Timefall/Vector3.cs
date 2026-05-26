@@ -7,7 +7,7 @@ namespace Timefall
     {
         public float X, Y, Z;
 
-        public static Vector3 Zero = new Vector3(0.0f);
+        public static Vector3 Zero => new Vector3(0.0f);
 
         public Vector3(float scalar)
         {

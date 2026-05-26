@@ -185,6 +185,132 @@ namespace Timefall
 		}
 
 		__declspec(dllexport)
+		const char* TextComponent_GetText(UUID entityID)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+
+			if (!entity.HasComponent<TextComponent>())
+			{
+				TF_CORE_ERROR("Entity does not have a text component!");
+				return "";
+			}
+
+			auto& tc = entity.GetComponent<TextComponent>();
+			return tc.Text.c_str();
+		}
+
+		__declspec(dllexport)
+		void TextComponent_SetText(UUID entityID, const char* text)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+			TF_CORE_ASSERT(entity.HasComponent<TextComponent>(), "Entity does not have a text component!");
+
+			auto& tc = entity.GetComponent<TextComponent>();
+			tc.Text = text;
+		}
+
+		__declspec(dllexport)
+		void TextComponent_GetColor(UUID entityID, glm::vec4* color)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+			TF_CORE_ASSERT(entity.HasComponent<TextComponent>(), "Entity does not have a text component!");
+
+			if (!entity.HasComponent<TextComponent>())
+			{
+				TF_CORE_ERROR("Entity does not have a text component!");
+				*color = glm::vec4(0.0f);
+				return;
+			}
+
+			auto& tc = entity.GetComponent<TextComponent>();
+			*color = tc.Color;
+		}
+
+		__declspec(dllexport)
+		void TextComponent_SetColor(UUID entityID, glm::vec4* color)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+			TF_CORE_ASSERT(entity.HasComponent<TextComponent>(), "Entity does not have a text component!");
+
+			auto& tc = entity.GetComponent<TextComponent>();
+			tc.Color = *color;
+		}
+
+		__declspec(dllexport)
+		float TextComponent_GetKerning(UUID entityID)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+
+			if (!entity.HasComponent<TextComponent>())
+			{
+				TF_CORE_ERROR("Entity does not have a text component!");
+				return 0.0f;
+			}
+
+			auto& tc = entity.GetComponent<TextComponent>();
+			return tc.Kerning;
+		}
+
+		__declspec(dllexport)
+		void TextComponent_SetKerning(UUID entityID, float kerning)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+			TF_CORE_ASSERT(entity.HasComponent<TextComponent>(), "Entity does not have a text component!");
+
+			auto& tc = entity.GetComponent<TextComponent>();
+			tc.Kerning = kerning;
+		}
+
+		__declspec(dllexport)
+		float TextComponent_GetLineSpacing(UUID entityID)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+
+			if (!entity.HasComponent<TextComponent>())
+			{
+				TF_CORE_ERROR("Entity does not have a text component!");
+				return 0.0f;
+			}
+
+			auto& tc = entity.GetComponent<TextComponent>();
+			return tc.LineSpacing;
+		}
+
+		__declspec(dllexport)
+		void TextComponent_SetLineSpacing(UUID entityID, float lineSpacing)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+			TF_CORE_ASSERT(entity.HasComponent<TextComponent>(), "Entity does not have a text component!");
+
+			auto& tc = entity.GetComponent<TextComponent>();
+			tc.LineSpacing = lineSpacing;
+		}
+
+		__declspec(dllexport)
 		bool Input_IsKeyDown(KeyCode keycode)
 		{
 			return Input::IsKeyPressed(keycode);
