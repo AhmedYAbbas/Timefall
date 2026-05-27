@@ -11,11 +11,12 @@ namespace Timefall
 		UUID(uint64_t uuid);
 		UUID(const UUID&) = default;
 		UUID(UUID&&) = default;
+
 		UUID& operator=(const UUID&) = default;
 		UUID& operator=(UUID&&) = default;
 		bool operator==(const UUID& other) const { return m_UUID == other.m_UUID; }
 		bool operator!=(const UUID& other) const { return !(*this == other); }
-
+		
 		operator uint64_t() const { return m_UUID; }
 
 	private:

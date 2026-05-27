@@ -19,7 +19,7 @@ namespace Timefall
 		unsigned int GetHeight() const override { return m_Data.Height; }
 
 		// Window attributes
-		void SetEventCallBack(const EventCallBackFn& callback) override { m_Data.EventCallBack = callback; }
+		void SetEventCallBack(const EventCallBackFn& callback) override { m_Data.EventCallback = callback; }
 		void SetVsync(bool enabled) override;
 		bool IsVsync() const override { return m_Data.Vsync; }
 
@@ -39,7 +39,7 @@ namespace Timefall
 			unsigned int Width, Height;
 			bool Vsync;
 
-			EventCallBackFn EventCallBack;
+			EventCallBackFn EventCallback;
 		};
 
 		WindowData m_Data;

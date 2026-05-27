@@ -3,6 +3,8 @@
 #include "Timefall/Core/Core.h"
 #include "Timefall/Events/Event.h"
 
+#include <filesystem>
+
 namespace Timefall
 {
 	class TF_API WindowResizeEvent : public Event
@@ -37,6 +39,28 @@ namespace Timefall
 
 		EVENT_CLASS_TYPE(WindowClose)
 		EVENT_CLASS_CATEGORY(EventCategoryApplication)
+	};
+
+	class TF_API WindowDropEvent : public Event
+	{
+	public:
+		WindowDropEvent(const std::vector<std::filesystem::path>& paths)
+			: m_Paths(paths)
+		{
+		}
+
+		WindowDropEvent(std::vector<std::filesystem::path>&& paths)
+			: m_Paths(std::move(paths))
+		{
+		}
+
+		const std::vector<std::filesystem::path>& GetPaths() const { return m_Paths; }
+
+		EVENT_CLASS_TYPE(WindowDrop)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
+
+	private:
+		std::vector<std::filesystem::path> m_Paths;
 	};
 
 	class TF_API AppTickEvent : public Event

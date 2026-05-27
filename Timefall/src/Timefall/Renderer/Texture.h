@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Timefall/Core/Core.h"
+#include "Timefall/Asset/Asset.h"
 
 namespace Timefall
 {
@@ -20,8 +21,8 @@ namespace Timefall
 		ImageFormat Format = ImageFormat::RGBA8;
 		bool GenerateMips = true;
 	};
-
-	class TF_API Texture
+	
+	class TF_API Texture : public Asset
 	{
 	public:
 		virtual ~Texture() = default;
@@ -51,5 +52,8 @@ namespace Timefall
 	public:
 		static Ref<Texture2D> Create(const TextureSpecification& spec);
 		static Ref<Texture2D> Create(const std::string& path);
+
+		static AssetType GetStaticType() { return AssetType::Texture2D; }
+		virtual AssetType GetType() const override { return GetStaticType(); }
 	};
 }

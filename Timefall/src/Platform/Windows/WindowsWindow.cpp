@@ -7,6 +7,8 @@
 #include "Timefall/Events/KeyEvent.h"
 #include "Timefall/Renderer/Renderer.h"
 
+#include <filesystem>
+
 namespace Timefall
 {
 	static uint8_t s_GLFWWindowCount = 0;
@@ -74,14 +76,26 @@ namespace Timefall
 			data.Height = height;
 
 			WindowResizeEvent event(width, height);
-			data.EventCallBack(event);
+			data.EventCallback(event);
 		});
 
 		glfwSetWindowCloseCallback(m_Window, [](GLFWwindow* window)
 		{
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 			WindowCloseEvent event;
-			data.EventCallBack(event);
+			data.EventCallback(event);
+		});
+
+		glfwSetDropCallback(m_Window, [](GLFWwindow* window, int pathCount, const char* paths[])
+		{
+			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+
+			std::vector<std::filesystem::path> filepaths(pathCount);
+			for (int i = 0; i < pathCount; i++)
+				filepaths[i] = std::filesystem::path(paths[i]);
+
+			WindowDropEvent event(std::move(filepaths));
+			data.EventCallback(event);
 		});
 
 		glfwSetKeyCallback(m_Window, [](GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -93,19 +107,19 @@ namespace Timefall
 				case GLFW_PRESS:
 				{
 					KeyPressedEvent event(static_cast<KeyCode>(key), 0);
-					data.EventCallBack(event);
+					data.EventCallback(event);
 					break;
 				}
 				case GLFW_RELEASE:
 				{
 					KeyReleasedEvent event(static_cast<KeyCode>(key));
-					data.EventCallBack(event);
+					data.EventCallback(event);
 					break;
 				}
 				case GLFW_REPEAT:
 				{
 					KeyPressedEvent event(static_cast<KeyCode>(key), 1);
-					data.EventCallBack(event);
+					data.EventCallback(event);
 					break;
 				}
 			}
@@ -116,7 +130,7 @@ namespace Timefall
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
 			KeyTypedEvent event(static_cast<KeyCode>(character));
-			data.EventCallBack(event);
+			data.EventCallback(event);
 		});
 
 		glfwSetMouseButtonCallback(m_Window, [](GLFWwindow* window, int button, int action, int mods)
@@ -128,13 +142,13 @@ namespace Timefall
 				case GLFW_PRESS:
 				{
 					MouseButtonPressedEvent event(static_cast<MouseCode>(button));
-					data.EventCallBack(event);
+					data.EventCallback(event);
 					break;
 				}
 				case GLFW_RELEASE:
 				{
 					MouseButtonReleasedEvent event(static_cast<MouseCode>(button));
-					data.EventCallBack(event);
+					data.EventCallback(event);
 					break;
 				}
 			}
@@ -145,7 +159,7 @@ namespace Timefall
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
 			MouseScrolledEvent event((float)xOffest, (float)yOffset);
-			data.EventCallBack(event);
+			data.EventCallback(event);
 		});
 
 		glfwSetCursorPosCallback(m_Window, [](GLFWwindow* window, double xPos, double yPos)
@@ -153,7 +167,7 @@ namespace Timefall
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
 			MouseMovedEvent event((float)xPos, (float)yPos);
-			data.EventCallBack(event);
+			data.EventCallback(event);
 		});
 	}
 

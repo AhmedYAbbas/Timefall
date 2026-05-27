@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Timefall/Asset/EditorAssetManager.h"
+#include "Timefall/Asset/RuntimeAssetManager.h"
+
 #include <string>
 #include <filesystem>
 
@@ -40,6 +43,9 @@ namespace Timefall
 		inline ProjectConfig& GetConfig() { return m_Config; }
 
 		inline static Ref<Project>& GetActive() { return s_ActiveProject; }
+		Ref<AssetManagerBase> GetAssetManager() { return m_AssetManager; }
+		Ref<RuntimeAssetManager> GetRuntimeAssetManager() { return std::static_pointer_cast<RuntimeAssetManager>(m_AssetManager); }
+		Ref<EditorAssetManager> GetEditorAssetManager() { return std::static_pointer_cast<EditorAssetManager>(m_AssetManager); }
 
 		static Ref<Project> New();
 		static Ref<Project> Load(const std::filesystem::path& path);
@@ -48,6 +54,7 @@ namespace Timefall
 	private:
 		ProjectConfig m_Config;
 		std::filesystem::path m_ProjectDirectory;
+		Ref<AssetManagerBase> m_AssetManager;
 
 		inline static Ref<Project> s_ActiveProject;
 	};

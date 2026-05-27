@@ -188,6 +188,7 @@ namespace Timefall
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<KeyPressedEvent>(TF_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
 		dispatcher.Dispatch<MouseButtonPressedEvent>(TF_BIND_EVENT_FN(EditorLayer::OnMouseButtonPressed));
+		dispatcher.Dispatch<WindowDropEvent>(TF_BIND_EVENT_FN(EditorLayer::OnWindowDrop));
 	}
 
 	void EditorLayer::OnImGuiRender()
@@ -578,6 +579,15 @@ namespace Timefall
 		}
 
 		return false;
+	}
+
+	bool EditorLayer::OnWindowDrop(WindowDropEvent& e)
+	{
+		// TODO: if a project is dropped in, probably open it
+
+		//AssetManager::ImportAsset();
+
+		return true;
 	}
 
 	void EditorLayer::OnOverlayRender()
