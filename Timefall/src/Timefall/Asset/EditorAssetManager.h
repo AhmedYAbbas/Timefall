@@ -15,7 +15,13 @@ namespace Timefall
 		virtual bool IsAssetHandleValid(AssetHandle handle) const override;
 		virtual bool IsAssetLoaded(AssetHandle handle) const override;
 
-		const AssetMetadata& GetAssetMetadata(AssetHandle handle) const;
+		void ImportAsset(const std::filesystem::path& filePath);
+
+		const AssetMetadata& GetMetadata(AssetHandle handle) const;
+		const AssetRegistry& GetAssetRegistry() const { return m_AssetRegistry; }
+
+		void SerializeAssetRegistry() const;
+		bool DeserializeAssetRegistry();
 
 	private:
 		AssetRegistry m_AssetRegistry;

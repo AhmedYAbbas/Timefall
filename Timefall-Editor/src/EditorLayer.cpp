@@ -11,6 +11,7 @@
 #include "Timefall/Utils/PlatformUtils.h"
 #include "Timefall/Scripting/ScriptEngine.h"
 #include "Timefall/Renderer/Font.h"
+#include "Timefall/Asset/TextureImporter.h"
 
 #include "ImGuizmo.h"
 #include "Timefall/Math/Math.h"
@@ -29,11 +30,11 @@ namespace Timefall
 	{
 		TF_PROFILE_FUNCTION();
 
-		m_PlayIcon = Texture2D::Create("resources/icons/PlayButton.png");
-		m_PauseIcon = Texture2D::Create("resources/icons/PauseButton.png");
-		m_SimulateIcon = Texture2D::Create("resources/icons/SimulateButton.png");
-		m_StepIcon = Texture2D::Create("resources/icons/StepButton.png");
-		m_StopIcon = Texture2D::Create("resources/icons/StopButton.png");
+		m_PlayIcon = TextureImporter::LoadTexture2D("resources/icons/PlayButton.png");
+		m_PauseIcon = TextureImporter::LoadTexture2D("resources/icons/PauseButton.png");
+		m_SimulateIcon = TextureImporter::LoadTexture2D("resources/icons/SimulateButton.png");
+		m_StepIcon = TextureImporter::LoadTexture2D("resources/icons/StepButton.png");
+		m_StopIcon = TextureImporter::LoadTexture2D("resources/icons/StopButton.png");
 
 		FramebufferSpecification fbSpec;
 		fbSpec.Attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::DEPTH };

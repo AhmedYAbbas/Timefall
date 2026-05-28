@@ -285,20 +285,8 @@ namespace Timefall
 
 			auto& spriteRendererComponent = entity.GetComponent<SpriteRendererComponent>();
 			out << YAML::Key << "Color" << YAML::Value << spriteRendererComponent.Color;
-
-			if (spriteRendererComponent.Texture)
-			{
-				out << YAML::Key << "Texture";
-				out << YAML::BeginMap; // Texture
-				out << YAML::Key << "Width" << YAML::Value << spriteRendererComponent.Texture->GetWidth();
-				out << YAML::Key << "Height" << YAML::Value << spriteRendererComponent.Texture->GetHeight();
-				out << YAML::Key << "InternalFormat" << YAML::Value << spriteRendererComponent.Texture->GetInternalFormat();
-				out << YAML::Key << "DataFormat" << YAML::Value << spriteRendererComponent.Texture->GetDataFormat();
-				out << YAML::Key << "Path" << YAML::Value << spriteRendererComponent.Texture->GetPath().string();
-				out << YAML::EndMap; // Texture
-
-				out << YAML::Key << "TilingFactor" << YAML::Value << spriteRendererComponent.TilingFactor;
-			}
+			out << YAML::Key << "TextureHandle" << YAML::Value << spriteRendererComponent.Texture;
+			out << YAML::Key << "TilingFactor" << YAML::Value << spriteRendererComponent.TilingFactor;
 
 			out << YAML::EndMap; // SpriteRendererComponent
 		}
@@ -531,14 +519,18 @@ namespace Timefall
 
 					if (spriteRendererComponent["Texture"])
 					{
-						const auto width = spriteRendererComponent["Texture"]["Width"].as<uint32_t>();
+						// Note: Legacy code
+						/*const auto width = spriteRendererComponent["Texture"]["Width"].as<uint32_t>();
 						const auto height = spriteRendererComponent["Texture"]["Height"].as<uint32_t>();
 						const auto dataFormat = spriteRendererComponent["Texture"]["DataFormat"].as<uint32_t>();
 						const auto texturePath = spriteRendererComponent["Texture"]["Path"].as<std::string>();
 
 						auto path = Project::GetAssetFileSystemPath(texturePath);
-						src.Texture = Texture2D::Create(path.string());
+						src.Texture = Texture2D::Create(path.string());*/
 					}
+
+					if (spriteRendererComponent["TextureHandle"])
+						src.Texture = spriteRendererComponent["TextureHandle"].as<AssetHandle>();
 
 					if (spriteRendererComponent["TilingFactor"])
 						src.TilingFactor = spriteRendererComponent["TilingFactor"].as<float>();

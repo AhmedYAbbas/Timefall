@@ -9,8 +9,7 @@ namespace Timefall
 	class TF_API OpenGLTexture2D : public Texture2D
 	{
 	public:
-		OpenGLTexture2D(const TextureSpecification& spec);
-		OpenGLTexture2D(const std::filesystem::path& path);
+		OpenGLTexture2D(const TextureSpecification& spec, Buffer data = Buffer());
 		virtual ~OpenGLTexture2D();
 
 		virtual const TextureSpecification& GetSpecification() const override { return m_Specification; }
@@ -18,14 +17,13 @@ namespace Timefall
 		virtual uint32_t GetWidth() const override { return m_Width; };
 		virtual uint32_t GetHeight() const override { return m_Height; };
 		virtual uint32_t GetRendererID() const override { return m_RendererID; };
-		virtual std::filesystem::path GetPath() const override { return m_Path; }
 
 		virtual uint32_t GetInternalFormat() const override { return m_InternalFormat; }
 		virtual uint32_t GetDataFormat() const override { return m_DataFormat; }
 
 		virtual std::vector<uint8_t> GetData() const override;
 
-		virtual void SetData(void* data, uint32_t size) override;
+		virtual void SetData(Buffer data) override;
 		virtual void SetData(const std::vector<uint8_t>& data, uint32_t dataFormat) override;
 
 		virtual void Bind(int slot = 0) const override;
@@ -38,7 +36,6 @@ namespace Timefall
 	private:
 		TextureSpecification m_Specification;
 
-		std::filesystem::path m_Path;
 		uint32_t m_Width, m_Height;
 		uint32_t m_RendererID;
 		uint32_t m_InternalFormat, m_DataFormat;

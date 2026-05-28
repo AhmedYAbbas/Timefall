@@ -404,12 +404,14 @@ namespace Timefall
 			ImGui::Button("Texture", ImVec2(100.0f, 0.0f));
 			if (ImGui::BeginDragDropTarget())
 			{
+#if 0
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
 				{
 					auto texturePath = (const char*)payload->Data;
-					component.Texture = Texture2D::Create(texturePath);
+					component.Texture = Texture2D::Create(texturePath)->Handle;
 				}
 
+#endif
 				ImGui::EndDragDropTarget();
 			}
 

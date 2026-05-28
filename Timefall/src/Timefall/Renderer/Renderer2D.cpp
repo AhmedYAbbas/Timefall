@@ -6,6 +6,8 @@
 #include "Timefall/Renderer/Shader.h"
 #include "Timefall/Renderer/RenderCommand.h"
 
+#include "Timefall/Asset/AssetManager.h"
+
 #include "Timefall/Renderer/MSDFData.h"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -199,7 +201,7 @@ namespace Timefall
 
 		s_Data.WhiteTexture = Texture2D::Create(TextureSpecification());
 		uint32_t whiteTextureData = 0xffffffff;
-		s_Data.WhiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
+		s_Data.WhiteTexture->SetData(Buffer(&whiteTextureData, sizeof(uint32_t)));
 
 		int32_t samplers[s_Data.MaxTextureSlots];
 		for (uint32_t i = 0; i < s_Data.MaxTextureSlots; ++i)
@@ -676,9 +678,10 @@ namespace Timefall
 
 		if (src.Texture)
 		{
+			Ref<Texture2D> texture = AssetManager::GetAsset<Texture2D>(src.Texture);
 			for (uint32_t i = 1; i < s_Data.TextureSlotIndex; ++i)
 			{
-				if (*s_Data.TextureSlots[i].get() == *src.Texture.get())
+				if (*s_Data.TextureSlots[i].get() == *texture.get())
 				{
 					textureIndex = (float)i;
 					break;
@@ -691,7 +694,7 @@ namespace Timefall
 					FlushAndReset();
 
 				textureIndex = (float)s_Data.TextureSlotIndex;
-				s_Data.TextureSlots[s_Data.TextureSlotIndex++] = src.Texture;
+				s_Data.TextureSlots[s_Data.TextureSlotIndex++] = texture;
 			}
 		}
 

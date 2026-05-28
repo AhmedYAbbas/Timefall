@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Timefall/Core/Core.h"
+#include "Timefall/Core/Buffer.h"
 #include "Timefall/Asset/Asset.h"
 
 namespace Timefall
@@ -32,14 +33,13 @@ namespace Timefall
 		virtual uint32_t GetWidth() const = 0;
 		virtual uint32_t GetHeight() const = 0;
 		virtual uint32_t GetRendererID() const = 0;
-		virtual std::filesystem::path GetPath() const = 0;
 		
 		// OpenGL specific?
 		virtual uint32_t GetInternalFormat() const = 0;
 		virtual uint32_t GetDataFormat() const = 0;
 
 		virtual std::vector<uint8_t> GetData() const = 0;
-		virtual void SetData(void* data, uint32_t size) = 0;
+		virtual void SetData(Buffer data) = 0;
 		virtual void SetData(const std::vector<uint8_t>& data, uint32_t dataFormat) = 0;
 
 		virtual void Bind(int slot = 0) const = 0;
@@ -50,8 +50,7 @@ namespace Timefall
 	class TF_API Texture2D : public Texture
 	{
 	public:
-		static Ref<Texture2D> Create(const TextureSpecification& spec);
-		static Ref<Texture2D> Create(const std::string& path);
+		static Ref<Texture2D> Create(const TextureSpecification& spec, Buffer data = Buffer());
 
 		static AssetType GetStaticType() { return AssetType::Texture2D; }
 		virtual AssetType GetType() const override { return GetStaticType(); }

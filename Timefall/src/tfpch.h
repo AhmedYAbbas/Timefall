@@ -17,6 +17,7 @@
 #include <unordered_set>
 
 #include "Timefall/Core/Log.h"
+#include "Timefall/Core/Buffer.h"
 #include "Timefall/Debug/Instrumentor.h"
 
 #ifdef TF_PLATFORM_WINDOWS

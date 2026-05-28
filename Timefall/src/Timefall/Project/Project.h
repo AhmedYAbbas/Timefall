@@ -15,6 +15,7 @@ namespace Timefall
 		std::filesystem::path StartScene;
 
 		std::filesystem::path AssetDirectory;
+		std::filesystem::path AssetRegistryPath; // Relative to AssetDirectory
 		std::filesystem::path ScriptModulePath;
 	};
 
@@ -31,6 +32,12 @@ namespace Timefall
 		{
 			TF_CORE_ASSERT(s_ActiveProject, "Project not initialized!");
 			return GetProjectDirectory() / s_ActiveProject->m_Config.AssetDirectory;
+		}
+		
+		static std::filesystem::path GetAssetRegistryPath()
+		{
+			TF_CORE_ASSERT(s_ActiveProject, "Project not initialized!");
+			return GetAssetDirectory() / s_ActiveProject->m_Config.AssetRegistryPath;
 		}
 
 		// TODO: move to asset manager when I have one

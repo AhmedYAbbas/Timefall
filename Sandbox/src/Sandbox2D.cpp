@@ -1,5 +1,7 @@
 #include "Sandbox2D.h"
 
+#include "Timefall/Asset/TextureImporter.h"
+
 #include <imgui/imgui.h>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -32,8 +34,8 @@ void Sandbox2D::OnAttach()
 {
 	TF_PROFILE_FUNCTION();
 
-	m_CheckerboardTexture = Timefall::Texture2D::Create("assets/textures/Checkerboard.png");
-	m_SpriteSheet = Timefall::Texture2D::Create("assets/Game/Textures/tilemap_packed.png");
+	m_CheckerboardTexture = Timefall::TextureImporter::LoadTexture2D("assets/textures/Checkerboard.png");
+	m_SpriteSheet = Timefall::TextureImporter::LoadTexture2D("assets/Game/Textures/tilemap_packed.png");
 
 	m_LadderTexture = Timefall::SubTexture2D::Create(m_SpriteSheet, {11, 4}, {16, 16});
 	m_CactusTexture = Timefall::SubTexture2D::Create(m_SpriteSheet, {15, 6}, {16, 16});

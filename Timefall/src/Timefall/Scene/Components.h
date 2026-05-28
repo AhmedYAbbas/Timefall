@@ -60,7 +60,7 @@ namespace Timefall
 	struct TF_API SpriteRendererComponent
 	{
 		glm::vec4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
-		Ref<Texture2D> Texture;
+		AssetHandle Texture = 0;
 		float TilingFactor = 1.0f;
 
 		SpriteRendererComponent() = default;

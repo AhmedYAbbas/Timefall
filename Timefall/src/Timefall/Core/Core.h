@@ -49,19 +49,24 @@
 	#error "Unknown platform!"
 #endif // End of platform detection
 
-#ifdef TF_DEBUG
-	#if defined(TF_PLATFORM_WINDOWS)
-		#define	TF_DEBUGBREAK() __debugbreak()
-	#elif defined(TF_PLATFORM_LINUX)
-		#include <signal.h>
-		#define TF_DEBUGBREAK() raise(SIGTRAP)
-	#else
-		#error "Platform doesn't support debugbreak yet!"
-	#endif
-	#define TF_ENABLE_ASSERTS
+#if defined(TF_PLATFORM_WINDOWS)
+	#define	TF_DEBUGBREAK() __debugbreak()
+#elif defined(TF_PLATFORM_LINUX)
+	#include <signal.h>
+	#define TF_DEBUGBREAK() raise(SIGTRAP)
 #else
-	#define TF_DEBUGBREAK()
+	#error "Platform doesn't support debugbreak yet!"
 #endif
+	#define TF_ENABLE_ASSERTS
+
+#ifdef TF_DEBUG
+	#define TF_ENABLE_ASSERTS
+#endif
+
+#ifndef TF_DIST
+	#define TF_ENABLE_VERIFY
+#endif
+
 
 // TODO: Modify the assertion to have an if-else case + add static assertion
 #ifdef TF_ENABLE_ASSERTS
@@ -70,6 +75,14 @@
 #else
 	#define TF_ASSERT(x, ...) 
 	#define TF_CORE_ASSERT(x, ...)
+#endif
+
+#ifdef TF_ENABLE_VERIFY
+	#define TF_VERIFY(x, ...) { if (!(x)) { TF_ERROR("Verification failed: {0}", __VA_ARGS__); TF_DEBUGBREAK(); } }
+	#define TF_CORE_VERIFY(x, ...) { if (!(x)) { TF_CORE_ERROR("Core verification failed: {0}", __VA_ARGS__); TF_DEBUGBREAK(); } } 
+#else
+	#define TF_VERIFY(x, ...) 
+	#define TF_CORE_VERIFY(x, ...)
 #endif
 
 #define BIT(x) (1 << (x))
