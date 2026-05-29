@@ -12,6 +12,8 @@
 #include "Timefall/Scripting/ScriptEngine.h"
 #include "Timefall/Renderer/Font.h"
 #include "Timefall/Asset/TextureImporter.h"
+#include "Timefall/Asset/SceneImporter.h"
+#include "Timefall/Asset/AssetManager.h"
 
 #include "ImGuizmo.h"
 #include "Timefall/Math/Math.h"
@@ -332,8 +334,8 @@ namespace Timefall
 		{
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
 			{
-				auto path = (const char*)payload->Data;
-				OpenScene(path);
+				AssetHandle handle = *(AssetHandle*)payload->Data;
+				OpenScene(handle);
 			}
 			ImGui::EndDragDropTarget();
 		}
@@ -680,8 +682,10 @@ namespace Timefall
 		{
 			ScriptEngine::Init();
 
-			auto startScenePath = Project::GetAssetFileSystemPath(Project::GetActive()->GetConfig().StartScene);
-			OpenScene(startScenePath);
+			AssetHandle startScene = Project::GetActive()->GetConfig().StartScene;
+			if (startScene)
+				OpenScene(startScene);
+
 			m_ContentBrowserPanel = CreateScope<ContentBrowserPanel>();
 		}
 	}
@@ -703,26 +707,26 @@ namespace Timefall
 
 	void EditorLayer::OpenScene()
 	{
-		auto filepath = FileDialogs::OpenFile("Timefall Scene (*.timefall)\0*.timefall\0");
-		if (!filepath.empty())
-			OpenScene(filepath);
+		// auto filepath = FileDialogs::OpenFile("Timefall Scene (*.timefall)\0*.timefall\0");
+		// if (!filepath.empty())
+		// 	OpenScene(filepath);
 	}
 
-	void EditorLayer::OpenScene(const std::filesystem::path& filepath)
+	void EditorLayer::OpenScene(AssetHandle handle)
 	{
+		TF_CORE_ASSERT(handle != (AssetHandle)0, "Invalid asset handle!")
+
 		if (m_SceneState != SceneState::Edit)
 			OnSceneStop();
 
-		Ref<Scene> newScene = CreateRef<Scene>();
-		SceneSerializer serializer(newScene);
-		if (serializer.DeserializeText(filepath))
-		{
-			m_EditorScene = newScene;
-			m_SceneHierarchyPanel.SetContext(m_EditorScene);
+		Ref<Scene> readOnlyScene = AssetManager::GetAsset<Scene>(handle);
+		Ref<Scene> newScene = Scene::Copy(readOnlyScene);
 
-			m_ActiveScene = m_EditorScene;
-			m_EditorScenePath = filepath;
-		}
+		m_EditorScene = newScene;
+		m_SceneHierarchyPanel.SetContext(m_EditorScene);
+
+		m_ActiveScene = m_EditorScene;
+		m_EditorScenePath = Project::GetActive()->GetEditorAssetManager()->GetFilePath(handle);
 	}
 
 	void EditorLayer::SaveScene()
@@ -758,8 +762,7 @@ namespace Timefall
 
 	void EditorLayer::SerializeScene(const Ref<Scene>& scene, const std::filesystem::path& filepath)
 	{
-		SceneSerializer serializer(scene);
-		serializer.SerializeText(filepath);
+		SceneImporter::SaveScene(scene, filepath);
 	}
 
 	void EditorLayer::OnScenePlay()

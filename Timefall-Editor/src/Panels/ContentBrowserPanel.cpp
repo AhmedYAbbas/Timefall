@@ -11,7 +11,7 @@ namespace Timefall
 	ContentBrowserPanel::ContentBrowserPanel()
 		: m_BaseDirectory(Project::GetAssetDirectory()), m_CurrentDirectory(m_BaseDirectory)
 	{
-		m_TreeNodes.emplace_back(TreeNode("."));
+		m_TreeNodes.emplace_back(TreeNode(".", 0));
 
 		m_DirectoryIcon = TextureImporter::LoadTexture2D("resources/icons/content_browser/DirectoryIcon.png");
 		m_FileIcon = TextureImporter::LoadTexture2D("resources/icons/content_browser/FileIcon.png");
@@ -82,12 +82,18 @@ namespace Timefall
 
 				if (ImGui::BeginPopupContextItem())
 				{
-					if (ImGui::MenuItem("Import"))
+					if (ImGui::MenuItem("Delete"))
 					{
-						auto relativePath = std::filesystem::relative(item, Project::GetAssetDirectory());
-						Project::GetActive()->GetEditorAssetManager()->ImportAsset(relativePath);
+						TF_CORE_ASSERT(false, "Not implemented yet");
 					}
 					ImGui::EndPopup();
+				}
+
+				if (ImGui::BeginDragDropSource())
+				{
+					AssetHandle handle = m_TreeNodes[treeNodeIndex].Handle;
+					ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", &handle, sizeof(AssetHandle));
+					ImGui::EndDragDropSource();
 				}
 
 				ImGui::PopStyleColor();
@@ -112,19 +118,13 @@ namespace Timefall
 				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 				ImGui::ImageButton(filenameString.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), { thumbnailSize, thumbnailSize }, { 0, 1 }, { 1, 0 });
 
-				if (ImGui::BeginDragDropSource())
-				{
-					std::filesystem::path relativePath(path);
-					ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", relativePath.string().c_str(), relativePath.string().size() + 1);
-					ImGui::EndDragDropSource();
-				}
-
 				if (ImGui::BeginPopupContextItem())
 				{
 					if (ImGui::MenuItem("Import"))
 					{
 						auto relativePath = std::filesystem::relative(path, Project::GetAssetDirectory());
 						Project::GetActive()->GetEditorAssetManager()->ImportAsset(relativePath);
+						RefreshAssetTree();
 					}
 					ImGui::EndPopup();
 				}
@@ -166,7 +166,7 @@ namespace Timefall
 				else
 				{
 					// add node
-					TreeNode newNode(p);
+					TreeNode newNode(p, handle);
 					newNode.Parent = currentNodeIndex;
 					m_TreeNodes.push_back(newNode);
 

@@ -34,7 +34,7 @@ namespace Timefall
 
 		void NewScene();
 		void OpenScene();
-		void OpenScene(const std::filesystem::path& filepath);
+		void OpenScene(AssetHandle handle);
 		void SaveScene();
 		void SaveSceneAs();
 		void DuplicateEntity();

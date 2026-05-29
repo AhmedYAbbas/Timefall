@@ -9,7 +9,26 @@
 
 namespace Timefall
 {
-	Ref<Asset> EditorAssetManager::GetAsset(AssetHandle handle) const
+	static std::unordered_map<std::filesystem::path, AssetType> s_AssetExtensionsMap =
+	{
+		{ ".timefall", AssetType::Scene },
+		{ ".png", AssetType::Texture2D },
+		{ ".jpg", AssetType::Texture2D },
+		{ ".jpeg", AssetType::Texture2D }
+	};
+
+	static AssetType GetAssetTypeFromFileExtension(const std::filesystem::path& extension)
+	{
+		if (!s_AssetExtensionsMap.contains(extension))
+		{
+			TF_CORE_WARN("Unknown asset type for extension: {0}", extension.string());
+			return AssetType::None;
+		}
+
+		return s_AssetExtensionsMap.at(extension);
+	}
+
+	Ref<Asset> EditorAssetManager::GetAsset(AssetHandle handle)
 	{
 		if (!IsAssetHandleValid(handle))
 		{
@@ -30,6 +49,7 @@ namespace Timefall
 			{
 				TF_CORE_ERROR("EditorAssetManager::GetAsset - Failed to import asset: {0}", metadata.FilePath.string());
 			}
+			m_LoadedAssets[handle] = asset;
 		}
 			
 		return asset;
@@ -45,16 +65,30 @@ namespace Timefall
 		return m_LoadedAssets.contains(handle);
 	}
 
+	AssetType EditorAssetManager::GetAssetType(AssetHandle handle) const
+	{
+		if (!IsAssetHandleValid(handle))
+			return AssetType::None;
+
+		return m_AssetRegistry.at(handle).Type;
+	}
+
+	const std::filesystem::path& EditorAssetManager::GetFilePath(AssetHandle handle) const
+	{
+		return GetMetadata(handle).FilePath;
+	}
+
 	void EditorAssetManager::ImportAsset(const std::filesystem::path& filePath)
 	{
 		AssetHandle handle;
 		AssetMetadata metadata;
 		metadata.FilePath = filePath;
-		metadata.Type = AssetType::Texture2D; // TODO: determine type based on file extension
+		metadata.Type = GetAssetTypeFromFileExtension(filePath.extension());
+		TF_CORE_ASSERT(metadata.Type != AssetType::None, "Unsupported asset type for file: {0}", filePath.string());
 		Ref<Asset> asset = AssetImporter::ImportAsset(handle, metadata);
-		asset->Handle = handle;
 		if (asset)
 		{
+			asset->Handle = handle;
 			m_LoadedAssets[handle] = asset;
 			m_AssetRegistry[handle] = metadata;
 			SerializeAssetRegistry();

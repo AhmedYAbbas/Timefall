@@ -12,7 +12,7 @@ namespace Timefall
 	{
 		std::string Name = "Untitled";
 
-		std::filesystem::path StartScene;
+		AssetHandle StartScene;
 
 		std::filesystem::path AssetDirectory;
 		std::filesystem::path AssetRegistryPath; // Relative to AssetDirectory

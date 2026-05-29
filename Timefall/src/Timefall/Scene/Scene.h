@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Timefall/Asset/Asset.h"
 #include "Timefall/Core/UUID.h"
 #include "Timefall/Core/Timestep.h"
 #include "Timefall/Renderer/EditorCamera.h"
@@ -11,13 +12,15 @@ namespace Timefall
 {
 	class Entity;
 
-	class TF_API Scene
+	class TF_API Scene : public Asset
 	{
 	public:
 		Scene();
 		~Scene();
 
 		static Ref<Scene> Copy(const Ref<Scene>& srcScene);
+
+		virtual AssetType GetType() const override { return AssetType::Scene; }
 
 		Entity CreateEntity(const std::string tag = "");
 		Entity CreateEntityWithUUID(const UUID& uuid, const std::string& tag = "");
