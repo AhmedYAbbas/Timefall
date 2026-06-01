@@ -51,6 +51,22 @@
         }
     }
 
+    public class SpriteRendererComponent : Component
+    {
+        public Vector4 Color
+        {
+            get
+            {
+                NativeCalls.SpriteRendererComponent_GetColor(Entity.ID, out Vector4 color);
+                return color;
+            }
+            set
+            {
+                NativeCalls.SpriteRendererComponent_SetColor(Entity.ID, ref value);
+            }
+        }
+    }
+
     public class TextComponent : Component
     {
 

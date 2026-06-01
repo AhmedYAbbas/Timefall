@@ -25,6 +25,10 @@ namespace Timefall
 		Entity CreateEntity(const std::string tag = "");
 		Entity CreateEntityWithUUID(const UUID& uuid, const std::string& tag = "");
 		void DestroyEntity(Entity entity);
+		// Queues an entity for destruction at the end of the current runtime update,
+		// so it's safe to call from within scripts / component iteration. Children are
+		// destroyed recursively when the queue is flushed.
+		void SubmitToDestroyEntity(Entity entity);
 		Entity DuplicateEntity(Entity entity);
 
 		Entity FindEntityByName(const std::string_view& name);
@@ -74,6 +78,9 @@ namespace Timefall
 		void OnPhysics2DStart();
 		void OnPhysics2DStop();
 
+		// Destroys everything queued via SubmitToDestroyEntity. Called at the end of a runtime update.
+		void FlushDestroyQueue();
+
 		void RenderScene(EditorCamera& camera);
 
 	private:
@@ -91,6 +98,9 @@ namespace Timefall
 		int m_PhysicsSubStepCount = 4;
 
 		std::unordered_map<UUID, entt::entity> m_EntityMap;
+
+		// Entities queued for deferred destruction (flushed at end of runtime update).
+		std::vector<entt::entity> m_EntitiesToDestroy;
 
 		friend class Entity;
 		friend class SceneSerializer;

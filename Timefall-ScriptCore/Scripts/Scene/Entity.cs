@@ -33,6 +33,25 @@ namespace Timefall
         protected Entity() : this(0) { }
         internal Entity(ulong id) => ID = id;
 
+        // Creates a new runtime entity in the active scene and returns a handle to it.
+        public static Entity Create(string name = "Entity")
+        {
+            ulong id = NativeCalls.Scene_CreateEntity(name);
+            return new Entity(id);
+        }
+
+        // Destroys this entity in the active scene.
+        public void Destroy()
+        {
+            NativeCalls.Entity_Destroy(ID);
+        }
+
+        public T AddComponent<T>() where T : Component, new()
+        {
+            NativeCalls.Entity_AddComponent(ID, typeof(T).FullName);
+            return new T() { Entity = this };
+        }
+
         // Virtual lifecycle methods - override in derived classes
         public virtual void OnCreate() { }
         public virtual void OnUpdate(float ts) { }

@@ -13,6 +13,7 @@
 namespace Timefall
 {
 	static std::unordered_map<std::string, std::function<bool(Entity)>> s_EntityHasComponentFuncs;
+	static std::unordered_map<std::string, std::function<void(Entity)>> s_EntityAddComponentFuncs;
 
 	extern "C"
 	{
@@ -67,7 +68,72 @@ namespace Timefall
 
 			return entity.GetUUID();
 		}
-		
+
+		__declspec(dllexport)
+		uint64_t Scene_CreateEntity(const char* name)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+
+			Entity entity = scene->CreateEntity(name ? name : "Entity");
+			return entity.GetUUID();
+		}
+
+		__declspec(dllexport)
+		void Entity_Destroy(UUID entityID)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+
+			Entity entity = scene->GetEntityByUUID(entityID);
+			if (!entity)
+			{
+				TF_CORE_ERROR("Entity_Destroy: entity {0} not found", (uint64_t)entityID);
+				return;
+			}
+
+			// Deferred: flushed at the end of the runtime update so it's safe to call
+			// from within a script's OnUpdate (e.g. line clears destroying many cells).
+			scene->SubmitToDestroyEntity(entity);
+		}
+
+		__declspec(dllexport)
+		void Entity_AddComponent(UUID entityID, const char* componentTypeFullName)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+
+			auto it = s_EntityAddComponentFuncs.find(componentTypeFullName);
+			TF_CORE_ASSERT(it != s_EntityAddComponentFuncs.end(), "Component type not registered for AddComponent");
+			it->second(entity);
+		}
+
+		__declspec(dllexport)
+		void SpriteRendererComponent_GetColor(UUID entityID, glm::vec4* outColor)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+			TF_CORE_ASSERT(entity.HasComponent<SpriteRendererComponent>(), "Entity does not have a sprite renderer component!");
+
+			*outColor = entity.GetComponent<SpriteRendererComponent>().Color;
+		}
+
+		__declspec(dllexport)
+		void SpriteRendererComponent_SetColor(UUID entityID, glm::vec4* color)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+			TF_CORE_ASSERT(entity.HasComponent<SpriteRendererComponent>(), "Entity does not have a sprite renderer component!");
+
+			entity.GetComponent<SpriteRendererComponent>().Color = *color;
+		}
+
 		__declspec(dllexport)
 		void TransformComponent_GetTranslation(UUID entityID, glm::vec3* outTranslation)
 		{
@@ -334,6 +400,7 @@ namespace Timefall
 			std::string managedComponentTypeName = std::format("Timefall.{}", componentStructName);
 			// TODO: Need to check if managedComponentTypeName actually exists in the loaded assemblies
 			s_EntityHasComponentFuncs[managedComponentTypeName] = [](Entity entity) { return entity.HasComponent<T>(); };
+			s_EntityAddComponentFuncs[managedComponentTypeName] = [](Entity entity) { entity.AddComponent<T>(); };
 		}(), ...);
 	}
 

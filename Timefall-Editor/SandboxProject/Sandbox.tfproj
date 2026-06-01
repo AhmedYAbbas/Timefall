@@ -1,5 +1,6 @@
 Project:
-  Name: "Untitled"
-  StartScene: "Scenes/PhysicsSandbox.timefall"
+  Name: "Sandbox"
+  StartScene: 14748461370065992660
   AssetDirectory: "Assets"
+  AssetRegistryPath: AssetRegistry.tfr
   ScriptModulePath: "Scripts/bin/Debug/Sandbox.dll"

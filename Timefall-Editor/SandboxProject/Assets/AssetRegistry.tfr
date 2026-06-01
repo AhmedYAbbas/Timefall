@@ -1,0 +1,13 @@
+AssetRegistry:
+  - Handle: 6498071192691832611
+    FilePath: Textures/Fish.png
+    Type: Texture2D
+  - Handle: 14561479867608167996
+    FilePath: Textures/Checkerboard.png
+    Type: Texture2D
+  - Handle: 14748461370065992660
+    FilePath: Scenes/Sandbox.timefall
+    Type: Scene
+  - Handle: 15191860190705874248
+    FilePath: Scenes/PhysicsSandbox.timefall
+    Type: Scene

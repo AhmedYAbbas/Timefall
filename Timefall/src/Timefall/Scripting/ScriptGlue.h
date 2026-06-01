@@ -7,6 +7,6 @@ namespace Timefall
 	class TF_API ScriptGlue
 	{
 	public:
-			static void RegisterComponents();
+		static void RegisterComponents();
 	};
 }

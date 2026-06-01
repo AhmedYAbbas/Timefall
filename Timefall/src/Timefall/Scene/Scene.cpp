@@ -225,6 +225,9 @@ namespace Timefall
 
 			Renderer2D::EndScene();
 		}
+
+		// Safe point: scripts and component iteration are done for this frame.
+		FlushDestroyQueue();
 	}
 
 	void Scene::OnUpdateSimulation(Timestep ts, EditorCamera& camera)
@@ -319,6 +322,32 @@ namespace Timefall
 	{
 		m_EntityMap.erase(entity.GetUUID());
 		m_Registry.destroy(entity);
+	}
+
+	void Scene::SubmitToDestroyEntity(Entity entity)
+	{
+		if (!entity)
+			return;
+
+		m_EntitiesToDestroy.push_back(entity);
+	}
+
+	void Scene::FlushDestroyQueue()
+	{
+		if (m_EntitiesToDestroy.empty())
+			return;
+
+		for (entt::entity handle : m_EntitiesToDestroy)
+		{
+			// A handle may already be invalid if it was queued more than once,
+			// or destroyed as part of a parent's recursive teardown.
+			if (!m_Registry.valid(handle))
+				continue;
+
+			DestroyEntity(Entity{ handle, this });
+		}
+
+		m_EntitiesToDestroy.clear();
 	}
 
 	Entity Scene::DuplicateEntity(Entity entity)

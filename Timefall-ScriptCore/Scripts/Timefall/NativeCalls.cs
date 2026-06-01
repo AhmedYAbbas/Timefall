@@ -16,6 +16,18 @@ namespace Timefall
         [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial ulong Entity_FindEntityByName(string name);
 
+        [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial ulong Scene_CreateEntity(string? name);
+        [LibraryImport("Timefall")]
+        internal static partial void Entity_Destroy(ulong entityID);
+        [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void Entity_AddComponent(ulong entityID, string? componentTypeFullName);
+
+        [LibraryImport("Timefall")]
+        internal static partial void SpriteRendererComponent_GetColor(ulong entityID, out Vector4 color);
+        [LibraryImport("Timefall")]
+        internal static partial void SpriteRendererComponent_SetColor(ulong entityID, ref Vector4 color);
+
         [LibraryImport("Timefall")]
         internal static partial void TransformComponent_GetTranslation(ulong entityID, out Vector3 translation);
         [LibraryImport("Timefall")]
