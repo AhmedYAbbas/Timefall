@@ -4,11 +4,14 @@
 #include "Timefall/Scene/SceneCamera.h"
 #include "Timefall/Renderer/Texture.h"
 #include "Timefall/Renderer/Font.h"
+#include "Timefall/Math/Math.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
+
+#include <vector>
 
 namespace Timefall
 {
@@ -49,12 +52,33 @@ namespace Timefall
 		{
 		}
 
-		glm::mat4 GetTransform() const
+		// Composes this component's LOCAL transform (T * R * S). Rotation is Euler radians.
+		// World transform is resolved by Entity::GetWorldTransform() (it must walk the parent chain).
+		glm::mat4 GetLocalTransform() const
 		{
 			return glm::translate(glm::mat4(1.0f), Translation)
 				* glm::toMat4(glm::quat(Rotation))
 				* glm::scale(glm::mat4(1.0f), Scale);
 		}
+
+		// Overwrites local T/R/S by decomposing a local matrix. Lossless under uniform scale;
+		// drops shear/perspective it cannot represent. Used by reparent / SetWorldTransform.
+		void SetLocalTransform(const glm::mat4& transform)
+		{
+			Math::DecomposeTransform(transform, Translation, Rotation, Scale);
+		}
+	};
+
+	// Scene-graph link. Added lazily (only on parented entities) — absence means a root entity.
+	// Parent == 0 is the reserved "no parent" sentinel. Stores UUIDs (not entt handles) so it
+	// survives save/load, Scene::Copy, and duplication.
+	struct TF_API RelationshipComponent
+	{
+		UUID Parent = 0;
+		std::vector<UUID> Children;
+
+		RelationshipComponent() = default;
+		RelationshipComponent(const RelationshipComponent&) = default;
 	};
 
 	struct TF_API SpriteRendererComponent
@@ -190,6 +214,7 @@ namespace Timefall
 
 	using AllComponents = ComponentGroup<
 		TransformComponent,
+		RelationshipComponent,
 		SpriteRendererComponent,
 		CircleRendererComponent,
 		CameraComponent,

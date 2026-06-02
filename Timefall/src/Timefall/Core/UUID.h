@@ -14,9 +14,10 @@ namespace Timefall
 
 		UUID& operator=(const UUID&) = default;
 		UUID& operator=(UUID&&) = default;
-		bool operator==(const UUID& other) const { return m_UUID == other.m_UUID; }
-		bool operator!=(const UUID& other) const { return !(*this == other); }
-		
+
+		// No explicit operator== / operator!=: comparisons go through this implicit conversion
+		// (built-in integer comparison). Defining them alongside the conversion makes mixed
+		// comparisons like `uuid != 0` ambiguous (two equally-ranked one-conversion paths).
 		operator uint64_t() const { return m_UUID; }
 
 	private:

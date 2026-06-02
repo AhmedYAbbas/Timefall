@@ -31,6 +31,10 @@ namespace Timefall
 		void SubmitToDestroyEntity(Entity entity);
 		Entity DuplicateEntity(Entity entity);
 
+		// Reparents child under parent (an invalid/empty parent unparents it), preserving the
+		// child's WORLD transform. Rejects cycles (no-op + warning). Maintains both link sides.
+		void SetParent(Entity child, Entity parent);
+
 		Entity FindEntityByName(const std::string_view& name);
 		Entity GetEntityByUUID(const UUID& uuid);
 
@@ -78,8 +82,23 @@ namespace Timefall
 		void OnPhysics2DStart();
 		void OnPhysics2DStop();
 
+		// Writes a Box2D body's world pose back into the entity's transform, converting to local
+		// space when the entity is parented (root bodies take a direct fast path).
+		void SyncTransformFromBody(Entity entity, b2BodyId body);
+
 		// Destroys everything queued via SubmitToDestroyEntity. Called at the end of a runtime update.
 		void FlushDestroyQueue();
+
+		// --- Scene-graph helpers ---
+		// Establishes the parent/child link only; does NOT touch transforms (local stays as-is).
+		// Used by duplication / deserialization, where the child must keep its authored local.
+		void LinkChildToParent(Entity child, Entity parent);
+		// Removes child from its current parent's Children list and clears its Parent.
+		void DetachFromParent(Entity child);
+		// Recursively destroys an entity and its descendants (does not detach from parent).
+		void DestroyEntityAndChildren(Entity entity);
+		// Deep-clones an entity and its subtree with fresh UUIDs, rebuilding the hierarchy links.
+		Entity DuplicateEntitySubtree(Entity entity);
 
 		void RenderScene(EditorCamera& camera);
 

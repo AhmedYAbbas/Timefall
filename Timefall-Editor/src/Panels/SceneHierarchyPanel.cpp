@@ -31,11 +31,41 @@ namespace Timefall
 
 		if (m_Context)
 		{
-			m_Context->m_Registry.view<entt::entity>().each([&](auto entity)
+			// A previously-selected entity may have been destroyed (e.g. by a script via the
+			// deferred-destroy queue) while still selected, leaving a stale handle. Clear it
+			// before anything below touches its components (Properties panel, etc.).
+			if (m_SelectionContext && !m_SelectionContext.IsValid())
+				m_SelectionContext = {};
+
+			// Draw only roots at the top level; DrawEntityNode recurses into Children. An entity
+			// whose Parent is missing (0 or a dangling UUID) is treated as a root so it stays visible.
+			m_Context->m_Registry.view<entt::entity>().each([&](auto entityHandle)
 			{
-				Entity e = { entity, m_Context.get() };
-				DrawEntityNode(e);
+				Entity e = { entityHandle, m_Context.get() };
+
+				bool isRoot = true;
+				if (e.HasComponent<RelationshipComponent>())
+				{
+					UUID parentID = e.GetComponent<RelationshipComponent>().Parent;
+					isRoot = (parentID == 0) || !m_Context->GetEntityByUUID(parentID);
+				}
+
+				if (isRoot)
+					DrawEntityNode(e);
 			});
+
+			// Whole-window drop target: dropping an entity onto empty space unparents it. ImGui's
+			// smallest-surface-wins target resolution means a drop onto a node still hits the node.
+			if (ImGui::BeginDragDropTargetCustom(ImGui::GetCurrentWindow()->Rect(), ImGui::GetID("SceneHierarchyUnparentTarget")))
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("SCENE_GRAPH_ENTITY"))
+				{
+					m_PendingReparent = true;
+					m_PendingReparentChild = *(const UUID*)payload->Data;
+					m_PendingReparentParent = 0; // unparent
+				}
+				ImGui::EndDragDropTarget();
+			}
 
 			if (Input::IsMouseButtonPressed(MouseCode::Button0) && ImGui::IsWindowHovered())
 				m_SelectionContext = {};
@@ -50,6 +80,9 @@ namespace Timefall
 
 				ImGui::EndPopup();
 			}
+
+			// Apply captured structural edits now that the tree iteration is complete.
+			ApplyDeferredEdits();
 		}
 
 		ImGui::End();
@@ -66,38 +99,103 @@ namespace Timefall
 	{
 		auto& tag = entity.GetComponent<TagComponent>().Tag;
 
-		ImGuiTreeNodeFlags treeNodeFlags = ((m_SelectionContext == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
-		treeNodeFlags |= ImGuiTreeNodeFlags_SpanAvailWidth;
-		bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity, treeNodeFlags, tag.c_str());
+		bool hasChildren = entity.HasComponent<RelationshipComponent>()
+			&& !entity.GetComponent<RelationshipComponent>().Children.empty();
+
+		ImGuiTreeNodeFlags treeNodeFlags = ((m_SelectionContext == entity) ? ImGuiTreeNodeFlags_Selected : 0)
+			| ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+		if (!hasChildren)
+			treeNodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+		bool opened = ImGui::TreeNodeEx((void*)(uint64_t)entity.GetUUID(), treeNodeFlags, tag.c_str());
 
 		if (ImGui::IsItemClicked())
 			m_SelectionContext = entity;
 
-		bool entityMarkedForDeletion = false;
+		// Drag source: carries this entity's UUID.
+		if (ImGui::BeginDragDropSource())
+		{
+			UUID id = entity.GetUUID();
+			ImGui::SetDragDropPayload("SCENE_GRAPH_ENTITY", &id, sizeof(UUID));
+			ImGui::Text("%s", tag.c_str());
+			ImGui::EndDragDropSource();
+		}
+
+		// Drop target: reparent the dropped entity under this one (deferred).
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("SCENE_GRAPH_ENTITY"))
+			{
+				m_PendingReparent = true;
+				m_PendingReparentChild = *(const UUID*)payload->Data;
+				m_PendingReparentParent = entity.GetUUID();
+			}
+			ImGui::EndDragDropTarget();
+		}
+
 		if (ImGui::BeginPopupContextItem())
 		{
+			if (ImGui::MenuItem("Create Child Entity"))
+				m_PendingCreateChildParent = entity.GetUUID();
+
 			if (ImGui::MenuItem("Delete Entity"))
-			{
-				entityMarkedForDeletion = true;
-				if (m_SelectionContext == entity)
-					m_SelectionContext = {};
-			}
+				m_PendingDelete = entity.GetUUID();
 
 			ImGui::EndPopup();
 		}
 
-		if (opened)
+		// Recurse into children (only parents push a tree level / need TreePop).
+		if (opened && hasChildren)
 		{
-			ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-			bool opened = ImGui::TreeNodeEx((void*)9817239, flags, tag.c_str());
-			if (opened)
-				ImGui::TreePop();
+			// Copy: the live Children list may change via this frame's deferred edits.
+			std::vector<UUID> children = entity.GetComponent<RelationshipComponent>().Children;
+			for (UUID childID : children)
+			{
+				Entity child = m_Context->GetEntityByUUID(childID);
+				if (child)
+					DrawEntityNode(child);
+			}
 
 			ImGui::TreePop();
 		}
+	}
 
-		if (entityMarkedForDeletion)
-			m_Context->DestroyEntity(entity);
+	void SceneHierarchyPanel::ApplyDeferredEdits()
+	{
+		if (m_PendingReparent)
+		{
+			Entity child = m_Context->GetEntityByUUID(m_PendingReparentChild);
+			Entity parent = m_PendingReparentParent != 0 ? m_Context->GetEntityByUUID(m_PendingReparentParent) : Entity{};
+			if (child)
+				m_Context->SetParent(child, parent);
+
+			m_PendingReparent = false;
+			m_PendingReparentChild = 0;
+			m_PendingReparentParent = 0;
+		}
+
+		if (m_PendingCreateChildParent != 0)
+		{
+			Entity parent = m_Context->GetEntityByUUID(m_PendingCreateChildParent);
+			if (parent)
+			{
+				Entity child = m_Context->CreateEntity("Empty Entity");
+				m_Context->SetParent(child, parent);
+			}
+			m_PendingCreateChildParent = 0;
+		}
+
+		if (m_PendingDelete != 0)
+		{
+			Entity toDelete = m_Context->GetEntityByUUID(m_PendingDelete);
+			if (toDelete)
+			{
+				if (m_SelectionContext == toDelete)
+					m_SelectionContext = {};
+				m_Context->DestroyEntity(toDelete);
+			}
+			m_PendingDelete = 0;
+		}
 	}
 
 	static void DrawVec3Control(const std::string& label, glm::vec3& values, float resetValue = 0.0f, float columnWidth = 100.0f)

@@ -354,15 +354,15 @@ namespace Timefall
 				// auto cameraEntity = m_ActiveScene->GetPrimaryCameraEntity();
 				// const auto& camera = cameraEntity.GetComponent<CameraComponent>().Camera;
 				// const glm::mat4& cameraProjection = camera.GetProjection();
-				// glm::mat4 cameraView = glm::inverse(cameraEntity.GetComponent<TransformComponent>().GetTransform());
+				// glm::mat4 cameraView = glm::inverse(cameraEntity.GetWorldTransform());
 
 				// Editor Camera
 				const glm::mat4& cameraProjection = m_EditorCamera.GetProjection();
 				glm::mat4 cameraView = m_EditorCamera.GetViewMatrix();
 
-				// Entity transform
-				auto& tc = selectedEntity.GetComponent<TransformComponent>();
-				glm::mat4 transform = tc.GetTransform();
+				// Entity transform — operate in WORLD space so the gizmo tracks the entity's actual
+				// on-screen location even when it's a child (local != world).
+				glm::mat4 transform = selectedEntity.GetWorldTransform();
 
 				// Snapping
 				bool snap = Input::IsKeyPressed(Key::LeftControl);
@@ -379,13 +379,9 @@ namespace Timefall
 
 				if (ImGuizmo::IsUsing())
 				{
-					glm::vec3 translation, rotation, scale;
-					Math::DecomposeTransform(transform, translation, rotation, scale);
-
-					glm::vec3 deltaRotation = rotation - tc.Rotation;
-					tc.Translation = translation;
-					tc.Rotation += deltaRotation;
-					tc.Scale = scale;
+					// Write the manipulated world transform back; SetWorldTransform solves the
+					// entity's local transform under its parent (identity for roots).
+					selectedEntity.SetWorldTransform(transform);
 				}
 			}
 		}
@@ -601,7 +597,7 @@ namespace Timefall
 			if (!camera)
 				return;
 
-			Renderer2D::BeginScene(camera.GetComponent<CameraComponent>().Camera, camera.GetComponent<TransformComponent>().GetTransform());
+			Renderer2D::BeginScene(camera.GetComponent<CameraComponent>().Camera, camera.GetComponent<TransformComponent>().GetLocalTransform());
 		}
 		else
 		{
@@ -652,11 +648,12 @@ namespace Timefall
 
 		}
 
-		// Draw selected entity outline
-		if (Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity())
+		// Draw selected entity outline. IsValid() guards against a selection that was destroyed
+		// this frame (e.g. by a script via the deferred-destroy queue) but is still cached here.
+		if (Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity(); selectedEntity.IsValid())
 		{
-			auto& tc = selectedEntity.GetComponent<TransformComponent>();
-			Renderer2D::DrawRect(tc.GetTransform(), glm::vec4(1.0f, 0.5f, 0.0f, 1.0f));
+			// World transform so the outline sits on the entity's actual location, child or not.
+			Renderer2D::DrawRect(selectedEntity.GetWorldTransform(), glm::vec4(1.0f, 0.5f, 0.0f, 1.0f));
 		}
 
 		Renderer2D::EndScene();

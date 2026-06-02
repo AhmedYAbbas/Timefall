@@ -57,6 +57,12 @@ namespace Timefall
 		operator uint32_t() const { return (uint32_t)m_EntityHandle; }
 		operator entt::entity() const { return m_EntityHandle; }
 
+		// True only if this handle refers to a LIVE entity in its scene's registry. Necessary
+		// because entt recycles ids (index + version): a destroyed entity's handle is non-null
+		// but stale, so operator bool's != null check cannot detect it. Use this before touching
+		// components on a handle that may have been destroyed (e.g. a cached editor selection).
+		bool IsValid() const { return m_Scene && m_Scene->m_Registry.valid(m_EntityHandle); }
+
 		UUID GetUUID()
 		{
 			TF_CORE_ASSERT(HasComponent<IDComponent>(), "Entity does not have a UUID component!");
@@ -68,7 +74,23 @@ namespace Timefall
 			TF_CORE_ASSERT(HasComponent<TagComponent>(), "Entity does not have a Tag component!");
 			return GetComponent<TagComponent>().Tag;
 		}
-		
+
+		// --- Scene-graph world transform ---------------------------------------------------------
+		// Resolved by walking the parent chain (RelationshipComponent); a root entity's world == local.
+		glm::mat4 GetWorldTransform();
+		void SetWorldTransform(const glm::mat4& worldTransform);
+
+		glm::vec3 GetWorldTranslation();
+		void SetWorldTranslation(const glm::vec3& translation);
+
+		glm::vec3 GetWorldRotation();              // Euler radians
+		void SetWorldRotation(const glm::vec3& rotation);
+
+		glm::vec3 GetWorldScale();                 // read-only (lossyScale): no setter by design
+
+		// World transform of this entity's parent (identity if it has no parent). Helper for the above.
+		glm::mat4 GetParentWorldTransform();
+
 		// TODO: Remove
 		Scene* GetScene() const { return m_Scene; }
 

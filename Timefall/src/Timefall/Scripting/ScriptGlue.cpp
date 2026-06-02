@@ -155,7 +155,157 @@ namespace Timefall
 
 			entity.GetComponent<TransformComponent>().Translation = *translation;
 		}
-		
+
+		__declspec(dllexport)
+		void TransformComponent_GetRotation(UUID entityID, glm::vec3* outRotation)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+
+			*outRotation = entity.GetComponent<TransformComponent>().Rotation; // Euler radians
+		}
+
+		__declspec(dllexport)
+		void TransformComponent_SetRotation(UUID entityID, glm::vec3* rotation)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+
+			entity.GetComponent<TransformComponent>().Rotation = *rotation; // Euler radians
+		}
+
+		__declspec(dllexport)
+		void TransformComponent_GetScale(UUID entityID, glm::vec3* outScale)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+
+			*outScale = entity.GetComponent<TransformComponent>().Scale;
+		}
+
+		__declspec(dllexport)
+		void TransformComponent_SetScale(UUID entityID, glm::vec3* scale)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+
+			entity.GetComponent<TransformComponent>().Scale = *scale;
+		}
+
+		__declspec(dllexport)
+		void TransformComponent_GetWorldTranslation(UUID entityID, glm::vec3* outTranslation)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+
+			*outTranslation = entity.GetWorldTranslation();
+		}
+
+		__declspec(dllexport)
+		void TransformComponent_SetWorldTranslation(UUID entityID, glm::vec3* translation)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+
+			entity.SetWorldTranslation(*translation);
+		}
+
+		__declspec(dllexport)
+		void TransformComponent_GetWorldRotation(UUID entityID, glm::vec3* outRotation)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+
+			*outRotation = entity.GetWorldRotation(); // Euler radians
+		}
+
+		__declspec(dllexport)
+		void TransformComponent_SetWorldRotation(UUID entityID, glm::vec3* rotation)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+
+			entity.SetWorldRotation(*rotation); // Euler radians
+		}
+
+		__declspec(dllexport)
+		void TransformComponent_GetWorldScale(UUID entityID, glm::vec3* outScale)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+
+			*outScale = entity.GetWorldScale(); // read-only lossy scale
+		}
+
+		__declspec(dllexport)
+		void Entity_SetParent(UUID childID, UUID parentID)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity child = scene->GetEntityByUUID(childID);
+			TF_CORE_ASSERT(child, "Entity is null");
+
+			Entity parent = parentID != 0 ? scene->GetEntityByUUID(parentID) : Entity{};
+			scene->SetParent(child, parent);
+		}
+
+		__declspec(dllexport)
+		uint64_t Entity_GetParent(UUID entityID)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			if (!entity || !entity.HasComponent<RelationshipComponent>())
+				return 0;
+
+			return entity.GetComponent<RelationshipComponent>().Parent;
+		}
+
+		__declspec(dllexport)
+		int Entity_GetChildrenCount(UUID entityID)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			if (!entity || !entity.HasComponent<RelationshipComponent>())
+				return 0;
+
+			return (int)entity.GetComponent<RelationshipComponent>().Children.size();
+		}
+
+		__declspec(dllexport)
+		void Entity_GetChildren(UUID entityID, uint64_t* outChildren, int count)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			if (!entity || !entity.HasComponent<RelationshipComponent>())
+				return;
+
+			const auto& children = entity.GetComponent<RelationshipComponent>().Children;
+			int n = count < (int)children.size() ? count : (int)children.size();
+			for (int i = 0; i < n; ++i)
+				outChildren[i] = children[i];
+		}
+
 		
 		__declspec(dllexport)
 		void Rigidbody2DComponent_ApplyLinearImpulse(UUID entityID, glm::vec2* impulse, glm::vec2* point, bool wake)

@@ -6,6 +6,7 @@
 #include "Timefall/Scene/Components.h"
 #include "Timefall/Renderer/Renderer2D.h"
 #include "Timefall/Scripting/ScriptEngine.h"
+#include "Timefall/Math/Math.h"
 
 #include <box2d/box2d.h>
 
@@ -65,11 +66,14 @@ namespace Timefall
 			UUID uuid = srcSceneRegistry.get<IDComponent>(e).ID;
 			const auto& name = srcSceneRegistry.get<TagComponent>(e).Tag;
 			Entity newEntity = dstScene->CreateEntityWithUUID(uuid, name);
-			enttMap[uuid] = (entt::entity)newEntity;
+			enttMap[uuid] = newEntity;
 		}
 
 		// Copy components (except IDComponent and TagComponent)
 		CopyComponent<TransformComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		// Copy preserves UUIDs (CreateEntityWithUUID), so RelationshipComponent's Parent/Children
+		// UUIDs resolve correctly in the destination scene without any remapping.
+		CopyComponent<RelationshipComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<SpriteRendererComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<CircleRendererComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<CameraComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
@@ -159,17 +163,8 @@ namespace Timefall
 				for (auto e : view)
 				{
 					Entity entity = { e, this };
-					auto& transform = entity.GetComponent<TransformComponent>();
-					auto& rb2d = entity.GetComponent<Rigidbody2DComponent>();
-
 					if (m_PhysicsBodiesMap.contains(entity))
-					{
-						b2BodyId body = m_PhysicsBodiesMap[entity];
-						const auto& position = b2Body_GetPosition(body);
-						transform.Translation.x = position.x;
-						transform.Translation.y = position.y;
-						transform.Rotation.z = b2Rot_GetAngle(b2Body_GetRotation(body));
-					}
+						SyncTransformFromBody(entity, m_PhysicsBodiesMap[entity]);
 				}
 			}
 		}
@@ -184,7 +179,7 @@ namespace Timefall
 				if (camera.Primary)
 				{
 					mainCamera = &camera.Camera;
-					cameraTransform = transform.GetTransform();
+					cameraTransform = Entity{ entity, this }.GetWorldTransform();
 				}
 			}
 		}
@@ -199,7 +194,7 @@ namespace Timefall
 				for (auto entity : group)
 				{
 					auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-					Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)entity);
+					Renderer2D::DrawSprite(Entity{ entity, this }.GetWorldTransform(), sprite, (int)entity);
 				}
 			}
 
@@ -209,7 +204,7 @@ namespace Timefall
 				for (auto entity : group)
 				{
 					auto [crc, transform] = group.get<CircleRendererComponent, TransformComponent>(entity);
-					Renderer2D::DrawCircle(transform.GetTransform(), crc.Color, crc.Thickness, crc.Fade, (int)entity);
+					Renderer2D::DrawCircle(Entity{ entity, this }.GetWorldTransform(), crc.Color, crc.Thickness, crc.Fade, (int)entity);
 				}
 			}
 			
@@ -219,7 +214,7 @@ namespace Timefall
 				for (auto entity : group)
 				{
 					auto [textComponent, transform] = group.get<TextComponent, TransformComponent>(entity);
-					Renderer2D::DrawString(textComponent.Text, textComponent.FontAsset, transform.GetTransform(), {textComponent.Color, textComponent.Kerning, textComponent.LineSpacing}, (int)entity);
+					Renderer2D::DrawString(textComponent.Text, textComponent.FontAsset, Entity{ entity, this }.GetWorldTransform(), {textComponent.Color, textComponent.Kerning, textComponent.LineSpacing}, (int)entity);
 				}
 			}
 
@@ -243,17 +238,8 @@ namespace Timefall
 				for (auto e : view)
 				{
 					Entity entity = { e, this };
-					auto& transform = entity.GetComponent<TransformComponent>();
-					auto& rb2d = entity.GetComponent<Rigidbody2DComponent>();
-
 					if (m_PhysicsBodiesMap.contains(entity))
-					{
-						b2BodyId body = m_PhysicsBodiesMap[entity];
-						const auto& position = b2Body_GetPosition(body);
-						transform.Translation.x = position.x;
-						transform.Translation.y = position.y;
-						transform.Rotation.z = b2Rot_GetAngle(b2Body_GetRotation(body));
-					}
+						SyncTransformFromBody(entity, m_PhysicsBodiesMap[entity]);
 				}
 			}
 		}
@@ -320,8 +306,97 @@ namespace Timefall
 
 	void Scene::DestroyEntity(Entity entity)
 	{
+		if (!entity.IsValid())
+			return;
+
+		// Keep the (soon-to-be-orphaned) parent's Children list consistent, then tear down the
+		// whole subtree rooted at this entity.
+		DetachFromParent(entity);
+		DestroyEntityAndChildren(entity);
+	}
+
+	void Scene::DestroyEntityAndChildren(Entity entity)
+	{
+		if (entity.HasComponent<RelationshipComponent>())
+		{
+			// Copy the child list: the recursive destroy mutates the live vector as it goes.
+			std::vector<UUID> children = m_Registry.get<RelationshipComponent>(entity).Children;
+			for (UUID childID : children)
+			{
+				Entity child = GetEntityByUUID(childID);
+				if (child)
+					DestroyEntityAndChildren(child);
+			}
+		}
+
 		m_EntityMap.erase(entity.GetUUID());
 		m_Registry.destroy(entity);
+	}
+
+	void Scene::LinkChildToParent(Entity child, Entity parent)
+	{
+		UUID childID = child.GetUUID();
+		UUID parentID = parent ? parent.GetUUID() : UUID(0);
+
+		// Emplace both relationship components up front (get_or_emplace may reallocate the pool),
+		// then re-fetch fresh references before writing — never hold a ref across an emplace.
+		m_Registry.get_or_emplace<RelationshipComponent>(child);
+		if (parent)
+			m_Registry.get_or_emplace<RelationshipComponent>(parent);
+
+		m_Registry.get<RelationshipComponent>(child).Parent = parentID;
+		if (parent)
+			m_Registry.get<RelationshipComponent>(parent).Children.push_back(childID);
+	}
+
+	void Scene::DetachFromParent(Entity child)
+	{
+		if (!child.HasComponent<RelationshipComponent>())
+			return;
+
+		auto& rc = m_Registry.get<RelationshipComponent>(child);
+		if (rc.Parent != 0)
+		{
+			Entity oldParent = GetEntityByUUID(rc.Parent);
+			if (oldParent && oldParent.HasComponent<RelationshipComponent>())
+			{
+				auto& siblings = m_Registry.get<RelationshipComponent>(oldParent).Children;
+				std::erase(siblings, child.GetUUID());
+			}
+		}
+		rc.Parent = 0;
+	}
+
+	void Scene::SetParent(Entity child, Entity parent)
+	{
+		if (!child.IsValid())
+			return;
+
+		if (parent)
+		{
+			// Reject cycles: the new parent must not be the child itself nor inside the child's subtree.
+			Entity ancestor = parent;
+			while (ancestor)
+			{
+				if (ancestor == child)
+				{
+					TF_CORE_WARN("Scene::SetParent ignored: would create a cycle.");
+					return;
+				}
+				if (!ancestor.HasComponent<RelationshipComponent>())
+					break;
+				UUID ancestorParent = ancestor.GetComponent<RelationshipComponent>().Parent;
+				if (ancestorParent == 0)
+					break;
+				ancestor = GetEntityByUUID(ancestorParent);
+			}
+		}
+
+		// Preserve the child's world transform across the reparent.
+		glm::mat4 worldBefore = child.GetWorldTransform();
+		DetachFromParent(child);
+		LinkChildToParent(child, parent);
+		child.SetWorldTransform(worldBefore);
 	}
 
 	void Scene::SubmitToDestroyEntity(Entity entity)
@@ -352,12 +427,52 @@ namespace Timefall
 
 	Entity Scene::DuplicateEntity(Entity entity)
 	{
-		std::string name = entity.GetName(); // Get the name as a value because having a reference to the entity's name might lead to dangling references after duplication
-		Entity newEntity = CreateEntity(name);
+		// Deep-clone the entity and its whole subtree with fresh UUIDs.
+		Entity newEntity = DuplicateEntitySubtree(entity);
 
-		// Important for scene serialization for some reason
-		CopyComponentIfExists(AllComponents{}, newEntity, entity);
+		// Attach the clone under the same parent as the original, keeping its local transform
+		// (link-only, not world-preserving) so the duplicate overlaps the original exactly.
+		if (entity.HasComponent<RelationshipComponent>())
+		{
+			UUID parentID = entity.GetComponent<RelationshipComponent>().Parent;
+			if (parentID != 0)
+			{
+				Entity parent = GetEntityByUUID(parentID);
+				if (parent)
+					LinkChildToParent(newEntity, parent);
+			}
+		}
+
 		return newEntity;
+	}
+
+	Entity Scene::DuplicateEntitySubtree(Entity src)
+	{
+		std::string name = src.GetName(); // Copy by value: the name reference can dangle after the registry grows.
+		Entity dst = CreateEntity(name);
+
+		CopyComponentIfExists(AllComponents{}, dst, src);
+
+		// The blind copy duplicated src's RelationshipComponent with stale Parent/Children UUIDs;
+		// reset it and rebuild the hierarchy explicitly below with fresh links.
+		if (dst.HasComponent<RelationshipComponent>())
+			dst.GetComponent<RelationshipComponent>() = RelationshipComponent{};
+
+		if (src.HasComponent<RelationshipComponent>())
+		{
+			std::vector<UUID> children = src.GetComponent<RelationshipComponent>().Children; // copy: registry grows during recursion
+			for (UUID childID : children)
+			{
+				Entity child = GetEntityByUUID(childID);
+				if (child)
+				{
+					Entity childClone = DuplicateEntitySubtree(child);
+					LinkChildToParent(childClone, dst);
+				}
+			}
+		}
+
+		return dst;
 	}
 
 	Entity Scene::FindEntityByName(const std::string_view& name)
@@ -392,12 +507,17 @@ namespace Timefall
 		for (auto e : view)
 		{
 			Entity entity = { e, this };
-			auto& transform = entity.GetComponent<TransformComponent>();
 			auto& rb2d = entity.GetComponent<Rigidbody2DComponent>();
+
+			// Box2D lives in world space; build the body from the entity's WORLD transform so a
+			// parented body spawns in the right place / orientation / size. (world == local for roots.)
+			glm::vec3 worldTranslation, worldRotation, worldScale;
+			Math::DecomposeTransform(entity.GetWorldTransform(), worldTranslation, worldRotation, worldScale);
+
 			b2BodyDef bodyDef = b2DefaultBodyDef();
 			bodyDef.type = (b2BodyType)rb2d.Type;
-			bodyDef.position = b2Vec2(transform.Translation.x, transform.Translation.y);
-			bodyDef.rotation = b2MakeRot(transform.Rotation.z);
+			bodyDef.position = b2Vec2(worldTranslation.x, worldTranslation.y);
+			bodyDef.rotation = b2MakeRot(worldRotation.z);
 			bodyDef.fixedRotation = rb2d.FixedRotation;
 
 			b2BodyId body = b2CreateBody(m_PhysicsWorld, &bodyDef);
@@ -407,7 +527,7 @@ namespace Timefall
 			{
 				auto& bc2d = entity.GetComponent<BoxCollider2DComponent>();
 
-				b2Polygon boxShape = b2MakeOffsetBox(bc2d.Size.x * transform.Scale.x, bc2d.Size.y * transform.Scale.y, b2Vec2(bc2d.Offset.x, bc2d.Offset.y), b2MakeRot(0));
+				b2Polygon boxShape = b2MakeOffsetBox(bc2d.Size.x * worldScale.x, bc2d.Size.y * worldScale.y, b2Vec2(bc2d.Offset.x, bc2d.Offset.y), b2MakeRot(0));
 				b2ShapeDef shapeDef = b2DefaultShapeDef();
 				shapeDef.density = bc2d.Density;
 				shapeDef.material.friction = bc2d.Friction;
@@ -419,7 +539,7 @@ namespace Timefall
 			{
 				auto& cc2d = entity.GetComponent<CircleCollider2DComponent>();
 
-				b2Circle circleShape{ {cc2d.Offset.x, cc2d.Offset.y}, transform.Scale.x * cc2d.Radius };
+				b2Circle circleShape{ {cc2d.Offset.x, cc2d.Offset.y}, worldScale.x * cc2d.Radius };
 				b2ShapeDef shapeDef = b2DefaultShapeDef();
 				shapeDef.density = cc2d.Density;
 				shapeDef.material.friction = cc2d.Friction;
@@ -434,6 +554,34 @@ namespace Timefall
 		b2DestroyWorld(m_PhysicsWorld);
 	}
 
+	void Scene::SyncTransformFromBody(Entity entity, b2BodyId body)
+	{
+		b2Vec2 position = b2Body_GetPosition(body);
+		float angle = b2Rot_GetAngle(b2Body_GetRotation(body));
+
+		bool isParented = entity.HasComponent<RelationshipComponent>()
+			&& entity.GetComponent<RelationshipComponent>().Parent != 0;
+
+		if (isParented)
+		{
+			// Box2D is authoritative in WORLD space; convert its pose back into local space under
+			// the parent. World scale and world Z are preserved; only XY-position and Z-rotation
+			// come from physics. (A dynamic body under a script-MOVED parent is unsupported —
+			// physics overwrites the parent-driven motion every frame.)
+			glm::vec3 worldTranslation = entity.GetWorldTranslation();
+			entity.SetWorldTranslation({ position.x, position.y, worldTranslation.z });
+			entity.SetWorldRotation({ 0.0f, 0.0f, angle });
+		}
+		else
+		{
+			// Root body: world == local. Fast path, identical to pre-hierarchy behavior.
+			auto& transform = entity.GetComponent<TransformComponent>();
+			transform.Translation.x = position.x;
+			transform.Translation.y = position.y;
+			transform.Rotation.z = angle;
+		}
+	}
+
 	void Scene::RenderScene(EditorCamera& camera)
 	{
 		Renderer2D::BeginScene(camera);
@@ -444,7 +592,7 @@ namespace Timefall
 			for (auto entity : group)
 			{
 				auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-				Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)entity);
+				Renderer2D::DrawSprite(Entity{ entity, this }.GetWorldTransform(), sprite, (int)entity);
 			}
 		}
 
@@ -454,7 +602,7 @@ namespace Timefall
 			for (auto entity : group)
 			{
 				auto [crc, transform] = group.get<CircleRendererComponent, TransformComponent>(entity);
-				Renderer2D::DrawCircle(transform.GetTransform(), crc.Color, crc.Thickness, crc.Fade, (int)entity);
+				Renderer2D::DrawCircle(Entity{ entity, this }.GetWorldTransform(), crc.Color, crc.Thickness, crc.Fade, (int)entity);
 			}
 		}
 
@@ -464,7 +612,7 @@ namespace Timefall
 			for (auto entity : group)
 			{
 				auto [textComponent, transform] = group.get<TextComponent, TransformComponent>(entity);
-				Renderer2D::DrawString(textComponent.Text, textComponent.FontAsset, transform.GetTransform(), {textComponent.Color, textComponent.Kerning, textComponent.LineSpacing}, (int)entity);
+				Renderer2D::DrawString(textComponent.Text, textComponent.FontAsset, Entity{ entity, this }.GetWorldTransform(), {textComponent.Color, textComponent.Kerning, textComponent.LineSpacing}, (int)entity);
 			}
 		}
 
@@ -484,6 +632,11 @@ namespace Timefall
 
 	template<>
 	TF_API void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformComponent& component)
+	{
+	}
+
+	template<>
+	TF_API void Scene::OnComponentAdded<RelationshipComponent>(Entity entity, RelationshipComponent& component)
 	{
 	}
 

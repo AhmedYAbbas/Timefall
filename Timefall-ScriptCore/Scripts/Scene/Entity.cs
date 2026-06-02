@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 
 namespace Timefall
 {
@@ -17,16 +18,71 @@ namespace Timefall
     {
         public ulong ID { get; private set; }
 
-        public Vector3 Translation
+        // --- Local transform (relative to parent; the authored T/R/S) ---
+        public Vector3 LocalTranslation
+        {
+            get { NativeCalls.TransformComponent_GetTranslation(ID, out Vector3 v); return v; }
+            set { NativeCalls.TransformComponent_SetTranslation(ID, ref value); }
+        }
+
+        public Vector3 LocalRotation // Euler radians
+        {
+            get { NativeCalls.TransformComponent_GetRotation(ID, out Vector3 v); return v; }
+            set { NativeCalls.TransformComponent_SetRotation(ID, ref value); }
+        }
+
+        public Vector3 LocalScale
+        {
+            get { NativeCalls.TransformComponent_GetScale(ID, out Vector3 v); return v; }
+            set { NativeCalls.TransformComponent_SetScale(ID, ref value); }
+        }
+
+        // --- World transform (resolved through the parent chain) ---
+        public Vector3 WorldTranslation
+        {
+            get { NativeCalls.TransformComponent_GetWorldTranslation(ID, out Vector3 v); return v; }
+            set { NativeCalls.TransformComponent_SetWorldTranslation(ID, ref value); }
+        }
+
+        public Vector3 WorldRotation // Euler radians
+        {
+            get { NativeCalls.TransformComponent_GetWorldRotation(ID, out Vector3 v); return v; }
+            set { NativeCalls.TransformComponent_SetWorldRotation(ID, ref value); }
+        }
+
+        // Read-only "lossy" world scale (no setter by design; set LocalScale instead).
+        public Vector3 WorldScale
+        {
+            get { NativeCalls.TransformComponent_GetWorldScale(ID, out Vector3 v); return v; }
+        }
+
+        // --- Scene graph ---
+        public Entity? Parent
         {
             get
             {
-                NativeCalls.TransformComponent_GetTranslation(ID, out Vector3 translation);
-                return translation;
+                ulong parentID = NativeCalls.Entity_GetParent(ID);
+                return parentID == 0 ? null : new Entity(parentID);
             }
-            set
+            set { NativeCalls.Entity_SetParent(ID, value?.ID ?? 0); }
+        }
+
+        public Entity[] Children
+        {
+            get
             {
-                NativeCalls.TransformComponent_SetTranslation(ID, ref value);
+                int count = NativeCalls.Entity_GetChildrenCount(ID);
+                if (count == 0)
+                    return Array.Empty<Entity>();
+
+                // Count-then-fill: ask the count, allocate, let native fill the buffer.
+                ulong[] ids = new ulong[count];
+                NativeCalls.Entity_GetChildren(ID, ids, count);
+
+                Entity[] children = new Entity[count];
+                for (int i = 0; i < count; i++)
+                    children[i] = new Entity(ids[i]);
+                return children;
             }
         }
 

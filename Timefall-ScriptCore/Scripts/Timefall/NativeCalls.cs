@@ -32,6 +32,34 @@ namespace Timefall
         internal static partial void TransformComponent_GetTranslation(ulong entityID, out Vector3 translation);
         [LibraryImport("Timefall")]
         internal static partial void TransformComponent_SetTranslation(ulong entityID, ref Vector3 translation);
+        [LibraryImport("Timefall")]
+        internal static partial void TransformComponent_GetRotation(ulong entityID, out Vector3 rotation);
+        [LibraryImport("Timefall")]
+        internal static partial void TransformComponent_SetRotation(ulong entityID, ref Vector3 rotation);
+        [LibraryImport("Timefall")]
+        internal static partial void TransformComponent_GetScale(ulong entityID, out Vector3 scale);
+        [LibraryImport("Timefall")]
+        internal static partial void TransformComponent_SetScale(ulong entityID, ref Vector3 scale);
+
+        [LibraryImport("Timefall")]
+        internal static partial void TransformComponent_GetWorldTranslation(ulong entityID, out Vector3 translation);
+        [LibraryImport("Timefall")]
+        internal static partial void TransformComponent_SetWorldTranslation(ulong entityID, ref Vector3 translation);
+        [LibraryImport("Timefall")]
+        internal static partial void TransformComponent_GetWorldRotation(ulong entityID, out Vector3 rotation);
+        [LibraryImport("Timefall")]
+        internal static partial void TransformComponent_SetWorldRotation(ulong entityID, ref Vector3 rotation);
+        [LibraryImport("Timefall")]
+        internal static partial void TransformComponent_GetWorldScale(ulong entityID, out Vector3 scale);
+
+        [LibraryImport("Timefall")]
+        internal static partial void Entity_SetParent(ulong childID, ulong parentID);
+        [LibraryImport("Timefall")]
+        internal static partial ulong Entity_GetParent(ulong entityID);
+        [LibraryImport("Timefall")]
+        internal static partial int Entity_GetChildrenCount(ulong entityID);
+        [LibraryImport("Timefall")]
+        internal static partial void Entity_GetChildren(ulong entityID, [Out] ulong[] outChildren, int count);
 
         [LibraryImport("Timefall")]
         internal static partial void Rigidbody2DComponent_ApplyLinearImpulse(ulong entityID, ref Vector2 impulse, ref Vector2 point, [MarshalAs(UnmanagedType.U1)] bool wake);

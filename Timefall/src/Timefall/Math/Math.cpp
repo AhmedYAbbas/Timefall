@@ -1,8 +1,10 @@
 #include "tfpch.h"
 #include "Math.h"
 
+#include <glm/gtc/matrix_transform.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 namespace Timefall::Math
 {
@@ -78,5 +80,12 @@ namespace Timefall::Math
 
 
         return true;
+	}
+
+	glm::mat4 ComposeTransform(const glm::vec3& position, const glm::vec3& rotation, const glm::vec3& scale)
+	{
+		return glm::translate(glm::mat4(1.0f), position)
+			* glm::toMat4(glm::quat(rotation))
+			* glm::scale(glm::mat4(1.0f), scale);
 	}
 }

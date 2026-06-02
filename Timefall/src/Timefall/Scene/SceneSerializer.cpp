@@ -199,6 +199,22 @@ namespace Timefall
 			out << YAML::EndMap; // TransformComponent
 		}
 
+		if (entity.HasComponent<RelationshipComponent>())
+		{
+			out << YAML::Key << "RelationshipComponent";
+			out << YAML::BeginMap; // RelationshipComponent
+
+			auto& rc = entity.GetComponent<RelationshipComponent>();
+			out << YAML::Key << "Parent" << YAML::Value << (uint64_t)rc.Parent;
+
+			out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
+			for (UUID child : rc.Children)
+				out << (uint64_t)child;
+			out << YAML::EndSeq;
+
+			out << YAML::EndMap; // RelationshipComponent
+		}
+
 		if (entity.HasComponent<CameraComponent>())
 		{
 			out << YAML::Key << "CameraComponent";
@@ -437,6 +453,20 @@ namespace Timefall
 					tc.Translation = transformComponent["Position"].as<glm::vec3>();
 					tc.Rotation = transformComponent["Rotation"].as<glm::vec3>();
 					tc.Scale = transformComponent["Scale"].as<glm::vec3>();
+				}
+
+				if (auto relationshipComponent = entity["RelationshipComponent"])
+				{
+					// UUIDs are position-independent, so Parent/Children read directly — no second
+					// pass needed (the referenced entities all exist by the time anything resolves them).
+					auto& rc = deserializedEntity.AddComponent<RelationshipComponent>();
+					rc.Parent = relationshipComponent["Parent"].as<uint64_t>();
+
+					if (auto children = relationshipComponent["Children"])
+					{
+						for (auto child : children)
+							rc.Children.push_back(child.as<uint64_t>());
+					}
 				}
 
 				if (auto cameraComponent = entity["CameraComponent"])
