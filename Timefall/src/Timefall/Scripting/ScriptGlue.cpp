@@ -14,6 +14,13 @@ namespace Timefall
 {
 	static std::unordered_map<std::string, std::function<bool(Entity)>> s_EntityHasComponentFuncs;
 	static std::unordered_map<std::string, std::function<void(Entity)>> s_EntityAddComponentFuncs;
+	static std::unordered_map<std::string, std::function<void(Entity)>> s_EntityRemoveComponentFuncs;
+
+	// Built-in component/field names cross the boundary as ASCII identifiers; widen byte-wise.
+	static std::wstring WidenAscii(const char* s)
+	{
+		return s ? std::wstring(s, s + std::strlen(s)) : std::wstring();
+	}
 
 	extern "C"
 	{
@@ -52,8 +59,15 @@ namespace Timefall
 			Entity entity = scene->GetEntityByUUID(entityID);
 			TF_CORE_ASSERT(entity, "Entity is null");
 
-			TF_CORE_ASSERT(s_EntityHasComponentFuncs.find(componentTypeFullName) != s_EntityHasComponentFuncs.end(), "Component type not registered");
-			return s_EntityHasComponentFuncs[componentTypeFullName](entity);
+			auto it = s_EntityHasComponentFuncs.find(componentTypeFullName);
+			if (it != s_EntityHasComponentFuncs.end())
+				return it->second(entity);
+
+			// User-defined component: look it up in the managed storage.
+			if (!entity.HasComponent<ManagedComponentStorage>())
+				return false;
+			const auto& storage = entity.GetComponent<ManagedComponentStorage>();
+			return storage.Components.find(WidenAscii(componentTypeFullName)) != storage.Components.end();
 		}
 
 		__declspec(dllexport)
@@ -106,8 +120,82 @@ namespace Timefall
 			TF_CORE_ASSERT(entity, "Entity is null");
 
 			auto it = s_EntityAddComponentFuncs.find(componentTypeFullName);
-			TF_CORE_ASSERT(it != s_EntityAddComponentFuncs.end(), "Component type not registered for AddComponent");
-			it->second(entity);
+			if (it != s_EntityAddComponentFuncs.end())
+			{
+				it->second(entity);
+				return;
+			}
+
+			// User-defined component: ensure storage + default-init fields from the schema.
+			ScriptEngine::AddManagedComponent(entity, WidenAscii(componentTypeFullName));
+		}
+
+		__declspec(dllexport)
+		void Entity_RemoveComponent(UUID entityID, const char* componentTypeFullName)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			TF_CORE_ASSERT(entity, "Entity is null");
+
+			auto it = s_EntityRemoveComponentFuncs.find(componentTypeFullName);
+			if (it != s_EntityRemoveComponentFuncs.end())
+			{
+				it->second(entity);
+				return;
+			}
+
+			// User-defined component: erase from the managed storage.
+			if (!entity.HasComponent<ManagedComponentStorage>())
+				return;
+			auto& storage = entity.GetComponent<ManagedComponentStorage>();
+			storage.Components.erase(WidenAscii(componentTypeFullName));
+		}
+
+		__declspec(dllexport)
+		void ManagedComponent_GetField(UUID entityID, const wchar_t* typeName, const wchar_t* fieldName, void* outValue, int size)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			if (!entity || !entity.HasComponent<ManagedComponentStorage>())
+				return;
+
+			auto& storage = entity.GetComponent<ManagedComponentStorage>();
+			auto compIt = storage.Components.find(typeName);
+			if (compIt == storage.Components.end())
+				return;
+
+			auto fieldIt = compIt->second.Fields.find(fieldName);
+			if (fieldIt == compIt->second.Fields.end())
+				return;
+
+			// Copy exactly the caller's type size (clamped to the 16-byte buffer). The C# side
+			// passes sizeof(T); a fixed 16-byte copy would overrun a smaller dest (e.g. int).
+			size_t n = (size_t)size < ScriptFieldInstance::BufferSize() ? (size_t)size : ScriptFieldInstance::BufferSize();
+			memcpy(outValue, fieldIt->second.Data(), n);
+		}
+
+		__declspec(dllexport)
+		void ManagedComponent_SetField(UUID entityID, const wchar_t* typeName, const wchar_t* fieldName, void* value, int size)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			Entity entity = scene->GetEntityByUUID(entityID);
+			if (!entity || !entity.HasComponent<ManagedComponentStorage>())
+				return;
+
+			auto& storage = entity.GetComponent<ManagedComponentStorage>();
+			auto compIt = storage.Components.find(typeName);
+			if (compIt == storage.Components.end())
+				return;
+
+			auto fieldIt = compIt->second.Fields.find(fieldName);
+			if (fieldIt == compIt->second.Fields.end())
+				return;
+
+			size_t n = (size_t)size < ScriptFieldInstance::BufferSize() ? (size_t)size : ScriptFieldInstance::BufferSize();
+			memcpy(fieldIt->second.Data(), value, n);
 		}
 
 		__declspec(dllexport)
@@ -537,6 +625,12 @@ namespace Timefall
 		{
 			ScriptEngine::RegisterEntityTypes(typeName, assemblyName, fieldNames, fieldTypeNames, fieldCount);
 		}
+
+		__declspec(dllexport)
+		void Native_RegisterComponentTypes(const wchar_t* typeName, const wchar_t* assemblyName, const wchar_t** fieldNames, const wchar_t** fieldTypeNames, int fieldCount)
+		{
+			ScriptEngine::RegisterComponentTypes(typeName, assemblyName, fieldNames, fieldTypeNames, fieldCount);
+		}
 	}
 
 	template<typename... T>
@@ -551,6 +645,7 @@ namespace Timefall
 			// TODO: Need to check if managedComponentTypeName actually exists in the loaded assemblies
 			s_EntityHasComponentFuncs[managedComponentTypeName] = [](Entity entity) { return entity.HasComponent<T>(); };
 			s_EntityAddComponentFuncs[managedComponentTypeName] = [](Entity entity) { entity.AddComponent<T>(); };
+			s_EntityRemoveComponentFuncs[managedComponentTypeName] = [](Entity entity) { if (entity.HasComponent<T>()) entity.RemoveComponent<T>(); };
 		}(), ...);
 	}
 

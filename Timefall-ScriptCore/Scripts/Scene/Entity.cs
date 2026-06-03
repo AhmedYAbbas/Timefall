@@ -108,6 +108,11 @@ namespace Timefall
             return new T() { Entity = this };
         }
 
+        public void RemoveComponent<T>() where T : Component, new()
+        {
+            NativeCalls.Entity_RemoveComponent(ID, typeof(T).FullName);
+        }
+
         // Virtual lifecycle methods - override in derived classes
         public virtual void OnCreate() { }
         public virtual void OnUpdate(float ts) { }

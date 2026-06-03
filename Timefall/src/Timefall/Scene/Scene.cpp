@@ -83,6 +83,7 @@ namespace Timefall
 		CopyComponent<BoxCollider2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<CircleCollider2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<TextComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<ManagedComponentStorage>(dstSceneRegistry, srcSceneRegistry, enttMap);
 
 		return dstScene;
 	}
@@ -688,6 +689,11 @@ namespace Timefall
 	
 	template<>
 	TF_API void Scene::OnComponentAdded<TextComponent>(Entity entity, TextComponent& component)
+	{
+	}
+
+	template<>
+	TF_API void Scene::OnComponentAdded<ManagedComponentStorage>(Entity entity, ManagedComponentStorage& component)
 	{
 	}
 }

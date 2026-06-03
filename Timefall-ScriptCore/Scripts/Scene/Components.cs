@@ -1,8 +1,25 @@
-﻿namespace Timefall
+﻿using System.Runtime.CompilerServices;
+
+namespace Timefall
 {
     public abstract class Component
     {
         public Entity Entity { get; internal set; } = null!;
+
+        // Native-backed field access for user-defined components. The property name (via
+        // CallerMemberName) is the field name in the native ManagedComponentStorage. Blittable
+        // (unmanaged) fields only — matches the ScriptFieldType set the engine stores.
+        protected unsafe T Get<T>([CallerMemberName] string field = "") where T : unmanaged
+        {
+            T value = default;
+            NativeCalls.ManagedComponent_GetField(Entity.ID, GetType().FullName!, field, (IntPtr)(&value), sizeof(T));
+            return value;
+        }
+
+        protected unsafe void Set<T>(T value, [CallerMemberName] string field = "") where T : unmanaged
+        {
+            NativeCalls.ManagedComponent_SetField(Entity.ID, GetType().FullName!, field, (IntPtr)(&value), sizeof(T));
+        }
     }
 
     public class TransformComponent : Component

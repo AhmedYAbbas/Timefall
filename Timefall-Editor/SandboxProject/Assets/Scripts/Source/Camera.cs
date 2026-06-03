@@ -16,7 +16,7 @@ namespace Sandbox
         public override void OnUpdate(float ts)
         {
             if (m_Player != null)
-                Translation = new Vector3(m_Player.Translation.XY, DistanceFromPlayer);
+                LocalTranslation = new Vector3(m_Player.LocalTranslation.XY, DistanceFromPlayer);
 
             float speed = 1f;
             Vector3 velocity = Vector3.Zero;
@@ -34,9 +34,9 @@ namespace Sandbox
             velocity *= speed;
             DistanceFromPlayer += ts;
 
-            Vector3 translation = Translation;
+            Vector3 translation = LocalTranslation;
             translation += velocity * ts;
-            Translation = translation;
+            LocalTranslation = translation;
         }
     }
 }

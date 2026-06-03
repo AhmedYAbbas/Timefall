@@ -15,6 +15,13 @@ namespace Sandbox
 
             m_Transform = GetComponent<TransformComponent>();
             m_Rigidbody = GetComponent<Rigidbody2DComponent>();
+
+            var t = AddComponent<BlockTag>();
+            t.Kind = 7;
+            
+            Console.WriteLine($"Has block tag: {HasComponent<BlockTag>()}");
+            RemoveComponent<BlockTag>();
+            Console.WriteLine($"Has block tag after removal: {HasComponent<BlockTag>()}");
         }
 
         public override void OnUpdate(float ts)

@@ -6,6 +6,9 @@ int/
 # Hazel files
 *.log
 
+# Local design / planning docs (kept out of git)
+docs/
+
 # Visual Studio files and folders
 .vs/
 *.sln

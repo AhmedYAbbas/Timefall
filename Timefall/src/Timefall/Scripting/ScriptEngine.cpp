@@ -81,6 +81,7 @@ namespace Timefall
 		ScriptClass TypeRegistryClass;
 
 		std::unordered_map<std::wstring, Ref<ScriptClass>> EntityClasses;
+		std::unordered_map<std::wstring, Ref<ScriptClass>> ComponentClasses;
 		std::unordered_map<UUID, Ref<ScriptInstance>> EntityInstances;
 		std::unordered_map<UUID, ScriptFieldMap> EntityScriptFields;
 
@@ -257,6 +258,7 @@ namespace Timefall
 		// assembly (Sandbox.dll) is being reloaded. Just ask the managed TypeRegistry to
 		// rebuild its registry from the new DLL on disk.
 		s_ScriptEngineData->EntityClasses.clear();
+		s_ScriptEngineData->ComponentClasses.clear();
 		BuildTypeRegistry();
 	}
 
@@ -336,6 +338,50 @@ namespace Timefall
 		s_ScriptEngineData->EntityClasses.emplace(typeName, scriptClass);
 	}
 
+	void ScriptEngine::RegisterComponentTypes(const wchar_t* typeName, const wchar_t* assemblyName, const wchar_t** fieldNames, const wchar_t** fieldTypeNames, int fieldCount)
+	{
+		std::wstring assemblyPath = std::format(L"{}{}.dll", SCRIPTS_PATH, assemblyName);
+		std::wstring qualifiedTypeName = std::format(L"{}, {}", typeName, assemblyName);
+
+		Ref<ScriptClass> scriptClass = CreateRef<ScriptClass>(assemblyPath, qualifiedTypeName);
+		for (int i = 0; i < fieldCount; i++)
+			scriptClass->m_Fields.emplace(fieldNames[i], ScriptField{ fieldNames[i], Utils::DotNetTypeToScriptFieldType(fieldTypeNames[i]) });
+
+		s_ScriptEngineData->ComponentClasses[typeName] = scriptClass;
+	}
+
+	Ref<ScriptClass> ScriptEngine::GetComponentClass(const std::wstring& name)
+	{
+		auto it = s_ScriptEngineData->ComponentClasses.find(name);
+		return it != s_ScriptEngineData->ComponentClasses.end() ? it->second : nullptr;
+	}
+
+	const std::unordered_map<std::wstring, Ref<ScriptClass>>& ScriptEngine::GetComponentClasses()
+	{
+		return s_ScriptEngineData->ComponentClasses;
+	}
+
+	void ScriptEngine::AddManagedComponent(Entity entity, const std::wstring& typeName)
+	{
+		if (!entity.HasComponent<ManagedComponentStorage>())
+			entity.AddComponent<ManagedComponentStorage>();
+
+		auto& storage = entity.GetComponent<ManagedComponentStorage>();
+		if (storage.Components.find(typeName) != storage.Components.end())
+			return; // already present
+
+		ManagedComponentData data;
+		if (Ref<ScriptClass> schema = GetComponentClass(typeName))
+		{
+			for (const auto& [fieldName, field] : schema->GetFields())
+			{
+				ScriptFieldInstance& inst = data.Fields[fieldName];
+				inst.Field = field; // zero-initialized buffer (ScriptFieldInstance default ctor memsets)
+			}
+		}
+		storage.Components[typeName] = std::move(data);
+	}
+
 	Scene* ScriptEngine::GetSceneContext()
 	{
 		return s_ScriptEngineData->SceneContext;
@@ -374,8 +420,13 @@ namespace Timefall
 
 	void* ScriptEngine::GetManagedInstance(UUID uuid)
 	{
-		TF_CORE_ASSERT(s_ScriptEngineData->EntityInstances.find(uuid) != s_ScriptEngineData->EntityInstances.end(), "Entity does not exist");
-		return s_ScriptEngineData->EntityInstances.at(uuid)->GetManagedInstance();
+		// Return null (not assert) when the entity has no live script instance — As<T>() is
+		// designed to handle null (e.g. As<Camera>() on an entity that has no Camera script).
+		auto it = s_ScriptEngineData->EntityInstances.find(uuid);
+		if (it == s_ScriptEngineData->EntityInstances.end())
+			return nullptr;
+
+		return it->second->GetManagedInstance();
 	}
 
 	bool ScriptEngine::LoadHostFxr()
@@ -424,6 +475,7 @@ namespace Timefall
 		auto scriptModulePath = Project::GetAssetDirectory() / Project::GetActive()->GetConfig().ScriptModulePath;
 
 		s_ScriptEngineData->EntityClasses.clear();
+		s_ScriptEngineData->ComponentClasses.clear();
 		s_ScriptEngineData->TypeRegistryClass.InvokeMethod<void(*)(const wchar_t*)>(L"BuildEntityRegistry", L"Timefall.BuildEntityRegistryDelegate, Timefall-ScriptCore", scriptModulePath.wstring().c_str());
 		ScriptGlue::RegisterComponents();
 

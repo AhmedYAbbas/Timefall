@@ -7,6 +7,9 @@ namespace Timefall
         [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf16)]
         internal static partial void Native_RegisterEntityTypes(string? typeName, string? assemblyName, string[] fieldNames, string[] fieldTypeNames, int fieldCount);
 
+        [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf16)]
+        internal static partial void Native_RegisterComponentTypes(string? typeName, string? assemblyName, string[] fieldNames, string[] fieldTypeNames, int fieldCount);
+
         [LibraryImport("Timefall")]
         internal static partial IntPtr GetScriptInstance(ulong entityID);
 
@@ -22,6 +25,14 @@ namespace Timefall
         internal static partial void Entity_Destroy(ulong entityID);
         [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf8)]
         internal static partial void Entity_AddComponent(ulong entityID, string? componentTypeFullName);
+
+        [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void Entity_RemoveComponent(ulong entityID, string? componentTypeFullName);
+
+        [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf16)]
+        internal static partial void ManagedComponent_GetField(ulong entityID, string typeName, string fieldName, IntPtr outValue, int size);
+        [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf16)]
+        internal static partial void ManagedComponent_SetField(ulong entityID, string typeName, string fieldName, IntPtr value, int size);
 
         [LibraryImport("Timefall")]
         internal static partial void SpriteRendererComponent_GetColor(ulong entityID, out Vector4 color);

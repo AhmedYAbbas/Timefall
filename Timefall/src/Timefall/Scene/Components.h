@@ -5,6 +5,7 @@
 #include "Timefall/Renderer/Texture.h"
 #include "Timefall/Renderer/Font.h"
 #include "Timefall/Math/Math.h"
+#include "Timefall/Scripting/ScriptEngine.h" // ScriptFieldInstance / ScriptFieldMap
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -207,6 +208,27 @@ namespace Timefall
 		operator bool() const { return Instance; }
 	};
 
+	// One user-defined (C#-declared) component's data: a name->typed-value-buffer map.
+	// Reuses the ScriptField stack verbatim (ScriptFieldMap = unordered_map<wstring, ScriptFieldInstance>).
+	struct TF_API ManagedComponentData
+	{
+		ScriptFieldMap Fields;
+
+		ManagedComponentData() = default;
+		ManagedComponentData(const ManagedComponentData&) = default;
+	};
+
+	// Type-erased holder for every user-defined component on an entity, keyed by the C# type
+	// full-name (e.g. L"Sandbox.BlockTag"). Pure data: no UUIDs, no GCHandle, so it copies and
+	// hot-reloads trivially. Source of truth for user-component values in every context.
+	struct TF_API ManagedComponentStorage
+	{
+		std::unordered_map<std::wstring, ManagedComponentData> Components;
+
+		ManagedComponentStorage() = default;
+		ManagedComponentStorage(const ManagedComponentStorage&) = default;
+	};
+
 	template<typename... T>
 	struct TF_API ComponentGroup
 	{
@@ -223,5 +245,6 @@ namespace Timefall
 		BoxCollider2DComponent,
 		CircleCollider2DComponent,
 		TextComponent,
+		ManagedComponentStorage,
 		NativeScriptComponent>;
 }

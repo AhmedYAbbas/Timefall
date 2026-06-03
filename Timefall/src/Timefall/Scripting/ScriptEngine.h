@@ -21,7 +21,7 @@ namespace Timefall
 	struct TF_API ScriptField
 	{
 		std::wstring Name;
-		ScriptFieldType Type;
+		ScriptFieldType Type = ScriptFieldType::None; // default-init so freshly-created fields are deterministic
 	};
 
 	// ScriptField + data storage
@@ -47,6 +47,10 @@ namespace Timefall
 			static_assert(sizeof(T) <= 16, "Type too large!");
 			memcpy(m_Buffer, &value, sizeof(T));
 		}
+
+		void* Data() { return m_Buffer; }
+		static constexpr size_t BufferSize() { return 16; } // matches m_Buffer[16]
+
 	private:
 		uint8_t m_Buffer[16];
 		friend class ScriptEngine;
@@ -170,6 +174,16 @@ namespace Timefall
 
 		static bool LoadAssembly(const std::filesystem::path& runtimeConfigPath);
 		static void RegisterEntityTypes(const wchar_t* typeName, const wchar_t* assemblyName, const wchar_t** fieldNames, const wchar_t** fieldTypeNames, int fieldCount);
+
+		// User-defined component schemas (C# Component subclasses). Registered from the app
+		// assembly scan; rebuilt on hot-reload alongside the entity classes.
+		static void RegisterComponentTypes(const wchar_t* typeName, const wchar_t* assemblyName, const wchar_t** fieldNames, const wchar_t** fieldTypeNames, int fieldCount);
+		static Ref<ScriptClass> GetComponentClass(const std::wstring& name);
+		static const std::unordered_map<std::wstring, Ref<ScriptClass>>& GetComponentClasses();
+
+		// Ensures `entity` has a ManagedComponentStorage entry for `typeName`, default-initializing
+		// its field buffers from the registered schema. No-op if the entry already exists.
+		static void AddManagedComponent(Entity entity, const std::wstring& typeName);
 
 		static Scene* GetSceneContext();
 		static Ref<ScriptClass> GetEntityScriptClass(const std::wstring& name);

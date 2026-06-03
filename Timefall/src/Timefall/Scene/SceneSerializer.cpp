@@ -294,6 +294,52 @@ namespace Timefall
 			out << YAML::EndMap; // ScriptComponent
 		}
 
+		if (entity.HasComponent<ManagedComponentStorage>())
+		{
+			auto& storage = entity.GetComponent<ManagedComponentStorage>();
+			if (!storage.Components.empty())
+			{
+				out << YAML::Key << "ManagedComponents" << YAML::Value << YAML::BeginSeq;
+				for (auto& [typeName, data] : storage.Components)
+				{
+					out << YAML::BeginMap; // ManagedComponent
+					out << YAML::Key << "TypeName" << YAML::Value << typeName;
+					out << YAML::Key << "Fields" << YAML::Value << YAML::BeginSeq;
+					for (auto& [name, fieldConst] : data.Fields)
+					{
+						ScriptFieldInstance scriptField = fieldConst; // copy: GetValue<T>() (used by the macro) is non-const
+						out << YAML::BeginMap; // Field
+						out << YAML::Key << "Name" << YAML::Value << name;
+						out << YAML::Key << "Type" << YAML::Value << Utils::ScriptFieldTypeToString(scriptField.Field.Type);
+						out << YAML::Key << "Data" << YAML::Value;
+						switch (scriptField.Field.Type)
+						{
+							WRITE_SCRIPT_FIELD(Float,   float);
+							WRITE_SCRIPT_FIELD(Double,  double);
+							WRITE_SCRIPT_FIELD(Bool,    bool);
+							WRITE_SCRIPT_FIELD(Char,    char);
+							WRITE_SCRIPT_FIELD(SByte,   int8_t);
+							WRITE_SCRIPT_FIELD(Int16,   int16_t);
+							WRITE_SCRIPT_FIELD(Int32,   int32_t);
+							WRITE_SCRIPT_FIELD(Int64,   int64_t);
+							WRITE_SCRIPT_FIELD(Byte,    uint8_t);
+							WRITE_SCRIPT_FIELD(UInt16,  uint16_t);
+							WRITE_SCRIPT_FIELD(UInt32,  uint32_t);
+							WRITE_SCRIPT_FIELD(UInt64,  uint64_t);
+							WRITE_SCRIPT_FIELD(Vector2, glm::vec2);
+							WRITE_SCRIPT_FIELD(Vector3, glm::vec3);
+							WRITE_SCRIPT_FIELD(Vector4, glm::vec4);
+							WRITE_SCRIPT_FIELD(Entity,  UUID);
+						}
+						out << YAML::EndMap; // Field
+					}
+					out << YAML::EndSeq;
+					out << YAML::EndMap; // ManagedComponent
+				}
+				out << YAML::EndSeq;
+			}
+		}
+
 		if (entity.HasComponent<SpriteRendererComponent>())
 		{
 			out << YAML::Key << "SpriteRendererComponent";
@@ -539,6 +585,53 @@ namespace Timefall
 								}
 							}
 						}
+					}
+				}
+
+				if (auto managedComponents = entity["ManagedComponents"])
+				{
+					auto& storage = deserializedEntity.HasComponent<ManagedComponentStorage>()
+						? deserializedEntity.GetComponent<ManagedComponentStorage>()
+						: deserializedEntity.AddComponent<ManagedComponentStorage>();
+
+					for (auto managedComponent : managedComponents)
+					{
+						std::wstring typeName = managedComponent["TypeName"].as<std::wstring>();
+						ManagedComponentData componentData; // not `data`: the READ_SCRIPT_FIELD macro declares a local `data`
+
+						if (auto fields = managedComponent["Fields"])
+						{
+							for (auto scriptField : fields)
+							{
+								std::wstring name = scriptField["Name"].as<std::wstring>();
+								std::wstring typeString = scriptField["Type"].as<std::wstring>();
+								ScriptFieldType type = Utils::ScriptFieldTypeFromString(typeString);
+
+								ScriptFieldInstance& fieldInstance = componentData.Fields[name];
+								fieldInstance.Field = ScriptField{ name, type };
+
+								switch (type)
+								{
+									READ_SCRIPT_FIELD(Float, float);
+									READ_SCRIPT_FIELD(Double, double);
+									READ_SCRIPT_FIELD(Bool, bool);
+									READ_SCRIPT_FIELD(Char, char);
+									READ_SCRIPT_FIELD(SByte, int8_t);
+									READ_SCRIPT_FIELD(Int16, int16_t);
+									READ_SCRIPT_FIELD(Int32, int32_t);
+									READ_SCRIPT_FIELD(Int64, int64_t);
+									READ_SCRIPT_FIELD(Byte, uint8_t);
+									READ_SCRIPT_FIELD(UInt16, uint16_t);
+									READ_SCRIPT_FIELD(UInt32, uint32_t);
+									READ_SCRIPT_FIELD(UInt64, uint64_t);
+									READ_SCRIPT_FIELD(Vector2, glm::vec2);
+									READ_SCRIPT_FIELD(Vector3, glm::vec3);
+									READ_SCRIPT_FIELD(Vector4, glm::vec4);
+									READ_SCRIPT_FIELD(Entity, UUID);
+								}
+							}
+						}
+						storage.Components[typeName] = std::move(componentData);
 					}
 				}
 

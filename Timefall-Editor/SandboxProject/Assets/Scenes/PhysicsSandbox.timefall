@@ -4,9 +4,14 @@ Entities:
     TagComponent:
       Tag: Text
     TransformComponent:
-      Position: [-3.123516, 5.0583687, 0]
-      Rotation: [0, 0, 0]
-      Scale: [2.4499998, 2.4499998, 2.4499998]
+      Position: [0.47404218, 5.0583687, 0]
+      Rotation: [0, -0, -0.73851705]
+      Scale: [2.4500003, 2.450002, 2.450001]
+    RelationshipComponent:
+      Parent: 0
+      Children:
+        - 5722967266416677241
+        - 9728078465746292828
     Rigidbody2DComponent:
       BodyType: Dynamic
       FixedRotation: false
@@ -26,9 +31,13 @@ Entities:
     TagComponent:
       Tag: Ground
     TransformComponent:
-      Position: [11.316574, -0.7230787, 0]
-      Rotation: [0, 0, 0.5408414]
-      Scale: [26.865513, 0.99999976, 1]
+      Position: [4.5921206, -8.8271885, 0]
+      Rotation: [0, -0, 1.2793584]
+      Scale: [26.865498, 0.99998486, 1]
+    RelationshipComponent:
+      Parent: 5722967266416677241
+      Children:
+        []
     SpriteRendererComponent:
       Color: [1, 0.55598456, 0, 1]
       TextureHandle: 0
@@ -47,9 +56,13 @@ Entities:
     TagComponent:
       Tag: Player
     TransformComponent:
-      Position: [-5.9043703, 5.805495, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Position: [0, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [0.40816322, 0.40816313, 0.4081631]
+    RelationshipComponent:
+      Parent: 15933229236446901720
+      Children:
+        - 9207990595640943279
     ScriptComponent:
       ModuleName: Sandbox.Player
       ScriptFields:
@@ -79,9 +92,13 @@ Entities:
     TagComponent:
       Tag: Camera
     TransformComponent:
-      Position: [0, 0, 34.38777]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Position: [1.2468221, -1.6569871, 14.035819]
+      Rotation: [0, -0, 0.7385167]
+      Scale: [0.4081631, 0.40816307, 0.4081631]
+    RelationshipComponent:
+      Parent: 15933229236446901720
+      Children:
+        []
     CameraComponent:
       Camera:
         ProjectionType: 0
@@ -146,8 +163,8 @@ Entities:
       Tag: Ground
     TransformComponent:
       Position: [-9.089184, -6.4865804, 0]
-      Rotation: [0, 0, -0.42387894]
-      Scale: [26.865517, 0.99999964, 1]
+      Rotation: [-3.141592, 5.2296883e-07, -0.3682055]
+      Scale: [26.865486, 1, 0.9999887]
     SpriteRendererComponent:
       Color: [1, 0.55598456, 0, 1]
       TextureHandle: 0

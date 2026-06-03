@@ -23,9 +23,29 @@ Entities:
       Tag: Sandbox
     TransformComponent:
       Position: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Rotation: [0, -0, 0]
+      Scale: [0.001, 1, 1]
     ScriptComponent:
       ModuleName: Sandbox.SpawnTester
       ScriptFields:
-        []
+        - Name: MoveSpeed
+          Type: Float
+          Data: 2
+    ManagedComponents:
+      - TypeName: Sandbox.BlockTag
+        Fields:
+          - Name: Weight
+            Type: Float
+            Data: 0
+          - Name: Kind
+            Type: Int32
+            Data: 5
+          - Name: Color
+            Type: Vector4
+            Data: [0.10038614, 1, 0, 0]
+          - Name: Weight2
+            Type: Float
+            Data: 0
+          - Name: Weight23
+            Type: Float
+            Data: 0

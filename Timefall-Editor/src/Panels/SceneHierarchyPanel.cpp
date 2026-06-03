@@ -267,6 +267,54 @@ namespace Timefall
 		ImGui::PopID();
 	}
 
+	// Draws one editable control for a ScriptFieldInstance by its type. Returns true if edited.
+	static bool DrawScriptField(const std::string& label, ScriptFieldInstance& field)
+	{
+		switch (field.Field.Type)
+		{
+			case ScriptFieldType::Float:
+			{
+				float v = field.GetValue<float>();
+				if (ImGui::DragFloat(label.c_str(), &v, 0.1f)) { field.SetValue(v); return true; }
+				break;
+			}
+			case ScriptFieldType::Int32:
+			{
+				int v = field.GetValue<int32_t>();
+				if (ImGui::DragInt(label.c_str(), &v)) { field.SetValue<int32_t>(v); return true; }
+				break;
+			}
+			case ScriptFieldType::Bool:
+			{
+				bool v = field.GetValue<bool>();
+				if (ImGui::Checkbox(label.c_str(), &v)) { field.SetValue(v); return true; }
+				break;
+			}
+			case ScriptFieldType::Vector2:
+			{
+				glm::vec2 v = field.GetValue<glm::vec2>();
+				if (ImGui::DragFloat2(label.c_str(), glm::value_ptr(v), 0.1f)) { field.SetValue(v); return true; }
+				break;
+			}
+			case ScriptFieldType::Vector3:
+			{
+				glm::vec3 v = field.GetValue<glm::vec3>();
+				if (ImGui::DragFloat3(label.c_str(), glm::value_ptr(v), 0.1f)) { field.SetValue(v); return true; }
+				break;
+			}
+			case ScriptFieldType::Vector4:
+			{
+				glm::vec4 v = field.GetValue<glm::vec4>();
+				if (ImGui::ColorEdit4(label.c_str(), glm::value_ptr(v))) { field.SetValue(v); return true; }
+				break;
+			}
+			default:
+				ImGui::TextDisabled("%s (unsupported type)", label.c_str());
+				break;
+		}
+		return false;
+	}
+
 	template<typename T, typename UIFunction>
 	static void DrawComponent(const std::string& label, Entity entity, UIFunction uiFunction)
 	{
@@ -335,6 +383,23 @@ namespace Timefall
 			DisplayAddComponentEntry<BoxCollider2DComponent>("Box Collider 2D");
 			DisplayAddComponentEntry<CircleCollider2DComponent>("Circle Collider 2D");
 			DisplayAddComponentEntry<TextComponent>("Text Renderer");
+
+			// User-defined (C#) components
+			for (const auto& [typeName, scriptClass] : ScriptEngine::GetComponentClasses())
+			{
+				std::string label(typeName.begin(), typeName.end());
+				bool alreadyHas = false;
+				if (m_SelectionContext.HasComponent<ManagedComponentStorage>())
+				{
+					auto& storage = m_SelectionContext.GetComponent<ManagedComponentStorage>();
+					alreadyHas = storage.Components.find(typeName) != storage.Components.end();
+				}
+				if (!alreadyHas && ImGui::MenuItem(label.c_str()))
+				{
+					ScriptEngine::AddManagedComponent(m_SelectionContext, typeName);
+					ImGui::CloseCurrentPopup();
+				}
+			}
 
 			ImGui::EndPopup();
 		}
@@ -612,6 +677,67 @@ namespace Timefall
 			ImGui::DragFloat("Kerning", &component.Kerning, 0.025f);
 			ImGui::DragFloat("Line Spacing", &component.LineSpacing, 0.025f);
 		});
+
+		// User-defined (managed) components — native storage is the source of truth, so we read/write
+		// its ScriptFieldInstance buffers directly (same path in edit and play modes).
+		if (entity.HasComponent<ManagedComponentStorage>())
+		{
+			auto& storage = entity.GetComponent<ManagedComponentStorage>();
+			std::vector<std::wstring> toRemove;
+
+			for (auto& [typeName, data] : storage.Components)
+			{
+				std::string label(typeName.begin(), typeName.end());
+				ImGui::PushID(label.c_str());
+
+				// Mirror DrawComponent: measure region BEFORE the node and set AllowItemOverlap so the
+				// full-width header doesn't swallow the "+" button's click.
+				ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
+				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 4, 4 });
+				float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+				ImGui::Separator();
+				bool open = ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanAvailWidth);
+				ImGui::PopStyleVar();
+				ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);
+				if (ImGui::Button("+", ImVec2{ lineHeight, lineHeight }))
+					ImGui::OpenPopup("ManagedComponentSettings");
+
+				if (ImGui::BeginPopup("ManagedComponentSettings"))
+				{
+					if (ImGui::MenuItem("Remove Component"))
+						toRemove.push_back(typeName);
+					ImGui::EndPopup();
+				}
+
+				if (open)
+				{
+					if (Ref<ScriptClass> schema = ScriptEngine::GetComponentClass(typeName))
+					{
+						for (const auto& [fieldName, field] : schema->GetFields())
+						{
+							ScriptFieldInstance& inst = data.Fields[fieldName];
+							inst.Field = field; // schema is authoritative for name+type (handles new/changed fields; value buffer preserved)
+							std::string fieldLabel(fieldName.begin(), fieldName.end());
+							DrawScriptField(fieldLabel, inst);
+						}
+					}
+					else
+					{
+						for (auto& [fieldName, inst] : data.Fields)
+						{
+							std::string fieldLabel(fieldName.begin(), fieldName.end());
+							DrawScriptField(fieldLabel, inst);
+						}
+					}
+					ImGui::TreePop();
+				}
+
+				ImGui::PopID();
+			}
+
+			for (const std::wstring& typeName : toRemove)
+				storage.Components.erase(typeName);
+		}
 	}
 
 	template<typename T>

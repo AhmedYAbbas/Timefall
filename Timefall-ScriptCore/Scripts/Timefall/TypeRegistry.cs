@@ -77,6 +77,21 @@ namespace Timefall
                     string[] fieldTypeNames = fields.Select(f => f.FieldType.FullName ?? string.Empty).ToArray();
                     NativeCalls.Native_RegisterEntityTypes(type.FullName, asm.GetName().Name, fieldNames, fieldTypeNames, fields.Length);
                 }
+                else if (type.IsAssignableTo(typeof(Component)) && type != typeof(Component) && !type.IsAbstract)
+                {
+                    Console.WriteLine($"Registering Component Type: {type.FullName} from Assembly: {asm.GetName().Name}");
+                    PropertyInfo[] props = type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                                               .Where(p => p.CanRead && p.CanWrite
+                                                        && p.GetIndexParameters().Length == 0
+                                                        && p.DeclaringType != typeof(Component))
+                                               .ToArray();
+
+                    s_RegisteredTypes[type.FullName!] = type;
+
+                    string[] fieldNames = props.Select(p => p.Name).ToArray();
+                    string[] fieldTypeNames = props.Select(p => p.PropertyType.FullName ?? string.Empty).ToArray();
+                    NativeCalls.Native_RegisterComponentTypes(type.FullName, asm.GetName().Name, fieldNames, fieldTypeNames, props.Length);
+                }
             }
         }
 
