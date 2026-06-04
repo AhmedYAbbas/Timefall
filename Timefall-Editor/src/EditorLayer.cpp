@@ -661,12 +661,18 @@ namespace Timefall
 
 		}
 
-		// Draw selected entity outline. IsValid() guards against a selection that was destroyed
-		// this frame (e.g. by a script via the deferred-destroy queue) but is still cached here.
-		if (Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity(); selectedEntity.IsValid())
+		// Draw selected entity outline — an editor-only aid, so skip it in Play mode where the
+		// runtime camera shows the actual game (otherwise the orange rect leaks onto the screen).
+		// Edit and Simulate both use the editor camera, so the outline still draws there.
+		// IsValid() guards against a selection that was destroyed this frame (e.g. by a script via
+		// the deferred-destroy queue) but is still cached here.
+		if (m_SceneState != SceneState::Play)
 		{
-			// World transform so the outline sits on the entity's actual location, child or not.
-			Renderer2D::DrawRect(selectedEntity.GetWorldTransform(), glm::vec4(1.0f, 0.5f, 0.0f, 1.0f));
+			if (Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity(); selectedEntity.IsValid())
+			{
+				// World transform so the outline sits on the entity's actual location, child or not.
+				Renderer2D::DrawRect(selectedEntity.GetWorldTransform(), glm::vec4(1.0f, 0.5f, 0.0f, 1.0f));
+			}
 		}
 
 		Renderer2D::EndScene();
