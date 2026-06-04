@@ -10,6 +10,9 @@ namespace Timefall
         [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf16)]
         internal static partial void Native_RegisterComponentTypes(string? typeName, string? assemblyName, string[] fieldNames, string[] fieldTypeNames, int fieldCount);
 
+        [LibraryImport("Timefall", StringMarshalling = StringMarshalling.Utf8)]
+        internal static partial void SceneManager_LoadScene(string name);
+
         [LibraryImport("Timefall")]
         internal static partial IntPtr GetScriptInstance(ulong entityID);
 

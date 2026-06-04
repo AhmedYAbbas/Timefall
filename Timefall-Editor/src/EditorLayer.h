@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Timefall.h"
+#include "Timefall/Scene/SceneManager.h"
 #include "Panels/SceneHierarchyPanel.h"
 #include "Panels/ContentBrowserPanel.h"
 #include <filesystem>
@@ -48,13 +49,15 @@ namespace Timefall
 		void OnSceneStop();
 		void OnScenePause();
 
+		// The scene to render/update: the edited scene in Edit mode, else the engine-owned runtime scene.
+		Ref<Scene> GetActiveScene() const;
+
 	private:
 		OrthographicCameraController m_CameraController;
 
 		// Temp
 		Ref<Framebuffer> m_Framebuffer;
 
-		Ref<Scene> m_ActiveScene;
 		Ref<Scene> m_EditorScene;
 		std::filesystem::path m_EditorScenePath;
 

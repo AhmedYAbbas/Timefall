@@ -45,7 +45,6 @@ namespace Timefall
 		m_Framebuffer = Framebuffer::Create(fbSpec);
 
 		m_EditorScene = CreateRef<Scene>();
-		m_ActiveScene = m_EditorScene;
 
 		auto commandLineArgs = Application::Get().GetSpecification().CommandLineArgs;
 		if (commandLineArgs.Count > 1)
@@ -66,16 +65,16 @@ namespace Timefall
 		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
 
 #if 0
-		m_SquareEntity = m_ActiveScene->CreateEntity("Green Square");
+		m_SquareEntity = GetActiveScene()->CreateEntity("Green Square");
 		m_SquareEntity.AddComponent<SpriteRendererComponent>(glm::vec4{0.0f, 1.0f, 0.0f, 1.0f});
 		
-		auto redSquare = m_ActiveScene->CreateEntity("Red Square");
+		auto redSquare = GetActiveScene()->CreateEntity("Red Square");
 		redSquare.AddComponent<SpriteRendererComponent>(glm::vec4{1.0f, 0.0f, 0.0f, 1.0f});
 
-		m_PrimaryCamera = m_ActiveScene->CreateEntity("Main Camera");
+		m_PrimaryCamera = GetActiveScene()->CreateEntity("Main Camera");
 		m_PrimaryCamera.AddComponent<CameraComponent>();
 
-		m_SecondaryCamera = m_ActiveScene->CreateEntity("Secondary Camera");
+		m_SecondaryCamera = GetActiveScene()->CreateEntity("Secondary Camera");
 		auto& cc = m_SecondaryCamera.AddComponent<CameraComponent>();
 		cc.Primary = false;
 
@@ -111,7 +110,7 @@ namespace Timefall
 		m_PrimaryCamera.AddComponent<NativeScriptComponent>().Bind<CameraController>();
 		m_SecondaryCamera.AddComponent<NativeScriptComponent>().Bind<CameraController>();
 #endif
-		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+		m_SceneHierarchyPanel.SetContext(GetActiveScene());
 	}
 
 	void EditorLayer::OnDetach()
@@ -119,11 +118,17 @@ namespace Timefall
 		TF_PROFILE_FUNCTION();
 	}
 
+	Ref<Scene> EditorLayer::GetActiveScene() const
+	{
+		return m_SceneState == SceneState::Edit ? m_EditorScene : SceneManager::GetActiveScene();
+	}
+
 	void EditorLayer::OnUpdate(Timestep ts)
 	{
 		TF_PROFILE_FUNCTION();
 
-		m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+		GetActiveScene()->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+		SceneManager::SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 
 		// Resize
 		if (FramebufferSpecification spec = m_Framebuffer->GetSpecification();
@@ -150,18 +155,20 @@ namespace Timefall
 			case SceneState::Edit:
 			{
 				m_EditorCamera.OnUpdate(ts);
-				m_ActiveScene->OnUpdateEditor(ts, m_EditorCamera);
+				GetActiveScene()->OnUpdateEditor(ts, m_EditorCamera);
 				break;
 			}
 			case SceneState::Simulate:
 			{
 				m_EditorCamera.OnUpdate(ts);
-				m_ActiveScene->OnUpdateSimulation(ts, m_EditorCamera);
+				GetActiveScene()->OnUpdateSimulation(ts, m_EditorCamera);
 				break;
 			}
 			case SceneState::Play:
 			{
-				m_ActiveScene->OnUpdateRuntime(ts);
+				GetActiveScene()->OnUpdateRuntime(ts);
+				if (SceneManager::ProcessPendingLoad())
+					m_SceneHierarchyPanel.SetContext(SceneManager::GetActiveScene());
 				break;
 			}
 		}
@@ -177,7 +184,7 @@ namespace Timefall
 		if (mouseX >= 0 && mouseX < viewportSize.x && mouseY >= 0 && mouseY < viewportSize.y)
 		{
 			int data = m_Framebuffer->ReadPixel(1, mouseX, mouseY);
-			m_HoveredEntity = data == -1 ?  Entity() : Entity{ (entt::entity)data, m_ActiveScene.get() };
+			m_HoveredEntity = data == -1 ?  Entity() : Entity{ (entt::entity)data, GetActiveScene().get() };
 		}
 
 		OnOverlayRender();
@@ -357,7 +364,7 @@ namespace Timefall
 				ImGuizmo::SetRect(m_ViewportBounds[0].x, m_ViewportBounds[0].y, m_ViewportBounds[1].x - m_ViewportBounds[0].x, m_ViewportBounds[1].y - m_ViewportBounds[0].y);
 
 				// Runtime Camera
-				// auto cameraEntity = m_ActiveScene->GetPrimaryCameraEntity();
+				// auto cameraEntity = GetActiveScene()->GetPrimaryCameraEntity();
 				// const auto& camera = cameraEntity.GetComponent<CameraComponent>().Camera;
 				// const glm::mat4& cameraProjection = camera.GetProjection();
 				// glm::mat4 cameraView = glm::inverse(cameraEntity.GetWorldTransform());
@@ -415,7 +422,7 @@ namespace Timefall
 
 		ImGui::Begin("##Toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
-		bool toolbarEnabled = (bool)m_ActiveScene;
+		bool toolbarEnabled = (bool)GetActiveScene();
 
 		ImVec4 tintColor = ImVec4(1, 1, 1, 1);
 		if (!toolbarEnabled)
@@ -461,13 +468,13 @@ namespace Timefall
 
 		if (hasPauseButton)
 		{
-			bool isPaused = m_ActiveScene->IsPaused();
+			bool isPaused = GetActiveScene()->IsPaused();
 			ImGui::SameLine();
 			{
 				Ref<Texture2D> icon = m_PauseIcon;
 				std::string id = std::to_string(icon->GetRendererID());
 				if (ImGui::ImageButton(id.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled)
-					m_ActiveScene->SetPaused(!isPaused);
+					GetActiveScene()->SetPaused(!isPaused);
 			}
 
 			// Step button
@@ -478,7 +485,7 @@ namespace Timefall
 					Ref<Texture2D> icon = m_StepIcon;
 					std::string id = std::to_string(icon->GetRendererID());
 					if (ImGui::ImageButton(id.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled)
-						m_ActiveScene->Step();
+						GetActiveScene()->Step();
 				}
 			}
 		}
@@ -565,7 +572,7 @@ namespace Timefall
 					if (selectedEntity)
 					{
 						m_SceneHierarchyPanel.SetSelectedEntity({});
-						m_ActiveScene->DestroyEntity(selectedEntity);
+						GetActiveScene()->DestroyEntity(selectedEntity);
 					}
 				}
 				break;
@@ -599,7 +606,7 @@ namespace Timefall
 	{
 		if (m_SceneState == SceneState::Play)
 		{
-			Entity camera = m_ActiveScene->GetPrimaryCameraEntity();
+			Entity camera = GetActiveScene()->GetPrimaryCameraEntity();
 			if (!camera)
 				return;
 
@@ -614,7 +621,7 @@ namespace Timefall
 		{
 			// Box Colliders
 			{
-				auto view = m_ActiveScene->GetAllEntitiesWithUsingView<TransformComponent, BoxCollider2DComponent>();
+				auto view = GetActiveScene()->GetAllEntitiesWithUsingView<TransformComponent, BoxCollider2DComponent>();
 				for (auto entity : view)
 				{
 					auto [tc, bc2d] = view.get<TransformComponent, BoxCollider2DComponent>(entity);
@@ -636,7 +643,7 @@ namespace Timefall
 				glm::vec3 cameraForwardDirection = m_EditorCamera.GetForwardDirection();
 				glm::vec3 projectionCollider = cameraForwardDirection * zIndex;
 
-				auto view = m_ActiveScene->GetAllEntitiesWithUsingView<TransformComponent, CircleCollider2DComponent>();
+				auto view = GetActiveScene()->GetAllEntitiesWithUsingView<TransformComponent, CircleCollider2DComponent>();
 				for (auto entity : view)
 				{
 					auto [tc, cc2d] = view.get<TransformComponent, CircleCollider2DComponent>(entity);
@@ -701,9 +708,8 @@ namespace Timefall
 	void EditorLayer::NewScene()
 	{
 		m_EditorScene = CreateRef<Scene>();
-		m_ActiveScene = m_EditorScene;
 
-		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+		m_SceneHierarchyPanel.SetContext(m_EditorScene);
 
 		m_EditorScenePath = std::filesystem::path();
 	}
@@ -728,14 +734,13 @@ namespace Timefall
 		m_EditorScene = newScene;
 		m_SceneHierarchyPanel.SetContext(m_EditorScene);
 
-		m_ActiveScene = m_EditorScene;
 		m_EditorScenePath = Project::GetActive()->GetEditorAssetManager()->GetFilePath(handle);
 	}
 
 	void EditorLayer::SaveScene()
 	{
 		if (!m_EditorScenePath.empty())
-			SerializeScene(m_ActiveScene, m_EditorScenePath);
+			SerializeScene(m_EditorScene, m_EditorScenePath);
 		else
 			SaveSceneAs();
 	}
@@ -745,7 +750,7 @@ namespace Timefall
 		auto filepath = FileDialogs::SaveFile("Timefall Scene (*.timefall)\0*.timefall\0");
 		if (!filepath.empty())
 		{
-			SerializeScene(m_ActiveScene, filepath);
+			SerializeScene(m_EditorScene, filepath);
 			m_EditorScenePath = filepath;
 		}
 	}
@@ -775,10 +780,12 @@ namespace Timefall
 
 		m_SceneState = SceneState::Play;
 
-		m_ActiveScene = Scene::Copy(m_EditorScene);
-		m_ActiveScene->OnRuntimeStart();
+		Ref<Scene> runtime = Scene::Copy(m_EditorScene);
+		SceneManager::SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+		SceneManager::SetActiveScene(runtime);
+		runtime->OnRuntimeStart();
 
-		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+		m_SceneHierarchyPanel.SetContext(runtime);
 	}
 
 	void EditorLayer::OnSceneSimulate()
@@ -788,26 +795,31 @@ namespace Timefall
 
 		m_SceneState = SceneState::Simulate;
 
-		m_ActiveScene = Scene::Copy(m_EditorScene);
-		m_ActiveScene->OnSimulationStart();
+		Ref<Scene> runtime = Scene::Copy(m_EditorScene);
+		SceneManager::SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+		SceneManager::SetActiveScene(runtime);
+		runtime->OnSimulationStart();
 
-		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+		m_SceneHierarchyPanel.SetContext(runtime);
 	}
 
 	void EditorLayer::OnSceneStop()
 	{
 		TF_CORE_ASSERT(m_SceneState == SceneState::Play || m_SceneState == SceneState::Simulate, "Invalid scene state!");
 
-		if (m_SceneState == SceneState::Play)
-			m_ActiveScene->OnRuntimeStop();
-		else if (m_SceneState == SceneState::Simulate)
-			m_ActiveScene->OnSimulationStop();
+		Ref<Scene> runtime = SceneManager::GetActiveScene();
+		if (runtime)
+		{
+			if (m_SceneState == SceneState::Play)
+				runtime->OnRuntimeStop();
+			else if (m_SceneState == SceneState::Simulate)
+				runtime->OnSimulationStop();
+		}
 
+		SceneManager::SetActiveScene(nullptr);
 		m_SceneState = SceneState::Edit;
 
-		m_ActiveScene = m_EditorScene;
-
-		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+		m_SceneHierarchyPanel.SetContext(m_EditorScene);
 	}
 
 	void EditorLayer::OnScenePause()
@@ -815,6 +827,6 @@ namespace Timefall
 		if (m_SceneState == SceneState::Edit)
 			return;
 
-		m_ActiveScene->SetPaused(true);
+		GetActiveScene()->SetPaused(true);
 	}
 }

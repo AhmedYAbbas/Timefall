@@ -5,9 +5,15 @@ AssetRegistry:
   - Handle: 14561479867608167996
     FilePath: Textures/Checkerboard.png
     Type: Texture2D
+  - Handle: 14688511799200688338
+    FilePath: Scenes/Menu.timefall
+    Type: Scene
   - Handle: 14748461370065992660
     FilePath: Scenes/Sandbox.timefall
     Type: Scene
   - Handle: 15191860190705874248
     FilePath: Scenes/PhysicsSandbox.timefall
+    Type: Scene
+  - Handle: 17992648059862121593
+    FilePath: Scenes/Game.timefall
     Type: Scene

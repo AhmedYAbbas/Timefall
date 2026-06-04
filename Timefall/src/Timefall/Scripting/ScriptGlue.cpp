@@ -5,6 +5,7 @@
 #include "Timefall/Core/UUID.h"
 #include "Timefall/Scene/Scene.h"
 #include "Timefall/Scene/Entity.h"
+#include "Timefall/Scene/SceneManager.h"
 
 #include <glm/gtx/io.hpp>
 #include <box2d/types.h>
@@ -725,6 +726,12 @@ namespace Timefall
 		void Native_RegisterComponentTypes(const wchar_t* typeName, const wchar_t* assemblyName, const wchar_t** fieldNames, const wchar_t** fieldTypeNames, int fieldCount)
 		{
 			ScriptEngine::RegisterComponentTypes(typeName, assemblyName, fieldNames, fieldTypeNames, fieldCount);
+		}
+
+		__declspec(dllexport)
+		void SceneManager_LoadScene(const char* name)
+		{
+			SceneManager::LoadScene(name ? name : "");
 		}
 	}
 
