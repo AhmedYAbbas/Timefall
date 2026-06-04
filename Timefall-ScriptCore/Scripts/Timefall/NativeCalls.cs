@@ -91,6 +91,27 @@ namespace Timefall
         [LibraryImport("Timefall")]
         [return: MarshalAs(UnmanagedType.U1)]
         internal static partial bool Input_IsKeyDown(KeyCode keycode);
+        [LibraryImport("Timefall")]
+        [return: MarshalAs(UnmanagedType.U1)]
+        internal static partial bool Input_IsKeyPressedThisFrame(KeyCode keycode);
+        [LibraryImport("Timefall")]
+        [return: MarshalAs(UnmanagedType.U1)]
+        internal static partial bool Input_IsKeyReleasedThisFrame(KeyCode keycode);
+
+        [LibraryImport("Timefall")]
+        [return: MarshalAs(UnmanagedType.U1)]
+        internal static partial bool Input_IsMouseButtonDown(MouseButton button);
+        [LibraryImport("Timefall")]
+        [return: MarshalAs(UnmanagedType.U1)]
+        internal static partial bool Input_IsMouseButtonPressedThisFrame(MouseButton button);
+        [LibraryImport("Timefall")]
+        [return: MarshalAs(UnmanagedType.U1)]
+        internal static partial bool Input_IsMouseButtonReleasedThisFrame(MouseButton button);
+
+        [LibraryImport("Timefall")]
+        internal static partial void Input_GetMousePosition(out Vector2 position);
+        [LibraryImport("Timefall")]
+        internal static partial void Input_GetMouseWorldPosition(out Vector2 position);
 
         [LibraryImport("Timefall", EntryPoint = "TextComponent_GetText")]
         internal static partial IntPtr TextComponent_GetText_Native(ulong entityID);

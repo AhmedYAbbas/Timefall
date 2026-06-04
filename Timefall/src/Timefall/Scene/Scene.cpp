@@ -287,6 +287,32 @@ namespace Timefall
 		return {};
 	}
 
+	glm::vec2 Scene::ScreenToWorldPoint(const glm::vec2& viewportPixel)
+	{
+		Entity cameraEntity = GetPrimaryCameraEntity();
+		if (!cameraEntity)
+		{
+			TF_CORE_WARN("ScreenToWorldPoint: no primary camera in the scene");
+			return glm::vec2(0.0f);
+		}
+
+		float vpW = (float)m_ViewportWidth;
+		float vpH = (float)m_ViewportHeight;
+		if (vpW <= 0.0f || vpH <= 0.0f)
+			return glm::vec2(0.0f);
+
+		float ndcX = (viewportPixel.x / vpW) * 2.0f - 1.0f;
+		float ndcY = 1.0f - (viewportPixel.y / vpH) * 2.0f; // flip Y: screen down -> NDC up
+
+		const glm::mat4& projection = cameraEntity.GetComponent<CameraComponent>().Camera.GetProjection();
+		glm::mat4 view = glm::inverse(cameraEntity.GetWorldTransform());
+		glm::vec4 world = glm::inverse(projection * view) * glm::vec4(ndcX, ndcY, 0.0f, 1.0f);
+		if (world.w != 0.0f)
+			world /= world.w;
+
+		return glm::vec2(world.x, world.y);
+	}
+
 	Entity Scene::CreateEntity(const std::string tag)
 	{
 		return CreateEntityWithUUID(UUID(), tag);

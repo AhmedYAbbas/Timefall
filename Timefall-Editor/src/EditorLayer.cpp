@@ -139,6 +139,12 @@ namespace Timefall
 		RenderCommand::Clear({ 0.1f, 0.1f, 0.1f, 1.0f });
 		m_Framebuffer->ClearColorAttachment(1, -1);
 
+		// Feed the viewport-relative mouse (top-left origin) to the engine so scripts get world input.
+		{
+			auto [mouseScreenX, mouseScreenY] = ImGui::GetMousePos();
+			Input::SetViewportMousePosition({ mouseScreenX - m_ViewportBounds[0].x, mouseScreenY - m_ViewportBounds[0].y });
+		}
+
 		switch (m_SceneState)
 		{
 			case SceneState::Edit:

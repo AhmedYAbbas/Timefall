@@ -6,20 +6,17 @@ namespace Sandbox
 {
     // Phase 0 plumbing proof: spawn / move / recolor / destroy entities from C# at runtime.
     // Attach this script to an entity in a scene, enter Play mode, then:
-    //   Space     -> spawn a randomly-colored quad
-    //   Backspace -> destroy all spawned quads
-    //   P         -> parent all spawned quads under a new "Piece" entity (Phase 2 hierarchy test)
+    //   Space      -> spawn a randomly-colored quad
+    //   Backspace  -> destroy all spawned quads
+    //   P          -> parent all spawned quads under a new "Piece" entity (Phase 2 hierarchy test)
+    //   B          -> spawn BlockTag-tagged entities + query them (Phase 4 query test)
+    //   Left-click -> spawn a quad at the cursor's world position (Phase 5 mouse->world test)
     // Spawned quads drift upward each frame to prove translation works; once parented, the parent
     // rotates and the quads should orbit it (proving SetParent world-preservation + world transforms).
     public class SpawnTester : Entity
     {
         private readonly List<Entity> m_Spawned = new();
         private readonly Random m_Random = new();
-
-        // Held-state edge tracking (interim until native input edges land in Phase 5).
-        private bool m_SpawnHeld;
-        private bool m_ClearHeld;
-        private bool m_ParentHeld;
 
         private Entity? m_Parent;
 
@@ -32,20 +29,22 @@ namespace Sandbox
 
         public override void OnUpdate(float ts)
         {
-            bool spawnDown = Input.IsKeyDown(KeyCode.Space);
-            if (spawnDown && !m_SpawnHeld)
+            // Native per-frame edges (Phase 5): one action per tap, no manual held-state tracking.
+            if (Input.IsKeyPressedThisFrame(KeyCode.Space))
                 SpawnQuad();
-            m_SpawnHeld = spawnDown;
 
-            bool clearDown = Input.IsKeyDown(KeyCode.Backspace);
-            if (clearDown && !m_ClearHeld)
+            if (Input.IsKeyPressedThisFrame(KeyCode.Backspace))
                 ClearAll();
-            m_ClearHeld = clearDown;
 
-            bool parentDown = Input.IsKeyDown(KeyCode.P);
-            if (parentDown && !m_ParentHeld)
+            if (Input.IsKeyPressedThisFrame(KeyCode.P))
                 ParentAll();
-            m_ParentHeld = parentDown;
+
+            if (Input.IsKeyPressedThisFrame(KeyCode.B))
+                BlockEntity();
+
+            // Left-click spawns a quad at the cursor's world position — proves mouse -> world unprojection.
+            if (Input.IsMouseButtonPressedThisFrame(MouseButton.Left))
+                SpawnQuadAt(Input.GetMouseWorldPosition());
 
             if (m_Parent != null)
             {
@@ -79,6 +78,22 @@ namespace Sandbox
             Console.WriteLine($"Parented {m_Spawned.Count} quads under {m_Parent.ID}");
         }
 
+        // Phase 4 query test: tag a few entities with BlockTag, then enumerate them by type.
+        private void BlockEntity()
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                Entity e = Entity.Create($"Block{i}");
+                e.AddComponent<BlockTag>();
+            }
+            Entity.Create("NotABlock");
+
+            Entity[] blocks = GetEntitiesWith<BlockTag>();
+            Entity[] sprites = GetEntitiesWith<SpriteRendererComponent>();
+            Console.WriteLine($"GetEntitiesWith<BlockTag> = {blocks.Length} (expect 3, +3 each press)");
+            Console.WriteLine($"GetEntitiesWith<SpriteRendererComponent> = {sprites.Length}");
+        }
+
         private void SpawnQuad()
         {
             Entity quad = Entity.Create($"SpawnedQuad_{m_Spawned.Count}");
@@ -93,6 +108,19 @@ namespace Sandbox
 
             m_Spawned.Add(quad);
             Console.WriteLine($"Spawned {quad.ID} (total {m_Spawned.Count})");
+        }
+
+        // Spawns a yellow quad at a world position (used for the mouse->world click test).
+        private void SpawnQuadAt(Vector2 worldPosition)
+        {
+            Entity quad = Entity.Create($"ClickedQuad_{m_Spawned.Count}");
+            quad.LocalTranslation = new Vector3(worldPosition.X, worldPosition.Y, 0.0f);
+
+            SpriteRendererComponent sprite = quad.AddComponent<SpriteRendererComponent>();
+            sprite.Color = new Vector4(1.0f, 1.0f, 0.0f, 1.0f);
+
+            m_Spawned.Add(quad);
+            Console.WriteLine($"Clicked world ({worldPosition.X:F2}, {worldPosition.Y:F2}) -> quad {quad.ID}");
         }
 
         private void ClearAll()

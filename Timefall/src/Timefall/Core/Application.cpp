@@ -99,6 +99,8 @@ namespace Timefall
 
 			ExecuteMainThreadQueue();
 
+			Input::OnUpdate();
+
 			if (!m_Minimized)
 			{
 				{

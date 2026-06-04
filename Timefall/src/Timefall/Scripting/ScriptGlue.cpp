@@ -664,7 +664,55 @@ namespace Timefall
 		__declspec(dllexport)
 		bool Input_IsKeyDown(KeyCode keycode)
 		{
-			return Input::IsKeyPressed(keycode);
+			return Input::IsKeyDown(keycode);
+		}
+
+		__declspec(dllexport)
+		bool Input_IsKeyPressedThisFrame(KeyCode keycode)
+		{
+			return Input::IsKeyPressedThisFrame(keycode);
+		}
+
+		__declspec(dllexport)
+		bool Input_IsKeyReleasedThisFrame(KeyCode keycode)
+		{
+			return Input::IsKeyReleasedThisFrame(keycode);
+		}
+
+		__declspec(dllexport)
+		bool Input_IsMouseButtonDown(MouseCode button)
+		{
+			return Input::IsMouseButtonDown(button);
+		}
+
+		__declspec(dllexport)
+		bool Input_IsMouseButtonPressedThisFrame(MouseCode button)
+		{
+			return Input::IsMouseButtonPressedThisFrame(button);
+		}
+
+		__declspec(dllexport)
+		bool Input_IsMouseButtonReleasedThisFrame(MouseCode button)
+		{
+			return Input::IsMouseButtonReleasedThisFrame(button);
+		}
+
+		__declspec(dllexport)
+		void Input_GetMousePosition(glm::vec2* outPosition)
+		{
+			*outPosition = Input::GetViewportMousePosition();
+		}
+
+		__declspec(dllexport)
+		void Input_GetMouseWorldPosition(glm::vec2* outPosition)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			if (!scene)
+			{
+				*outPosition = glm::vec2(0.0f);
+				return;
+			}
+			*outPosition = scene->ScreenToWorldPoint(Input::GetViewportMousePosition());
 		}
 
 		__declspec(dllexport)

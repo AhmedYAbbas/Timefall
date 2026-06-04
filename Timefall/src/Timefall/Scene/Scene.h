@@ -7,6 +7,7 @@
 
 #include <entt.hpp>
 #include <box2d/id.h>
+#include <glm/glm.hpp>
 
 namespace Timefall 
 {
@@ -55,6 +56,9 @@ namespace Timefall
 		inline std::unordered_map<entt::entity, b2BodyId>& GetPhysicsBodiesMap() { return m_PhysicsBodiesMap; }
 
 		Entity GetPrimaryCameraEntity();
+
+		// Unprojects a viewport-relative pixel (top-left origin) to world (x, y) via the primary camera.
+		glm::vec2 ScreenToWorldPoint(const glm::vec2& viewportPixel);
 
 		inline bool IsRunning() const { return m_IsRunning; }
 		inline bool IsPaused() const { return m_IsPaused; }
