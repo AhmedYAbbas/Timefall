@@ -220,6 +220,25 @@ namespace Timefall
             return new Entity(foundID);
         }
 
+        // Returns every entity in the active scene that has component T (built-in or user-defined).
+        // Instance method (like FindEntityByName) so scripts can call it unqualified. Order is unspecified.
+        public Entity[] GetEntitiesWith<T>() where T : Component, new()
+        {
+            string typeName = typeof(T).FullName!;
+            int count = NativeCalls.Entity_GetEntitiesWithComponentCount(typeName);
+            if (count == 0)
+                return Array.Empty<Entity>();
+
+            // Count-then-fill: C# allocates and owns the buffer.
+            ulong[] ids = new ulong[count];
+            NativeCalls.Entity_GetEntitiesWithComponent(typeName, ids, count);
+
+            Entity[] result = new Entity[count];
+            for (int i = 0; i < count; i++)
+                result[i] = new Entity(ids[i]);
+            return result;
+        }
+
         public T? As<T>() where T : Entity, new()
         {
             IntPtr ptr = NativeCalls.GetScriptInstance(ID);

@@ -15,11 +15,37 @@ namespace Timefall
 	static std::unordered_map<std::string, std::function<bool(Entity)>> s_EntityHasComponentFuncs;
 	static std::unordered_map<std::string, std::function<void(Entity)>> s_EntityAddComponentFuncs;
 	static std::unordered_map<std::string, std::function<void(Entity)>> s_EntityRemoveComponentFuncs;
+	static std::unordered_map<std::string, std::function<void(Scene*, std::vector<UUID>&)>> s_EntityGetEntitiesWithFuncs;
 
 	// Built-in component/field names cross the boundary as ASCII identifiers; widen byte-wise.
 	static std::wstring WidenAscii(const char* s)
 	{
 		return s ? std::wstring(s, s + std::strlen(s)) : std::wstring();
+	}
+
+	// Collects the UUIDs of all entities in `scene` that have the named component. Built-in types
+	// dispatch through the enumerator map (entt view); user types fall back to a ManagedComponentStorage scan.
+	static std::vector<UUID> CollectEntitiesWithComponent(Scene* scene, const char* typeName)
+	{
+		std::vector<UUID> result;
+
+		auto it = s_EntityGetEntitiesWithFuncs.find(typeName);
+		if (it != s_EntityGetEntitiesWithFuncs.end())
+		{
+			it->second(scene, result);
+			return result;
+		}
+
+		// User-defined component: scan the managed storage.
+		std::wstring wide = WidenAscii(typeName);
+		for (auto e : scene->GetAllEntitiesWithUsingView<ManagedComponentStorage>())
+		{
+			Entity entity{ e, scene };
+			if (entity.GetComponent<ManagedComponentStorage>().Components.count(wide))
+				result.push_back(entity.GetUUID());
+		}
+
+		return result;
 	}
 
 	extern "C"
@@ -394,6 +420,27 @@ namespace Timefall
 				outChildren[i] = children[i];
 		}
 
+		__declspec(dllexport)
+		int Entity_GetEntitiesWithComponentCount(const char* componentTypeFullName)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+			return (int)CollectEntitiesWithComponent(scene, componentTypeFullName).size();
+		}
+
+		__declspec(dllexport)
+		void Entity_GetEntitiesWithComponent(const char* componentTypeFullName, uint64_t* outEntities, int count)
+		{
+			Scene* scene = ScriptEngine::GetSceneContext();
+			TF_CORE_ASSERT(scene, "Scene context is null");
+
+			// Stateless count-then-fill: re-run the query and copy up to `count` (the caller's buffer size).
+			std::vector<UUID> result = CollectEntitiesWithComponent(scene, componentTypeFullName);
+			int n = count < (int)result.size() ? count : (int)result.size();
+			for (int i = 0; i < n; ++i)
+				outEntities[i] = result[i]; // UUID -> uint64_t via implicit conversion
+		}
+
 		
 		__declspec(dllexport)
 		void Rigidbody2DComponent_ApplyLinearImpulse(UUID entityID, glm::vec2* impulse, glm::vec2* point, bool wake)
@@ -646,6 +693,13 @@ namespace Timefall
 			s_EntityHasComponentFuncs[managedComponentTypeName] = [](Entity entity) { return entity.HasComponent<T>(); };
 			s_EntityAddComponentFuncs[managedComponentTypeName] = [](Entity entity) { entity.AddComponent<T>(); };
 			s_EntityRemoveComponentFuncs[managedComponentTypeName] = [](Entity entity) { if (entity.HasComponent<T>()) entity.RemoveComponent<T>(); };
+			s_EntityGetEntitiesWithFuncs[managedComponentTypeName] = [](Scene* scene, std::vector<UUID>& out) {
+				for (auto e : scene->GetAllEntitiesWithUsingView<T>())
+				{
+					Entity entity{ e, scene };
+					out.push_back(entity.GetUUID());
+				}
+			};
 		}(), ...);
 	}
 
