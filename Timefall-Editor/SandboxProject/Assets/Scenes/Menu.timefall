@@ -1,5 +1,40 @@
 Scene: Timefall Scene
 Entities:
+  - Entity: 15299516957664848142
+    TagComponent:
+      Tag: Button Text
+    TransformComponent:
+      Position: [-0.2547655, -0.21152893, 0.1]
+      Rotation: [0, -0, 0]
+      Scale: [0.35850522, 0.97109604, 0.39]
+    RelationshipComponent:
+      Parent: 15509679130630650517
+      Children:
+        []
+    TextComponent:
+      Text: Play
+      Color: [1, 1, 1, 1]
+      Kerning: 0
+      LineSpacing: 0
+  - Entity: 15509679130630650517
+    TagComponent:
+      Tag: Play Button
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [4, 1.2, 1]
+    RelationshipComponent:
+      Parent: 0
+      Children:
+        - 15299516957664848142
+    ScriptComponent:
+      ModuleName: Sandbox.PlayButton
+      ScriptFields:
+        []
+    SpriteRendererComponent:
+      Color: [0.22007722, 0.22007722, 0.22007722, 1]
+      TextureHandle: 0
+      TilingFactor: 1
   - Entity: 5109594731642215563
     TagComponent:
       Tag: Camera
