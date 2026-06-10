@@ -229,6 +229,13 @@ namespace Timefall
 		UploadUniformFloat4(name, value);
 	}
 
+	void OpenGLShader::SetMat3(const std::string& name, const glm::mat3 value)
+	{
+		TF_PROFILE_FUNCTION();
+
+		UploadUniformMat3(name, value);
+	}
+
 	void OpenGLShader::SetMat4(const std::string& name, const glm::mat4 value)
 	{
 		TF_PROFILE_FUNCTION();

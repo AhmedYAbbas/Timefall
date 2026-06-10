@@ -1,6 +1,6 @@
 //--------------------------
 // - Timefall -
-// Renderer3D Lit Shader (Phase 9.0 — hardcoded directional light + material)
+// Renderer3D Lit Shader (Phase 9.1 — normal matrix + entity-id; light still hardcoded)
 // --------------------------
 
 #type vertex
@@ -17,6 +17,7 @@ layout(std140, binding = 0) uniform Camera
 };
 
 uniform mat4 u_Model;
+uniform mat3 u_NormalMatrix;
 
 layout(location = 0) out vec3 v_WorldPos;
 layout(location = 1) out vec3 v_Normal;
@@ -26,9 +27,7 @@ void main()
 {
 	vec4 world = u_Model * vec4(a_Position, 1.0);
 	v_WorldPos = world.xyz;
-	// 9.0 assumes uniform scale, so mat3(u_Model) is a valid normal basis.
-	// A proper inverse-transpose normal matrix arrives in 9.1/9.2.
-	v_Normal = mat3(u_Model) * a_Normal;
+	v_Normal = u_NormalMatrix * a_Normal;
 	v_TexCoord = a_TexCoord;
 	gl_Position = u_ViewProjection * world;
 }
@@ -46,9 +45,12 @@ layout(std140, binding = 0) uniform Camera
 	vec3 u_CameraPosition;
 };
 
-layout(location = 0) out vec4 o_Color;
+uniform int u_EntityID;
 
-// Hardcoded directional light + material for 9.0.
+layout(location = 0) out vec4 o_Color;
+layout(location = 1) out int o_EntityID;
+
+// Hardcoded directional light + material (replaced by LightComponent + materials in 9.2/9.3).
 const vec3  c_LightDir        = normalize(vec3(-0.5, -1.0, -0.3));
 const vec3  c_LightColor      = vec3(1.0);
 const vec3  c_MaterialDiffuse = vec3(0.8, 0.3, 0.3);
@@ -59,9 +61,9 @@ const float c_AmbientStrength  = 0.1;
 void main()
 {
 	vec3 N = normalize(v_Normal);
-	vec3 L = normalize(-c_LightDir);              // surface -> light
+	vec3 L = normalize(-c_LightDir);
 	vec3 V = normalize(u_CameraPosition - v_WorldPos);
-	vec3 H = normalize(L + V);                     // Blinn-Phong halfway
+	vec3 H = normalize(L + V);
 
 	float diff = max(dot(N, L), 0.0);
 	float spec = pow(max(dot(N, H), 0.0), c_Shininess);
@@ -71,4 +73,5 @@ void main()
 	vec3 specular = spec * c_MaterialSpecular * c_LightColor;
 
 	o_Color = vec4(ambient + diffuse + specular, 1.0);
+	o_EntityID = u_EntityID;
 }

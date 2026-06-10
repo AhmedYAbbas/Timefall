@@ -78,6 +78,7 @@ namespace Timefall
 		CopyComponent<RelationshipComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<SpriteRendererComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<CircleRendererComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<MeshComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<CameraComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<ScriptComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<NativeScriptComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
@@ -189,6 +190,21 @@ namespace Timefall
 
 		if (mainCamera)
 		{
+			// --- 3D pass (depth-tested) ---
+			RenderCommand::SetDepthTest(true);
+			Renderer3D::BeginScene(*mainCamera, cameraTransform);
+			{
+				auto view = m_Registry.view<TransformComponent, MeshComponent>();
+				for (auto entity : view)
+				{
+					auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
+					Renderer3D::SubmitMesh(Entity{ entity, this }.GetWorldTransform(), Renderer3D::GetPrimitive(mesh.Type), (int)entity);
+				}
+			}
+			Renderer3D::EndScene();
+
+			// --- 2D overlay pass (no depth test; draws on top) ---
+			RenderCommand::SetDepthTest(false);
 			Renderer2D::BeginScene(*mainCamera, cameraTransform);
 
 			// Draw sprites
@@ -616,7 +632,14 @@ namespace Timefall
 		// --- 3D pass (depth-tested) ---
 		RenderCommand::SetDepthTest(true);
 		Renderer3D::BeginScene(camera);
-		Renderer3D::DrawTestCube();
+		{
+			auto view = m_Registry.view<TransformComponent, MeshComponent>();
+			for (auto entity : view)
+			{
+				auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
+				Renderer3D::SubmitMesh(Entity{ entity, this }.GetWorldTransform(), Renderer3D::GetPrimitive(mesh.Type), (int)entity);
+			}
+		}
 		Renderer3D::EndScene();
 
 		// --- 2D overlay pass (no depth test; draws on top) ---
@@ -695,6 +718,11 @@ namespace Timefall
 	
 	template<>
 	TF_API void Scene::OnComponentAdded<CircleRendererComponent>(Entity entity, CircleRendererComponent& component)
+	{
+	}
+
+	template<>
+	TF_API void Scene::OnComponentAdded<MeshComponent>(Entity entity, MeshComponent& component)
 	{
 	}
 

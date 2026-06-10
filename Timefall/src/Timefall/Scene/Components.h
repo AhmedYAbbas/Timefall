@@ -4,6 +4,7 @@
 #include "Timefall/Scene/SceneCamera.h"
 #include "Timefall/Renderer/Texture.h"
 #include "Timefall/Renderer/Font.h"
+#include "Timefall/Renderer/Mesh.h"
 #include "Timefall/Math/Math.h"
 #include "Timefall/Scripting/ScriptEngine.h" // ScriptFieldInstance / ScriptFieldMap
 
@@ -108,6 +109,15 @@ namespace Timefall
 			: Color(color)
 		{
 		}
+	};
+
+	// 9.1 interim: selects a built-in primitive. Becomes a mesh AssetHandle in 9.4.
+	struct TF_API MeshComponent
+	{
+		PrimitiveType Type = PrimitiveType::Cube;
+
+		MeshComponent() = default;
+		MeshComponent(const MeshComponent&) = default;
 	};
 
 	struct TF_API CameraComponent
@@ -239,6 +249,7 @@ namespace Timefall
 		RelationshipComponent,
 		SpriteRendererComponent,
 		CircleRendererComponent,
+		MeshComponent,
 		CameraComponent,
 		ScriptComponent,
 		Rigidbody2DComponent,

@@ -379,6 +379,7 @@ namespace Timefall
 			DisplayAddComponentEntry<ScriptComponent>("Script");
 			DisplayAddComponentEntry<SpriteRendererComponent>("Sprite Renderer");
 			DisplayAddComponentEntry<CircleRendererComponent>("Circle Renderer");
+			DisplayAddComponentEntry<MeshComponent>("Mesh");
 			DisplayAddComponentEntry<Rigidbody2DComponent>("Rigidbody 2D");
 			DisplayAddComponentEntry<BoxCollider2DComponent>("Box Collider 2D");
 			DisplayAddComponentEntry<CircleCollider2DComponent>("Circle Collider 2D");
@@ -623,6 +624,30 @@ namespace Timefall
 			ImGui::ColorEdit4("Color", glm::value_ptr(component.Color));
 			ImGui::DragFloat("Thickness", &component.Thickness, 0.025f, 0.0f, 1.0f);
 			ImGui::DragFloat("Fade", &component.Fade, 0.00025f, 0.0f, 1.0f);
+		});
+
+		DrawComponent<MeshComponent>("Mesh", entity, [](auto& component)
+		{
+			const char* meshTypeStrings[] = { "Cube", "Sphere", "Plane" };
+			const char* currentMeshTypeString = meshTypeStrings[(int)component.Type];
+
+			if (ImGui::BeginCombo("Type", currentMeshTypeString))
+			{
+				for (int i = 0; i < 3; ++i)
+				{
+					bool isSelected = currentMeshTypeString == meshTypeStrings[i];
+					if (ImGui::Selectable(meshTypeStrings[i], isSelected))
+					{
+						currentMeshTypeString = meshTypeStrings[i];
+						component.Type = (PrimitiveType)i;
+					}
+
+					if (isSelected)
+						ImGui::SetItemDefaultFocus();
+				}
+
+				ImGui::EndCombo();
+			}
 		});
 
 		DrawComponent<Rigidbody2DComponent>("Rigidbody 2D", entity, [](auto& component)

@@ -671,7 +671,42 @@ namespace Timefall
 			if (Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity(); selectedEntity.IsValid())
 			{
 				// World transform so the outline sits on the entity's actual location, child or not.
-				Renderer2D::DrawRect(selectedEntity.GetWorldTransform(), glm::vec4(1.0f, 0.5f, 0.0f, 1.0f));
+				glm::mat4 worldTransform = selectedEntity.GetWorldTransform();
+				const glm::vec4 outlineColor(1.0f, 0.5f, 0.0f, 1.0f);
+
+				if (selectedEntity.HasComponent<MeshComponent>())
+				{
+					// 3D meshes get a wireframe box around their local bounds (the flat 2D rect
+					// would only show a quad at the center). Primitives fit [-0.5, 0.5]^3, except
+					// the plane which is flat (y = 0).
+					glm::vec3 min(-0.5f), max(0.5f);
+					if (selectedEntity.GetComponent<MeshComponent>().Type == PrimitiveType::Plane)
+					{
+						min.y = 0.0f;
+						max.y = 0.0f;
+					}
+
+					glm::vec3 corners[8] = {
+						{ min.x, min.y, min.z }, { max.x, min.y, min.z },
+						{ max.x, max.y, min.z }, { min.x, max.y, min.z },
+						{ min.x, min.y, max.z }, { max.x, min.y, max.z },
+						{ max.x, max.y, max.z }, { min.x, max.y, max.z },
+					};
+					for (int i = 0; i < 8; i++)
+						corners[i] = glm::vec3(worldTransform * glm::vec4(corners[i], 1.0f));
+
+					static const int edges[12][2] = {
+						{0,1},{1,2},{2,3},{3,0}, // z = min face
+						{4,5},{5,6},{6,7},{7,4}, // z = max face
+						{0,4},{1,5},{2,6},{3,7}, // connectors
+					};
+					for (const auto& e : edges)
+						Renderer2D::DrawLine(corners[e[0]], corners[e[1]], outlineColor);
+				}
+				else
+				{
+					Renderer2D::DrawRect(worldTransform, outlineColor);
+				}
 			}
 		}
 

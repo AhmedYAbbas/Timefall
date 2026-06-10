@@ -1,5 +1,14 @@
 Scene: Timefall Scene
 Entities:
+  - Entity: 15101987036167359853
+    TagComponent:
+      Tag: Mesh
+    TransformComponent:
+      Position: [0.03372425, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      PrimitiveType: Sphere
   - Entity: 6378182095781707484
     TagComponent:
       Tag: Camera
@@ -34,12 +43,12 @@ Entities:
     ManagedComponents:
       - TypeName: Sandbox.BlockTag
         Fields:
-          - Name: Weight
-            Type: Float
-            Data: 0
           - Name: Kind
             Type: Int32
             Data: 5
+          - Name: Weight
+            Type: Float
+            Data: 0
           - Name: Color
             Type: Vector4
             Data: [0.10038614, 1, 0, 0]

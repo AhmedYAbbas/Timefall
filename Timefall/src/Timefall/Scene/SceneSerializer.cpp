@@ -366,6 +366,17 @@ namespace Timefall
 			out << YAML::EndMap; // CircleRendererComponent
 		}
 
+		if (entity.HasComponent<MeshComponent>())
+		{
+			out << YAML::Key << "MeshComponent";
+			out << YAML::BeginMap; // MeshComponent
+
+			auto& meshComponent = entity.GetComponent<MeshComponent>();
+			out << YAML::Key << "PrimitiveType" << YAML::Value << Utils::PrimitiveTypeToString(meshComponent.Type);
+
+			out << YAML::EndMap; // MeshComponent
+		}
+
 		if (entity.HasComponent<Rigidbody2DComponent>())
 		{
 			out << YAML::Key << "Rigidbody2DComponent";
@@ -665,6 +676,12 @@ namespace Timefall
 					crc.Color = circleRendererComponent["Color"].as<glm::vec4>();
 					crc.Thickness = circleRendererComponent["Thickness"].as<float>();
 					crc.Fade = circleRendererComponent["Fade"].as<float>();
+				}
+
+				if (auto meshComponent = entity["MeshComponent"])
+				{
+					auto& mc = deserializedEntity.AddComponent<MeshComponent>();
+					mc.Type = Utils::PrimitiveTypeFromString(meshComponent["PrimitiveType"].as<std::string>());
 				}
 
 				auto rigidbody2DComponent = entity["Rigidbody2DComponent"];
