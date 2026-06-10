@@ -11,7 +11,8 @@ namespace Timefall
 	{
 		None = 0,
 		Scene,
-		Texture2D
+		Texture2D,
+		Material
 	};
 
 	const char* AssetTypeToString(AssetType type);

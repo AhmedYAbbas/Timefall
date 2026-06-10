@@ -5,6 +5,8 @@
 #include "Timefall/Scripting/ScriptEngine.h"
 #include "Timefall/UI/UI.h"
 #include "Timefall/Asset/AssetManager.h"
+#include "Timefall/Renderer/Material.h"
+#include "Timefall/Asset/MaterialImporter.h"
 
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
@@ -648,6 +650,105 @@ namespace Timefall
 				}
 
 				ImGui::EndCombo();
+			}
+
+			ImGui::Separator();
+
+			// --- Material slot (drag a .tfmat from the Content Browser) ---
+			std::string matLabel = "None (default)";
+			bool matValid = false;
+			if (component.Material != 0
+				&& AssetManager::IsAssetHandleValid(component.Material)
+				&& AssetManager::GetAssetType(component.Material) == AssetType::Material)
+			{
+				matLabel = Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.Material).FilePath.filename().string();
+				matValid = true;
+			}
+
+			ImGui::Button(matLabel.c_str(), ImVec2(200.0f, 0.0f));
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+				{
+					AssetHandle handle = *(AssetHandle*)payload->Data;
+					if (AssetManager::GetAssetType(handle) == AssetType::Material)
+						component.Material = handle;
+				}
+				ImGui::EndDragDropTarget();
+			}
+			if (matValid)
+			{
+				ImGui::SameLine();
+				if (ImGui::Button("X##mat"))
+					component.Material = 0;
+			}
+			ImGui::SameLine();
+			ImGui::Text("Material");
+
+			// --- Inline editor for the assigned material (writes back to the .tfmat on change) ---
+			if (matValid)
+			{
+				Ref<Material> mat = AssetManager::GetAsset<Material>(component.Material);
+				if (mat)
+				{
+					bool changed = false;
+					changed |= ImGui::ColorEdit3("Diffuse", glm::value_ptr(mat->DiffuseColor));
+					changed |= ImGui::ColorEdit3("Specular", glm::value_ptr(mat->SpecularColor));
+					changed |= ImGui::DragFloat("Shininess", &mat->Shininess, 1.0f, 1.0f, 256.0f);
+
+					// Diffuse map slot
+					{
+						std::string label = (mat->DiffuseMap != 0 && AssetManager::IsAssetHandleValid(mat->DiffuseMap))
+							? Project::GetActive()->GetEditorAssetManager()->GetMetadata(mat->DiffuseMap).FilePath.filename().string()
+							: "None";
+						ImGui::Button(label.c_str(), ImVec2(160.0f, 0.0f));
+						if (ImGui::BeginDragDropTarget())
+						{
+							if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+							{
+								AssetHandle handle = *(AssetHandle*)payload->Data;
+								if (AssetManager::GetAssetType(handle) == AssetType::Texture2D)
+								{
+									mat->DiffuseMap = handle;
+									changed = true;
+								}
+							}
+							ImGui::EndDragDropTarget();
+						}
+						ImGui::SameLine();
+						ImGui::Text("Diffuse Map");
+					}
+
+					// Specular map slot
+					{
+						std::string label = (mat->SpecularMap != 0 && AssetManager::IsAssetHandleValid(mat->SpecularMap))
+							? Project::GetActive()->GetEditorAssetManager()->GetMetadata(mat->SpecularMap).FilePath.filename().string()
+							: "None";
+						ImGui::Button(label.c_str(), ImVec2(160.0f, 0.0f));
+						if (ImGui::BeginDragDropTarget())
+						{
+							if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+							{
+								AssetHandle handle = *(AssetHandle*)payload->Data;
+								if (AssetManager::GetAssetType(handle) == AssetType::Texture2D)
+								{
+									mat->SpecularMap = handle;
+									changed = true;
+								}
+							}
+							ImGui::EndDragDropTarget();
+						}
+						ImGui::SameLine();
+						ImGui::Text("Specular Map");
+					}
+
+					if (changed)
+					{
+						auto path = Project::GetAssetDirectory()
+							/ Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.Material).FilePath;
+						MaterialImporter::Serialize(path, mat);
+					}
+				}
 			}
 		});
 

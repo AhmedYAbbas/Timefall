@@ -3,6 +3,7 @@
 #include "Timefall/Renderer/EditorCamera.h"
 #include "Timefall/Renderer/Camera.h"
 #include "Timefall/Renderer/Mesh.h"
+#include "Timefall/Renderer/Material.h"
 
 #include <glm/glm.hpp>
 
@@ -21,7 +22,10 @@ namespace Timefall
 		static void BeginScene(const Camera& camera, const glm::mat4& transform);
 		static void EndScene();
 
-		static void SubmitMesh(const glm::mat4& transform, const Ref<Mesh>& mesh, int entityID = -1);
+		static void SubmitMesh(const glm::mat4& transform, const Ref<Mesh>& mesh, const Ref<Material>& material, int entityID = -1);
+
+		// Fallback material for meshes whose Material handle is 0 / invalid.
+		static Ref<Material> GetDefaultMaterial();
 
 		// Lights are submitted after BeginScene and before any SubmitMesh; they are uploaded
 		// to the Lights UBO lazily on the first SubmitMesh of the frame.

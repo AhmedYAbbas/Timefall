@@ -5,6 +5,8 @@
 #include "Timefall/Renderer/Shader.h"
 #include "Timefall/Renderer/UniformBuffer.h"
 #include "Timefall/Renderer/RenderCommand.h"
+#include "Timefall/Renderer/Texture.h"
+#include "Timefall/Asset/AssetManager.h"
 
 #include <glm/glm.hpp>
 
@@ -53,6 +55,9 @@ namespace Timefall
 		Ref<UniformBuffer> LightsUniformBuffer;
 		LightsData         LightsBuffer;
 		bool               LightsDirty = true;
+
+		Ref<Texture2D> WhiteTexture;
+		Ref<Material>  DefaultMaterial;
 	};
 
 	static Renderer3DData s_Data;
@@ -67,6 +72,17 @@ namespace Timefall
 
 		s_Data.CameraUniformBuffer = UniformBuffer::Create(sizeof(CameraData), 0);
 		s_Data.LightsUniformBuffer = UniformBuffer::Create(sizeof(LightsData), 1);
+
+		s_Data.WhiteTexture = Texture2D::Create(TextureSpecification());
+		uint32_t whiteTextureData = 0xffffffff;
+		s_Data.WhiteTexture->SetData(Buffer(&whiteTextureData, sizeof(uint32_t)));
+
+		s_Data.DefaultMaterial = CreateRef<Material>();
+
+		// Map sampler uniforms to texture units 0 (diffuse) and 1 (specular) once.
+		s_Data.LitShader->Bind();
+		s_Data.LitShader->SetInt("u_DiffuseMap", 0);
+		s_Data.LitShader->SetInt("u_SpecularMap", 1);
 	}
 
 	void Renderer3D::Shutdown()
@@ -101,7 +117,7 @@ namespace Timefall
 	{
 	}
 
-	void Renderer3D::SubmitMesh(const glm::mat4& transform, const Ref<Mesh>& mesh, int entityID)
+	void Renderer3D::SubmitMesh(const glm::mat4& transform, const Ref<Mesh>& mesh, const Ref<Material>& material, int entityID)
 	{
 		if (s_Data.LightsDirty)
 		{
@@ -112,6 +128,8 @@ namespace Timefall
 		if (!mesh)
 			return;
 
+		const Ref<Material>& mat = material ? material : s_Data.DefaultMaterial;
+
 		s_Data.LitShader->Bind();
 		s_Data.LitShader->SetMat4("u_Model", transform);
 
@@ -119,9 +137,29 @@ namespace Timefall
 		s_Data.LitShader->SetMat3("u_NormalMatrix", normalMatrix);
 		s_Data.LitShader->SetInt("u_EntityID", entityID);
 
+		s_Data.LitShader->SetFloat3("u_DiffuseColor", mat->DiffuseColor);
+		s_Data.LitShader->SetFloat3("u_SpecularColor", mat->SpecularColor);
+		s_Data.LitShader->SetFloat("u_Shininess", mat->Shininess);
+
+		Ref<Texture2D> diffuse = s_Data.WhiteTexture;
+		if (mat->DiffuseMap != 0 && AssetManager::IsAssetHandleValid(mat->DiffuseMap))
+			diffuse = AssetManager::GetAsset<Texture2D>(mat->DiffuseMap);
+
+		Ref<Texture2D> specular = s_Data.WhiteTexture;
+		if (mat->SpecularMap != 0 && AssetManager::IsAssetHandleValid(mat->SpecularMap))
+			specular = AssetManager::GetAsset<Texture2D>(mat->SpecularMap);
+
+		diffuse->Bind(0);
+		specular->Bind(1);
+
 		const Ref<VertexArray>& vao = mesh->GetVertexArray();
 		vao->Bind();
 		RenderCommand::DrawIndexed(vao, mesh->GetIndexCount());
+	}
+
+	Ref<Material> Renderer3D::GetDefaultMaterial()
+	{
+		return s_Data.DefaultMaterial;
 	}
 
 	Ref<Mesh> Renderer3D::GetPrimitive(PrimitiveType type)

@@ -7,6 +7,8 @@
 #include "Timefall/Renderer/Renderer2D.h"
 #include "Timefall/Renderer/Renderer3D.h"
 #include "Timefall/Renderer/RenderCommand.h"
+#include "Timefall/Renderer/Material.h"
+#include "Timefall/Asset/AssetManager.h"
 #include "Timefall/Scripting/ScriptEngine.h"
 #include "Timefall/Math/Math.h"
 
@@ -224,7 +226,10 @@ namespace Timefall
 				for (auto entity : view)
 				{
 					auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
-					Renderer3D::SubmitMesh(Entity{ entity, this }.GetWorldTransform(), Renderer3D::GetPrimitive(mesh.Type), (int)entity);
+					Ref<Material> material = (mesh.Material != 0 && AssetManager::IsAssetHandleValid(mesh.Material))
+						? AssetManager::GetAsset<Material>(mesh.Material)
+						: Renderer3D::GetDefaultMaterial();
+					Renderer3D::SubmitMesh(Entity{ entity, this }.GetWorldTransform(), Renderer3D::GetPrimitive(mesh.Type), material, (int)entity);
 				}
 			}
 			Renderer3D::EndScene();
@@ -688,7 +693,10 @@ namespace Timefall
 			for (auto entity : view)
 			{
 				auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
-				Renderer3D::SubmitMesh(Entity{ entity, this }.GetWorldTransform(), Renderer3D::GetPrimitive(mesh.Type), (int)entity);
+				Ref<Material> material = (mesh.Material != 0 && AssetManager::IsAssetHandleValid(mesh.Material))
+					? AssetManager::GetAsset<Material>(mesh.Material)
+					: Renderer3D::GetDefaultMaterial();
+				Renderer3D::SubmitMesh(Entity{ entity, this }.GetWorldTransform(), Renderer3D::GetPrimitive(mesh.Type), material, (int)entity);
 			}
 		}
 		Renderer3D::EndScene();

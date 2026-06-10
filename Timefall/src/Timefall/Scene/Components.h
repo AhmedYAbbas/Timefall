@@ -115,6 +115,7 @@ namespace Timefall
 	struct TF_API MeshComponent
 	{
 		PrimitiveType Type = PrimitiveType::Cube;
+		AssetHandle Material = 0;   // 0 -> engine default material
 
 		MeshComponent() = default;
 		MeshComponent(const MeshComponent&) = default;

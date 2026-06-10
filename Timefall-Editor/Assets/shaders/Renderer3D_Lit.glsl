@@ -67,23 +67,25 @@ layout(std140, binding = 1) uniform Lights
 
 uniform int u_EntityID;
 
+uniform vec3  u_DiffuseColor;
+uniform vec3  u_SpecularColor;
+uniform float u_Shininess;
+uniform sampler2D u_DiffuseMap;
+uniform sampler2D u_SpecularMap;
+
 layout(location = 0) out vec4 o_Color;
 layout(location = 1) out int o_EntityID;
 
-// Material — hardcoded until 9.3.
-const vec3  c_MaterialDiffuse  = vec3(0.8, 0.3, 0.3);
-const vec3  c_MaterialSpecular = vec3(0.5);
-const float c_Shininess        = 32.0;
-const float c_AmbientStrength  = 0.1;
+const float c_AmbientStrength = 0.1;
 
 // Blinn-Phong contribution of one light. L = surface->light (unit). radiance already folds in
 // the light color, intensity, and any attenuation/cone factor.
-vec3 BlinnPhong(vec3 N, vec3 V, vec3 L, vec3 radiance)
+vec3 BlinnPhong(vec3 N, vec3 V, vec3 L, vec3 radiance, vec3 matDiffuse, vec3 matSpecular, float shininess)
 {
 	float diff = max(dot(N, L), 0.0);
 	vec3  H    = normalize(L + V);
-	float spec = pow(max(dot(N, H), 0.0), c_Shininess);
-	return (diff * c_MaterialDiffuse + spec * c_MaterialSpecular) * radiance;
+	float spec = pow(max(dot(N, H), 0.0), shininess);
+	return (diff * matDiffuse + spec * matSpecular) * radiance;
 }
 
 // Range-based attenuation: smoothly 1 at the light, 0 at distance == range.
@@ -98,14 +100,17 @@ void main()
 	vec3 N = normalize(v_Normal);
 	vec3 V = normalize(u_CameraPosition - v_WorldPos);
 
-	vec3 color = c_AmbientStrength * c_MaterialDiffuse;
+	vec3 matDiffuse  = u_DiffuseColor  * texture(u_DiffuseMap,  v_TexCoord).rgb;
+	vec3 matSpecular = u_SpecularColor * texture(u_SpecularMap, v_TexCoord).rgb;
+
+	vec3 color = c_AmbientStrength * matDiffuse;
 
 	// Directional
 	for (int i = 0; i < u_DirCount; i++)
 	{
 		vec3 L = normalize(-u_DirLights[i].Direction.xyz);
 		vec3 radiance = u_DirLights[i].Color.rgb * u_DirLights[i].Color.a;
-		color += BlinnPhong(N, V, L, radiance);
+		color += BlinnPhong(N, V, L, radiance, matDiffuse, matSpecular, u_Shininess);
 	}
 
 	// Point
@@ -116,7 +121,7 @@ void main()
 		vec3 L = toLight / max(dist, 0.0001);
 		float att = Attenuate(dist, u_PointLights[i].Position.w);
 		vec3 radiance = u_PointLights[i].Color.rgb * u_PointLights[i].Color.a * att;
-		color += BlinnPhong(N, V, L, radiance);
+		color += BlinnPhong(N, V, L, radiance, matDiffuse, matSpecular, u_Shininess);
 	}
 
 	// Spot
@@ -137,7 +142,7 @@ void main()
 		float cone    = clamp((theta - outerCos) / max(innerCos - outerCos, 0.0001), 0.0, 1.0);
 
 		vec3 radiance = u_SpotLights[i].Color.rgb * intensity * att * cone;
-		color += BlinnPhong(N, V, L, radiance);
+		color += BlinnPhong(N, V, L, radiance, matDiffuse, matSpecular, u_Shininess);
 	}
 
 	o_Color = vec4(color, 1.0);

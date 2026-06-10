@@ -5,6 +5,9 @@ AssetRegistry:
   - Handle: 14561479867608167996
     FilePath: Textures/Checkerboard.png
     Type: Texture2D
+  - Handle: 14682736336039056039
+    FilePath: Materials/NewMaterial.tfmat
+    Type: Material
   - Handle: 14688511799200688338
     FilePath: Scenes/Menu.timefall
     Type: Scene
@@ -14,6 +17,9 @@ AssetRegistry:
   - Handle: 15191860190705874248
     FilePath: Scenes/PhysicsSandbox.timefall
     Type: Scene
+  - Handle: 17541711539439424707
+    FilePath: Materials/Cyan.tfmat
+    Type: Material
   - Handle: 17992648059862121593
     FilePath: Scenes/Game.timefall
     Type: Scene

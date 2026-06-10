@@ -14,7 +14,8 @@ namespace Timefall
 		{ ".timefall", AssetType::Scene },
 		{ ".png", AssetType::Texture2D },
 		{ ".jpg", AssetType::Texture2D },
-		{ ".jpeg", AssetType::Texture2D }
+		{ ".jpeg", AssetType::Texture2D },
+		{ ".tfmat", AssetType::Material }
 	};
 
 	static AssetType GetAssetTypeFromFileExtension(const std::filesystem::path& extension)

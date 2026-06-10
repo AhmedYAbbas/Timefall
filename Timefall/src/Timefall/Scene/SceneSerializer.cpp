@@ -373,6 +373,7 @@ namespace Timefall
 
 			auto& meshComponent = entity.GetComponent<MeshComponent>();
 			out << YAML::Key << "PrimitiveType" << YAML::Value << Utils::PrimitiveTypeToString(meshComponent.Type);
+			out << YAML::Key << "Material" << YAML::Value << (uint64_t)meshComponent.Material;
 
 			out << YAML::EndMap; // MeshComponent
 		}
@@ -698,6 +699,8 @@ namespace Timefall
 				{
 					auto& mc = deserializedEntity.AddComponent<MeshComponent>();
 					mc.Type = Utils::PrimitiveTypeFromString(meshComponent["PrimitiveType"].as<std::string>());
+					if (auto mat = meshComponent["Material"])
+						mc.Material = mat.as<uint64_t>();
 				}
 
 				if (auto lightComponent = entity["LightComponent"])

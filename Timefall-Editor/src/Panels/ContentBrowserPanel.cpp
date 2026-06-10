@@ -3,6 +3,8 @@
 
 #include "Timefall/Project/Project.h"
 #include "Timefall/Asset/TextureImporter.h"
+#include "Timefall/Renderer/Material.h"
+#include "Timefall/Asset/MaterialImporter.h"
 
 #include <imgui.h>
 
@@ -28,6 +30,16 @@ namespace Timefall
 		if (ImGui::Button(label))
 		{
 			m_Mode = m_Mode == Mode::Asset ? Mode::Filesystem : Mode::Asset;
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("Create Material"))
+		{
+			Ref<Material> material = CreateRef<Material>();
+			auto relativePath = std::filesystem::relative(m_CurrentDirectory, Project::GetAssetDirectory()) / "NewMaterial.tfmat";
+			MaterialImporter::Serialize(Project::GetAssetDirectory() / relativePath, material);
+			Project::GetActive()->GetEditorAssetManager()->ImportAsset(relativePath);
+			RefreshAssetTree();
 		}
 
 		if (m_CurrentDirectory != m_BaseDirectory)
