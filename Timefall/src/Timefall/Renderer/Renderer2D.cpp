@@ -393,8 +393,6 @@ namespace Timefall
 		s_Data.TextIndexCount = 0;
 		s_Data.TextVertexBufferPtr = s_Data.TextVertexBufferBase;
 
-		s_Data.Stats.DrawCalls = 0;
-		s_Data.Stats.QuadCount = 0;
 	}
 
 	void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color)
