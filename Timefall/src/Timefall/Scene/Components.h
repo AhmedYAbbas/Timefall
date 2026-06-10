@@ -120,6 +120,50 @@ namespace Timefall
 		MeshComponent(const MeshComponent&) = default;
 	};
 
+	struct TF_API LightComponent
+	{
+		enum class LightType : uint8_t { Directional = 0, Point = 1, Spot = 2 };
+
+		LightType Type = LightType::Directional;
+		glm::vec3 Color{ 1.0f, 1.0f, 1.0f };
+		float Intensity = 1.0f;
+
+		// Point / Spot: distance at which the light fades to zero.
+		float Range = 10.0f;
+
+		// Spot only (degrees). Inner = full brightness cone, Outer = falloff edge.
+		float InnerCutoff = 12.5f;
+		float OuterCutoff = 17.5f;
+
+		LightComponent() = default;
+		LightComponent(const LightComponent&) = default;
+	};
+
+	namespace Utils
+	{
+		static const char* LightTypeToString(LightComponent::LightType type)
+		{
+			switch (type)
+			{
+				case LightComponent::LightType::Directional: return "Directional";
+				case LightComponent::LightType::Point:       return "Point";
+				case LightComponent::LightType::Spot:        return "Spot";
+			}
+			TF_CORE_ASSERT(false, "Unknown LightType");
+			return "Directional";
+		}
+
+		static LightComponent::LightType LightTypeFromString(const std::string& type)
+		{
+			if (type == "Directional") return LightComponent::LightType::Directional;
+			if (type == "Point")       return LightComponent::LightType::Point;
+			if (type == "Spot")        return LightComponent::LightType::Spot;
+
+			TF_CORE_ASSERT(false, "Unknown LightType string");
+			return LightComponent::LightType::Directional;
+		}
+	}
+
 	struct TF_API CameraComponent
 	{
 		SceneCamera Camera;
@@ -250,6 +294,7 @@ namespace Timefall
 		SpriteRendererComponent,
 		CircleRendererComponent,
 		MeshComponent,
+		LightComponent,
 		CameraComponent,
 		ScriptComponent,
 		Rigidbody2DComponent,

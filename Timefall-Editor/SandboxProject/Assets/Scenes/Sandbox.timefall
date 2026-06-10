@@ -1,5 +1,33 @@
 Scene: Timefall Scene
 Entities:
+  - Entity: 5861592401214961244
+    TagComponent:
+      Tag: Light2
+    TransformComponent:
+      Position: [-0.3203125, 1.4529171, -0.7391358]
+      Rotation: [-0.6335545, -0.07853982, -0.015707962]
+      Scale: [1, 1, 1]
+    LightComponent:
+      Type: Directional
+      Color: [0.934363, 1, 0]
+      Intensity: 1
+      Range: 10
+      InnerCutoff: 12.5
+      OuterCutoff: 17.5
+  - Entity: 13898643491234862662
+    TagComponent:
+      Tag: Light
+    TransformComponent:
+      Position: [-0.045209777, 0, 2.4640136]
+      Rotation: [0, -0.015707962, 0]
+      Scale: [1.0000001, 0.99999994, 0.99995565]
+    LightComponent:
+      Type: Spot
+      Color: [0, 1, 0.942085]
+      Intensity: 1.3
+      Range: 6.5
+      InnerCutoff: 9.1
+      OuterCutoff: 13.5
   - Entity: 15101987036167359853
     TagComponent:
       Tag: Mesh
@@ -8,7 +36,7 @@ Entities:
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     MeshComponent:
-      PrimitiveType: Sphere
+      PrimitiveType: Cube
   - Entity: 6378182095781707484
     TagComponent:
       Tag: Camera

@@ -380,6 +380,7 @@ namespace Timefall
 			DisplayAddComponentEntry<SpriteRendererComponent>("Sprite Renderer");
 			DisplayAddComponentEntry<CircleRendererComponent>("Circle Renderer");
 			DisplayAddComponentEntry<MeshComponent>("Mesh");
+			DisplayAddComponentEntry<LightComponent>("Light");
 			DisplayAddComponentEntry<Rigidbody2DComponent>("Rigidbody 2D");
 			DisplayAddComponentEntry<BoxCollider2DComponent>("Box Collider 2D");
 			DisplayAddComponentEntry<CircleCollider2DComponent>("Circle Collider 2D");
@@ -647,6 +648,42 @@ namespace Timefall
 				}
 
 				ImGui::EndCombo();
+			}
+		});
+
+		DrawComponent<LightComponent>("Light", entity, [](auto& component)
+		{
+			const char* typeStrings[] = { "Directional", "Point", "Spot" };
+			const char* currentTypeString = typeStrings[(int)component.Type];
+
+			if (ImGui::BeginCombo("Type", currentTypeString))
+			{
+				for (int i = 0; i < 3; ++i)
+				{
+					bool isSelected = currentTypeString == typeStrings[i];
+					if (ImGui::Selectable(typeStrings[i], isSelected))
+					{
+						currentTypeString = typeStrings[i];
+						component.Type = (LightComponent::LightType)i;
+					}
+
+					if (isSelected)
+						ImGui::SetItemDefaultFocus();
+				}
+
+				ImGui::EndCombo();
+			}
+
+			ImGui::ColorEdit3("Color", glm::value_ptr(component.Color));
+			ImGui::DragFloat("Intensity", &component.Intensity, 0.05f, 0.0f, 100.0f);
+
+			if (component.Type != LightComponent::LightType::Directional)
+				ImGui::DragFloat("Range", &component.Range, 0.1f, 0.01f, 1000.0f);
+
+			if (component.Type == LightComponent::LightType::Spot)
+			{
+				ImGui::DragFloat("Inner Cutoff", &component.InnerCutoff, 0.1f, 0.0f, 89.0f);
+				ImGui::DragFloat("Outer Cutoff", &component.OuterCutoff, 0.1f, 0.0f, 90.0f);
 			}
 		});
 

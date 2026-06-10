@@ -23,6 +23,13 @@ namespace Timefall
 
 		static void SubmitMesh(const glm::mat4& transform, const Ref<Mesh>& mesh, int entityID = -1);
 
+		// Lights are submitted after BeginScene and before any SubmitMesh; they are uploaded
+		// to the Lights UBO lazily on the first SubmitMesh of the frame.
+		static void SubmitDirectionalLight(const glm::vec3& direction, const glm::vec3& color, float intensity);
+		static void SubmitPointLight(const glm::vec3& position, const glm::vec3& color, float intensity, float range);
+		static void SubmitSpotLight(const glm::vec3& position, const glm::vec3& direction, const glm::vec3& color,
+			float intensity, float range, float innerCutoffDegrees, float outerCutoffDegrees);
+
 		// Returns the cached built-in mesh for a primitive type.
 		static Ref<Mesh> GetPrimitive(PrimitiveType type);
 	};

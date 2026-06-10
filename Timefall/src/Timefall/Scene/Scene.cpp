@@ -79,6 +79,7 @@ namespace Timefall
 		CopyComponent<SpriteRendererComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<CircleRendererComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<MeshComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<LightComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<CameraComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<ScriptComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<NativeScriptComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
@@ -193,6 +194,31 @@ namespace Timefall
 			// --- 3D pass (depth-tested) ---
 			RenderCommand::SetDepthTest(true);
 			Renderer3D::BeginScene(*mainCamera, cameraTransform);
+			// Gather lights (must precede mesh submission — meshes read the Lights UBO).
+			{
+				auto lightView = m_Registry.view<TransformComponent, LightComponent>();
+				for (auto entity : lightView)
+				{
+					auto& light = lightView.get<LightComponent>(entity);
+					glm::mat4 world = Entity{ entity, this }.GetWorldTransform();
+					glm::vec3 position = glm::vec3(world[3]);
+					glm::vec3 direction = glm::normalize(glm::mat3(world) * glm::vec3(0.0f, 0.0f, -1.0f));
+
+					switch (light.Type)
+					{
+						case LightComponent::LightType::Directional:
+							Renderer3D::SubmitDirectionalLight(direction, light.Color, light.Intensity);
+							break;
+						case LightComponent::LightType::Point:
+							Renderer3D::SubmitPointLight(position, light.Color, light.Intensity, light.Range);
+							break;
+						case LightComponent::LightType::Spot:
+							Renderer3D::SubmitSpotLight(position, direction, light.Color, light.Intensity,
+								light.Range, light.InnerCutoff, light.OuterCutoff);
+							break;
+					}
+				}
+			}
 			{
 				auto view = m_Registry.view<TransformComponent, MeshComponent>();
 				for (auto entity : view)
@@ -632,6 +658,31 @@ namespace Timefall
 		// --- 3D pass (depth-tested) ---
 		RenderCommand::SetDepthTest(true);
 		Renderer3D::BeginScene(camera);
+		// Gather lights (must precede mesh submission — meshes read the Lights UBO).
+		{
+			auto lightView = m_Registry.view<TransformComponent, LightComponent>();
+			for (auto entity : lightView)
+			{
+				auto& light = lightView.get<LightComponent>(entity);
+				glm::mat4 world = Entity{ entity, this }.GetWorldTransform();
+				glm::vec3 position = glm::vec3(world[3]);
+				glm::vec3 direction = glm::normalize(glm::mat3(world) * glm::vec3(0.0f, 0.0f, -1.0f));
+
+				switch (light.Type)
+				{
+					case LightComponent::LightType::Directional:
+						Renderer3D::SubmitDirectionalLight(direction, light.Color, light.Intensity);
+						break;
+					case LightComponent::LightType::Point:
+						Renderer3D::SubmitPointLight(position, light.Color, light.Intensity, light.Range);
+						break;
+					case LightComponent::LightType::Spot:
+						Renderer3D::SubmitSpotLight(position, direction, light.Color, light.Intensity,
+							light.Range, light.InnerCutoff, light.OuterCutoff);
+						break;
+				}
+			}
+		}
 		{
 			auto view = m_Registry.view<TransformComponent, MeshComponent>();
 			for (auto entity : view)
@@ -723,6 +774,11 @@ namespace Timefall
 
 	template<>
 	TF_API void Scene::OnComponentAdded<MeshComponent>(Entity entity, MeshComponent& component)
+	{
+	}
+
+	template<>
+	TF_API void Scene::OnComponentAdded<LightComponent>(Entity entity, LightComponent& component)
 	{
 	}
 

@@ -377,6 +377,22 @@ namespace Timefall
 			out << YAML::EndMap; // MeshComponent
 		}
 
+		if (entity.HasComponent<LightComponent>())
+		{
+			out << YAML::Key << "LightComponent";
+			out << YAML::BeginMap; // LightComponent
+
+			auto& lightComponent = entity.GetComponent<LightComponent>();
+			out << YAML::Key << "Type" << YAML::Value << Utils::LightTypeToString(lightComponent.Type);
+			out << YAML::Key << "Color" << YAML::Value << lightComponent.Color;
+			out << YAML::Key << "Intensity" << YAML::Value << lightComponent.Intensity;
+			out << YAML::Key << "Range" << YAML::Value << lightComponent.Range;
+			out << YAML::Key << "InnerCutoff" << YAML::Value << lightComponent.InnerCutoff;
+			out << YAML::Key << "OuterCutoff" << YAML::Value << lightComponent.OuterCutoff;
+
+			out << YAML::EndMap; // LightComponent
+		}
+
 		if (entity.HasComponent<Rigidbody2DComponent>())
 		{
 			out << YAML::Key << "Rigidbody2DComponent";
@@ -682,6 +698,17 @@ namespace Timefall
 				{
 					auto& mc = deserializedEntity.AddComponent<MeshComponent>();
 					mc.Type = Utils::PrimitiveTypeFromString(meshComponent["PrimitiveType"].as<std::string>());
+				}
+
+				if (auto lightComponent = entity["LightComponent"])
+				{
+					auto& lc = deserializedEntity.AddComponent<LightComponent>();
+					lc.Type        = Utils::LightTypeFromString(lightComponent["Type"].as<std::string>());
+					lc.Color       = lightComponent["Color"].as<glm::vec3>();
+					lc.Intensity   = lightComponent["Intensity"].as<float>();
+					lc.Range       = lightComponent["Range"].as<float>();
+					lc.InnerCutoff = lightComponent["InnerCutoff"].as<float>();
+					lc.OuterCutoff = lightComponent["OuterCutoff"].as<float>();
 				}
 
 				auto rigidbody2DComponent = entity["Rigidbody2DComponent"];
