@@ -90,4 +90,12 @@ namespace Timefall
 
         glLineWidth(width);
     }
+
+    void OpenGLRendererAPI::SetDepthTest(bool enabled)
+    {
+        if (enabled)
+            glEnable(GL_DEPTH_TEST);
+        else
+            glDisable(GL_DEPTH_TEST);
+    }
 }

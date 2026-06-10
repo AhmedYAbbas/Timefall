@@ -37,7 +37,12 @@ namespace Timefall
 		{
 			s_RendererAPI->SetLineWidth(width);
 		}
-		
+
+		inline static void SetDepthTest(bool enabled)
+		{
+			s_RendererAPI->SetDepthTest(enabled);
+		}
+
 	private:
 		static Scope<RendererAPI> s_RendererAPI;
 	};

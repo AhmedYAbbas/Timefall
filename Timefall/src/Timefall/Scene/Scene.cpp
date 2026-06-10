@@ -5,6 +5,8 @@
 #include "Timefall/Scene/ScriptableEntity.h"
 #include "Timefall/Scene/Components.h"
 #include "Timefall/Renderer/Renderer2D.h"
+#include "Timefall/Renderer/Renderer3D.h"
+#include "Timefall/Renderer/RenderCommand.h"
 #include "Timefall/Scripting/ScriptEngine.h"
 #include "Timefall/Math/Math.h"
 
@@ -611,6 +613,14 @@ namespace Timefall
 
 	void Scene::RenderScene(EditorCamera& camera)
 	{
+		// --- 3D pass (depth-tested) ---
+		RenderCommand::SetDepthTest(true);
+		Renderer3D::BeginScene(camera);
+		Renderer3D::DrawTestCube();
+		Renderer3D::EndScene();
+
+		// --- 2D overlay pass (no depth test; draws on top) ---
+		RenderCommand::SetDepthTest(false);
 		Renderer2D::BeginScene(camera);
 
 		// Draw sprites

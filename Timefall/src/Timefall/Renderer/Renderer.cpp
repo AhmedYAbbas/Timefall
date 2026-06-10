@@ -2,6 +2,7 @@
 
 #include "Timefall/Renderer/Renderer.h"
 #include "Timefall/Renderer/Renderer2D.h"
+#include "Timefall/Renderer/Renderer3D.h"
 #include "Timefall/Renderer/RenderCommand.h"
 
 namespace Timefall
@@ -14,11 +15,13 @@ namespace Timefall
 
 		RenderCommand::Init();
 		Renderer2D::Init();
+		Renderer3D::Init();
 	}
 
 	void Renderer::Shutdown()
 	{
 		Renderer2D::Shutdown();
+		Renderer3D::Shutdown();
 	}
 
 	void Renderer::OnWindowResize(uint32_t width, uint32_t height)
