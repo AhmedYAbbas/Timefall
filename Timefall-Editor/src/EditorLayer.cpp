@@ -5,6 +5,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <cmath>
+
 #include "Timefall/Scene/Scene.h"
 
 #include "Timefall/Scene/SceneSerializer.h"
@@ -602,6 +604,84 @@ namespace Timefall
 		return true;
 	}
 
+	namespace
+	{
+		constexpr float GIZMO_TWO_PI = 6.28318530718f;
+
+		// Orthonormal basis (right, up) spanning the plane perpendicular to `axis`.
+		static void MakeBasis(const glm::vec3& axis, glm::vec3& right, glm::vec3& up)
+		{
+			glm::vec3 a = glm::normalize(axis);
+			glm::vec3 ref = (glm::abs(a.y) < 0.99f) ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::vec3(1.0f, 0.0f, 0.0f);
+			right = glm::normalize(glm::cross(ref, a));
+			up = glm::cross(a, right);
+		}
+
+		// A wireframe circle of `radius` centered at `center`, lying in the plane perpendicular to `axis`.
+		static void DrawWireCircle(const glm::vec3& center, const glm::vec3& axis, float radius, const glm::vec4& color, int segments = 24)
+		{
+			glm::vec3 right, up;
+			MakeBasis(axis, right, up);
+
+			glm::vec3 prev(0.0f);
+			for (int i = 0; i <= segments; i++)
+			{
+				float t = (float)i / (float)segments * GIZMO_TWO_PI;
+				glm::vec3 p = center + radius * (std::cos(t) * right + std::sin(t) * up);
+				if (i > 0)
+					Renderer2D::DrawLine(prev, p, color);
+				prev = p;
+			}
+		}
+
+		// Sun gizmo: a ring with parallel rays along the light direction.
+		static void DrawDirectionalLightGizmo(const glm::vec3& pos, const glm::vec3& dir, const glm::vec4& color)
+		{
+			const float ringRadius = 0.25f;
+			const float rayLength = 1.0f;
+
+			DrawWireCircle(pos, dir, ringRadius, color);
+
+			glm::vec3 right, up;
+			MakeBasis(dir, right, up);
+			for (int i = 0; i < 4; i++)
+			{
+				float t = (float)i / 4.0f * GIZMO_TWO_PI;
+				glm::vec3 base = pos + ringRadius * (std::cos(t) * right + std::sin(t) * up);
+				Renderer2D::DrawLine(base, base + dir * rayLength, color);
+			}
+			Renderer2D::DrawLine(pos, pos + dir * rayLength, color);
+		}
+
+		// Point gizmo: three rings forming a wireframe sphere.
+		static void DrawPointLightGizmo(const glm::vec3& pos, const glm::vec4& color)
+		{
+			const float r = 0.3f;
+			DrawWireCircle(pos, glm::vec3(1.0f, 0.0f, 0.0f), r, color);
+			DrawWireCircle(pos, glm::vec3(0.0f, 1.0f, 0.0f), r, color);
+			DrawWireCircle(pos, glm::vec3(0.0f, 0.0f, 1.0f), r, color);
+		}
+
+		// Spot gizmo: a cone opening along the direction, half-angle = outer cutoff, length = range.
+		static void DrawSpotLightGizmo(const glm::vec3& pos, const glm::vec3& dir, float outerCutoffDeg, float range, const glm::vec4& color)
+		{
+			float length = range;
+			float radius = length * std::tan(outerCutoffDeg * (GIZMO_TWO_PI / 360.0f)); // deg -> rad
+			glm::vec3 endCenter = pos + dir * length;
+
+			DrawWireCircle(endCenter, dir, radius, color);
+
+			glm::vec3 right, up;
+			MakeBasis(dir, right, up);
+			for (int i = 0; i < 4; i++)
+			{
+				float t = (float)i / 4.0f * GIZMO_TWO_PI;
+				glm::vec3 edge = endCenter + radius * (std::cos(t) * right + std::sin(t) * up);
+				Renderer2D::DrawLine(pos, edge, color);
+			}
+		}
+	}
+
 	void EditorLayer::OnOverlayRender()
 	{
 		if (m_SceneState == SceneState::Play)
@@ -661,6 +741,35 @@ namespace Timefall
 
 		}
 
+		// Light gizmo — shown only for the selected light (editor-only; lights have no geometry of
+		// their own). Drawn in the light's color so it doubles as a color readout.
+		if (m_SceneState != SceneState::Play)
+		{
+			if (Entity selected = m_SceneHierarchyPanel.GetSelectedEntity();
+				selected.IsValid() && selected.HasComponent<LightComponent>())
+			{
+				auto& lc = selected.GetComponent<LightComponent>();
+
+				glm::mat4 world = selected.GetWorldTransform();
+				glm::vec3 pos = glm::vec3(world[3]);
+				glm::vec3 dir = glm::normalize(glm::mat3(world) * glm::vec3(0.0f, 0.0f, -1.0f));
+				glm::vec4 color(lc.Color, 1.0f);
+
+				switch (lc.Type)
+				{
+					case LightComponent::LightType::Directional:
+						DrawDirectionalLightGizmo(pos, dir, color);
+						break;
+					case LightComponent::LightType::Point:
+						DrawPointLightGizmo(pos, color);
+						break;
+					case LightComponent::LightType::Spot:
+						DrawSpotLightGizmo(pos, dir, lc.OuterCutoff, lc.Range, color);
+						break;
+				}
+			}
+		}
+
 		// Draw selected entity outline — an editor-only aid, so skip it in Play mode where the
 		// runtime camera shows the actual game (otherwise the orange rect leaks onto the screen).
 		// Edit and Simulate both use the editor camera, so the outline still draws there.
@@ -702,6 +811,11 @@ namespace Timefall
 					};
 					for (const auto& e : edges)
 						Renderer2D::DrawLine(corners[e[0]], corners[e[1]], outlineColor);
+				}
+				else if (selectedEntity.HasComponent<LightComponent>())
+				{
+					// Lights are highlighted by their gizmo (drawn in the selection color above);
+					// the flat 2D rect would sit at the center and be misleading, so skip it.
 				}
 				else
 				{
