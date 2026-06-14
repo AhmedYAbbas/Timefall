@@ -23,3 +23,6 @@
 [submodule "Timefall/vendor/msdf-atlas-gen"]
 	path = Timefall/vendor/msdf-atlas-gen
 	url = https://github.com/TheCherno/msdf-atlas-gen
+[submodule "Timefall/vendor/assimp"]
+	path = Timefall/vendor/assimp
+	url = https://github.com/AhmedYAbbas/assimp
