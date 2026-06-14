@@ -1,5 +1,16 @@
 #include "EditorLayer.h"
 
+#include "Timefall/Scene/Scene.h"
+
+#include "Timefall/Utils/PlatformUtils.h"
+#include "Timefall/Scripting/ScriptEngine.h"
+#include "Timefall/Renderer/Font.h"
+#include "Timefall/Renderer/Renderer3D.h"
+#include "Timefall/Asset/TextureImporter.h"
+#include "Timefall/Asset/SceneImporter.h"
+#include "Timefall/Asset/AssetManager.h"
+#include "Timefall/Asset/EditorAssetManager.h"
+
 #include <imgui/imgui.h>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -7,18 +18,7 @@
 
 #include <cmath>
 
-#include "Timefall/Scene/Scene.h"
-
-#include "Timefall/Scene/SceneSerializer.h"
-#include "Timefall/Utils/PlatformUtils.h"
-#include "Timefall/Scripting/ScriptEngine.h"
-#include "Timefall/Renderer/Font.h"
-#include "Timefall/Asset/TextureImporter.h"
-#include "Timefall/Asset/SceneImporter.h"
-#include "Timefall/Asset/AssetManager.h"
-
 #include "ImGuizmo.h"
-#include "Timefall/Math/Math.h"
 
 namespace Timefall
 {
@@ -307,9 +307,14 @@ namespace Timefall
 		}
 
 		m_SceneHierarchyPanel.OnImGuiRender();
-		m_ContentBrowserPanel->OnImGuiRender();
+		m_ContentBrowserPanel->OnImGuiRender(GetActiveScene());
 
 		ImGui::Begin("Stats");
+
+		// ImGui keeps a smoothed running framerate over the last ~120 frames.
+		float fps = ImGui::GetIO().Framerate;
+		ImGui::Text("FPS: %.1f  (%.3f ms/frame)", fps, fps > 0.0f ? 1000.0f / fps : 0.0f);
+		ImGui::Separator();
 
 		auto stats = Renderer2D::GetStats();
 		ImGui::Text("Renderer2D Stats:");
@@ -785,14 +790,20 @@ namespace Timefall
 
 				if (selectedEntity.HasComponent<MeshComponent>())
 				{
-					// 3D meshes get a wireframe box around their local bounds (the flat 2D rect
-					// would only show a quad at the center). Primitives fit [-0.5, 0.5]^3, except
-					// the plane which is flat (y = 0).
+					// Wireframe box around the submesh's actual local-space bounds, resolved from the
+					// mesh asset, so imported meshes of any size/offset get a correctly-fitted outline.
+					// Falls back to a unit box if the mesh can't be resolved.
 					glm::vec3 min(-0.5f), max(0.5f);
-					if (selectedEntity.GetComponent<MeshComponent>().Type == PrimitiveType::Plane)
+					const auto& mc = selectedEntity.GetComponent<MeshComponent>();
+					if (mc.Mesh != 0 && AssetManager::IsAssetHandleValid(mc.Mesh))
 					{
-						min.y = 0.0f;
-						max.y = 0.0f;
+						Ref<MeshSource> meshSource = AssetManager::GetAsset<MeshSource>(mc.Mesh);
+						if (meshSource && mc.Submesh < meshSource->GetSubmeshes().size())
+						{
+							const Submesh& sm = meshSource->GetSubmeshes()[mc.Submesh];
+							min = sm.MinBounds;
+							max = sm.MaxBounds;
+						}
 					}
 
 					glm::vec3 corners[8] = {
@@ -851,6 +862,9 @@ namespace Timefall
 			if (startScene)
 				OpenScene(startScene);
 
+			// Seed the built-in primitive meshes BEFORE the Content Browser is created, because
+			// its constructor snapshots the asset registry into its tree (RefreshAssetTree).
+			Renderer3D::RegisterBuiltInMeshes(*Project::GetActive()->GetEditorAssetManager());
 			m_ContentBrowserPanel = CreateScope<ContentBrowserPanel>();
 		}
 	}

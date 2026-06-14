@@ -1,10 +1,12 @@
 #pragma once
 
 #include "Timefall/Core/Core.h"
+#include "Timefall/Asset/Asset.h"
 #include "Timefall/Renderer/VertexArray.h"
 
 #include <glm/glm.hpp>
 #include <vector>
+#include <string>
 
 namespace Timefall
 {
@@ -15,35 +17,49 @@ namespace Timefall
 		glm::vec2 TexCoord;
 	};
 
-	// Interim selector for built-in geometry (9.1). Replaced by real mesh assets in 9.4.
-	enum class PrimitiveType : uint8_t
+	// A range within the MeshSource's combined buffers, drawn as one DrawIndexed.
+	struct Submesh
 	{
-		Cube = 0,
-		Sphere = 1,
-		Plane = 2
+		uint32_t BaseVertex   = 0;
+		uint32_t BaseIndex    = 0;
+		uint32_t IndexCount   = 0;
+		uint32_t MaterialIndex = 0;   // index into the import's material list (transient; used at import)
+		std::string Name;
+
+		// Local-space axis-aligned bounds of this submesh's vertices (for selection/culling).
+		glm::vec3 MinBounds{ 0.0f };
+		glm::vec3 MaxBounds{ 0.0f };
 	};
 
-	class TF_API Mesh
+	// Retained only for the legacy MeshComponent deserializer shim (maps to reserved built-in handles).
+	enum class PrimitiveType : uint8_t { Cube = 0, Sphere = 1, Plane = 2 };
+
+	class TF_API MeshSource : public Asset
 	{
 	public:
-		Mesh(const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices);
+		MeshSource(const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices,
+			const std::vector<Submesh>& submeshes);
 
 		const Ref<VertexArray>& GetVertexArray() const { return m_VertexArray; }
-		uint32_t GetIndexCount() const { return m_IndexCount; }
+		const std::vector<Submesh>& GetSubmeshes() const { return m_Submeshes; }
 
-		static Ref<Mesh> Create(const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices);
+		static AssetType GetStaticType() { return AssetType::Mesh; }
+		virtual AssetType GetType() const override { return GetStaticType(); }
 
-		// Built-in primitives (centered at origin, ~unit size, Y-up).
-		static Ref<Mesh> CreateCube();
-		static Ref<Mesh> CreateSphere(uint32_t sectorCount = 32, uint32_t stackCount = 16, float radius = 0.5f);
-		static Ref<Mesh> CreatePlane();
+		static Ref<MeshSource> Create(const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices,
+			const std::vector<Submesh>& submeshes);
+
+		// Built-in primitives (centered at origin, ~unit size, Y-up). Each is a single-submesh source.
+		static Ref<MeshSource> CreateCube();
+		static Ref<MeshSource> CreateSphere(uint32_t sectorCount = 32, uint32_t stackCount = 16, float radius = 0.5f);
+		static Ref<MeshSource> CreatePlane();
 
 	private:
 		Ref<VertexArray> m_VertexArray;
-		uint32_t m_IndexCount = 0;
+		std::vector<Submesh> m_Submeshes;
 	};
 
-	// String <-> enum helpers for serialization (mirrors Utils::RigidBody2DBodyType* in Physics2D.h).
+	// String <-> enum helpers, retained for the legacy serializer shim.
 	namespace Utils
 	{
 		static const char* PrimitiveTypeToString(PrimitiveType type)
@@ -54,17 +70,13 @@ namespace Timefall
 				case PrimitiveType::Sphere: return "Sphere";
 				case PrimitiveType::Plane:  return "Plane";
 			}
-			TF_CORE_ASSERT(false, "Unknown PrimitiveType");
 			return "Cube";
 		}
 
 		static PrimitiveType PrimitiveTypeFromString(const std::string& type)
 		{
-			if (type == "Cube")   return PrimitiveType::Cube;
 			if (type == "Sphere") return PrimitiveType::Sphere;
 			if (type == "Plane")  return PrimitiveType::Plane;
-
-			TF_CORE_ASSERT(false, "Unknown PrimitiveType string");
 			return PrimitiveType::Cube;
 		}
 	}

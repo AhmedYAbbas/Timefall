@@ -15,7 +15,11 @@ namespace Timefall
 		{ ".png", AssetType::Texture2D },
 		{ ".jpg", AssetType::Texture2D },
 		{ ".jpeg", AssetType::Texture2D },
-		{ ".tfmat", AssetType::Material }
+		{ ".tfmat", AssetType::Material },
+		{ ".obj", AssetType::Mesh },
+		{ ".fbx", AssetType::Mesh },
+		{ ".gltf", AssetType::Mesh },
+		{ ".glb", AssetType::Mesh }
 	};
 
 	static AssetType GetAssetTypeFromFileExtension(const std::filesystem::path& extension)
@@ -79,7 +83,7 @@ namespace Timefall
 		return GetMetadata(handle).FilePath;
 	}
 
-	void EditorAssetManager::ImportAsset(const std::filesystem::path& filePath)
+	AssetHandle EditorAssetManager::ImportAsset(const std::filesystem::path& filePath)
 	{
 		AssetHandle handle;
 		AssetMetadata metadata;
@@ -94,6 +98,21 @@ namespace Timefall
 			m_AssetRegistry[handle] = metadata;
 			SerializeAssetRegistry();
 		}
+		return handle;
+	}
+
+	void EditorAssetManager::AddMemoryOnlyAsset(AssetHandle handle, const Ref<Asset>& asset,
+		const std::filesystem::path& virtualPath, AssetType type)
+	{
+		asset->Handle = handle;
+		m_LoadedAssets[handle] = asset;
+
+		AssetMetadata metadata;
+		metadata.FilePath = virtualPath;
+		metadata.Type = type;
+		metadata.MemoryOnly = true;
+		m_AssetRegistry[handle] = metadata;
+		// Not serialized: SerializeAssetRegistry skips MemoryOnly entries.
 	}
 
 	const AssetMetadata& EditorAssetManager::GetMetadata(AssetHandle handle) const
@@ -117,6 +136,9 @@ namespace Timefall
 			out << YAML::BeginSeq;
 			for (const auto& [handle, metadata] : m_AssetRegistry)
 			{
+				if (metadata.MemoryOnly)
+					continue;
+
 				out << YAML::BeginMap;
 				out << YAML::Key << "Handle" << YAML::Value << handle;
 				out << YAML::Key << "FilePath" << YAML::Value << metadata.FilePath.generic_string();

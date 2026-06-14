@@ -5,6 +5,8 @@
 #include "Timefall/Asset/TextureImporter.h"
 #include "Timefall/Renderer/Material.h"
 #include "Timefall/Asset/MaterialImporter.h"
+#include "Timefall/Asset/MeshImporter.h"
+#include "Timefall/Scene/Scene.h"
 
 #include <imgui.h>
 
@@ -22,7 +24,7 @@ namespace Timefall
 		m_Mode = Mode::Filesystem;
 	}
 
-	void ContentBrowserPanel::OnImGuiRender()
+	void ContentBrowserPanel::OnImGuiRender(const Ref<Scene>& sceneContext)
 	{
 		ImGui::Begin("Content Browser");
 
@@ -137,6 +139,14 @@ namespace Timefall
 						auto relativePath = std::filesystem::relative(path, Project::GetAssetDirectory());
 						Project::GetActive()->GetEditorAssetManager()->ImportAsset(relativePath);
 						RefreshAssetTree();
+					}
+					if (ImGui::MenuItem("Import Model"))
+					{
+						if (sceneContext)
+						{
+							MeshImporter::ImportModel(sceneContext, path);
+							RefreshAssetTree();
+						}
 					}
 					ImGui::EndPopup();
 				}

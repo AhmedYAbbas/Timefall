@@ -7,6 +7,7 @@
 #include "Timefall/Renderer/RenderCommand.h"
 #include "Timefall/Renderer/Texture.h"
 #include "Timefall/Asset/AssetManager.h"
+#include "Timefall/Asset/EditorAssetManager.h"
 
 #include <glm/glm.hpp>
 
@@ -44,9 +45,9 @@ namespace Timefall
 
 	struct Renderer3DData
 	{
-		Ref<Mesh>          CubeMesh;
-		Ref<Mesh>          SphereMesh;
-		Ref<Mesh>          PlaneMesh;
+		Ref<MeshSource>    CubeMesh;
+		Ref<MeshSource>    SphereMesh;
+		Ref<MeshSource>    PlaneMesh;
 
 		Ref<Shader>        LitShader;
 		Ref<UniformBuffer> CameraUniformBuffer;
@@ -58,15 +59,20 @@ namespace Timefall
 
 		Ref<Texture2D> WhiteTexture;
 		Ref<Material>  DefaultMaterial;
+
+		// Per-frame render-state cache (reset in BeginScene) to skip redundant GL state changes
+		// across the many SubmitMesh calls of a frame.
+		bool            ShaderBound = false;
+		const Material* CurrentMaterial = nullptr;
 	};
 
 	static Renderer3DData s_Data;
 
 	void Renderer3D::Init()
 	{
-		s_Data.CubeMesh   = Mesh::CreateCube();
-		s_Data.SphereMesh = Mesh::CreateSphere();
-		s_Data.PlaneMesh  = Mesh::CreatePlane();
+		s_Data.CubeMesh   = MeshSource::CreateCube();
+		s_Data.SphereMesh = MeshSource::CreateSphere();
+		s_Data.PlaneMesh  = MeshSource::CreatePlane();
 
 		s_Data.LitShader = Shader::Create("assets/shaders/Renderer3D_Lit.glsl");
 
@@ -99,6 +105,9 @@ namespace Timefall
 		s_Data.LightsBuffer.PointCount = 0;
 		s_Data.LightsBuffer.SpotCount = 0;
 		s_Data.LightsDirty = true;
+
+		s_Data.ShaderBound = false;
+		s_Data.CurrentMaterial = nullptr;
 	}
 
 	void Renderer3D::BeginScene(const Camera& camera, const glm::mat4& transform)
@@ -111,13 +120,17 @@ namespace Timefall
 		s_Data.LightsBuffer.PointCount = 0;
 		s_Data.LightsBuffer.SpotCount = 0;
 		s_Data.LightsDirty = true;
+
+		s_Data.ShaderBound = false;
+		s_Data.CurrentMaterial = nullptr;
 	}
 
 	void Renderer3D::EndScene()
 	{
 	}
 
-	void Renderer3D::SubmitMesh(const glm::mat4& transform, const Ref<Mesh>& mesh, const Ref<Material>& material, int entityID)
+	void Renderer3D::SubmitMesh(const glm::mat4& transform, const Ref<MeshSource>& mesh, uint32_t submeshIndex,
+		const Ref<Material>& material, int entityID)
 	{
 		if (s_Data.LightsDirty)
 		{
@@ -125,36 +138,51 @@ namespace Timefall
 			s_Data.LightsDirty = false;
 		}
 
-		if (!mesh)
+		if (!mesh || submeshIndex >= mesh->GetSubmeshes().size())
 			return;
 
 		const Ref<Material>& mat = material ? material : s_Data.DefaultMaterial;
 
-		s_Data.LitShader->Bind();
+		// Bind the lit shader once per frame; nothing else binds a program during the 3D pass.
+		if (!s_Data.ShaderBound)
+		{
+			s_Data.LitShader->Bind();
+			s_Data.ShaderBound = true;
+		}
+
+		// Per-object uniforms (always change between submits).
 		s_Data.LitShader->SetMat4("u_Model", transform);
 
 		glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(transform)));
 		s_Data.LitShader->SetMat3("u_NormalMatrix", normalMatrix);
 		s_Data.LitShader->SetInt("u_EntityID", entityID);
 
-		s_Data.LitShader->SetFloat3("u_DiffuseColor", mat->DiffuseColor);
-		s_Data.LitShader->SetFloat3("u_SpecularColor", mat->SpecularColor);
-		s_Data.LitShader->SetFloat("u_Shininess", mat->Shininess);
+		// Per-material state (colors + texture binds): only re-upload when the material changes.
+		// Imported models reuse a handful of materials across many submeshes, so this skips most
+		// of the per-submesh uniform/texture work.
+		if (mat.get() != s_Data.CurrentMaterial)
+		{
+			s_Data.LitShader->SetFloat3("u_DiffuseColor", mat->DiffuseColor);
+			s_Data.LitShader->SetFloat3("u_SpecularColor", mat->SpecularColor);
+			s_Data.LitShader->SetFloat("u_Shininess", mat->Shininess);
 
-		Ref<Texture2D> diffuse = s_Data.WhiteTexture;
-		if (mat->DiffuseMap != 0 && AssetManager::IsAssetHandleValid(mat->DiffuseMap))
-			diffuse = AssetManager::GetAsset<Texture2D>(mat->DiffuseMap);
+			Ref<Texture2D> diffuse = s_Data.WhiteTexture;
+			if (mat->DiffuseMap != 0 && AssetManager::IsAssetHandleValid(mat->DiffuseMap))
+				diffuse = AssetManager::GetAsset<Texture2D>(mat->DiffuseMap);
 
-		Ref<Texture2D> specular = s_Data.WhiteTexture;
-		if (mat->SpecularMap != 0 && AssetManager::IsAssetHandleValid(mat->SpecularMap))
-			specular = AssetManager::GetAsset<Texture2D>(mat->SpecularMap);
+			Ref<Texture2D> specular = s_Data.WhiteTexture;
+			if (mat->SpecularMap != 0 && AssetManager::IsAssetHandleValid(mat->SpecularMap))
+				specular = AssetManager::GetAsset<Texture2D>(mat->SpecularMap);
 
-		diffuse->Bind(0);
-		specular->Bind(1);
+			diffuse->Bind(0);
+			specular->Bind(1);
 
-		const Ref<VertexArray>& vao = mesh->GetVertexArray();
-		vao->Bind();
-		RenderCommand::DrawIndexed(vao, mesh->GetIndexCount());
+			s_Data.CurrentMaterial = mat.get();
+		}
+
+		// DrawIndexed binds the VAO internally, so no explicit bind needed here.
+		const Submesh& sm = mesh->GetSubmeshes()[submeshIndex];
+		RenderCommand::DrawIndexed(mesh->GetVertexArray(), sm.IndexCount, sm.BaseIndex, sm.BaseVertex);
 	}
 
 	Ref<Material> Renderer3D::GetDefaultMaterial()
@@ -162,15 +190,11 @@ namespace Timefall
 		return s_Data.DefaultMaterial;
 	}
 
-	Ref<Mesh> Renderer3D::GetPrimitive(PrimitiveType type)
+	void Renderer3D::RegisterBuiltInMeshes(EditorAssetManager& assetManager)
 	{
-		switch (type)
-		{
-			case PrimitiveType::Cube:   return s_Data.CubeMesh;
-			case PrimitiveType::Sphere: return s_Data.SphereMesh;
-			case PrimitiveType::Plane:  return s_Data.PlaneMesh;
-		}
-		return s_Data.CubeMesh;
+		assetManager.AddMemoryOnlyAsset(BuiltInMesh::Cube,   s_Data.CubeMesh,   "Cube",   AssetType::Mesh);
+		assetManager.AddMemoryOnlyAsset(BuiltInMesh::Sphere, s_Data.SphereMesh, "Sphere", AssetType::Mesh);
+		assetManager.AddMemoryOnlyAsset(BuiltInMesh::Plane,  s_Data.PlaneMesh,  "Plane",  AssetType::Mesh);
 	}
 
 	void Renderer3D::SubmitDirectionalLight(const glm::vec3& direction, const glm::vec3& color, float intensity)

@@ -372,7 +372,8 @@ namespace Timefall
 			out << YAML::BeginMap; // MeshComponent
 
 			auto& meshComponent = entity.GetComponent<MeshComponent>();
-			out << YAML::Key << "PrimitiveType" << YAML::Value << Utils::PrimitiveTypeToString(meshComponent.Type);
+			out << YAML::Key << "Mesh"     << YAML::Value << (uint64_t)meshComponent.Mesh;
+			out << YAML::Key << "Submesh"  << YAML::Value << meshComponent.Submesh;
 			out << YAML::Key << "Material" << YAML::Value << (uint64_t)meshComponent.Material;
 
 			out << YAML::EndMap; // MeshComponent
@@ -698,7 +699,18 @@ namespace Timefall
 				if (auto meshComponent = entity["MeshComponent"])
 				{
 					auto& mc = deserializedEntity.AddComponent<MeshComponent>();
-					mc.Type = Utils::PrimitiveTypeFromString(meshComponent["PrimitiveType"].as<std::string>());
+
+					if (auto meshNode = meshComponent["Mesh"])
+						mc.Mesh = meshNode.as<uint64_t>();
+					else if (auto legacy = meshComponent["PrimitiveType"])
+					{
+						// Pre-9.4 scenes stored a primitive enum; map to the reserved built-in handle.
+						std::string type = legacy.as<std::string>();
+						mc.Mesh = (type == "Sphere") ? 2 : (type == "Plane") ? 3 : 1;
+					}
+
+					if (auto sub = meshComponent["Submesh"])
+						mc.Submesh = sub.as<uint32_t>();
 					if (auto mat = meshComponent["Material"])
 						mc.Material = mat.as<uint64_t>();
 				}

@@ -23,9 +23,10 @@ namespace Timefall
 			s_RendererAPI->Clear(color);
 		}
 
-		inline static void DrawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCount = 0)
+		inline static void DrawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCount = 0,
+			uint32_t indexOffset = 0, uint32_t baseVertex = 0)
 		{
-			s_RendererAPI->DrawIndexed(vertexArray, indexCount);
+			s_RendererAPI->DrawIndexed(vertexArray, indexCount, indexOffset, baseVertex);
 		}
 
 		inline static void DrawLines(const Ref<VertexArray>& vertexArray, uint32_t vertexCount)

@@ -193,7 +193,11 @@ namespace Timefall
     }
 }
 
-#define TF_PROFILE 1
+// Set to 1 ONLY for a short profiling capture. When on, every TF_PROFILE_FUNCTION/SCOPE writes a
+// trace entry and flushes it to disk on each call (see Instrumentor::WriteProfile). EntryPoint.h
+// wraps the whole interactive Run() loop in a session, so leaving this on traces every draw/uniform
+// call every frame -> thousands of disk flushes/sec, which dominates frame time. Keep it 0 normally.
+#define TF_PROFILE 0
 #if TF_PROFILE
 
     // Resolve which function signature macro will be used. Note that this only

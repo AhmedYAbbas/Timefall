@@ -111,10 +111,11 @@ namespace Timefall
 		}
 	};
 
-	// 9.1 interim: selects a built-in primitive. Becomes a mesh AssetHandle in 9.4.
+	// References a MeshSource asset + a submesh index. Mesh == 0 renders nothing.
 	struct TF_API MeshComponent
 	{
-		PrimitiveType Type = PrimitiveType::Cube;
+		AssetHandle Mesh = 0;       // 0 -> nothing; built-in primitives use reserved handles 1/2/3
+		uint32_t    Submesh = 0;
 		AssetHandle Material = 0;   // 0 -> engine default material
 
 		MeshComponent() = default;

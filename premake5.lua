@@ -51,6 +51,7 @@ IncludeDir["box2d"] = "vendor/box2d/include"
 IncludeDir["hostfxr"] = "vendor/hostfxr/include"
 IncludeDir["msdfgen"] = "vendor/msdf-atlas-gen/msdfgen"
 IncludeDir["msdf_atlas_gen"] = "vendor/msdf-atlas-gen/msdf-atlas-gen"
+IncludeDir["assimp"] = "vendor/assimp/include"
 
 -- Library directories relative to Timefall folder (Timefall project directory)
 LibraryDir = {}
@@ -63,6 +64,7 @@ group "Dependencies"
 	include "Timefall/vendor/imgui"
 	include "Timefall/vendor/yaml-cpp"
 	include "Timefall/vendor/box2d"
+	include "Timefall/vendor/assimp"
 
 group ""
 

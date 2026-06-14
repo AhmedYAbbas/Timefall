@@ -7,7 +7,9 @@
 
 namespace Timefall
 {
-	Mesh::Mesh(const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices)
+	MeshSource::MeshSource(const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices,
+		const std::vector<Submesh>& submeshes)
+		: m_Submeshes(submeshes)
 	{
 		m_VertexArray = VertexArray::Create();
 		m_VertexArray->Bind();
@@ -24,16 +26,36 @@ namespace Timefall
 
 		Ref<IndexBuffer> ibo = IndexBuffer::Create((uint32_t*)indices.data(), (uint32_t)indices.size());
 		m_VertexArray->SetIndexBuffer(ibo);
-
-		m_IndexCount = (uint32_t)indices.size();
 	}
 
-	Ref<Mesh> Mesh::Create(const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices)
+	Ref<MeshSource> MeshSource::Create(const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices,
+		const std::vector<Submesh>& submeshes)
 	{
-		return CreateRef<Mesh>(vertices, indices);
+		return CreateRef<MeshSource>(vertices, indices, submeshes);
 	}
 
-	Ref<Mesh> Mesh::CreateCube()
+	static Submesh FullRangeSubmesh(const std::vector<MeshVertex>& vertices, uint32_t indexCount)
+	{
+		Submesh sm;
+		sm.BaseVertex = 0;
+		sm.BaseIndex = 0;
+		sm.IndexCount = indexCount;
+		sm.MaterialIndex = 0;
+		sm.Name = "Primitive";
+
+		glm::vec3 mn(std::numeric_limits<float>::max());
+		glm::vec3 mx(std::numeric_limits<float>::lowest());
+		for (const MeshVertex& v : vertices)
+		{
+			mn = glm::min(mn, v.Position);
+			mx = glm::max(mx, v.Position);
+		}
+		sm.MinBounds = mn;
+		sm.MaxBounds = mx;
+		return sm;
+	}
+
+	Ref<MeshSource> MeshSource::CreateCube()
 	{
 		std::vector<MeshVertex> vertices = {
 			// Front (+Z)
@@ -76,13 +98,13 @@ namespace Timefall
 			indices.insert(indices.end(), { v + 0, v + 1, v + 2, v + 2, v + 3, v + 0 });
 		}
 
-		return Create(vertices, indices);
+		return Create(vertices, indices, { FullRangeSubmesh(vertices, (uint32_t)indices.size()) });
 	}
 
-	Ref<Mesh> Mesh::CreateSphere(uint32_t sectorCount, uint32_t stackCount, float radius)
+	Ref<MeshSource> MeshSource::CreateSphere(uint32_t sectorCount, uint32_t stackCount, float radius)
 	{
 		std::vector<MeshVertex> vertices;
-		const float PI = glm::pi<float>();
+		constexpr float PI = glm::pi<float>();
 
 		// (stackCount+1) rows x (sectorCount+1) columns, Y-up.
 		for (uint32_t i = 0; i <= stackCount; i++)
@@ -119,10 +141,10 @@ namespace Timefall
 			}
 		}
 
-		return Create(vertices, indices);
+		return Create(vertices, indices, { FullRangeSubmesh(vertices, (uint32_t)indices.size()) });
 	}
 
-	Ref<Mesh> Mesh::CreatePlane()
+	Ref<MeshSource> MeshSource::CreatePlane()
 	{
 		std::vector<MeshVertex> vertices = {
 			{ {-0.5f, 0.0f,-0.5f}, {0,1,0}, {0,0} },
@@ -131,6 +153,6 @@ namespace Timefall
 			{ {-0.5f, 0.0f, 0.5f}, {0,1,0}, {0,1} },
 		};
 		std::vector<uint32_t> indices = { 0, 1, 2, 2, 3, 0 };
-		return Create(vertices, indices);
+		return Create(vertices, indices, { FullRangeSubmesh(vertices, (uint32_t)indices.size()) });
 	}
 }

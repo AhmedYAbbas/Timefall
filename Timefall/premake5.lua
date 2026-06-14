@@ -48,7 +48,8 @@ project "Timefall"
 		"%{IncludeDir.yaml_cpp}",
 		"%{IncludeDir.ImGuizmo}",
 		"%{IncludeDir.box2d}",
-		"%{IncludeDir.hostfxr}"
+		"%{IncludeDir.hostfxr}",
+		"%{IncludeDir.assimp}"
 	}
 
 	defines
@@ -73,6 +74,8 @@ project "Timefall"
 		"opengl32.lib",
 
 		"msdf-atlas-gen",
+
+		"assimp",
 
 		"%{LibraryDir.hostfxr}/hostfxr.lib",
 		"%{LibraryDir.hostfxr}/hostpolicy.lib",

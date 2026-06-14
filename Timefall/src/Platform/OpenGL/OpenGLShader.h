@@ -46,8 +46,14 @@ namespace Timefall
 		std::unordered_map<GLenum, std::string> Preprocess(std::string& source);
 		void Compile(const std::unordered_map<GLenum, std::string>& shaderSources);
 
+		// Caches glGetUniformLocation results by name; -1 (not found) is cached too so we never
+		// re-query the driver for the same uniform. Hot path: called for every uniform upload.
+		int GetUniformLocation(const std::string& name);
+
 	private:
 		std::string m_Name;
 		uint32_t m_RendererID;
+
+		std::unordered_map<std::string, int> m_UniformLocationCache;
 	};
 }

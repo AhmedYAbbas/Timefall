@@ -3,16 +3,17 @@
 #include "Timefall/Renderer/Texture.h"
 
 #include <filesystem>
-#include <set>
 
 namespace Timefall
 {
+	class Scene;
+
 	class ContentBrowserPanel
 	{
 	public:
 		ContentBrowserPanel();
 
-		void OnImGuiRender();
+		void OnImGuiRender(const Ref<Scene>& sceneContext);
 
 	private:
 		void RefreshAssetTree();

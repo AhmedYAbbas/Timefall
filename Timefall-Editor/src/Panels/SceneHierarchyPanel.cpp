@@ -631,26 +631,41 @@ namespace Timefall
 
 		DrawComponent<MeshComponent>("Mesh", entity, [](auto& component)
 		{
-			const char* meshTypeStrings[] = { "Cube", "Sphere", "Plane" };
-			const char* currentMeshTypeString = meshTypeStrings[(int)component.Type];
-
-			if (ImGui::BeginCombo("Type", currentMeshTypeString))
+			// --- Mesh slot (drag a mesh asset / built-in primitive from the Content Browser) ---
+			std::string meshLabel = "None";
+			if (component.Mesh != 0
+				&& AssetManager::IsAssetHandleValid(component.Mesh)
+				&& AssetManager::GetAssetType(component.Mesh) == AssetType::Mesh)
 			{
-				for (int i = 0; i < 3; ++i)
-				{
-					bool isSelected = currentMeshTypeString == meshTypeStrings[i];
-					if (ImGui::Selectable(meshTypeStrings[i], isSelected))
-					{
-						currentMeshTypeString = meshTypeStrings[i];
-						component.Type = (PrimitiveType)i;
-					}
-
-					if (isSelected)
-						ImGui::SetItemDefaultFocus();
-				}
-
-				ImGui::EndCombo();
+				meshLabel = Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.Mesh).FilePath.filename().string();
 			}
+
+			ImGui::Button(meshLabel.c_str(), ImVec2(200.0f, 0.0f));
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+				{
+					AssetHandle handle = *(AssetHandle*)payload->Data;
+					if (AssetManager::GetAssetType(handle) == AssetType::Mesh)
+					{
+						component.Mesh = handle;
+						component.Submesh = 0;
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+			if (component.Mesh != 0)
+			{
+				ImGui::SameLine();
+				if (ImGui::Button("X##mesh"))
+					component.Mesh = 0;
+			}
+			ImGui::SameLine();
+			ImGui::Text("Mesh");
+
+			int submesh = (int)component.Submesh;
+			if (ImGui::DragInt("Submesh", &submesh, 0.1f, 0, 1024))
+				component.Submesh = (uint32_t)(submesh < 0 ? 0 : submesh);
 
 			ImGui::Separator();
 

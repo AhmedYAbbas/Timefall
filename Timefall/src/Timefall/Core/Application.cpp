@@ -26,7 +26,7 @@ namespace Timefall
 
 		m_Window = Window::Create(WindowProps(specification.Name));
 		m_Window->SetEventCallBack(TF_BIND_EVENT_FN(Application::OnEvent));
-		m_Window->SetVsync(true);
+		m_Window->SetVsync(false);
 
 		Renderer::Init();
 

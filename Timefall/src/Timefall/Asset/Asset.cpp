@@ -11,6 +11,7 @@ namespace Timefall
             case AssetType::Scene:      return "Scene";
             case AssetType::Texture2D:  return "Texture2D";
             case AssetType::Material:   return "Material";
+            case AssetType::Mesh:       return "Mesh";
         }
 
 		return "Unknown";
@@ -22,6 +23,7 @@ namespace Timefall
 		if (typeString == "Scene")       return AssetType::Scene;
 		if (typeString == "Texture2D")   return AssetType::Texture2D;
 		if (typeString == "Material")    return AssetType::Material;
+		if (typeString == "Mesh")        return AssetType::Mesh;
 
 		return AssetType::None;
     }

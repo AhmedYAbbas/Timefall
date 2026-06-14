@@ -16,7 +16,12 @@ namespace Timefall
 		virtual bool IsAssetLoaded(AssetHandle handle) const override;
 		virtual AssetType GetAssetType(AssetHandle handle) const override;
 
-		void ImportAsset(const std::filesystem::path& filePath);
+		AssetHandle ImportAsset(const std::filesystem::path& filePath);
+
+		// Seed an in-memory asset (built-in primitives, runtime-created) under a fixed handle.
+		// Visible to the registry/content browser but never serialized to disk.
+		void AddMemoryOnlyAsset(AssetHandle handle, const Ref<Asset>& asset,
+			const std::filesystem::path& virtualPath, AssetType type);
 
 		const AssetMetadata& GetMetadata(AssetHandle handle) const;
 		const AssetRegistry& GetAssetRegistry() const { return m_AssetRegistry; }
@@ -28,7 +33,5 @@ namespace Timefall
 	private:
 		AssetRegistry m_AssetRegistry;
 		AssetMap m_LoadedAssets;
-
-		// TODO: memory-only assets
 	};
 }

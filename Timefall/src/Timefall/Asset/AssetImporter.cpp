@@ -4,6 +4,7 @@
 #include "TextureImporter.h"
 #include "SceneImporter.h"
 #include "MaterialImporter.h"
+#include "MeshImporter.h"
 
 namespace Timefall
 {
@@ -11,7 +12,8 @@ namespace Timefall
 	static std::unordered_map<AssetType, AssetImportFunction> s_Importers = {
 		{ AssetType::Texture2D, TextureImporter::ImportTexture2D },
 		{ AssetType::Scene, SceneImporter::ImportScene },
-		{ AssetType::Material, MaterialImporter::ImportMaterial }
+		{ AssetType::Material, MaterialImporter::ImportMaterial },
+		{ AssetType::Mesh, MeshImporter::ImportMesh }
 	};
 
 	Ref<Asset> AssetImporter::ImportAsset(AssetHandle handle, const AssetMetadata& metadata)
