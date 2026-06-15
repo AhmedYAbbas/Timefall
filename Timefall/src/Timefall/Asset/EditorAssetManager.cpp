@@ -91,13 +91,34 @@ namespace Timefall
 		metadata.Type = GetAssetTypeFromFileExtension(filePath.extension());
 		TF_CORE_ASSERT(metadata.Type != AssetType::None, "Unsupported asset type for file: {0}", filePath.string());
 		Ref<Asset> asset = AssetImporter::ImportAsset(handle, metadata);
-		if (asset)
-		{
-			asset->Handle = handle;
-			m_LoadedAssets[handle] = asset;
-			m_AssetRegistry[handle] = metadata;
-			SerializeAssetRegistry();
-		}
+		if (!asset)
+			return 0;   // import failed — don't hand back an unregistered handle
+
+		asset->Handle = handle;
+		m_LoadedAssets[handle] = asset;
+		m_AssetRegistry[handle] = metadata;
+		SerializeAssetRegistry();
+		return handle;
+	}
+
+	AssetHandle EditorAssetManager::ImportLoadedAsset(const std::filesystem::path& filePath, const Ref<Asset>& asset)
+	{
+		if (!asset)
+			return 0;
+
+		AssetHandle handle;
+		AssetMetadata metadata;
+		metadata.FilePath = filePath;
+		metadata.Type = GetAssetTypeFromFileExtension(filePath.extension());
+		TF_CORE_ASSERT(metadata.Type != AssetType::None, "Unsupported asset type for file: {0}", filePath.string());
+
+		// Same registration as ImportAsset, but caches an instance produced elsewhere (e.g. during
+		// model import) instead of re-reading the file. It IS disk-backed: on reload the asset is
+		// re-imported from FilePath, unlike AddMemoryOnlyAsset.
+		asset->Handle = handle;
+		m_LoadedAssets[handle] = asset;
+		m_AssetRegistry[handle] = metadata;
+		SerializeAssetRegistry();
 		return handle;
 	}
 

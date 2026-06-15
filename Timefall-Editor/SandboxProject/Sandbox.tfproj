@@ -1,6 +1,6 @@
 Project:
   Name: "Sandbox"
-  StartScene: 14748461370065992660
+  StartScene: 7631054108746840265
   AssetDirectory: "Assets"
   AssetRegistryPath: AssetRegistry.tfr
   ScriptModulePath: "Scripts/bin/Debug/Sandbox.dll"

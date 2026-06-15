@@ -18,6 +18,10 @@ namespace Timefall
 
 		AssetHandle ImportAsset(const std::filesystem::path& filePath);
 
+		// Register a disk-backed asset whose instance is already in memory (built once during model
+		// import). Re-imported from FilePath on reload. Returns 0 if asset is null.
+		AssetHandle ImportLoadedAsset(const std::filesystem::path& filePath, const Ref<Asset>& asset);
+
 		// Seed an in-memory asset (built-in primitives, runtime-created) under a fixed handle.
 		// Visible to the registry/content browser but never serialized to disk.
 		void AddMemoryOnlyAsset(AssetHandle handle, const Ref<Asset>& asset,

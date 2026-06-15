@@ -76,7 +76,7 @@ uniform sampler2D u_SpecularMap;
 layout(location = 0) out vec4 o_Color;
 layout(location = 1) out int o_EntityID;
 
-const float c_AmbientStrength = 0.1;
+const float c_AmbientStrength = 0.09f;
 
 // Blinn-Phong contribution of one light. L = surface->light (unit). radiance already folds in
 // the light color, intensity, and any attenuation/cone factor.
@@ -102,6 +102,7 @@ void main()
 
 	vec3 matDiffuse  = u_DiffuseColor  * texture(u_DiffuseMap,  v_TexCoord).rgb;
 	vec3 matSpecular = u_SpecularColor * texture(u_SpecularMap, v_TexCoord).rgb;
+	//vec3 matSpecular = vec3(0.4f);
 
 	vec3 color = c_AmbientStrength * matDiffuse;
 
@@ -146,5 +147,6 @@ void main()
 	}
 
 	o_Color = vec4(color, 1.0);
+	//o_Color.rgb = pow(o_Color.rgb, vec3(1.0/2.2)); // Gamma correction
 	o_EntityID = u_EntityID;
 }

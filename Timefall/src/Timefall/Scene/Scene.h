@@ -25,6 +25,13 @@ namespace Timefall
 
 		Entity CreateEntity(const std::string tag = "");
 		Entity CreateEntityWithUUID(const UUID& uuid, const std::string& tag = "");
+
+		// Overloads that link the new entity under `parent` AT CREATION, without preserving world
+		// transform: the entity keeps its (identity) local transform and inherits the parent's world.
+		// Use when building a hierarchy from known local transforms (e.g. model import). Contrast
+		// SetParent(), which back-solves local to keep the child's WORLD fixed (right for editor reparenting).
+		Entity CreateEntity(const std::string& tag, Entity parent);
+		Entity CreateEntityWithUUID(const UUID& uuid, const std::string& tag, Entity parent);
 		void DestroyEntity(Entity entity);
 		// Queues an entity for destruction at the end of the current runtime update,
 		// so it's safe to call from within scripts / component iteration. Children are

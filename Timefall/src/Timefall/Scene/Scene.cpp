@@ -368,10 +368,20 @@ namespace Timefall
 
 	Entity Scene::CreateEntity(const std::string tag)
 	{
-		return CreateEntityWithUUID(UUID(), tag);
+		return CreateEntityWithUUID(UUID(), tag, Entity{});
+	}
+
+	Entity Scene::CreateEntity(const std::string& tag, Entity parent)
+	{
+		return CreateEntityWithUUID(UUID(), tag, parent);
 	}
 
 	Entity Scene::CreateEntityWithUUID(const UUID& uuid, const std::string& tag)
+	{
+		return CreateEntityWithUUID(uuid, tag, Entity{});
+	}
+
+	Entity Scene::CreateEntityWithUUID(const UUID& uuid, const std::string& tag, Entity parent)
 	{
 		Entity entity = { m_Registry.create(), this };
 		entity.AddComponent<IDComponent>(uuid);
@@ -380,6 +390,11 @@ namespace Timefall
 		tagComp.Tag = tag.empty() ? "Entity" : tag;
 
 		m_EntityMap[uuid] = entity;
+
+		// Raw link (no world-preservation): the entity keeps its identity local transform and inherits
+		// the parent's world. SetParent() would instead back-solve local to hold world fixed.
+		if (parent)
+			LinkChildToParent(entity, parent);
 
 		return entity;
 	}
