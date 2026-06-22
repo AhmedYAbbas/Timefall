@@ -1,16 +1,52 @@
 Scene: Timefall Scene
 Entities:
-  - Entity: 17253375342531895612
+  - Entity: 10416499186478915510
     TagComponent:
-      Tag: Quad
+      Tag: Empty Entity
+    TransformComponent:
+      Position: [-1.3905451, 0.6249085, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 0
+  - Entity: 10746470915613893352
+    TagComponent:
+      Tag: Empty Entity
+    TransformComponent:
+      Position: [2.1371999, 0.9079169, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 1
+      Submesh: 0
+      Material: 0
+  - Entity: 3312706573496031648
+    TagComponent:
+      Tag: Empty Entity
     TransformComponent:
       Position: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    SpriteRendererComponent:
-      Color: [0, 0.8494208, 1, 1]
-      TextureHandle: 0
-      TilingFactor: 1
+      Rotation: [0, -0, 0]
+      Scale: [8.591001, 8.591001, 8.591001]
+    MeshComponent:
+      Mesh: 3
+      Submesh: 0
+      Material: 0
+  - Entity: 8068055778448417359
+    TagComponent:
+      Tag: Empty Entity
+    TransformComponent:
+      Position: [0, 3.450551, -2.294454]
+      Rotation: [-2.2102263, -0.9707103, -0.9994547]
+      Scale: [1, 0.99994564, 0.99993205]
+    LightComponent:
+      Type: Directional
+      Color: [1, 1, 1]
+      Intensity: 1
+      Range: 10
+      InnerCutoff: 12.5
+      OuterCutoff: 17.5
   - Entity: 7545432824266683476
     TagComponent:
       Tag: Camera

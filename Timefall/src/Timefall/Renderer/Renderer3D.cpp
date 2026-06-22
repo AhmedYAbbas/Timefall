@@ -6,10 +6,14 @@
 #include "Timefall/Renderer/UniformBuffer.h"
 #include "Timefall/Renderer/RenderCommand.h"
 #include "Timefall/Renderer/Texture.h"
+#include "Timefall/Renderer/ShadowMap.h"
 #include "Timefall/Asset/AssetManager.h"
 #include "Timefall/Asset/EditorAssetManager.h"
 
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include <cfloat>
 
 namespace Timefall
 {
@@ -43,6 +47,15 @@ namespace Timefall
 		int _Padding   = 0;
 	};
 
+	struct MeshSubmission
+	{
+		glm::mat4       Transform;
+		Ref<MeshSource> Mesh;
+		uint32_t        SubmeshIndex;
+		Ref<Material>   Material;
+		int             EntityID;
+	};
+
 	struct Renderer3DData
 	{
 		Ref<MeshSource>    CubeMesh;
@@ -60,9 +73,19 @@ namespace Timefall
 		Ref<Texture2D> WhiteTexture;
 		Ref<Material>  DefaultMaterial;
 
+		std::vector<MeshSubmission> Submissions;
+
+		Ref<ShadowMap> SunShadowMap;
+		Ref<Shader>    ShadowDepthShader;
+		glm::mat4      SunLightSpaceMatrix = glm::mat4(1.0f);
+		bool           SunCastsShadow = false;
+
+		static constexpr uint32_t SHADOW_RESOLUTION = 2048;
+		static constexpr uint32_t SHADOW_SAMPLER_SLOT = 2;  // units 0=diffuse,1=specular
+		static constexpr float    SHADOW_MAX_DISTANCE = 50.0f;  // A.0: fit light frustum to this radius
+
 		// Per-frame render-state cache (reset in BeginScene) to skip redundant GL state changes
 		// across the many SubmitMesh calls of a frame.
-		bool            ShaderBound = false;
 		const Material* CurrentMaterial = nullptr;
 	};
 
@@ -75,6 +98,8 @@ namespace Timefall
 		s_Data.PlaneMesh  = MeshSource::CreatePlane();
 
 		s_Data.LitShader = Shader::Create("assets/shaders/Renderer3D_Lit.glsl");
+		s_Data.ShadowDepthShader = Shader::Create("assets/shaders/Renderer3D_ShadowDepth.glsl");
+		s_Data.SunShadowMap = ShadowMap::Create(Renderer3DData::SHADOW_RESOLUTION, 1);
 
 		s_Data.CameraUniformBuffer = UniformBuffer::Create(sizeof(CameraData), 0);
 		s_Data.LightsUniformBuffer = UniformBuffer::Create(sizeof(LightsData), 1);
@@ -89,6 +114,7 @@ namespace Timefall
 		s_Data.LitShader->Bind();
 		s_Data.LitShader->SetInt("u_DiffuseMap", 0);
 		s_Data.LitShader->SetInt("u_SpecularMap", 1);
+		s_Data.LitShader->SetInt("u_ShadowMap", (int)Renderer3DData::SHADOW_SAMPLER_SLOT);
 	}
 
 	void Renderer3D::Shutdown()
@@ -106,7 +132,8 @@ namespace Timefall
 		s_Data.LightsBuffer.SpotCount = 0;
 		s_Data.LightsDirty = true;
 
-		s_Data.ShaderBound = false;
+		s_Data.Submissions.clear();
+		s_Data.SunCastsShadow = false;
 		s_Data.CurrentMaterial = nullptr;
 	}
 
@@ -121,68 +148,148 @@ namespace Timefall
 		s_Data.LightsBuffer.SpotCount = 0;
 		s_Data.LightsDirty = true;
 
-		s_Data.ShaderBound = false;
+		s_Data.Submissions.clear();
+		s_Data.SunCastsShadow = false;
 		s_Data.CurrentMaterial = nullptr;
+	}
+
+	// Fit a single orthographic light-space matrix around the NEAR portion of the camera
+	// frustum (out to maxShadowDistance). Phase A.0 only: no cascades, no texel snapping.
+	// Bounding the distance keeps the ortho tight enough that (a) the occluder->receiver
+	// depth gap stays well above the shader bias and (b) shadows occupy enough texels to be
+	// visible. The full-frustum fit (camera far ~1000) was pathological on both counts.
+	static glm::mat4 ComputeSunLightSpaceMatrix(const glm::mat4& cameraViewProjection, const glm::vec3& camPos,
+		const glm::vec3& lightDir, float maxShadowDistance)
+	{
+		glm::mat4 invVP = glm::inverse(cameraViewProjection);
+
+		// 8 world-space frustum corners from the NDC cube ([-1,1] in z for OpenGL).
+		glm::vec3 corners[8];
+		int i = 0;
+		for (int x = 0; x < 2; ++x)
+			for (int y = 0; y < 2; ++y)
+				for (int z = 0; z < 2; ++z)
+				{
+					glm::vec4 pt = invVP * glm::vec4(2.0f * x - 1.0f, 2.0f * y - 1.0f, 2.0f * z - 1.0f, 1.0f);
+					corners[i++] = glm::vec3(pt) / pt.w;
+				}
+
+		// Pull any corner farther than maxShadowDistance from the camera in toward it, so the
+		// fitted box covers only the near region (A.0 has no cascades to manage distance).
+		for (glm::vec3& c : corners)
+		{
+			glm::vec3 v = c - camPos;
+			float d = glm::length(v);
+			if (d > maxShadowDistance)
+				c = camPos + v * (maxShadowDistance / d);
+		}
+
+		glm::vec3 center(0.0f);
+		for (const glm::vec3& c : corners) center += c;
+		center /= 8.0f;
+
+		glm::vec3 dir = glm::normalize(lightDir);
+		glm::vec3 up = glm::abs(dir.y) > 0.99f ? glm::vec3(0.0f, 0.0f, 1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
+		glm::mat4 lightView = glm::lookAt(center - dir, center, up);
+
+		glm::vec3 minB(FLT_MAX), maxB(-FLT_MAX);
+		for (const glm::vec3& c : corners)
+		{
+			glm::vec3 ls = glm::vec3(lightView * glm::vec4(c, 1.0f));
+			minB = glm::min(minB, ls);
+			maxB = glm::max(maxB, ls);
+		}
+
+		// Small additive pad along the light axis (toward the light = larger z here, since the
+		// light looks down -z): extends the near plane so occluders just behind the slice still
+		// cast, without blowing up the depth range like the old 10x multiply did.
+		const float zPad = 0.25f * maxShadowDistance;
+		minB.z -= zPad;
+		maxB.z += zPad;
+
+		glm::mat4 lightProj = glm::ortho(minB.x, maxB.x, minB.y, maxB.y, -maxB.z, -minB.z);
+		return lightProj * lightView;
 	}
 
 	void Renderer3D::EndScene()
 	{
-	}
-
-	void Renderer3D::SubmitMesh(const glm::mat4& transform, const Ref<MeshSource>& mesh, uint32_t submeshIndex,
-		const Ref<Material>& material, int entityID)
-	{
+		// Upload any pending light data once for the frame.
 		if (s_Data.LightsDirty)
 		{
 			s_Data.LightsUniformBuffer->SetData(&s_Data.LightsBuffer, sizeof(LightsData));
 			s_Data.LightsDirty = false;
 		}
 
+		// Phase A.0: the first directional light casts shadows (the CastsShadows toggle arrives in A.5).
+		s_Data.SunCastsShadow = s_Data.LightsBuffer.DirCount > 0;
+
+		// ---- Shadow depth pass ----
+		if (s_Data.SunCastsShadow)
+		{
+			glm::vec3 sunDir = glm::vec3(s_Data.LightsBuffer.DirLights[0].Direction);
+			s_Data.SunLightSpaceMatrix = ComputeSunLightSpaceMatrix(s_Data.CameraBuffer.ViewProjection,
+				s_Data.CameraBuffer.CameraPosition, sunDir, Renderer3DData::SHADOW_MAX_DISTANCE);
+
+			s_Data.ShadowDepthShader->Bind();
+			s_Data.ShadowDepthShader->SetMat4("u_LightSpaceMatrix", s_Data.SunLightSpaceMatrix);
+
+			s_Data.SunShadowMap->BeginRenderPass();
+			s_Data.SunShadowMap->BindLayer(0);
+			for (const MeshSubmission& sub : s_Data.Submissions)
+			{
+				s_Data.ShadowDepthShader->SetMat4("u_Model", sub.Transform);
+				const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
+				RenderCommand::DrawIndexed(sub.Mesh->GetVertexArray(), sm.IndexCount, sm.BaseIndex, sm.BaseVertex);
+			}
+			s_Data.SunShadowMap->EndRenderPass();
+		}
+
+		// ---- Lit pass ----
+		s_Data.LitShader->Bind();
+		s_Data.LitShader->SetMat4("u_LightSpaceMatrix", s_Data.SunLightSpaceMatrix);
+		s_Data.SunShadowMap->BindForSampling(Renderer3DData::SHADOW_SAMPLER_SLOT);
+
+		s_Data.CurrentMaterial = nullptr;
+		for (const MeshSubmission& sub : s_Data.Submissions)
+		{
+			s_Data.LitShader->SetMat4("u_Model", sub.Transform);
+			glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(sub.Transform)));
+			s_Data.LitShader->SetMat3("u_NormalMatrix", normalMatrix);
+			s_Data.LitShader->SetInt("u_EntityID", sub.EntityID);
+
+			const Material* mat = sub.Material.get();
+			if (mat != s_Data.CurrentMaterial)
+			{
+				s_Data.LitShader->SetFloat3("u_DiffuseColor", mat->DiffuseColor);
+				s_Data.LitShader->SetFloat3("u_SpecularColor", mat->SpecularColor);
+				s_Data.LitShader->SetFloat("u_Shininess", mat->Shininess);
+
+				Ref<Texture2D> diffuse = s_Data.WhiteTexture;
+				if (mat->DiffuseMap != 0 && AssetManager::IsAssetHandleValid(mat->DiffuseMap))
+					diffuse = AssetManager::GetAsset<Texture2D>(mat->DiffuseMap);
+
+				Ref<Texture2D> specular = s_Data.WhiteTexture;
+				if (mat->SpecularMap != 0 && AssetManager::IsAssetHandleValid(mat->SpecularMap))
+					specular = AssetManager::GetAsset<Texture2D>(mat->SpecularMap);
+
+				diffuse->Bind(0);
+				specular->Bind(1);
+				s_Data.CurrentMaterial = mat;
+			}
+
+			const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
+			RenderCommand::DrawIndexed(sub.Mesh->GetVertexArray(), sm.IndexCount, sm.BaseIndex, sm.BaseVertex);
+		}
+	}
+
+	void Renderer3D::SubmitMesh(const glm::mat4& transform, const Ref<MeshSource>& mesh, uint32_t submeshIndex,
+		const Ref<Material>& material, int entityID)
+	{
 		if (!mesh || submeshIndex >= mesh->GetSubmeshes().size())
 			return;
 
 		const Ref<Material>& mat = material ? material : s_Data.DefaultMaterial;
-
-		// Bind the lit shader once per frame; nothing else binds a program during the 3D pass.
-		if (!s_Data.ShaderBound)
-		{
-			s_Data.LitShader->Bind();
-			s_Data.ShaderBound = true;
-		}
-
-		// Per-object uniforms (always change between submits).
-		s_Data.LitShader->SetMat4("u_Model", transform);
-
-		glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(transform)));
-		s_Data.LitShader->SetMat3("u_NormalMatrix", normalMatrix);
-		s_Data.LitShader->SetInt("u_EntityID", entityID);
-
-		// Per-material state (colors + texture binds): only re-upload when the material changes.
-		// Imported models reuse a handful of materials across many submeshes, so this skips most
-		// of the per-submesh uniform/texture work.
-		if (mat.get() != s_Data.CurrentMaterial)
-		{
-			s_Data.LitShader->SetFloat3("u_DiffuseColor", mat->DiffuseColor);
-			s_Data.LitShader->SetFloat3("u_SpecularColor", mat->SpecularColor);
-			s_Data.LitShader->SetFloat("u_Shininess", mat->Shininess);
-
-			Ref<Texture2D> diffuse = s_Data.WhiteTexture;
-			if (mat->DiffuseMap != 0 && AssetManager::IsAssetHandleValid(mat->DiffuseMap))
-				diffuse = AssetManager::GetAsset<Texture2D>(mat->DiffuseMap);
-
-			Ref<Texture2D> specular = s_Data.WhiteTexture;
-			if (mat->SpecularMap != 0 && AssetManager::IsAssetHandleValid(mat->SpecularMap))
-				specular = AssetManager::GetAsset<Texture2D>(mat->SpecularMap);
-
-			diffuse->Bind(0);
-			specular->Bind(1);
-
-			s_Data.CurrentMaterial = mat.get();
-		}
-
-		// DrawIndexed binds the VAO internally, so no explicit bind needed here.
-		const Submesh& sm = mesh->GetSubmeshes()[submeshIndex];
-		RenderCommand::DrawIndexed(mesh->GetVertexArray(), sm.IndexCount, sm.BaseIndex, sm.BaseVertex);
+		s_Data.Submissions.push_back({ transform, mesh, submeshIndex, mat, entityID });
 	}
 
 	Ref<Material> Renderer3D::GetDefaultMaterial()

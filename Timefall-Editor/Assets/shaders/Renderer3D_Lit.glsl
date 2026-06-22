@@ -18,10 +18,12 @@ layout(std140, binding = 0) uniform Camera
 
 uniform mat4 u_Model;
 uniform mat3 u_NormalMatrix;
+uniform mat4 u_LightSpaceMatrix;
 
 layout(location = 0) out vec3 v_WorldPos;
 layout(location = 1) out vec3 v_Normal;
 layout(location = 2) out vec2 v_TexCoord;
+layout(location = 3) out vec4 v_FragPosLightSpace;
 
 void main()
 {
@@ -29,6 +31,7 @@ void main()
 	v_WorldPos = world.xyz;
 	v_Normal = u_NormalMatrix * a_Normal;
 	v_TexCoord = a_TexCoord;
+	v_FragPosLightSpace = u_LightSpaceMatrix * world;
 	gl_Position = u_ViewProjection * world;
 }
 
@@ -38,6 +41,7 @@ void main()
 layout(location = 0) in vec3 v_WorldPos;
 layout(location = 1) in vec3 v_Normal;
 layout(location = 2) in vec2 v_TexCoord;
+layout(location = 3) in vec4 v_FragPosLightSpace;
 
 layout(std140, binding = 0) uniform Camera
 {
@@ -72,6 +76,7 @@ uniform vec3  u_SpecularColor;
 uniform float u_Shininess;
 uniform sampler2D u_DiffuseMap;
 uniform sampler2D u_SpecularMap;
+uniform sampler2DArray u_ShadowMap;   // Phase A.0: single layer (0)
 
 layout(location = 0) out vec4 o_Color;
 layout(location = 1) out int o_EntityID;
@@ -95,6 +100,22 @@ float Attenuate(float dist, float range)
 	return x * x;
 }
 
+// Phase A.0 hard shadow: 1.0 = fully shadowed, 0.0 = lit. Single-tap, slope-scaled bias.
+float ShadowCalculation(vec4 fragPosLightSpace, vec3 N, vec3 L)
+{
+	vec3 proj = fragPosLightSpace.xyz / fragPosLightSpace.w;   // manual perspective divide
+	proj = proj * 0.5 + 0.5;                                   // NDC [-1,1] -> [0,1]
+
+	if (proj.z > 1.0)
+		return 0.0;   // beyond the light's far plane -> treat as lit
+
+	float closestDepth = texture(u_ShadowMap, vec3(proj.xy, 0.0)).r;
+	float currentDepth = proj.z;
+
+	float bias = max(0.0025 * (1.0 - dot(N, L)), 0.0005);
+	return (currentDepth - bias) > closestDepth ? 1.0 : 0.0;
+}
+
 void main()
 {
 	vec3 N = normalize(v_Normal);
@@ -111,7 +132,10 @@ void main()
 	{
 		vec3 L = normalize(-u_DirLights[i].Direction.xyz);
 		vec3 radiance = u_DirLights[i].Color.rgb * u_DirLights[i].Color.a;
-		color += BlinnPhong(N, V, L, radiance, matDiffuse, matSpecular, u_Shininess);
+
+		// Phase A.0: only the first directional light casts shadows.
+		float shadow = (i == 0) ? ShadowCalculation(v_FragPosLightSpace, N, L) : 0.0;
+		color += (1.0 - shadow) * BlinnPhong(N, V, L, radiance, matDiffuse, matSpecular, u_Shininess);
 	}
 
 	// Point
