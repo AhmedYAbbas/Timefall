@@ -13,17 +13,16 @@ layout(location = 2) in vec2 a_TexCoord;
 layout(std140, binding = 0) uniform Camera
 {
 	mat4 u_ViewProjection;
+	mat4 u_View;
 	vec3 u_CameraPosition;
 };
 
 uniform mat4 u_Model;
 uniform mat3 u_NormalMatrix;
-uniform mat4 u_LightSpaceMatrix;
 
 layout(location = 0) out vec3 v_WorldPos;
 layout(location = 1) out vec3 v_Normal;
 layout(location = 2) out vec2 v_TexCoord;
-layout(location = 3) out vec4 v_FragPosLightSpace;
 
 void main()
 {
@@ -31,7 +30,6 @@ void main()
 	v_WorldPos = world.xyz;
 	v_Normal = u_NormalMatrix * a_Normal;
 	v_TexCoord = a_TexCoord;
-	v_FragPosLightSpace = u_LightSpaceMatrix * world;
 	gl_Position = u_ViewProjection * world;
 }
 
@@ -41,11 +39,11 @@ void main()
 layout(location = 0) in vec3 v_WorldPos;
 layout(location = 1) in vec3 v_Normal;
 layout(location = 2) in vec2 v_TexCoord;
-layout(location = 3) in vec4 v_FragPosLightSpace;
 
 layout(std140, binding = 0) uniform Camera
 {
 	mat4 u_ViewProjection;
+	mat4 u_View;
 	vec3 u_CameraPosition;
 };
 
@@ -69,6 +67,16 @@ layout(std140, binding = 1) uniform Lights
 	int u_SpotCount;
 };
 
+const int MAX_CASCADES = 4;
+
+layout(std140, binding = 2) uniform Shadows
+{
+	mat4 u_LightViewProj[MAX_CASCADES];
+	vec4 u_CascadeSplits;
+	int  u_CascadeCount;
+	int  u_VisualizeCascades;
+};
+
 uniform int u_EntityID;
 
 uniform vec3  u_DiffuseColor;
@@ -76,7 +84,7 @@ uniform vec3  u_SpecularColor;
 uniform float u_Shininess;
 uniform sampler2D u_DiffuseMap;
 uniform sampler2D u_SpecularMap;
-uniform sampler2DArray u_ShadowMap;   // Phase A.0: single layer (0)
+uniform sampler2DArray u_ShadowMap;
 
 layout(location = 0) out vec4 o_Color;
 layout(location = 1) out int o_EntityID;
@@ -100,26 +108,36 @@ float Attenuate(float dist, float range)
 	return x * x;
 }
 
-// Phase A.0 hard shadow: 1.0 = fully shadowed, 0.0 = lit. Single-tap, slope-scaled bias.
-float ShadowCalculation(vec4 fragPosLightSpace, vec3 N, vec3 L)
+int SelectCascade(float viewDepth)
 {
-	vec3 proj = fragPosLightSpace.xyz / fragPosLightSpace.w;   // manual perspective divide
-	proj = proj * 0.5 + 0.5;                                   // NDC [-1,1] -> [0,1]
+	for (int c = 0; c < u_CascadeCount; ++c)
+		if (viewDepth < u_CascadeSplits[c])
+			return c;
+	return u_CascadeCount - 1;
+}
+
+// Hard shadow for one cascade layer. 1.0 = shadowed, 0.0 = lit.
+float ShadowCalculation(vec3 worldPos, int cascade, vec3 N, vec3 L)
+{
+	vec4 lightSpace = u_LightViewProj[cascade] * vec4(worldPos, 1.0);
+	vec3 proj = lightSpace.xyz / lightSpace.w;
+	proj = proj * 0.5 + 0.5;
 
 	if (proj.z > 1.0)
-		return 0.0;   // beyond the light's far plane -> treat as lit
+		return 0.0;
 
-	float closestDepth = texture(u_ShadowMap, vec3(proj.xy, 0.0)).r;
-	float currentDepth = proj.z;
-
+	float closestDepth = texture(u_ShadowMap, vec3(proj.xy, float(cascade))).r;
 	float bias = max(0.0025 * (1.0 - dot(N, L)), 0.0005);
-	return (currentDepth - bias) > closestDepth ? 1.0 : 0.0;
+	return (proj.z - bias) > closestDepth ? 1.0 : 0.0;
 }
 
 void main()
 {
 	vec3 N = normalize(v_Normal);
 	vec3 V = normalize(u_CameraPosition - v_WorldPos);
+
+	float viewDepth = -(u_View * vec4(v_WorldPos, 1.0)).z;
+	int cascade = SelectCascade(viewDepth);
 
 	vec3 matDiffuse  = u_DiffuseColor  * texture(u_DiffuseMap,  v_TexCoord).rgb;
 	vec3 matSpecular = u_SpecularColor * texture(u_SpecularMap, v_TexCoord).rgb;
@@ -133,8 +151,7 @@ void main()
 		vec3 L = normalize(-u_DirLights[i].Direction.xyz);
 		vec3 radiance = u_DirLights[i].Color.rgb * u_DirLights[i].Color.a;
 
-		// Phase A.0: only the first directional light casts shadows.
-		float shadow = (i == 0) ? ShadowCalculation(v_FragPosLightSpace, N, L) : 0.0;
+		float shadow = (i == 0) ? ShadowCalculation(v_WorldPos, cascade, N, L) : 0.0;
 		color += (1.0 - shadow) * BlinnPhong(N, V, L, radiance, matDiffuse, matSpecular, u_Shininess);
 	}
 
@@ -168,6 +185,12 @@ void main()
 
 		vec3 radiance = u_SpotLights[i].Color.rgb * intensity * att * cone;
 		color += BlinnPhong(N, V, L, radiance, matDiffuse, matSpecular, u_Shininess);
+	}
+
+	if (u_VisualizeCascades == 1)
+	{
+		vec3 tints[4] = vec3[4](vec3(1.0, 0.4, 0.4), vec3(0.4, 1.0, 0.4), vec3(0.4, 0.4, 1.0), vec3(1.0, 1.0, 0.4));
+		color *= tints[cascade];
 	}
 
 	o_Color = vec4(color, 1.0);

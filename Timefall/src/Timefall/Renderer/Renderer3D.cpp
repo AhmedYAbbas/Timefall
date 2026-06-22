@@ -21,6 +21,7 @@ namespace Timefall
 	struct CameraData
 	{
 		glm::mat4 ViewProjection;
+		glm::mat4 View;
 		glm::vec3 CameraPosition;
 		float _Padding = 0.0f;
 	};
@@ -41,10 +42,10 @@ namespace Timefall
 		GpuDirLight   DirLights[MAX_DIR_LIGHTS];
 		GpuPointLight PointLights[MAX_POINT_LIGHTS];
 		GpuSpotLight  SpotLights[MAX_SPOT_LIGHTS];
-		int DirCount   = 0;
-		int PointCount = 0;
-		int SpotCount  = 0;
-		int _Padding   = 0;
+		uint32_t DirCount   = 0;
+		uint32_t PointCount = 0;
+		uint32_t SpotCount  = 0;
+		uint32_t _Padding   = 0;
 	};
 
 	struct MeshSubmission
@@ -54,6 +55,18 @@ namespace Timefall
 		uint32_t        SubmeshIndex;
 		Ref<Material>   Material;
 		int             EntityID;
+	};
+
+	static constexpr uint32_t MAX_CASCADES = 4;
+
+	// std140 mirror of the Shadows UBO block in Renderer3D_Lit.glsl.
+	struct ShadowData
+	{
+		glm::mat4 LightViewProj[MAX_CASCADES];
+		glm::vec4 CascadeSplits;            // far view-depth of each cascade
+		uint32_t  CascadeCount = 0;
+		uint32_t  VisualizeCascades = 0;
+		glm::vec2 _Pad{ 0.0f };
 	};
 
 	struct Renderer3DData
@@ -75,14 +88,18 @@ namespace Timefall
 
 		std::vector<MeshSubmission> Submissions;
 
-		Ref<ShadowMap> SunShadowMap;
-		Ref<Shader>    ShadowDepthShader;
-		glm::mat4      SunLightSpaceMatrix = glm::mat4(1.0f);
-		bool           SunCastsShadow = false;
+		Ref<ShadowMap>     SunShadowMap;
+		Ref<Shader>        ShadowDepthShader;
+		Ref<UniformBuffer> ShadowUniformBuffer;
+		ShadowData         ShadowBuffer;
+		bool               SunCastsShadow = false;
 
-		static constexpr uint32_t SHADOW_RESOLUTION = 2048;
-		static constexpr uint32_t SHADOW_SAMPLER_SLOT = 2;  // units 0=diffuse,1=specular
-		static constexpr float    SHADOW_MAX_DISTANCE = 50.0f;  // A.0: fit light frustum to this radius
+		static constexpr uint32_t SHADOW_RESOLUTION   = 2048;
+		static constexpr uint32_t SHADOW_SAMPLER_SLOT = 2;     // units 0=diffuse, 1=specular
+		static constexpr uint32_t CASCADE_COUNT       = 4;     // <= MAX_CASCADES
+		static constexpr float    SHADOW_MAX_DISTANCE = 100.0f;// cascades split within [near .. this]
+		static constexpr float    SPLIT_LAMBDA        = 0.85f;
+		static constexpr bool     VISUALIZE_CASCADES  = false; // debug-tint cascades
 
 		// Per-frame render-state cache (reset in BeginScene) to skip redundant GL state changes
 		// across the many SubmitMesh calls of a frame.
@@ -99,10 +116,11 @@ namespace Timefall
 
 		s_Data.LitShader = Shader::Create("assets/shaders/Renderer3D_Lit.glsl");
 		s_Data.ShadowDepthShader = Shader::Create("assets/shaders/Renderer3D_ShadowDepth.glsl");
-		s_Data.SunShadowMap = ShadowMap::Create(Renderer3DData::SHADOW_RESOLUTION, 1);
+		s_Data.SunShadowMap = ShadowMap::Create(Renderer3DData::SHADOW_RESOLUTION, Renderer3DData::CASCADE_COUNT);
 
 		s_Data.CameraUniformBuffer = UniformBuffer::Create(sizeof(CameraData), 0);
 		s_Data.LightsUniformBuffer = UniformBuffer::Create(sizeof(LightsData), 1);
+		s_Data.ShadowUniformBuffer = UniformBuffer::Create(sizeof(ShadowData), 2);
 
 		s_Data.WhiteTexture = Texture2D::Create(TextureSpecification());
 		uint32_t whiteTextureData = 0xffffffff;
@@ -124,6 +142,7 @@ namespace Timefall
 	void Renderer3D::BeginScene(const EditorCamera& camera)
 	{
 		s_Data.CameraBuffer.ViewProjection = camera.GetViewProjection();
+		s_Data.CameraBuffer.View = camera.GetViewMatrix();
 		s_Data.CameraBuffer.CameraPosition = camera.GetPosition();
 		s_Data.CameraUniformBuffer->SetData(&s_Data.CameraBuffer, sizeof(CameraData));
 
@@ -140,6 +159,7 @@ namespace Timefall
 	void Renderer3D::BeginScene(const Camera& camera, const glm::mat4& transform)
 	{
 		s_Data.CameraBuffer.ViewProjection = camera.GetProjection() * glm::inverse(transform);
+		s_Data.CameraBuffer.View = glm::inverse(transform);
 		s_Data.CameraBuffer.CameraPosition = glm::vec3(transform[3]);
 		s_Data.CameraUniformBuffer->SetData(&s_Data.CameraBuffer, sizeof(CameraData));
 
@@ -153,39 +173,11 @@ namespace Timefall
 		s_Data.CurrentMaterial = nullptr;
 	}
 
-	// Fit a single orthographic light-space matrix around the NEAR portion of the camera
-	// frustum (out to maxShadowDistance). Phase A.0 only: no cascades, no texel snapping.
-	// Bounding the distance keeps the ortho tight enough that (a) the occluder->receiver
-	// depth gap stays well above the shader bias and (b) shadows occupy enough texels to be
-	// visible. The full-frustum fit (camera far ~1000) was pathological on both counts.
-	static glm::mat4 ComputeSunLightSpaceMatrix(const glm::mat4& cameraViewProjection, const glm::vec3& camPos,
-		const glm::vec3& lightDir, float maxShadowDistance)
+	// Plain AABB fit around one cascade slice's corners (bounding-sphere stabilization is A.2).
+	static glm::mat4 FitOrthoToCorners(const glm::vec3 corners[8], const glm::vec3& lightDir, float zPad)
 	{
-		glm::mat4 invVP = glm::inverse(cameraViewProjection);
-
-		// 8 world-space frustum corners from the NDC cube ([-1,1] in z for OpenGL).
-		glm::vec3 corners[8];
-		int i = 0;
-		for (int x = 0; x < 2; ++x)
-			for (int y = 0; y < 2; ++y)
-				for (int z = 0; z < 2; ++z)
-				{
-					glm::vec4 pt = invVP * glm::vec4(2.0f * x - 1.0f, 2.0f * y - 1.0f, 2.0f * z - 1.0f, 1.0f);
-					corners[i++] = glm::vec3(pt) / pt.w;
-				}
-
-		// Pull any corner farther than maxShadowDistance from the camera in toward it, so the
-		// fitted box covers only the near region (A.0 has no cascades to manage distance).
-		for (glm::vec3& c : corners)
-		{
-			glm::vec3 v = c - camPos;
-			float d = glm::length(v);
-			if (d > maxShadowDistance)
-				c = camPos + v * (maxShadowDistance / d);
-		}
-
 		glm::vec3 center(0.0f);
-		for (const glm::vec3& c : corners) center += c;
+		for (int i = 0; i < 8; ++i) center += corners[i];
 		center /= 8.0f;
 
 		glm::vec3 dir = glm::normalize(lightDir);
@@ -193,22 +185,77 @@ namespace Timefall
 		glm::mat4 lightView = glm::lookAt(center - dir, center, up);
 
 		glm::vec3 minB(FLT_MAX), maxB(-FLT_MAX);
-		for (const glm::vec3& c : corners)
+		for (int i = 0; i < 8; ++i)
 		{
-			glm::vec3 ls = glm::vec3(lightView * glm::vec4(c, 1.0f));
+			glm::vec3 ls = glm::vec3(lightView * glm::vec4(corners[i], 1.0f));
 			minB = glm::min(minB, ls);
 			maxB = glm::max(maxB, ls);
 		}
 
-		// Small additive pad along the light axis (toward the light = larger z here, since the
-		// light looks down -z): extends the near plane so occluders just behind the slice still
-		// cast, without blowing up the depth range like the old 10x multiply did.
-		const float zPad = 0.25f * maxShadowDistance;
+		// Pad the near plane toward the light so occluders just behind the slice still cast.
 		minB.z -= zPad;
 		maxB.z += zPad;
 
 		glm::mat4 lightProj = glm::ortho(minB.x, maxB.x, minB.y, maxB.y, -maxB.z, -minB.z);
 		return lightProj * lightView;
+	}
+
+	static void ComputeCascades(const glm::mat4& cameraViewProjection, const glm::mat4& cameraView,
+		const glm::vec3& lightDir, float maxShadowDistance, uint32_t cascadeCount, ShadowData& out)
+	{
+		glm::mat4 invVP = glm::inverse(cameraViewProjection);
+
+		// Loop order puts near corners at even indices, far corners at odd, paired as edge k = (2k, 2k+1).
+		glm::vec3 corners[8];
+		int idx = 0;
+		for (int x = 0; x < 2; ++x)
+			for (int y = 0; y < 2; ++y)
+				for (int z = 0; z < 2; ++z)
+				{
+					glm::vec4 pt = invVP * glm::vec4(2.0f * x - 1.0f, 2.0f * y - 1.0f, 2.0f * z - 1.0f, 1.0f);
+					corners[idx++] = glm::vec3(pt) / pt.w;
+				}
+
+		// View looks down -z, so negate to get positive camera-space depth.
+		float camNear = -(cameraView * glm::vec4(corners[0], 1.0f)).z;
+		float camFar  = -(cameraView * glm::vec4(corners[1], 1.0f)).z;
+		float shadowFar = glm::min(camFar, maxShadowDistance);
+
+		// Practical split: lerp of uniform and logarithmic distributions.
+		float splits[MAX_CASCADES];
+		for (uint32_t c = 0; c < cascadeCount; ++c)
+		{
+			float p = float(c + 1) / float(cascadeCount);
+			float logD = camNear * glm::pow(shadowFar / camNear, p);
+			float uniD = camNear + (shadowFar - camNear) * p;
+			splits[c] = glm::mix(uniD, logD, Renderer3DData::SPLIT_LAMBDA);
+		}
+
+		float range = camFar - camNear;
+		float dNear = camNear;
+		for (uint32_t c = 0; c < cascadeCount; ++c)
+		{
+			float dFar = splits[c];
+			float tN = (dNear - camNear) / range;
+			float tF = (dFar  - camNear) / range;
+
+			glm::vec3 slice[8];
+			for (int k = 0; k < 4; ++k)
+			{
+				const glm::vec3& nearC = corners[2 * k];
+				const glm::vec3& farC  = corners[2 * k + 1];
+				glm::vec3 edge = farC - nearC;
+				slice[k]     = nearC + edge * tN;
+				slice[k + 4] = nearC + edge * tF;
+			}
+
+			out.LightViewProj[c] = FitOrthoToCorners(slice, lightDir, 0.25f * (dFar - dNear) + 5.0f);
+			out.CascadeSplits[c] = dFar;
+			dNear = dFar;
+		}
+
+		out.CascadeCount = cascadeCount;
+		out.VisualizeCascades = Renderer3DData::VISUALIZE_CASCADES ? 1u : 0u;
 	}
 
 	void Renderer3D::EndScene()
@@ -220,33 +267,33 @@ namespace Timefall
 			s_Data.LightsDirty = false;
 		}
 
-		// Phase A.0: the first directional light casts shadows (the CastsShadows toggle arrives in A.5).
 		s_Data.SunCastsShadow = s_Data.LightsBuffer.DirCount > 0;
 
-		// ---- Shadow depth pass ----
+		// Shadow depth pass: one draw set per cascade layer.
 		if (s_Data.SunCastsShadow)
 		{
 			glm::vec3 sunDir = glm::vec3(s_Data.LightsBuffer.DirLights[0].Direction);
-			s_Data.SunLightSpaceMatrix = ComputeSunLightSpaceMatrix(s_Data.CameraBuffer.ViewProjection,
-				s_Data.CameraBuffer.CameraPosition, sunDir, Renderer3DData::SHADOW_MAX_DISTANCE);
+			ComputeCascades(s_Data.CameraBuffer.ViewProjection, s_Data.CameraBuffer.View, sunDir,
+				Renderer3DData::SHADOW_MAX_DISTANCE, Renderer3DData::CASCADE_COUNT, s_Data.ShadowBuffer);
+			s_Data.ShadowUniformBuffer->SetData(&s_Data.ShadowBuffer, sizeof(ShadowData));
 
 			s_Data.ShadowDepthShader->Bind();
-			s_Data.ShadowDepthShader->SetMat4("u_LightSpaceMatrix", s_Data.SunLightSpaceMatrix);
-
 			s_Data.SunShadowMap->BeginRenderPass();
-			s_Data.SunShadowMap->BindLayer(0);
-			for (const MeshSubmission& sub : s_Data.Submissions)
+			for (uint32_t c = 0; c < Renderer3DData::CASCADE_COUNT; ++c)
 			{
-				s_Data.ShadowDepthShader->SetMat4("u_Model", sub.Transform);
-				const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
-				RenderCommand::DrawIndexed(sub.Mesh->GetVertexArray(), sm.IndexCount, sm.BaseIndex, sm.BaseVertex);
+				s_Data.ShadowDepthShader->SetMat4("u_LightSpaceMatrix", s_Data.ShadowBuffer.LightViewProj[c]);
+				s_Data.SunShadowMap->BindLayer(c);
+				for (const MeshSubmission& sub : s_Data.Submissions)
+				{
+					s_Data.ShadowDepthShader->SetMat4("u_Model", sub.Transform);
+					const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
+					RenderCommand::DrawIndexed(sub.Mesh->GetVertexArray(), sm.IndexCount, sm.BaseIndex, sm.BaseVertex);
+				}
 			}
 			s_Data.SunShadowMap->EndRenderPass();
 		}
 
-		// ---- Lit pass ----
 		s_Data.LitShader->Bind();
-		s_Data.LitShader->SetMat4("u_LightSpaceMatrix", s_Data.SunLightSpaceMatrix);
 		s_Data.SunShadowMap->BindForSampling(Renderer3DData::SHADOW_SAMPLER_SLOT);
 
 		s_Data.CurrentMaterial = nullptr;
