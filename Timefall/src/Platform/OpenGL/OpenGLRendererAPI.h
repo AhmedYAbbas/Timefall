@@ -20,5 +20,6 @@ namespace Timefall
 		virtual void SetLineWidth(float width) override;
 
 		virtual void SetDepthTest(bool enabled) override;
+		virtual void SetFaceCulling(FaceCull mode) override;
 	};
 }

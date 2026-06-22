@@ -44,6 +44,11 @@ namespace Timefall
 			s_RendererAPI->SetDepthTest(enabled);
 		}
 
+		inline static void SetFaceCulling(RendererAPI::FaceCull mode)
+		{
+			s_RendererAPI->SetFaceCulling(mode);
+		}
+
 	private:
 		static Scope<RendererAPI> s_RendererAPI;
 	};

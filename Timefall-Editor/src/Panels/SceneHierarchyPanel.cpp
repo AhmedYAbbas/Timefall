@@ -801,6 +801,16 @@ namespace Timefall
 				ImGui::DragFloat("Inner Cutoff", &component.InnerCutoff, 0.1f, 0.0f, 89.0f);
 				ImGui::DragFloat("Outer Cutoff", &component.OuterCutoff, 0.1f, 0.0f, 90.0f);
 			}
+
+			if (component.Type == LightComponent::LightType::Directional)
+			{
+				ImGui::Checkbox("Casts Shadows", &component.CastsShadows);
+				if (component.CastsShadows)
+				{
+					ImGui::DragFloat("Shadow Softness", &component.ShadowSoftness, 0.01f, 0.0f, 1.0f);
+					ImGui::DragFloat("Depth Bias", &component.DepthBias, 0.05f, 0.0f, 5.0f);
+				}
+			}
 		});
 
 		DrawComponent<Rigidbody2DComponent>("Rigidbody 2D", entity, [](auto& component)

@@ -73,8 +73,12 @@ layout(std140, binding = 2) uniform Shadows
 {
 	mat4 u_LightViewProj[MAX_CASCADES];
 	vec4 u_CascadeSplits;
-	int  u_CascadeCount;
-	int  u_VisualizeCascades;
+	vec4 u_CascadeTexelWorld;
+	vec4 u_CascadeDepthRange;
+	int   u_CascadeCount;
+	int   u_VisualizeCascades;
+	float u_LightSize;
+	float u_DepthBias;
 };
 
 uniform int u_EntityID;
@@ -108,6 +112,29 @@ float Attenuate(float dist, float range)
 	return x * x;
 }
 
+const float CASCADE_BLEND = 0.1;  // blend band as a fraction of cascade extent
+
+const float BLOCKER_SEARCH_TEXELS = 24.0;
+const float MAX_FILTER_TEXELS     = 24.0;
+
+const int   BLOCKER_SAMPLES = 16;
+const int   PCF_SAMPLES     = 32;
+const float GOLDEN_ANGLE    = 2.39996323;
+
+// Interleaved gradient noise (Jimenez 2014): low-discrepancy per-pixel rotation seed.
+float InterleavedGradientNoise(vec2 p)
+{
+	return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715))));
+}
+
+// Evenly-distributed disk sample (Vogel/sunflower), rotated per pixel.
+vec2 VogelDisk(int i, int count, float rotation)
+{
+	float r = sqrt((float(i) + 0.5) / float(count));
+	float theta = float(i) * GOLDEN_ANGLE + rotation;
+	return r * vec2(cos(theta), sin(theta));
+}
+
 int SelectCascade(float viewDepth)
 {
 	for (int c = 0; c < u_CascadeCount; ++c)
@@ -116,19 +143,81 @@ int SelectCascade(float viewDepth)
 	return u_CascadeCount - 1;
 }
 
-// Hard shadow for one cascade layer. 1.0 = shadowed, 0.0 = lit.
-float ShadowCalculation(vec3 worldPos, int cascade, vec3 N, vec3 L)
+// PCSS for one cascade layer: blocker search -> penumbra estimate -> variable-kernel PCF.
+float SampleShadowCascade(vec3 worldPos, int cascade, vec3 N, vec3 L)
 {
-	vec4 lightSpace = u_LightViewProj[cascade] * vec4(worldPos, 1.0);
+	float NdotL = clamp(dot(N, L), 0.0, 1.0);
+	vec3 offsetPos = worldPos + N * (u_CascadeTexelWorld[cascade] * 2.0 * (1.0 - NdotL));
+
+	vec4 lightSpace = u_LightViewProj[cascade] * vec4(offsetPos, 1.0);
 	vec3 proj = lightSpace.xyz / lightSpace.w;
 	proj = proj * 0.5 + 0.5;
-
 	if (proj.z > 1.0)
 		return 0.0;
 
-	float closestDepth = texture(u_ShadowMap, vec3(proj.xy, float(cascade))).r;
-	float bias = max(0.0025 * (1.0 - dot(N, L)), 0.0005);
-	return (proj.z - bias) > closestDepth ? 1.0 : 0.0;
+	float bias = max(0.0025 * (1.0 - NdotL), 0.0005) * u_DepthBias;
+	float texelUV = 1.0 / float(textureSize(u_ShadowMap, 0).x);
+	float receiver = proj.z;
+
+	float rotation = InterleavedGradientNoise(gl_FragCoord.xy) * 6.2831853;
+
+	// 1. Blocker search: average depth of texels closer to the light than the receiver.
+	// Fixed (un-rotated) pattern so the penumbra SIZE stays spatially coherent; per-pixel
+	// rotation here would make the kernel size flicker, which no amount of PCF taps can fix.
+	float searchUV = BLOCKER_SEARCH_TEXELS * texelUV;
+	float blockerSum = 0.0;
+	int   blockerCount = 0;
+	for (int i = 0; i < BLOCKER_SAMPLES; ++i)
+	{
+		vec2 off = VogelDisk(i, BLOCKER_SAMPLES, 0.0) * searchUV;
+		float d = texture(u_ShadowMap, vec3(proj.xy + off, float(cascade))).r;
+		if (d < receiver - bias)
+		{
+			blockerSum += d;
+			blockerCount++;
+		}
+	}
+	if (blockerCount == 0)
+		return 0.0; // no occluder -> fully lit
+
+	float avgBlocker = blockerSum / float(blockerCount);
+
+	// 2. Penumbra (directional): depth gap -> world, scale by light size, back to texels.
+	float worldGap = (receiver - avgBlocker) * u_CascadeDepthRange[cascade];
+	float penumbraTexels = (worldGap * u_LightSize) / u_CascadeTexelWorld[cascade];
+	float filterUV = clamp(penumbraTexels, 1.0, MAX_FILTER_TEXELS) * texelUV;
+
+	// 3. Variable-kernel PCF over the rotated Vogel disk.
+	float sum = 0.0;
+	for (int i = 0; i < PCF_SAMPLES; ++i)
+	{
+		vec2 off = VogelDisk(i, PCF_SAMPLES, rotation) * filterUV;
+		float closest = texture(u_ShadowMap, vec3(proj.xy + off, float(cascade))).r;
+		sum += (receiver - bias) > closest ? 1.0 : 0.0;
+	}
+
+	return sum / float(PCF_SAMPLES);
+}
+
+// Sun shadow with a blend across the cascade boundary to hide the resolution seam.
+float ComputeSunShadow(vec3 worldPos, float viewDepth, int cascade, vec3 N, vec3 L)
+{
+	float shadow = SampleShadowCascade(worldPos, cascade, N, L);
+
+	if (cascade + 1 < u_CascadeCount)
+	{
+		float splitFar  = u_CascadeSplits[cascade];
+		float prevSplit = cascade == 0 ? 0.0 : u_CascadeSplits[cascade - 1];
+		float band = (splitFar - prevSplit) * CASCADE_BLEND;
+		float t = (viewDepth - (splitFar - band)) / max(band, 1e-4);
+		if (t > 0.0)
+		{
+			float next = SampleShadowCascade(worldPos, cascade + 1, N, L);
+			shadow = mix(shadow, next, clamp(t, 0.0, 1.0));
+		}
+	}
+
+	return shadow;
 }
 
 void main()
@@ -137,7 +226,7 @@ void main()
 	vec3 V = normalize(u_CameraPosition - v_WorldPos);
 
 	float viewDepth = -(u_View * vec4(v_WorldPos, 1.0)).z;
-	int cascade = SelectCascade(viewDepth);
+	int cascade = u_CascadeCount > 0 ? SelectCascade(viewDepth) : 0;
 
 	vec3 matDiffuse  = u_DiffuseColor  * texture(u_DiffuseMap,  v_TexCoord).rgb;
 	vec3 matSpecular = u_SpecularColor * texture(u_SpecularMap, v_TexCoord).rgb;
@@ -151,7 +240,7 @@ void main()
 		vec3 L = normalize(-u_DirLights[i].Direction.xyz);
 		vec3 radiance = u_DirLights[i].Color.rgb * u_DirLights[i].Color.a;
 
-		float shadow = (i == 0) ? ShadowCalculation(v_WorldPos, cascade, N, L) : 0.0;
+		float shadow = (i == 0 && u_CascadeCount > 0) ? ComputeSunShadow(v_WorldPos, viewDepth, cascade, N, L) : 0.0;
 		color += (1.0 - shadow) * BlinnPhong(N, V, L, radiance, matDiffuse, matSpecular, u_Shininess);
 	}
 
@@ -194,6 +283,6 @@ void main()
 	}
 
 	o_Color = vec4(color, 1.0);
-	//o_Color.rgb = pow(o_Color.rgb, vec3(1.0/2.2)); // Gamma correction
+	o_Color.rgb = pow(o_Color.rgb, vec3(1.0/2.2)); // Gamma correction
 	o_EntityID = u_EntityID;
 }

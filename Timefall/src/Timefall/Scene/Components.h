@@ -137,6 +137,11 @@ namespace Timefall
 		float InnerCutoff = 12.5f;
 		float OuterCutoff = 17.5f;
 
+		// Directional only: cascaded PCSS shadows.
+		bool  CastsShadows   = false;
+		float ShadowSoftness = 0.5f;   // [0..1] -> PCSS light size
+		float DepthBias      = 1.0f;   // multiplier on the shadow depth bias
+
 		LightComponent() = default;
 		LightComponent(const LightComponent&) = default;
 	};

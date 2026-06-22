@@ -210,7 +210,8 @@ namespace Timefall
 					switch (light.Type)
 					{
 						case LightComponent::LightType::Directional:
-							Renderer3D::SubmitDirectionalLight(direction, light.Color, light.Intensity);
+							Renderer3D::SubmitDirectionalLight(direction, light.Color, light.Intensity,
+								light.CastsShadows, light.ShadowSoftness, light.DepthBias);
 							break;
 						case LightComponent::LightType::Point:
 							Renderer3D::SubmitPointLight(position, light.Color, light.Intensity, light.Range);
@@ -695,7 +696,8 @@ namespace Timefall
 				switch (light.Type)
 				{
 					case LightComponent::LightType::Directional:
-						Renderer3D::SubmitDirectionalLight(direction, light.Color, light.Intensity);
+						Renderer3D::SubmitDirectionalLight(direction, light.Color, light.Intensity,
+							light.CastsShadows, light.ShadowSoftness, light.DepthBias);
 						break;
 					case LightComponent::LightType::Point:
 						Renderer3D::SubmitPointLight(position, light.Color, light.Intensity, light.Range);

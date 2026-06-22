@@ -8169,6 +8169,9 @@ Entities:
       Range: 10
       InnerCutoff: 12.5
       OuterCutoff: 17.5
+      CastsShadows: false
+      ShadowSoftness: 0.5
+      DepthBias: 1
   - Entity: 6035363117838772875
     TagComponent:
       Tag: Accent Light
@@ -8183,6 +8186,9 @@ Entities:
       Range: 10
       InnerCutoff: 12.5
       OuterCutoff: 17.5
+      CastsShadows: false
+      ShadowSoftness: 0.5
+      DepthBias: 1
   - Entity: 5200033462010454689
     TagComponent:
       Tag: Camera
@@ -8212,8 +8218,8 @@ Entities:
       Tag: Directional Light
     TransformComponent:
       Position: [0, 0, 0]
-      Rotation: [-1.1065388, 0.9267698, 0]
-      Scale: [1, 0.99999905, 0.9999996]
+      Rotation: [-1.7663153, 0.9486154, -0.35466143]
+      Scale: [1.0000001, 1.0000012, 1.0000007]
     LightComponent:
       Type: Directional
       Color: [1, 0.8627451, 0.627451]
@@ -8221,3 +8227,6 @@ Entities:
       Range: 10
       InnerCutoff: 12.5
       OuterCutoff: 17.5
+      CastsShadows: true
+      ShadowSoftness: 1
+      DepthBias: 1

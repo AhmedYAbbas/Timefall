@@ -13,8 +13,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <cfloat>
-
 namespace Timefall
 {
 	// std140 layout matching the Camera UBO block in Renderer3D_Lit.glsl.
@@ -64,9 +62,12 @@ namespace Timefall
 	{
 		glm::mat4 LightViewProj[MAX_CASCADES];
 		glm::vec4 CascadeSplits;            // far view-depth of each cascade
+		glm::vec4 CascadeTexelWorld;        // world units per shadow texel, per cascade
+		glm::vec4 CascadeDepthRange;        // world depth mapped to [0,1] per cascade
 		uint32_t  CascadeCount = 0;
 		uint32_t  VisualizeCascades = 0;
-		glm::vec2 _Pad{ 0.0f };
+		float     LightSize = 0.08f;       // PCSS light size (from the sun's ShadowSoftness)
+		float     DepthBias = 1.0f;        // multiplier on the shader depth bias
 	};
 
 	struct Renderer3DData
@@ -93,12 +94,16 @@ namespace Timefall
 		Ref<UniformBuffer> ShadowUniformBuffer;
 		ShadowData         ShadowBuffer;
 		bool               SunCastsShadow = false;
+		glm::vec3          SunDirection{ 0.0f, -1.0f, 0.0f };
+		float              SunShadowSoftness = 0.5f;
+		float              SunDepthBias = 1.0f;
 
 		static constexpr uint32_t SHADOW_RESOLUTION   = 2048;
 		static constexpr uint32_t SHADOW_SAMPLER_SLOT = 2;     // units 0=diffuse, 1=specular
 		static constexpr uint32_t CASCADE_COUNT       = 4;     // <= MAX_CASCADES
 		static constexpr float    SHADOW_MAX_DISTANCE = 100.0f;// cascades split within [near .. this]
 		static constexpr float    SPLIT_LAMBDA        = 0.85f;
+		static constexpr float    SHADOW_DEPTH_EXTENT = 6.0f;  // ortho slab = radius * this each way along the light
 		static constexpr bool     VISUALIZE_CASCADES  = false; // debug-tint cascades
 
 		// Per-frame render-state cache (reset in BeginScene) to skip redundant GL state changes
@@ -173,30 +178,34 @@ namespace Timefall
 		s_Data.CurrentMaterial = nullptr;
 	}
 
-	// Plain AABB fit around one cascade slice's corners (bounding-sphere stabilization is A.2).
-	static glm::mat4 FitOrthoToCorners(const glm::vec3 corners[8], const glm::vec3& lightDir, float zPad)
+	// Bounding-sphere fit: rotation-invariant size + origin snapped to the texel grid -> no shimmer.
+	static glm::mat4 FitOrthoToCorners(const glm::vec3 corners[8], const glm::vec3& lightDir, float& outRadius)
 	{
 		glm::vec3 center(0.0f);
 		for (int i = 0; i < 8; ++i) center += corners[i];
 		center /= 8.0f;
 
+		float radius = 0.0f;
+		for (int i = 0; i < 8; ++i) radius = glm::max(radius, glm::length(corners[i] - center));
+		outRadius = radius;
+
 		glm::vec3 dir = glm::normalize(lightDir);
 		glm::vec3 up = glm::abs(dir.y) > 0.99f ? glm::vec3(0.0f, 0.0f, 1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
-		glm::mat4 lightView = glm::lookAt(center - dir, center, up);
 
-		glm::vec3 minB(FLT_MAX), maxB(-FLT_MAX);
-		for (int i = 0; i < 8; ++i)
-		{
-			glm::vec3 ls = glm::vec3(lightView * glm::vec4(corners[i], 1.0f));
-			minB = glm::min(minB, ls);
-			maxB = glm::max(maxB, ls);
-		}
+		// Snap the sphere center to whole-texel increments in light space.
+		float texelsPerUnit = float(Renderer3DData::SHADOW_RESOLUTION) / (2.0f * radius);
+		glm::mat4 toTexel = glm::scale(glm::mat4(1.0f), glm::vec3(texelsPerUnit)) * glm::lookAt(glm::vec3(0.0f), dir, up);
+		glm::mat4 toTexelInv = glm::inverse(toTexel);
 
-		// Pad the near plane toward the light so occluders just behind the slice still cast.
-		minB.z -= zPad;
-		maxB.z += zPad;
+		glm::vec4 c = toTexel * glm::vec4(center, 1.0f);
+		c.x = glm::floor(c.x);
+		c.y = glm::floor(c.y);
+		center = glm::vec3(toTexelInv * c);
 
-		glm::mat4 lightProj = glm::ortho(minB.x, maxB.x, minB.y, maxB.y, -maxB.z, -minB.z);
+		float depthExtent = radius * Renderer3DData::SHADOW_DEPTH_EXTENT;
+		glm::vec3 eye = center - dir * (radius * 2.0f);
+		glm::mat4 lightView = glm::lookAt(eye, center, up);
+		glm::mat4 lightProj = glm::ortho(-radius, radius, -radius, radius, -depthExtent, depthExtent);
 		return lightProj * lightView;
 	}
 
@@ -249,7 +258,10 @@ namespace Timefall
 				slice[k + 4] = nearC + edge * tF;
 			}
 
-			out.LightViewProj[c] = FitOrthoToCorners(slice, lightDir, 0.25f * (dFar - dNear) + 5.0f);
+			float radius = 0.0f;
+			out.LightViewProj[c] = FitOrthoToCorners(slice, lightDir, radius);
+			out.CascadeTexelWorld[c] = (2.0f * radius) / float(Renderer3DData::SHADOW_RESOLUTION);
+			out.CascadeDepthRange[c] = 2.0f * Renderer3DData::SHADOW_DEPTH_EXTENT * radius;
 			out.CascadeSplits[c] = dFar;
 			dNear = dFar;
 		}
@@ -267,17 +279,19 @@ namespace Timefall
 			s_Data.LightsDirty = false;
 		}
 
-		s_Data.SunCastsShadow = s_Data.LightsBuffer.DirCount > 0;
-
 		// Shadow depth pass: one draw set per cascade layer.
 		if (s_Data.SunCastsShadow)
 		{
-			glm::vec3 sunDir = glm::vec3(s_Data.LightsBuffer.DirLights[0].Direction);
-			ComputeCascades(s_Data.CameraBuffer.ViewProjection, s_Data.CameraBuffer.View, sunDir,
+			ComputeCascades(s_Data.CameraBuffer.ViewProjection, s_Data.CameraBuffer.View, s_Data.SunDirection,
 				Renderer3DData::SHADOW_MAX_DISTANCE, Renderer3DData::CASCADE_COUNT, s_Data.ShadowBuffer);
+			s_Data.ShadowBuffer.LightSize = s_Data.SunShadowSoftness * 0.16f;
+			s_Data.ShadowBuffer.DepthBias = s_Data.SunDepthBias;
 			s_Data.ShadowUniformBuffer->SetData(&s_Data.ShadowBuffer, sizeof(ShadowData));
 
 			s_Data.ShadowDepthShader->Bind();
+			// Cull front faces so the map stores back faces (second-depth): receivers don't
+			// self-shadow, which kills grazing-angle acne on closed geometry.
+			RenderCommand::SetFaceCulling(RendererAPI::FaceCull::Front);
 			s_Data.SunShadowMap->BeginRenderPass();
 			for (uint32_t c = 0; c < Renderer3DData::CASCADE_COUNT; ++c)
 			{
@@ -291,6 +305,14 @@ namespace Timefall
 				}
 			}
 			s_Data.SunShadowMap->EndRenderPass();
+			RenderCommand::SetFaceCulling(RendererAPI::FaceCull::None);
+		}
+		else
+		{
+			// No caster: zero the cascade count so the lit shader skips shadows (avoids
+			// sampling stale matrices / depth from a previous frame).
+			s_Data.ShadowBuffer.CascadeCount = 0;
+			s_Data.ShadowUniformBuffer->SetData(&s_Data.ShadowBuffer, sizeof(ShadowData));
 		}
 
 		s_Data.LitShader->Bind();
@@ -351,7 +373,8 @@ namespace Timefall
 		assetManager.AddMemoryOnlyAsset(BuiltInMesh::Plane,  s_Data.PlaneMesh,  "Plane",  AssetType::Mesh);
 	}
 
-	void Renderer3D::SubmitDirectionalLight(const glm::vec3& direction, const glm::vec3& color, float intensity)
+	void Renderer3D::SubmitDirectionalLight(const glm::vec3& direction, const glm::vec3& color, float intensity,
+		bool castsShadows, float shadowSoftness, float depthBias)
 	{
 		if (s_Data.LightsBuffer.DirCount >= (int)MAX_DIR_LIGHTS)
 			return;
@@ -360,6 +383,15 @@ namespace Timefall
 		light.Direction = glm::vec4(glm::normalize(direction), 0.0f);
 		light.Color     = glm::vec4(color, intensity);
 		s_Data.LightsDirty = true;
+
+		// First directional light flagged as a caster becomes the shadow sun.
+		if (castsShadows && !s_Data.SunCastsShadow)
+		{
+			s_Data.SunCastsShadow = true;
+			s_Data.SunDirection = glm::normalize(direction);
+			s_Data.SunShadowSoftness = shadowSoftness;
+			s_Data.SunDepthBias = depthBias;
+		}
 	}
 
 	void Renderer3D::SubmitPointLight(const glm::vec3& position, const glm::vec3& color, float intensity, float range)

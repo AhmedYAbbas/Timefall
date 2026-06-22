@@ -391,6 +391,9 @@ namespace Timefall
 			out << YAML::Key << "Range" << YAML::Value << lightComponent.Range;
 			out << YAML::Key << "InnerCutoff" << YAML::Value << lightComponent.InnerCutoff;
 			out << YAML::Key << "OuterCutoff" << YAML::Value << lightComponent.OuterCutoff;
+			out << YAML::Key << "CastsShadows" << YAML::Value << lightComponent.CastsShadows;
+			out << YAML::Key << "ShadowSoftness" << YAML::Value << lightComponent.ShadowSoftness;
+			out << YAML::Key << "DepthBias" << YAML::Value << lightComponent.DepthBias;
 
 			out << YAML::EndMap; // LightComponent
 		}
@@ -724,6 +727,12 @@ namespace Timefall
 					lc.Range       = lightComponent["Range"].as<float>();
 					lc.InnerCutoff = lightComponent["InnerCutoff"].as<float>();
 					lc.OuterCutoff = lightComponent["OuterCutoff"].as<float>();
+					if (lightComponent["CastsShadows"])
+						lc.CastsShadows = lightComponent["CastsShadows"].as<bool>();
+					if (lightComponent["ShadowSoftness"])
+						lc.ShadowSoftness = lightComponent["ShadowSoftness"].as<float>();
+					if (lightComponent["DepthBias"])
+						lc.DepthBias = lightComponent["DepthBias"].as<float>();
 				}
 
 				auto rigidbody2DComponent = entity["Rigidbody2DComponent"];

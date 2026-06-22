@@ -152,7 +152,9 @@ namespace Timefall
 			{ { 0.5f, 0.0f, 0.5f}, {0,1,0}, {1,1} },
 			{ {-0.5f, 0.0f, 0.5f}, {0,1,0}, {0,1} },
 		};
-		std::vector<uint32_t> indices = { 0, 1, 2, 2, 3, 0 };
+		// Wound so the geometric front face matches the +Y normal (consistent with the cube),
+		// which front-face shadow culling relies on.
+		std::vector<uint32_t> indices = { 0, 2, 1, 2, 0, 3 };
 		return Create(vertices, indices, { FullRangeSubmesh(vertices, (uint32_t)indices.size()) });
 	}
 }

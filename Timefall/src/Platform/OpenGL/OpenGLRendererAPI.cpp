@@ -100,4 +100,14 @@ namespace Timefall
         else
             glDisable(GL_DEPTH_TEST);
     }
+
+    void OpenGLRendererAPI::SetFaceCulling(FaceCull mode)
+    {
+        switch (mode)
+        {
+            case FaceCull::None:  glDisable(GL_CULL_FACE); break;
+            case FaceCull::Front: glEnable(GL_CULL_FACE); glCullFace(GL_FRONT); break;
+            case FaceCull::Back:  glEnable(GL_CULL_FACE); glCullFace(GL_BACK);  break;
+        }
+    }
 }
