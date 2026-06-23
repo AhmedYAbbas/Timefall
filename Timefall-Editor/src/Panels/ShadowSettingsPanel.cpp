@@ -33,6 +33,13 @@ namespace Timefall
 		if (ImGui::Combo("Resolution", &resIndex, kResolutionLabels, IM_ARRAYSIZE(kResolutionLabels)))
 			s.ShadowMapResolution = kResolutions[resIndex];
 
+		int spotResIndex = 1;
+		for (int i = 0; i < IM_ARRAYSIZE(kResolutions); ++i)
+			if (kResolutions[i] == s.SpotShadowResolution)
+				spotResIndex = i;
+		if (ImGui::Combo("Spot Resolution", &spotResIndex, kResolutionLabels, IM_ARRAYSIZE(kResolutionLabels)))
+			s.SpotShadowResolution = kResolutions[spotResIndex];
+
 		int cascadeCount = (int)s.CascadeCount;
 		if (ImGui::SliderInt("Cascade Count", &cascadeCount, 1, (int)ShadowSettings::MaxCascades))
 			s.CascadeCount = (uint32_t)cascadeCount;

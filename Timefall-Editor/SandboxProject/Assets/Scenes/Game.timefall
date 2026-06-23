@@ -9,6 +9,7 @@ ShadowSettings:
   PCFSamples: 16
   SoftShadows: true
   VisualizeCascades: false
+  SpotShadowResolution: 4096
   CullMode: 0
 Entities:
   - Entity: 379633497836092205
