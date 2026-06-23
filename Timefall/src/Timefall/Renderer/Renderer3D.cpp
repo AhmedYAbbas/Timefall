@@ -74,6 +74,13 @@ namespace Timefall
 		int32_t   SoftShadows = 1;         // 1 = PCSS, 0 = fixed-kernel PCF
 	};
 
+	// std140 mirror of the SpotShadows UBO block. Indexed by spot light index.
+	struct SpotShadowData
+	{
+		glm::mat4 LightViewProj[MAX_SPOT_LIGHTS];
+		glm::vec4 Params[MAX_SPOT_LIGHTS]; // x = casts(0/1), y = lightSize, z = depthBias, w = 0
+	};
+
 	struct Renderer3DData
 	{
 		Ref<MeshSource>    CubeMesh;
@@ -103,7 +110,13 @@ namespace Timefall
 		float              SunDepthBias = 1.0f;
 		ShadowSettings     Shadows;
 
+		Ref<ShadowMap>     SpotShadowMap;
+		Ref<UniformBuffer> SpotShadowUniformBuffer;
+		SpotShadowData     SpotShadowBuffer;
+		bool               AnySpotCasts = false;
+
 		static constexpr uint32_t SHADOW_SAMPLER_SLOT = 2;     // units 0=diffuse, 1=specular
+		static constexpr uint32_t SPOT_SHADOW_SAMPLER_SLOT = 3;
 		static constexpr float    SHADOW_DEPTH_EXTENT = 6.0f;  // ortho slab = radius * this each way along the light
 
 		// Per-frame render-state cache (reset in BeginScene) to skip redundant GL state changes
@@ -122,10 +135,12 @@ namespace Timefall
 		s_Data.LitShader = Shader::Create("assets/shaders/Renderer3D_Lit.glsl");
 		s_Data.ShadowDepthShader = Shader::Create("assets/shaders/Renderer3D_ShadowDepth.glsl");
 		s_Data.SunShadowMap = ShadowMap::Create(s_Data.Shadows.ShadowMapResolution, s_Data.Shadows.CascadeCount);
+		s_Data.SpotShadowMap = ShadowMap::Create(s_Data.Shadows.SpotShadowResolution, MAX_SPOT_LIGHTS);
 
 		s_Data.CameraUniformBuffer = UniformBuffer::Create(sizeof(CameraData), 0);
 		s_Data.LightsUniformBuffer = UniformBuffer::Create(sizeof(LightsData), 1);
 		s_Data.ShadowUniformBuffer = UniformBuffer::Create(sizeof(ShadowData), 2);
+		s_Data.SpotShadowUniformBuffer = UniformBuffer::Create(sizeof(SpotShadowData), 3);
 
 		s_Data.WhiteTexture = Texture2D::Create(TextureSpecification());
 		uint32_t whiteTextureData = 0xffffffff;
@@ -138,6 +153,7 @@ namespace Timefall
 		s_Data.LitShader->SetInt("u_DiffuseMap", 0);
 		s_Data.LitShader->SetInt("u_SpecularMap", 1);
 		s_Data.LitShader->SetInt("u_ShadowMap", (int)Renderer3DData::SHADOW_SAMPLER_SLOT);
+		s_Data.LitShader->SetInt("u_SpotShadowMap", (int)Renderer3DData::SPOT_SHADOW_SAMPLER_SLOT);
 	}
 
 	void Renderer3D::Shutdown()
@@ -158,6 +174,7 @@ namespace Timefall
 
 		s_Data.Submissions.clear();
 		s_Data.SunCastsShadow = false;
+		s_Data.AnySpotCasts = false;
 		s_Data.CurrentMaterial = nullptr;
 	}
 
@@ -175,6 +192,7 @@ namespace Timefall
 
 		s_Data.Submissions.clear();
 		s_Data.SunCastsShadow = false;
+		s_Data.AnySpotCasts = false;
 		s_Data.CurrentMaterial = nullptr;
 	}
 
@@ -189,6 +207,9 @@ namespace Timefall
 		{
 			s_Data.SunShadowMap = ShadowMap::Create(s_Data.Shadows.ShadowMapResolution, s_Data.Shadows.CascadeCount);
 		}
+
+		if (s_Data.SpotShadowMap->GetResolution() != s_Data.Shadows.SpotShadowResolution)
+			s_Data.SpotShadowMap = ShadowMap::Create(s_Data.Shadows.SpotShadowResolution, MAX_SPOT_LIGHTS);
 	}
 
 	// Bounding-sphere fit: rotation-invariant size + origin snapped to the texel grid -> no shimmer.
@@ -297,6 +318,16 @@ namespace Timefall
 		}
 	}
 
+	static glm::mat4 ComputeSpotMatrix(const glm::vec3& position, const glm::vec3& direction,
+		float range, float outerCutoffDegrees)
+	{
+		glm::vec3 dir = glm::normalize(direction);
+		glm::vec3 up = glm::abs(dir.y) > 0.99f ? glm::vec3(0.0f, 0.0f, 1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
+		glm::mat4 proj = glm::perspective(glm::radians(2.0f * outerCutoffDegrees), 1.0f, 0.05f, glm::max(range, 0.1f));
+		glm::mat4 view = glm::lookAt(position, position + dir, up);
+		return proj * view;
+	}
+
 	void Renderer3D::EndScene()
 	{
 		// Upload any pending light data once for the frame.
@@ -344,8 +375,33 @@ namespace Timefall
 			s_Data.ShadowUniformBuffer->SetData(&s_Data.ShadowBuffer, sizeof(ShadowData));
 		}
 
+		// Always upload so a spot that stopped casting this frame clears its stale caster flag.
+		s_Data.SpotShadowUniformBuffer->SetData(&s_Data.SpotShadowBuffer, sizeof(SpotShadowData));
+		if (s_Data.AnySpotCasts)
+		{
+			s_Data.ShadowDepthShader->Bind();
+			RenderCommand::SetFaceCulling(ToFaceCull(s_Data.Shadows.CullMode));
+			s_Data.SpotShadowMap->BeginRenderPass();
+			for (uint32_t i = 0; i < s_Data.LightsBuffer.SpotCount; ++i)
+			{
+				if (s_Data.SpotShadowBuffer.Params[i].x < 0.5f)
+					continue;
+				s_Data.ShadowDepthShader->SetMat4("u_LightSpaceMatrix", s_Data.SpotShadowBuffer.LightViewProj[i]);
+				s_Data.SpotShadowMap->BindLayer(i);
+				for (const MeshSubmission& sub : s_Data.Submissions)
+				{
+					s_Data.ShadowDepthShader->SetMat4("u_Model", sub.Transform);
+					const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
+					RenderCommand::DrawIndexed(sub.Mesh->GetVertexArray(), sm.IndexCount, sm.BaseIndex, sm.BaseVertex);
+				}
+			}
+			s_Data.SpotShadowMap->EndRenderPass();
+			RenderCommand::SetFaceCulling(RendererAPI::FaceCull::Back);
+		}
+
 		s_Data.LitShader->Bind();
 		s_Data.SunShadowMap->BindForSampling(Renderer3DData::SHADOW_SAMPLER_SLOT);
+		s_Data.SpotShadowMap->BindForSampling(Renderer3DData::SPOT_SHADOW_SAMPLER_SLOT);
 
 		s_Data.CurrentMaterial = nullptr;
 		for (const MeshSubmission& sub : s_Data.Submissions)
@@ -435,7 +491,8 @@ namespace Timefall
 	}
 
 	void Renderer3D::SubmitSpotLight(const glm::vec3& position, const glm::vec3& direction, const glm::vec3& color,
-		float intensity, float range, float innerCutoffDegrees, float outerCutoffDegrees)
+		float intensity, float range, float innerCutoffDegrees, float outerCutoffDegrees,
+		bool castsShadows, float shadowSoftness, float depthBias)
 	{
 		if (s_Data.LightsBuffer.SpotCount >= (int)MAX_SPOT_LIGHTS)
 			return;
@@ -443,11 +500,23 @@ namespace Timefall
 		float innerCos = glm::cos(glm::radians(innerCutoffDegrees));
 		float outerCos = glm::cos(glm::radians(outerCutoffDegrees));
 
+		uint32_t index = s_Data.LightsBuffer.SpotCount;
 		GpuSpotLight& light = s_Data.LightsBuffer.SpotLights[s_Data.LightsBuffer.SpotCount++];
 		light.Position  = glm::vec4(position, 0.0f);
 		light.Direction = glm::vec4(glm::normalize(direction), 0.0f);
 		light.Color     = glm::vec4(color, 0.0f);
 		light.Params    = glm::vec4(range, innerCos, outerCos, intensity);
 		s_Data.LightsDirty = true;
+
+		if (castsShadows)
+		{
+			s_Data.SpotShadowBuffer.LightViewProj[index] = ComputeSpotMatrix(position, direction, range, outerCutoffDegrees);
+			s_Data.SpotShadowBuffer.Params[index] = glm::vec4(1.0f, shadowSoftness * 0.16f, depthBias, 0.0f);
+			s_Data.AnySpotCasts = true;
+		}
+		else
+		{
+			s_Data.SpotShadowBuffer.Params[index] = glm::vec4(0.0f);
+		}
 	}
 }

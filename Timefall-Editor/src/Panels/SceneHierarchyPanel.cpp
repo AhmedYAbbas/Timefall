@@ -802,7 +802,8 @@ namespace Timefall
 				ImGui::DragFloat("Outer Cutoff", &component.OuterCutoff, 0.1f, 0.0f, 90.0f);
 			}
 
-			if (component.Type == LightComponent::LightType::Directional)
+			if (component.Type == LightComponent::LightType::Directional
+				|| component.Type == LightComponent::LightType::Spot)
 			{
 				ImGui::Checkbox("Casts Shadows", &component.CastsShadows);
 				if (component.CastsShadows)

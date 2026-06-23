@@ -85,6 +85,12 @@ layout(std140, binding = 2) uniform Shadows
 	int   u_SoftShadows;
 };
 
+layout(std140, binding = 3) uniform SpotShadows
+{
+	mat4 u_SpotLightViewProj[MAX_SPOT];
+	vec4 u_SpotShadowParams[MAX_SPOT];   // x = casts, y = lightSize, z = depthBias
+};
+
 uniform int u_EntityID;
 
 uniform vec3  u_DiffuseColor;
@@ -93,6 +99,7 @@ uniform float u_Shininess;
 uniform sampler2D u_DiffuseMap;
 uniform sampler2D u_SpecularMap;
 uniform sampler2DArray u_ShadowMap;
+uniform sampler2DArray u_SpotShadowMap;
 
 layout(location = 0) out vec4 o_Color;
 layout(location = 1) out int o_EntityID;
@@ -230,6 +237,20 @@ float ComputeSunShadow(vec3 worldPos, float viewDepth, int cascade, vec3 N, vec3
 	return shadow;
 }
 
+float SampleSpotShadow(vec3 worldPos, int i, vec3 N, vec3 L)
+{
+	vec4 ls = u_SpotLightViewProj[i] * vec4(worldPos, 1.0);
+	vec3 proj = ls.xyz / ls.w;
+	proj = proj * 0.5 + 0.5;
+	if (proj.z > 1.0)
+		return 0.0;
+
+	float NdotL = clamp(dot(N, L), 0.0, 1.0);
+	float bias = max(0.0025 * (1.0 - NdotL), 0.0005) * u_SpotShadowParams[i].z;
+	float closest = texture(u_SpotShadowMap, vec3(proj.xy, float(i))).r;
+	return (proj.z - bias) > closest ? 1.0 : 0.0;
+}
+
 void main()
 {
 	vec3 N = normalize(v_Normal);
@@ -283,6 +304,8 @@ void main()
 		float cone    = clamp((theta - outerCos) / max(innerCos - outerCos, 0.0001), 0.0, 1.0);
 
 		vec3 radiance = u_SpotLights[i].Color.rgb * intensity * att * cone;
+		if (u_SpotShadowParams[i].x > 0.5)
+			radiance *= (1.0 - SampleSpotShadow(v_WorldPos, i, N, L));
 		color += BlinnPhong(N, V, L, radiance, matDiffuse, matSpecular, u_Shininess);
 	}
 

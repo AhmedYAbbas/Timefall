@@ -11,11 +11,45 @@ ShadowSettings:
   VisualizeCascades: false
   CullMode: 0
 Entities:
+  - Entity: 379633497836092205
+    TagComponent:
+      Tag: Spot Light 2
+    TransformComponent:
+      Position: [4.934932, 3.806727, 1.5300152]
+      Rotation: [-0.3244916, 1.358866, 3.3861852e-05]
+      Scale: [0.99999845, 1, 0.9999995]
+    LightComponent:
+      Type: Spot
+      Color: [1, 1, 1]
+      Intensity: 1
+      Range: 24.2
+      InnerCutoff: 12.5
+      OuterCutoff: 31.1
+      CastsShadows: true
+      ShadowSoftness: 0.5
+      DepthBias: 1
+  - Entity: 18352939936871580739
+    TagComponent:
+      Tag: Spot Light 1
+    TransformComponent:
+      Position: [2.657693, 2.4891496, 4.346621]
+      Rotation: [-0.4061934, -0, 0]
+      Scale: [5.4479623, 3.1299999, 3.1299999]
+    LightComponent:
+      Type: Spot
+      Color: [1, 1, 1]
+      Intensity: 1
+      Range: 14.1
+      InnerCutoff: 16.2
+      OuterCutoff: 17.5
+      CastsShadows: true
+      ShadowSoftness: 0.41
+      DepthBias: 1
   - Entity: 10416499186478915510
     TagComponent:
-      Tag: Empty Entity
+      Tag: Sphere
     TransformComponent:
-      Position: [-1.3905451, 0.6249085, 0]
+      Position: [-1.3905451, 1.5563576, 1.4480224]
       Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
     MeshComponent:
@@ -24,7 +58,7 @@ Entities:
       Material: 0
   - Entity: 10746470915613893352
     TagComponent:
-      Tag: Empty Entity
+      Tag: Cube
     TransformComponent:
       Position: [2.1371999, 0.9079169, 0]
       Rotation: [0, -0, 0]
@@ -35,7 +69,7 @@ Entities:
       Material: 0
   - Entity: 3312706573496031648
     TagComponent:
-      Tag: Empty Entity
+      Tag: Plane
     TransformComponent:
       Position: [0, 0, 0]
       Rotation: [0, -0, 0]
@@ -46,7 +80,7 @@ Entities:
       Material: 0
   - Entity: 8068055778448417359
     TagComponent:
-      Tag: Empty Entity
+      Tag: Directional Light
     TransformComponent:
       Position: [0, 3.450551, -2.294454]
       Rotation: [-2.1655385, -0.18129024, -0.76652265]
