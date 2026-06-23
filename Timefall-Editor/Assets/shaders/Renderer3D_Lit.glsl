@@ -315,15 +315,65 @@ float SampleSpotShadow(vec3 worldPos, int i, vec3 N, vec3 L)
 float SamplePointShadow(vec3 worldPos, int i, vec3 N, vec3 L)
 {
 	int   layer = int(u_PointShadowParams[i].w);
-	vec3  lightPos = u_PointLights[i].Position.xyz;
-	float far = u_PointLights[i].Position.w;
+	vec3  lightPos  = u_PointLights[i].Position.xyz;
+	float far       = u_PointLights[i].Position.w;
+	float lightSize = u_PointShadowParams[i].y;
+
 	vec3  toFrag = worldPos - lightPos;
 	float dR = length(toFrag);
+	vec3  dir = toFrag / max(dR, 1e-4);
 
 	float NdotL = clamp(dot(N, L), 0.0, 1.0);
-	float bias = max(0.05 * (1.0 - NdotL), 0.01) * u_PointShadowParams[i].z;
-	float stored = texture(u_PointShadowMap, vec4(normalize(toFrag), float(layer))).r * far;
-	return (dR - bias) > stored ? 1.0 : 0.0;
+	// Larger world-distance bias than sun/spot: the cube's linear-distance depth is coarser.
+	float bias = max(0.25 * (1.0 - NdotL), 0.05) * u_PointShadowParams[i].z;
+
+	// Tangent basis perpendicular to the light->fragment direction.
+	vec3 up = abs(dir.y) > 0.99 ? vec3(0.0, 0.0, 1.0) : vec3(0.0, 1.0, 0.0);
+	vec3 T  = normalize(cross(up, dir));
+	vec3 B  = cross(dir, T);
+	float ign = InterleavedGradientNoise(gl_FragCoord.xy);
+	float rotation = ign * 6.2831853;
+
+	float angularRadius;
+	if (u_SoftShadows != 0)
+	{
+		float searchAngle = 0.05;
+		float blockerSum = 0.0;
+		int   blockerCount = 0;
+		for (int k = 0; k < u_BlockerSamples; ++k)
+		{
+			vec2 o = VogelDisk(k, u_BlockerSamples, 0.0) * searchAngle;
+			vec3 sd = normalize(dir + T * o.x + B * o.y);
+			float st = texture(u_PointShadowMap, vec4(sd, float(layer))).r * far;
+			if (st < dR - bias)
+			{
+				blockerSum += st;
+				blockerCount++;
+			}
+		}
+		if (blockerCount == 0)
+			return 0.0;
+
+		float dBlk = blockerSum / float(blockerCount);
+		float worldPenumbra = (dR - dBlk) / dBlk * lightSize;
+		angularRadius = clamp(worldPenumbra / dR, 0.0015, 0.03);
+	}
+	else
+	{
+		angularRadius = 0.01;
+	}
+
+	float shadow = 0.0;
+	for (int k = 0; k < u_PCFSamples; ++k)
+	{
+		// Per-pixel radial jitter breaks the Vogel disk's fixed-radius rings into grain.
+		float jitter = 0.7 + 0.3 * fract(ign + float(k) * 0.61803399);
+		vec2 o = VogelDisk(k, u_PCFSamples, rotation) * angularRadius * jitter;
+		vec3 sd = normalize(dir + T * o.x + B * o.y);
+		float st = texture(u_PointShadowMap, vec4(sd, float(layer))).r * far;
+		shadow += (dR - bias) > st ? 1.0 : 0.0;
+	}
+	return shadow / float(u_PCFSamples);
 }
 
 void main()
