@@ -42,7 +42,8 @@ namespace Timefall
 
 		static void SubmitDirectionalLight(const glm::vec3& direction, const glm::vec3& color, float intensity,
 			bool castsShadows = false, float shadowSoftness = 0.5f, float depthBias = 1.0f);
-		static void SubmitPointLight(const glm::vec3& position, const glm::vec3& color, float intensity, float range);
+		static void SubmitPointLight(const glm::vec3& position, const glm::vec3& color, float intensity, float range,
+			bool castsShadows = false, float shadowSoftness = 0.5f, float depthBias = 1.0f);
 		static void SubmitSpotLight(const glm::vec3& position, const glm::vec3& direction, const glm::vec3& color,
 			float intensity, float range, float innerCutoffDegrees, float outerCutoffDegrees,
 			bool castsShadows = false, float shadowSoftness = 0.5f, float depthBias = 1.0f);

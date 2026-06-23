@@ -91,6 +91,11 @@ layout(std140, binding = 3) uniform SpotShadows
 	vec4 u_SpotShadowParams[MAX_SPOT];   // x = casts, y = lightSize, z = depthBias
 };
 
+layout(std140, binding = 4) uniform PointShadows
+{
+	vec4 u_PointShadowParams[MAX_POINT]; // x = casts, y = lightSize, z = depthBias, w = cubeLayer
+};
+
 uniform int u_EntityID;
 
 uniform vec3  u_DiffuseColor;
@@ -100,6 +105,7 @@ uniform sampler2D u_DiffuseMap;
 uniform sampler2D u_SpecularMap;
 uniform sampler2DArray u_ShadowMap;
 uniform sampler2DArray u_SpotShadowMap;
+uniform samplerCubeArray u_PointShadowMap;
 
 layout(location = 0) out vec4 o_Color;
 layout(location = 1) out int o_EntityID;
@@ -306,6 +312,20 @@ float SampleSpotShadow(vec3 worldPos, int i, vec3 N, vec3 L)
 	return shadow / float(u_PCFSamples);
 }
 
+float SamplePointShadow(vec3 worldPos, int i, vec3 N, vec3 L)
+{
+	int   layer = int(u_PointShadowParams[i].w);
+	vec3  lightPos = u_PointLights[i].Position.xyz;
+	float far = u_PointLights[i].Position.w;
+	vec3  toFrag = worldPos - lightPos;
+	float dR = length(toFrag);
+
+	float NdotL = clamp(dot(N, L), 0.0, 1.0);
+	float bias = max(0.05 * (1.0 - NdotL), 0.01) * u_PointShadowParams[i].z;
+	float stored = texture(u_PointShadowMap, vec4(normalize(toFrag), float(layer))).r * far;
+	return (dR - bias) > stored ? 1.0 : 0.0;
+}
+
 void main()
 {
 	vec3 N = normalize(v_Normal);
@@ -338,6 +358,8 @@ void main()
 		vec3 L = toLight / max(dist, 0.0001);
 		float att = Attenuate(dist, u_PointLights[i].Position.w);
 		vec3 radiance = u_PointLights[i].Color.rgb * u_PointLights[i].Color.a * att;
+		if (u_PointShadowParams[i].x > 0.5)
+			radiance *= (1.0 - SamplePointShadow(v_WorldPos, i, N, L));
 		color += BlinnPhong(N, V, L, radiance, matDiffuse, matSpecular, u_Shininess);
 	}
 

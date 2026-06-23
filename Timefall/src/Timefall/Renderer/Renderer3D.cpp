@@ -7,6 +7,7 @@
 #include "Timefall/Renderer/RenderCommand.h"
 #include "Timefall/Renderer/Texture.h"
 #include "Timefall/Renderer/ShadowMap.h"
+#include "Timefall/Renderer/CubeShadowMap.h"
 #include "Timefall/Asset/AssetManager.h"
 #include "Timefall/Asset/EditorAssetManager.h"
 
@@ -81,6 +82,19 @@ namespace Timefall
 		glm::vec4 Params[MAX_SPOT_LIGHTS]; // x = casts(0/1), y = lightSize, z = depthBias, w = 0
 	};
 
+	// std140 mirror of the PointShadows UBO block. Indexed by point light index.
+	struct PointShadowData
+	{
+		glm::vec4 Params[MAX_POINT_LIGHTS]; // x = casts(0/1), y = lightSize, z = depthBias, w = cubeLayer
+	};
+
+	struct PointCaster
+	{
+		glm::vec3 Position;
+		float     Far;
+		uint32_t  Layer;
+	};
+
 	struct Renderer3DData
 	{
 		Ref<MeshSource>    CubeMesh;
@@ -102,6 +116,7 @@ namespace Timefall
 
 		Ref<ShadowMap>     SunShadowMap;
 		Ref<Shader>        ShadowDepthShader;
+		Ref<Shader>        PointShadowDepthShader;
 		Ref<UniformBuffer> ShadowUniformBuffer;
 		ShadowData         ShadowBuffer;
 		bool               SunCastsShadow = false;
@@ -115,8 +130,15 @@ namespace Timefall
 		SpotShadowData     SpotShadowBuffer;
 		bool               AnySpotCasts = false;
 
+		Ref<CubeShadowMap> PointShadowMap;
+		Ref<UniformBuffer> PointShadowUniformBuffer;
+		PointShadowData    PointShadowBuffer;
+		std::vector<PointCaster> PointCasters;
+		bool               AnyPointCasts = false;
+
 		static constexpr uint32_t SHADOW_SAMPLER_SLOT = 2;     // units 0=diffuse, 1=specular
 		static constexpr uint32_t SPOT_SHADOW_SAMPLER_SLOT = 3;
+		static constexpr uint32_t POINT_SHADOW_SAMPLER_SLOT = 4;
 		static constexpr float    SHADOW_DEPTH_EXTENT = 6.0f;  // ortho slab = radius * this each way along the light
 
 		// Per-frame render-state cache (reset in BeginScene) to skip redundant GL state changes
@@ -134,13 +156,16 @@ namespace Timefall
 
 		s_Data.LitShader = Shader::Create("assets/shaders/Renderer3D_Lit.glsl");
 		s_Data.ShadowDepthShader = Shader::Create("assets/shaders/Renderer3D_ShadowDepth.glsl");
+		s_Data.PointShadowDepthShader = Shader::Create("assets/shaders/Renderer3D_PointShadowDepth.glsl");
 		s_Data.SunShadowMap = ShadowMap::Create(s_Data.Shadows.ShadowMapResolution, s_Data.Shadows.CascadeCount);
 		s_Data.SpotShadowMap = ShadowMap::Create(s_Data.Shadows.SpotShadowResolution, MAX_SPOT_LIGHTS);
+		s_Data.PointShadowMap = CubeShadowMap::Create(s_Data.Shadows.PointShadowResolution, 1);
 
 		s_Data.CameraUniformBuffer = UniformBuffer::Create(sizeof(CameraData), 0);
 		s_Data.LightsUniformBuffer = UniformBuffer::Create(sizeof(LightsData), 1);
 		s_Data.ShadowUniformBuffer = UniformBuffer::Create(sizeof(ShadowData), 2);
 		s_Data.SpotShadowUniformBuffer = UniformBuffer::Create(sizeof(SpotShadowData), 3);
+		s_Data.PointShadowUniformBuffer = UniformBuffer::Create(sizeof(PointShadowData), 4);
 
 		s_Data.WhiteTexture = Texture2D::Create(TextureSpecification());
 		uint32_t whiteTextureData = 0xffffffff;
@@ -154,6 +179,7 @@ namespace Timefall
 		s_Data.LitShader->SetInt("u_SpecularMap", 1);
 		s_Data.LitShader->SetInt("u_ShadowMap", (int)Renderer3DData::SHADOW_SAMPLER_SLOT);
 		s_Data.LitShader->SetInt("u_SpotShadowMap", (int)Renderer3DData::SPOT_SHADOW_SAMPLER_SLOT);
+		s_Data.LitShader->SetInt("u_PointShadowMap", (int)Renderer3DData::POINT_SHADOW_SAMPLER_SLOT);
 	}
 
 	void Renderer3D::Shutdown()
@@ -175,6 +201,8 @@ namespace Timefall
 		s_Data.Submissions.clear();
 		s_Data.SunCastsShadow = false;
 		s_Data.AnySpotCasts = false;
+		s_Data.AnyPointCasts = false;
+		s_Data.PointCasters.clear();
 		s_Data.CurrentMaterial = nullptr;
 	}
 
@@ -193,6 +221,8 @@ namespace Timefall
 		s_Data.Submissions.clear();
 		s_Data.SunCastsShadow = false;
 		s_Data.AnySpotCasts = false;
+		s_Data.AnyPointCasts = false;
+		s_Data.PointCasters.clear();
 		s_Data.CurrentMaterial = nullptr;
 	}
 
@@ -210,6 +240,10 @@ namespace Timefall
 
 		if (s_Data.SpotShadowMap->GetResolution() != s_Data.Shadows.SpotShadowResolution)
 			s_Data.SpotShadowMap = ShadowMap::Create(s_Data.Shadows.SpotShadowResolution, MAX_SPOT_LIGHTS);
+
+		if (s_Data.PointShadowMap->GetResolution() != s_Data.Shadows.PointShadowResolution)
+			s_Data.PointShadowMap = CubeShadowMap::Create(s_Data.Shadows.PointShadowResolution,
+				s_Data.PointShadowMap->GetCubeCount());
 	}
 
 	// Bounding-sphere fit: rotation-invariant size + origin snapped to the texel grid -> no shimmer.
@@ -328,6 +362,13 @@ namespace Timefall
 		return proj * view;
 	}
 
+	static const glm::vec3 s_CubeFaceDir[6] = {
+		{ 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 }
+	};
+	static const glm::vec3 s_CubeFaceUp[6] = {
+		{ 0, -1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 }, { 0, -1, 0 }, { 0, -1, 0 }
+	};
+
 	void Renderer3D::EndScene()
 	{
 		// Upload any pending light data once for the frame.
@@ -402,9 +443,44 @@ namespace Timefall
 			RenderCommand::SetFaceCulling(RendererAPI::FaceCull::Back);
 		}
 
+		if (s_Data.AnyPointCasts)
+		{
+			uint32_t casterCount = (uint32_t)s_Data.PointCasters.size();
+			if (s_Data.PointShadowMap->GetCubeCount() < casterCount)
+				s_Data.PointShadowMap = CubeShadowMap::Create(s_Data.Shadows.PointShadowResolution, casterCount);
+
+			s_Data.PointShadowDepthShader->Bind();
+			RenderCommand::SetFaceCulling(ToFaceCull(s_Data.Shadows.CullMode));
+			s_Data.PointShadowMap->BeginRenderPass();
+			for (const PointCaster& caster : s_Data.PointCasters)
+			{
+				s_Data.PointShadowDepthShader->SetFloat3("u_LightPos", caster.Position);
+				s_Data.PointShadowDepthShader->SetFloat("u_Far", caster.Far);
+				glm::mat4 proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.05f, caster.Far);
+				for (uint32_t face = 0; face < 6; ++face)
+				{
+					glm::mat4 view = glm::lookAt(caster.Position, caster.Position + s_CubeFaceDir[face], s_CubeFaceUp[face]);
+					s_Data.PointShadowDepthShader->SetMat4("u_LightSpaceMatrix", proj * view);
+					s_Data.PointShadowMap->BindFace(caster.Layer, face);
+					for (const MeshSubmission& sub : s_Data.Submissions)
+					{
+						s_Data.PointShadowDepthShader->SetMat4("u_Model", sub.Transform);
+						const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
+						RenderCommand::DrawIndexed(sub.Mesh->GetVertexArray(), sm.IndexCount, sm.BaseIndex, sm.BaseVertex);
+					}
+				}
+			}
+			s_Data.PointShadowMap->EndRenderPass();
+			RenderCommand::SetFaceCulling(RendererAPI::FaceCull::Back);
+		}
+
+		// Always upload so a point that stopped casting this frame clears its stale caster flag.
+		s_Data.PointShadowUniformBuffer->SetData(&s_Data.PointShadowBuffer, sizeof(PointShadowData));
+
 		s_Data.LitShader->Bind();
 		s_Data.SunShadowMap->BindForSampling(Renderer3DData::SHADOW_SAMPLER_SLOT);
 		s_Data.SpotShadowMap->BindForSampling(Renderer3DData::SPOT_SHADOW_SAMPLER_SLOT);
+		s_Data.PointShadowMap->BindForSampling(Renderer3DData::POINT_SHADOW_SAMPLER_SLOT);
 
 		s_Data.CurrentMaterial = nullptr;
 		for (const MeshSubmission& sub : s_Data.Submissions)
@@ -482,15 +558,29 @@ namespace Timefall
 		}
 	}
 
-	void Renderer3D::SubmitPointLight(const glm::vec3& position, const glm::vec3& color, float intensity, float range)
+	void Renderer3D::SubmitPointLight(const glm::vec3& position, const glm::vec3& color, float intensity, float range,
+		bool castsShadows, float shadowSoftness, float depthBias)
 	{
 		if (s_Data.LightsBuffer.PointCount >= (int)MAX_POINT_LIGHTS)
 			return;
 
+		uint32_t index = s_Data.LightsBuffer.PointCount;
 		GpuPointLight& light = s_Data.LightsBuffer.PointLights[s_Data.LightsBuffer.PointCount++];
 		light.Position = glm::vec4(position, range);
 		light.Color    = glm::vec4(color, intensity);
 		s_Data.LightsDirty = true;
+
+		if (castsShadows && s_Data.PointCasters.size() < MAX_POINT_LIGHTS)
+		{
+			uint32_t layer = (uint32_t)s_Data.PointCasters.size();
+			s_Data.PointCasters.push_back({ position, glm::max(range, 0.1f), layer });
+			s_Data.PointShadowBuffer.Params[index] = glm::vec4(1.0f, shadowSoftness * 0.16f, depthBias, (float)layer);
+			s_Data.AnyPointCasts = true;
+		}
+		else
+		{
+			s_Data.PointShadowBuffer.Params[index] = glm::vec4(0.0f);
+		}
 	}
 
 	void Renderer3D::SubmitSpotLight(const glm::vec3& position, const glm::vec3& direction, const glm::vec3& color,

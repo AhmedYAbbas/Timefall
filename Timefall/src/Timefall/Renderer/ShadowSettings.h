@@ -20,6 +20,7 @@ namespace Timefall
 		bool     SoftShadows          = true;
 		bool     VisualizeCascades    = false;
 		uint32_t SpotShadowResolution = 1024;
+		uint32_t PointShadowResolution = 512;
 		ShadowCullMode CullMode       = ShadowCullMode::Back;
 	};
 }

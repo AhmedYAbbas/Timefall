@@ -702,7 +702,8 @@ namespace Timefall
 							light.CastsShadows, light.ShadowSoftness, light.DepthBias);
 						break;
 					case LightComponent::LightType::Point:
-						Renderer3D::SubmitPointLight(position, light.Color, light.Intensity, light.Range);
+						Renderer3D::SubmitPointLight(position, light.Color, light.Intensity, light.Range,
+							light.CastsShadows, light.ShadowSoftness, light.DepthBias);
 						break;
 					case LightComponent::LightType::Spot:
 						Renderer3D::SubmitSpotLight(position, direction, light.Color, light.Intensity,

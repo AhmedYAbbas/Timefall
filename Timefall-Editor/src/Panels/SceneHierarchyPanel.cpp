@@ -803,7 +803,8 @@ namespace Timefall
 			}
 
 			if (component.Type == LightComponent::LightType::Directional
-				|| component.Type == LightComponent::LightType::Spot)
+				|| component.Type == LightComponent::LightType::Spot
+				|| component.Type == LightComponent::LightType::Point)
 			{
 				ImGui::Checkbox("Casts Shadows", &component.CastsShadows);
 				if (component.CastsShadows)
