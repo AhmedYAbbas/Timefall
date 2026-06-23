@@ -4,6 +4,7 @@
 #include "Timefall/Core/UUID.h"
 #include "Timefall/Core/Timestep.h"
 #include "Timefall/Renderer/EditorCamera.h"
+#include "Timefall/Renderer/ShadowSettings.h"
 
 #include <entt.hpp>
 #include <box2d/id.h>
@@ -63,6 +64,9 @@ namespace Timefall
 		inline std::unordered_map<entt::entity, b2BodyId>& GetPhysicsBodiesMap() { return m_PhysicsBodiesMap; }
 
 		Entity GetPrimaryCameraEntity();
+
+		ShadowSettings& GetShadowSettings() { return m_ShadowSettings; }
+		const ShadowSettings& GetShadowSettings() const { return m_ShadowSettings; }
 
 		// Unprojects a viewport-relative pixel (top-left origin) to world (x, y) via the primary camera.
 		glm::vec2 ScreenToWorldPoint(const glm::vec2& viewportPixel);
@@ -128,6 +132,8 @@ namespace Timefall
 		int m_PhysicsSubStepCount = 4;
 
 		std::unordered_map<UUID, entt::entity> m_EntityMap;
+
+		ShadowSettings m_ShadowSettings;
 
 		// Entities queued for deferred destruction (flushed at end of runtime update).
 		std::vector<entt::entity> m_EntitiesToDestroy;

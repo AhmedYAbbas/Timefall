@@ -135,9 +135,9 @@ namespace Timefall
 			for (uint32_t j = 0; j < sectorCount; j++, k1++, k2++)
 			{
 				if (i != 0)
-					indices.insert(indices.end(), { k1, k2, k1 + 1 });
+					indices.insert(indices.end(), { k1, k1 + 1, k2 });
 				if (i != (stackCount - 1))
-					indices.insert(indices.end(), { k1 + 1, k2, k2 + 1 });
+					indices.insert(indices.end(), { k1 + 1, k2 + 1, k2 });
 			}
 		}
 

@@ -79,6 +79,10 @@ layout(std140, binding = 2) uniform Shadows
 	int   u_VisualizeCascades;
 	float u_LightSize;
 	float u_DepthBias;
+	float u_CascadeBlend;
+	int   u_BlockerSamples;
+	int   u_PCFSamples;
+	int   u_SoftShadows;
 };
 
 uniform int u_EntityID;
@@ -112,13 +116,10 @@ float Attenuate(float dist, float range)
 	return x * x;
 }
 
-const float CASCADE_BLEND = 0.1;  // blend band as a fraction of cascade extent
-
 const float BLOCKER_SEARCH_TEXELS = 24.0;
 const float MAX_FILTER_TEXELS     = 24.0;
+const float FIXED_PCF_TEXELS      = 2.0;  // fixed-kernel radius when soft shadows are off
 
-const int   BLOCKER_SAMPLES = 16;
-const int   PCF_SAMPLES     = 32;
 const float GOLDEN_ANGLE    = 2.39996323;
 
 // Interleaved gradient noise (Jimenez 2014): low-discrepancy per-pixel rotation seed.
@@ -161,42 +162,51 @@ float SampleShadowCascade(vec3 worldPos, int cascade, vec3 N, vec3 L)
 
 	float rotation = InterleavedGradientNoise(gl_FragCoord.xy) * 6.2831853;
 
-	// 1. Blocker search: average depth of texels closer to the light than the receiver.
-	// Fixed (un-rotated) pattern so the penumbra SIZE stays spatially coherent; per-pixel
-	// rotation here would make the kernel size flicker, which no amount of PCF taps can fix.
-	float searchUV = BLOCKER_SEARCH_TEXELS * texelUV;
-	float blockerSum = 0.0;
-	int   blockerCount = 0;
-	for (int i = 0; i < BLOCKER_SAMPLES; ++i)
+	float filterUV;
+	if (u_SoftShadows != 0)
 	{
-		vec2 off = VogelDisk(i, BLOCKER_SAMPLES, 0.0) * searchUV;
-		float d = texture(u_ShadowMap, vec3(proj.xy + off, float(cascade))).r;
-		if (d < receiver - bias)
+		// 1. Blocker search: average depth of texels closer to the light than the receiver.
+		// Fixed (un-rotated) pattern so the penumbra SIZE stays spatially coherent; per-pixel
+		// rotation here would make the kernel size flicker, which no amount of PCF taps can fix.
+		float searchUV = BLOCKER_SEARCH_TEXELS * texelUV;
+		float blockerSum = 0.0;
+		int   blockerCount = 0;
+		for (int i = 0; i < u_BlockerSamples; ++i)
 		{
-			blockerSum += d;
-			blockerCount++;
+			vec2 off = VogelDisk(i, u_BlockerSamples, 0.0) * searchUV;
+			float d = texture(u_ShadowMap, vec3(proj.xy + off, float(cascade))).r;
+			if (d < receiver - bias)
+			{
+				blockerSum += d;
+				blockerCount++;
+			}
 		}
+		if (blockerCount == 0)
+			return 0.0; // no occluder -> fully lit
+
+		float avgBlocker = blockerSum / float(blockerCount);
+
+		// 2. Penumbra (directional): depth gap -> world, scale by light size, back to texels.
+		float worldGap = (receiver - avgBlocker) * u_CascadeDepthRange[cascade];
+		float penumbraTexels = (worldGap * u_LightSize) / u_CascadeTexelWorld[cascade];
+		filterUV = clamp(penumbraTexels, 1.0, MAX_FILTER_TEXELS) * texelUV;
 	}
-	if (blockerCount == 0)
-		return 0.0; // no occluder -> fully lit
-
-	float avgBlocker = blockerSum / float(blockerCount);
-
-	// 2. Penumbra (directional): depth gap -> world, scale by light size, back to texels.
-	float worldGap = (receiver - avgBlocker) * u_CascadeDepthRange[cascade];
-	float penumbraTexels = (worldGap * u_LightSize) / u_CascadeTexelWorld[cascade];
-	float filterUV = clamp(penumbraTexels, 1.0, MAX_FILTER_TEXELS) * texelUV;
+	else
+	{
+		// Fixed-kernel PCF: uniform softness, no blocker search / penumbra estimate.
+		filterUV = FIXED_PCF_TEXELS * texelUV;
+	}
 
 	// 3. Variable-kernel PCF over the rotated Vogel disk.
 	float sum = 0.0;
-	for (int i = 0; i < PCF_SAMPLES; ++i)
+	for (int i = 0; i < u_PCFSamples; ++i)
 	{
-		vec2 off = VogelDisk(i, PCF_SAMPLES, rotation) * filterUV;
+		vec2 off = VogelDisk(i, u_PCFSamples, rotation) * filterUV;
 		float closest = texture(u_ShadowMap, vec3(proj.xy + off, float(cascade))).r;
 		sum += (receiver - bias) > closest ? 1.0 : 0.0;
 	}
 
-	return sum / float(PCF_SAMPLES);
+	return sum / float(u_PCFSamples);
 }
 
 // Sun shadow with a blend across the cascade boundary to hide the resolution seam.
@@ -208,7 +218,7 @@ float ComputeSunShadow(vec3 worldPos, float viewDepth, int cascade, vec3 N, vec3
 	{
 		float splitFar  = u_CascadeSplits[cascade];
 		float prevSplit = cascade == 0 ? 0.0 : u_CascadeSplits[cascade - 1];
-		float band = (splitFar - prevSplit) * CASCADE_BLEND;
+		float band = (splitFar - prevSplit) * u_CascadeBlend;
 		float t = (viewDepth - (splitFar - band)) / max(band, 1e-4);
 		if (t > 0.0)
 		{

@@ -1,6 +1,7 @@
 #include "EditorLayer.h"
 
 #include "Timefall/Scene/Scene.h"
+#include "Timefall/Scene/SceneManager.h"
 
 #include "Timefall/Utils/PlatformUtils.h"
 #include "Timefall/Scripting/ScriptEngine.h"
@@ -12,13 +13,12 @@
 #include "Timefall/Asset/EditorAssetManager.h"
 
 #include <imgui/imgui.h>
+#include "ImGuizmo.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include <cmath>
-
-#include "ImGuizmo.h"
 
 namespace Timefall
 {
@@ -308,6 +308,7 @@ namespace Timefall
 
 		m_SceneHierarchyPanel.OnImGuiRender();
 		m_ContentBrowserPanel->OnImGuiRender(GetActiveScene());
+		m_ShadowSettingsPanel.OnImGuiRender(GetActiveScene());
 
 		ImGui::Begin("Stats");
 

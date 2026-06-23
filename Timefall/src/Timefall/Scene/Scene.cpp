@@ -59,6 +59,7 @@ namespace Timefall
 
 		dstScene->m_ViewportWidth = srcScene->m_ViewportWidth;
 		dstScene->m_ViewportHeight = srcScene->m_ViewportHeight;
+		dstScene->m_ShadowSettings = srcScene->m_ShadowSettings;
 
 		auto& srcSceneRegistry = srcScene->m_Registry;
 		auto& dstSceneRegistry = dstScene->m_Registry;
@@ -683,6 +684,7 @@ namespace Timefall
 		// --- 3D pass (depth-tested) ---
 		RenderCommand::SetDepthTest(true);
 		Renderer3D::BeginScene(camera);
+		Renderer3D::SetShadowSettings(m_ShadowSettings);
 		// Gather lights (must precede mesh submission — meshes read the Lights UBO).
 		{
 			auto lightView = m_Registry.view<TransformComponent, LightComponent>();

@@ -4,6 +4,7 @@
 #include "Timefall/Renderer/Camera.h"
 #include "Timefall/Renderer/Mesh.h"
 #include "Timefall/Renderer/Material.h"
+#include "Timefall/Renderer/ShadowSettings.h"
 #include "Timefall/Asset/Asset.h"
 
 #include <glm/glm.hpp>
@@ -28,6 +29,9 @@ namespace Timefall
 		static void BeginScene(const EditorCamera& camera);
 		static void BeginScene(const Camera& camera, const glm::mat4& transform);
 		static void EndScene();
+
+		// Call before EndScene. Recreates the shadow map on resolution / cascade-count change.
+		static void SetShadowSettings(const ShadowSettings& settings);
 
 		static void SubmitMesh(const glm::mat4& transform, const Ref<MeshSource>& mesh, uint32_t submeshIndex,
 			const Ref<Material>& material, int entityID = -1);

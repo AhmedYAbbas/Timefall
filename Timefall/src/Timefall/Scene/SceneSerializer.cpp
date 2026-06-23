@@ -465,6 +465,23 @@ namespace Timefall
 		YAML::Emitter out;
 		out << YAML::BeginMap;
 		out << YAML::Key << "Scene" << YAML::Value << "Timefall Scene";
+
+		{
+			const ShadowSettings& s = m_Scene->m_ShadowSettings;
+			out << YAML::Key << "ShadowSettings" << YAML::Value << YAML::BeginMap;
+			out << YAML::Key << "CascadeCount"         << YAML::Value << s.CascadeCount;
+			out << YAML::Key << "ShadowMapResolution"  << YAML::Value << s.ShadowMapResolution;
+			out << YAML::Key << "MaxShadowDistance"    << YAML::Value << s.MaxShadowDistance;
+			out << YAML::Key << "SplitLambda"          << YAML::Value << s.SplitLambda;
+			out << YAML::Key << "CascadeBlend"         << YAML::Value << s.CascadeBlend;
+			out << YAML::Key << "BlockerSearchSamples" << YAML::Value << s.BlockerSearchSamples;
+			out << YAML::Key << "PCFSamples"           << YAML::Value << s.PCFSamples;
+			out << YAML::Key << "SoftShadows"          << YAML::Value << s.SoftShadows;
+			out << YAML::Key << "VisualizeCascades"    << YAML::Value << s.VisualizeCascades;
+			out << YAML::Key << "CullMode"             << YAML::Value << (uint32_t)s.CullMode;
+			out << YAML::EndMap;
+		}
+
 		out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 		m_Scene->m_Registry.view<entt::entity>().each([&](auto entityID)
 		{
@@ -509,6 +526,22 @@ namespace Timefall
 
 		std::string sceneName = data["Scene"].as<std::string>();
 		TF_CORE_TRACE("Deserializing scene '{0}'", sceneName);
+
+		// Missing keys keep the struct's defaults, so older scenes load fine.
+		if (auto shadows = data["ShadowSettings"])
+		{
+			ShadowSettings& s = m_Scene->m_ShadowSettings;
+			if (shadows["CascadeCount"])         s.CascadeCount         = shadows["CascadeCount"].as<uint32_t>();
+			if (shadows["ShadowMapResolution"])  s.ShadowMapResolution  = shadows["ShadowMapResolution"].as<uint32_t>();
+			if (shadows["MaxShadowDistance"])    s.MaxShadowDistance    = shadows["MaxShadowDistance"].as<float>();
+			if (shadows["SplitLambda"])          s.SplitLambda          = shadows["SplitLambda"].as<float>();
+			if (shadows["CascadeBlend"])         s.CascadeBlend         = shadows["CascadeBlend"].as<float>();
+			if (shadows["BlockerSearchSamples"]) s.BlockerSearchSamples = shadows["BlockerSearchSamples"].as<uint32_t>();
+			if (shadows["PCFSamples"])           s.PCFSamples           = shadows["PCFSamples"].as<uint32_t>();
+			if (shadows["SoftShadows"])          s.SoftShadows          = shadows["SoftShadows"].as<bool>();
+			if (shadows["VisualizeCascades"])    s.VisualizeCascades    = shadows["VisualizeCascades"].as<bool>();
+			if (shadows["CullMode"])             s.CullMode             = (ShadowCullMode)shadows["CullMode"].as<uint32_t>();
+		}
 
 		if (auto entities = data["Entities"])
 		{

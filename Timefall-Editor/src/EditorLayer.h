@@ -1,9 +1,10 @@
 #pragma once
 
 #include "Timefall.h"
-#include "Timefall/Scene/SceneManager.h"
 #include "Panels/SceneHierarchyPanel.h"
 #include "Panels/ContentBrowserPanel.h"
+#include "Panels/ShadowSettingsPanel.h"
+
 #include <filesystem>
 
 namespace Timefall
@@ -89,5 +90,6 @@ namespace Timefall
 
 		SceneHierarchyPanel m_SceneHierarchyPanel;
 		Scope<ContentBrowserPanel> m_ContentBrowserPanel;
+		ShadowSettingsPanel m_ShadowSettingsPanel;
 	};
 }

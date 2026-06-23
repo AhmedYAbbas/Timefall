@@ -1,4 +1,15 @@
 Scene: Timefall Scene
+ShadowSettings:
+  CascadeCount: 4
+  ShadowMapResolution: 4096
+  MaxShadowDistance: 100
+  SplitLambda: 0.848
+  CascadeBlend: 0.143
+  BlockerSearchSamples: 16
+  PCFSamples: 16
+  SoftShadows: true
+  VisualizeCascades: false
+  CullMode: 0
 Entities:
   - Entity: 10416499186478915510
     TagComponent:
@@ -38,8 +49,8 @@ Entities:
       Tag: Empty Entity
     TransformComponent:
       Position: [0, 3.450551, -2.294454]
-      Rotation: [-2.2102263, -0.9707103, -0.9994547]
-      Scale: [1, 0.99994564, 0.99993205]
+      Rotation: [-2.1655385, -0.18129024, -0.76652265]
+      Scale: [0.9999999, 0.9999622, 0.9999472]
     LightComponent:
       Type: Directional
       Color: [1, 1, 1]
@@ -47,6 +58,9 @@ Entities:
       Range: 10
       InnerCutoff: 12.5
       OuterCutoff: 17.5
+      CastsShadows: true
+      ShadowSoftness: 0.5
+      DepthBias: 0.5
   - Entity: 7545432824266683476
     TagComponent:
       Tag: Camera
