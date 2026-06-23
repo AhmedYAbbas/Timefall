@@ -574,7 +574,7 @@ namespace Timefall
 		{
 			uint32_t layer = (uint32_t)s_Data.PointCasters.size();
 			s_Data.PointCasters.push_back({ position, glm::max(range, 0.1f), layer });
-			s_Data.PointShadowBuffer.Params[index] = glm::vec4(1.0f, shadowSoftness * 0.16f, depthBias, (float)layer);
+			s_Data.PointShadowBuffer.Params[index] = glm::vec4(1.0f, shadowSoftness * 0.10f, depthBias, (float)layer);
 			s_Data.AnyPointCasts = true;
 		}
 		else

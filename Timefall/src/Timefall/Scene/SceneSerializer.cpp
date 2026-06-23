@@ -479,6 +479,7 @@ namespace Timefall
 			out << YAML::Key << "SoftShadows"          << YAML::Value << s.SoftShadows;
 			out << YAML::Key << "VisualizeCascades"    << YAML::Value << s.VisualizeCascades;
 			out << YAML::Key << "SpotShadowResolution" << YAML::Value << s.SpotShadowResolution;
+			out << YAML::Key << "PointShadowResolution" << YAML::Value << s.PointShadowResolution;
 			out << YAML::Key << "CullMode"             << YAML::Value << (uint32_t)s.CullMode;
 			out << YAML::EndMap;
 		}
@@ -542,6 +543,7 @@ namespace Timefall
 			if (shadows["SoftShadows"])          s.SoftShadows          = shadows["SoftShadows"].as<bool>();
 			if (shadows["VisualizeCascades"])    s.VisualizeCascades    = shadows["VisualizeCascades"].as<bool>();
 			if (shadows["SpotShadowResolution"]) s.SpotShadowResolution = shadows["SpotShadowResolution"].as<uint32_t>();
+			if (shadows["PointShadowResolution"]) s.PointShadowResolution = shadows["PointShadowResolution"].as<uint32_t>();
 			if (shadows["CullMode"])             s.CullMode             = (ShadowCullMode)shadows["CullMode"].as<uint32_t>();
 		}
 

@@ -356,7 +356,7 @@ float SamplePointShadow(vec3 worldPos, int i, vec3 N, vec3 L)
 
 		float dBlk = blockerSum / float(blockerCount);
 		float worldPenumbra = (dR - dBlk) / dBlk * lightSize;
-		angularRadius = clamp(worldPenumbra / dR, 0.0015, 0.03);
+		angularRadius = clamp(worldPenumbra / dR, 0.0015, 0.06);
 	}
 	else
 	{
