@@ -237,6 +237,12 @@ float ComputeSunShadow(vec3 worldPos, float viewDepth, int cascade, vec3 N, vec3
 	return shadow;
 }
 
+float LinearizeDepth(float d, float near, float far)
+{
+	float z = d * 2.0 - 1.0; // depth-buffer [0,1] -> NDC [-1,1]
+	return (2.0 * near * far) / (far + near - z * (far - near));
+}
+
 float SampleSpotShadow(vec3 worldPos, int i, vec3 N, vec3 L)
 {
 	vec4 ls = u_SpotLightViewProj[i] * vec4(worldPos, 1.0);
@@ -245,10 +251,59 @@ float SampleSpotShadow(vec3 worldPos, int i, vec3 N, vec3 L)
 	if (proj.z > 1.0)
 		return 0.0;
 
-	float NdotL = clamp(dot(N, L), 0.0, 1.0);
-	float bias = max(0.0025 * (1.0 - NdotL), 0.0005) * u_SpotShadowParams[i].z;
-	float closest = texture(u_SpotShadowMap, vec3(proj.xy, float(i))).r;
-	return (proj.z - bias) > closest ? 1.0 : 0.0;
+	float NdotL     = clamp(dot(N, L), 0.0, 1.0);
+	float bias      = max(0.0025 * (1.0 - NdotL), 0.0005) * u_SpotShadowParams[i].z;
+	float lightSize = u_SpotShadowParams[i].y;
+	float receiver  = proj.z;
+	float texelUV   = 1.0 / float(textureSize(u_SpotShadowMap, 0).x);
+	float rotation  = InterleavedGradientNoise(gl_FragCoord.xy) * 6.2831853;
+
+	float filterUV;
+	if (u_SoftShadows != 0)
+	{
+		float searchUV = BLOCKER_SEARCH_TEXELS * texelUV;
+		float blockerSum = 0.0;
+		int   blockerCount = 0;
+		for (int s = 0; s < u_BlockerSamples; ++s)
+		{
+			vec2 off = VogelDisk(s, u_BlockerSamples, 0.0) * searchUV;
+			float d = texture(u_SpotShadowMap, vec3(proj.xy + off, float(i))).r;
+			if (d < receiver - bias)
+			{
+				blockerSum += d;
+				blockerCount++;
+			}
+		}
+		if (blockerCount == 0)
+			return 0.0;
+
+		float avgBlocker = blockerSum / float(blockerCount);
+
+		// Fernando PCSS in linear depth: world penumbra width -> UV via the frustum width at the receiver.
+		float near = 0.05;
+		float far  = u_SpotLights[i].Params.x;                              // spot range
+		float outerCos = u_SpotLights[i].Params.z;
+		float tanHalf  = sqrt(max(1.0 - outerCos * outerCos, 0.0)) / max(outerCos, 1e-3);
+
+		float linReceiver = LinearizeDepth(receiver, near, far);
+		float linBlocker  = LinearizeDepth(avgBlocker, near, far);
+		float worldPenumbra = (linReceiver - linBlocker) / linBlocker * lightSize;
+		float worldPerUV    = 2.0 * linReceiver * tanHalf;                  // frustum width at the receiver
+		filterUV = clamp(worldPenumbra / max(worldPerUV, 1e-4), texelUV, MAX_FILTER_TEXELS * texelUV);
+	}
+	else
+	{
+		filterUV = FIXED_PCF_TEXELS * texelUV;
+	}
+
+	float shadow = 0.0;
+	for (int s = 0; s < u_PCFSamples; ++s)
+	{
+		vec2 off = VogelDisk(s, u_PCFSamples, rotation) * filterUV;
+		float closest = texture(u_SpotShadowMap, vec3(proj.xy + off, float(i))).r;
+		shadow += (receiver - bias) > closest ? 1.0 : 0.0;
+	}
+	return shadow / float(u_PCFSamples);
 }
 
 void main()

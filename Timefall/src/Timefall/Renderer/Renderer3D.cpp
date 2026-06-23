@@ -337,6 +337,13 @@ namespace Timefall
 			s_Data.LightsDirty = false;
 		}
 
+		// Shared PCSS quality, read by both the sun cascades and spot shadows — must reach the
+		// GPU even when no sun casts (spots still sample the Shadows UBO for these).
+		s_Data.ShadowBuffer.CascadeBlend = s_Data.Shadows.CascadeBlend;
+		s_Data.ShadowBuffer.BlockerSamples = (int32_t)s_Data.Shadows.BlockerSearchSamples;
+		s_Data.ShadowBuffer.PCFSamples = (int32_t)s_Data.Shadows.PCFSamples;
+		s_Data.ShadowBuffer.SoftShadows = s_Data.Shadows.SoftShadows ? 1 : 0;
+
 		// Shadow depth pass: one draw set per cascade layer.
 		if (s_Data.SunCastsShadow)
 		{
@@ -344,10 +351,6 @@ namespace Timefall
 				s_Data.Shadows, s_Data.ShadowBuffer);
 			s_Data.ShadowBuffer.LightSize = s_Data.SunShadowSoftness * 0.16f;
 			s_Data.ShadowBuffer.DepthBias = s_Data.SunDepthBias;
-			s_Data.ShadowBuffer.CascadeBlend = s_Data.Shadows.CascadeBlend;
-			s_Data.ShadowBuffer.BlockerSamples = (int32_t)s_Data.Shadows.BlockerSearchSamples;
-			s_Data.ShadowBuffer.PCFSamples = (int32_t)s_Data.Shadows.PCFSamples;
-			s_Data.ShadowBuffer.SoftShadows = s_Data.Shadows.SoftShadows ? 1 : 0;
 			s_Data.ShadowUniformBuffer->SetData(&s_Data.ShadowBuffer, sizeof(ShadowData));
 
 			s_Data.ShadowDepthShader->Bind();
