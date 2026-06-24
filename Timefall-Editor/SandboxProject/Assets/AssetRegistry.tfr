@@ -11,12 +11,21 @@ AssetRegistry:
   - Handle: 120916045623469682
     FilePath: Models/textures/wood_tile_01_BaseColor.png
     Type: Texture2D
+  - Handle: 182545799455387449
+    FilePath: Materials/NewSponza_Main_glTF_003_stone_trims_02.tfmat
+    Type: Material
+  - Handle: 214184687880811477
+    FilePath: Models/textures/wood_tile_01_BaseColor.png
+    Type: Texture2D
   - Handle: 226858714522468798
     FilePath: Materials/NewSponza_Main_glTF_003_dirt_decal.tfmat
     Type: Material
   - Handle: 275272341515824835
     FilePath: Materials/NewSponza_Main_glTF_003_column_head_1stfloor.tfmat
     Type: Material
+  - Handle: 362470951624200294
+    FilePath: Models/textures/ceiling_plaster_01_Normal.png
+    Type: Texture2D
   - Handle: 500147264452498102
     FilePath: Materials/NewSponza_Main_glTF_003_metal_door.tfmat
     Type: Material
@@ -43,6 +52,15 @@ AssetRegistry:
     Type: Texture2D
   - Handle: 748017606295878556
     FilePath: Materials/NewSponza_Main_glTF_003_wood_01.tfmat
+    Type: Material
+  - Handle: 816492475494591028
+    FilePath: Materials/NewSponza_Main_glTF_003_column_brickwall_01.tfmat
+    Type: Material
+  - Handle: 838773118974604119
+    FilePath: Models/textures/wood_door_01_BaseColor.png
+    Type: Texture2D
+  - Handle: 856129275262533730
+    FilePath: Materials/NewSponza_Main_glTF_003_wood_door_01.tfmat
     Type: Material
   - Handle: 858314312967275278
     FilePath: Materials/tv velha_DefaultMaterial.tfmat
@@ -80,6 +98,9 @@ AssetRegistry:
   - Handle: 1189540321269265435
     FilePath: Materials/NewSponza_Main_Zup_003_ceiling_plaster_02.tfmat
     Type: Material
+  - Handle: 1195428405797656457
+    FilePath: Materials/NewSponza_Main_glTF_003_column_head_2ndfloor_03.tfmat
+    Type: Material
   - Handle: 1233334657166001643
     FilePath: Models/NewSponza_Main_Yup_003.fbx
     Type: Mesh
@@ -101,6 +122,9 @@ AssetRegistry:
   - Handle: 1492068347681210905
     FilePath: Materials/NewSponza_Main_glTF_003_door_stoneframe_02.tfmat
     Type: Material
+  - Handle: 1516441242517560438
+    FilePath: Models/textures/door_stoneframe_01_Normal.png
+    Type: Texture2D
   - Handle: 1591037150255396106
     FilePath: Models/textures/brickwall_02_BaseColor.png
     Type: Texture2D
@@ -113,6 +137,9 @@ AssetRegistry:
   - Handle: 1726043383061027032
     FilePath: Materials/NewSponza_Main_glTF_003_brickwall_01.tfmat
     Type: Material
+  - Handle: 1759287153809622985
+    FilePath: Models/textures/metal_door_01_Normal.png
+    Type: Texture2D
   - Handle: 1860329522833529660
     FilePath: Materials/NewSponza_Main_Yup_003_column_1stfloor.tfmat
     Type: Material
@@ -122,6 +149,9 @@ AssetRegistry:
   - Handle: 2027837146598203769
     FilePath: Materials/NewSponza_Main_glTF_003_column_brickwall_01.tfmat
     Type: Material
+  - Handle: 2031807226864961126
+    FilePath: Models/textures/window_frame_01_BaseColor.png
+    Type: Texture2D
   - Handle: 2096612367482551860
     FilePath: Materials/NewSponza_Main_Zup_003_dirt_decal.tfmat
     Type: Material
@@ -164,6 +194,12 @@ AssetRegistry:
   - Handle: 2830407622982238548
     FilePath: Models/textures/ceiling_plaster_01_BaseColor.png
     Type: Texture2D
+  - Handle: 2870886381009397622
+    FilePath: Models/textures/brickwall_01_BaseColor.png
+    Type: Texture2D
+  - Handle: 2876346047560377460
+    FilePath: Models/textures/brickwall_01_Normal.png
+    Type: Texture2D
   - Handle: 2909801009288383357
     FilePath: Models/textures/wood_door_01_BaseColor.png
     Type: Texture2D
@@ -179,6 +215,9 @@ AssetRegistry:
   - Handle: 2995742293344968933
     FilePath: Materials/NewSponza_Main_glTF_003_ceiling_plaster_02.tfmat
     Type: Material
+  - Handle: 3006202264381302350
+    FilePath: Materials/NewSponza_Main_glTF_003_column_head_1stfloor.tfmat
+    Type: Material
   - Handle: 3025382866165550268
     FilePath: Materials/tv velha_Mat.tfmat
     Type: Material
@@ -190,6 +229,9 @@ AssetRegistry:
     Type: Material
   - Handle: 3122574492726714224
     FilePath: Models/textures/metal_door_01_BaseColor.png
+    Type: Texture2D
+  - Handle: 3145493834608934038
+    FilePath: Models/textures/door_stoneframe_02_BaseColor.png
     Type: Texture2D
   - Handle: 3148826695733697644
     FilePath: Materials/NewSponza_Main_glTF_003_arch_stone_wall_01.tfmat
@@ -230,6 +272,9 @@ AssetRegistry:
   - Handle: 3515667479700187907
     FilePath: Materials/NewSponza_Main_glTF_003_column_head_2ndfloor_03.tfmat
     Type: Material
+  - Handle: 3569195576946273339
+    FilePath: Models/textures/lionhead_01_Normal.png
+    Type: Texture2D
   - Handle: 3599750157843905819
     FilePath: Models/textures/col_head_1stfloor_BaseColor.png
     Type: Texture2D
@@ -238,6 +283,9 @@ AssetRegistry:
     Type: Material
   - Handle: 3613950123571375232
     FilePath: Materials/NewSponza_Main_glTF_003_brickwall_02.tfmat
+    Type: Material
+  - Handle: 3624527259039396257
+    FilePath: Materials/NewSponza_Main_glTF_003_lamp_glass_01.tfmat
     Type: Material
   - Handle: 3814902145375756632
     FilePath: Models/textures/wood_tile_01_BaseColor.png
@@ -256,6 +304,9 @@ AssetRegistry:
     Type: Texture2D
   - Handle: 4039277506355301126
     FilePath: Materials/NewSponza_Main_glTF_003_stone_trims_02.tfmat
+    Type: Material
+  - Handle: 4100011817384404979
+    FilePath: Materials/NewSponza_Main_glTF_003_brickwall_01.tfmat
     Type: Material
   - Handle: 4104731682876893028
     FilePath: Models/textures/col_head_1stfloor_BaseColor.png
@@ -323,6 +374,9 @@ AssetRegistry:
   - Handle: 5063284575058095071
     FilePath: Materials/NewSponza_Main_Zup_003_lamp_glass_01.tfmat
     Type: Material
+  - Handle: 5155788505171486632
+    FilePath: Materials/NewSponza_Main_glTF_003_floor_01.tfmat
+    Type: Material
   - Handle: 5160015212705472429
     FilePath: Materials/NewSponza_Main_glTF_003_dirt_decal.tfmat
     Type: Material
@@ -344,6 +398,15 @@ AssetRegistry:
   - Handle: 5359472662337153993
     FilePath: Materials/NewSponza_Main_glTF_003_wood_door_01.tfmat
     Type: Material
+  - Handle: 5430876861694660442
+    FilePath: Materials/NewSponza_Main_glTF_003_ceiling_plaster_02.tfmat
+    Type: Material
+  - Handle: 5477791245210159233
+    FilePath: Models/textures/stone_01_tile_Normal.png
+    Type: Texture2D
+  - Handle: 5511318824578193230
+    FilePath: Models/NewSponza_Main_glTF_003.gltf
+    Type: Mesh
   - Handle: 5521304314385800532
     FilePath: Models/textures/ceiling_plaster_01_BaseColor.png
     Type: Texture2D
@@ -398,6 +461,15 @@ AssetRegistry:
   - Handle: 5858857276906880535
     FilePath: Materials/NewSponza_Main_glTF_003_column_head_2ndfloor_02.tfmat
     Type: Material
+  - Handle: 5901751916887133135
+    FilePath: Models/textures/ceiling_plaster_02_BaseColor.png
+    Type: Texture2D
+  - Handle: 5950173617767060390
+    FilePath: Materials/NewSponza_Main_glTF_003_door_stoneframe_02.tfmat
+    Type: Material
+  - Handle: 6033112325885448689
+    FilePath: Models/textures/ornament_01_BaseColor.png
+    Type: Texture2D
   - Handle: 6037562585091212950
     FilePath: Materials/NewSponza_Main_glTF_003_door_stoneframe_01.tfmat
     Type: Material
@@ -427,6 +499,9 @@ AssetRegistry:
     Type: Material
   - Handle: 6209237530808576691
     FilePath: Materials/NewSponza_Main_glTF_003_stone_trims_01.tfmat
+    Type: Material
+  - Handle: 6270170196163979549
+    FilePath: Materials/NewSponza_Main_glTF_003_roof_tiles_01.tfmat
     Type: Material
   - Handle: 6313898461194296955
     FilePath: Models/textures/arch_stone_wall_01_BaseColor.png
@@ -473,11 +548,17 @@ AssetRegistry:
   - Handle: 6837413904949763183
     FilePath: Materials/NewSponza_Main_glTF_003_wood_01.tfmat
     Type: Material
+  - Handle: 6871223734289355370
+    FilePath: Models/textures/col_head_1stfloor_Normal.png
+    Type: Texture2D
   - Handle: 6874240871775610528
     FilePath: Materials/NewSponza_Main_glTF_003_door_stoneframe_02.tfmat
     Type: Material
   - Handle: 6876395363179278989
     FilePath: Models/textures/col_brickwall_01_BaseColor.png
+    Type: Texture2D
+  - Handle: 6880320901589495651
+    FilePath: Models/textures/arch_stone_wall_01_BaseColor.png
     Type: Texture2D
   - Handle: 6900154006928647903
     FilePath: Models/textures/door_stoneframe_02_BaseColor.png
@@ -485,8 +566,14 @@ AssetRegistry:
   - Handle: 6933746088288177604
     FilePath: Materials/NewSponza_Main_glTF_003_ornament_lion.tfmat
     Type: Material
+  - Handle: 6966981362408406849
+    FilePath: Materials/NewSponza_Main_glTF_003_stone_trims_01.tfmat
+    Type: Material
   - Handle: 7029268731930045439
     FilePath: Materials/NewSponza_Main_glTF_003_column_1stfloor.tfmat
+    Type: Material
+  - Handle: 7119176772302479029
+    FilePath: Materials/NewSponza_Main_glTF_003_ceiling_plaster_01.tfmat
     Type: Material
   - Handle: 7280937355434303891
     FilePath: Materials/NewSponza_Main_glTF_003_window_frame_01.tfmat
@@ -497,11 +584,17 @@ AssetRegistry:
   - Handle: 7416493310412803808
     FilePath: Materials/NewSponza_Main_Yup_003_metal_door.tfmat
     Type: Material
+  - Handle: 7478356087048770995
+    FilePath: Models/textures/lionhead_01_BaseColor.png
+    Type: Texture2D
   - Handle: 7485492934640636115
     FilePath: Models/textures/ceiling_plaster_01_BaseColor.png
     Type: Texture2D
   - Handle: 7508939862344677287
     FilePath: Materials/NewSponza_Main_glTF_003_ceiling_plaster_02.tfmat
+    Type: Material
+  - Handle: 7541924595839541381
+    FilePath: Materials/NewSponza_Main_glTF_003_ornament_lion.tfmat
     Type: Material
   - Handle: 7550321278577541219
     FilePath: Materials/NewSponza_Main_glTF_003_glass.tfmat
@@ -515,6 +608,9 @@ AssetRegistry:
   - Handle: 7631054108746840265
     FilePath: Scenes/Sponza.timefall
     Type: Scene
+  - Handle: 7662402820878928037
+    FilePath: Materials/NewSponza_Main_glTF_003_arch_stone_wall_01.tfmat
+    Type: Material
   - Handle: 7711391984432391761
     FilePath: Materials/NewSponza_Main_glTF_003_column_head_2ndfloor_02.tfmat
     Type: Material
@@ -542,8 +638,14 @@ AssetRegistry:
   - Handle: 7998366440017489192
     FilePath: Materials/NewSponza_Main_glTF_003_column_brickwall_01.tfmat
     Type: Material
+  - Handle: 8009953213920430263
+    FilePath: Models/textures/metal_door_01_BaseColor.png
+    Type: Texture2D
   - Handle: 8035983121058900752
     FilePath: Materials/NewSponza_Main_glTF_003_wood_door_01.tfmat
+    Type: Material
+  - Handle: 8082585692593211223
+    FilePath: Materials/NewSponza_Main_glTF_003_glass.tfmat
     Type: Material
   - Handle: 8104963514833222405
     FilePath: Materials/NewSponza_Main_glTF_003_light_bulb.tfmat
@@ -554,6 +656,9 @@ AssetRegistry:
   - Handle: 8153735518518538842
     FilePath: Materials/NewSponza_Main_glTF_003_dirt_decal.tfmat
     Type: Material
+  - Handle: 8159743451780669302
+    FilePath: Models/textures/floor_tiles_01_BaseColor.png
+    Type: Texture2D
   - Handle: 8185289150221306115
     FilePath: Materials/NewSponza_Main_glTF_003_arch_stone_wall_01.tfmat
     Type: Material
@@ -562,6 +667,9 @@ AssetRegistry:
     Type: Texture2D
   - Handle: 8279727577025139518
     FilePath: Models/textures/brickwall_01_BaseColor.png
+    Type: Texture2D
+  - Handle: 8325522719465568242
+    FilePath: Models/textures/window_frame_01_Normal.png
     Type: Texture2D
   - Handle: 8333310169092671059
     FilePath: Materials/NewSponza_Main_glTF_003_brickwall_01.tfmat
@@ -590,6 +698,9 @@ AssetRegistry:
   - Handle: 8703640007031530689
     FilePath: Materials/NewSponza_Main_glTF_003_brickwall_02.tfmat
     Type: Material
+  - Handle: 8719002104080924404
+    FilePath: Models/textures/door_stoneframe_01_BaseColor.png
+    Type: Texture2D
   - Handle: 8742037988414560005
     FilePath: Materials/NewSponza_Main_Yup_003_brickwall_01.tfmat
     Type: Material
@@ -614,6 +725,9 @@ AssetRegistry:
   - Handle: 9049673651036944083
     FilePath: Materials/NewSponza_Main_glTF_003_mat28.tfmat
     Type: Material
+  - Handle: 9112165608394225062
+    FilePath: Models/textures/stones_2ndfloor_01_BaseColor.png
+    Type: Texture2D
   - Handle: 9146695312759600097
     FilePath: Models/textures/lionhead_01_BaseColor.png
     Type: Texture2D
@@ -641,12 +755,18 @@ AssetRegistry:
   - Handle: 9562864203021286893
     FilePath: Materials/NewSponza_Main_glTF_003_stone_trims_02.tfmat
     Type: Material
+  - Handle: 9582848314022202679
+    FilePath: Models/textures/col_head_2ndfloor_03_BaseColor.png
+    Type: Texture2D
   - Handle: 9591428767187505321
     FilePath: Materials/NewSponza_Main_glTF_003_ornament_01.tfmat
     Type: Material
   - Handle: 9603166317886650158
     FilePath: Models/textures/floor_tiles_01_BaseColor.png
     Type: Texture2D
+  - Handle: 9642262351166545909
+    FilePath: Materials/NewSponza_Main_glTF_003_stones_2ndfloor.tfmat
+    Type: Material
   - Handle: 9756703403873788055
     FilePath: Materials/NewSponza_Main_glTF_003_wood_door_01.tfmat
     Type: Material
@@ -683,12 +803,24 @@ AssetRegistry:
   - Handle: 10054410802230849326
     FilePath: Materials/NewSponza_Main_glTF_003_roof_tiles_01.tfmat
     Type: Material
+  - Handle: 10104160311783609684
+    FilePath: Models/textures/stones_2ndfloor_01_Normal.png
+    Type: Texture2D
+  - Handle: 10109891961237958425
+    FilePath: Materials/NewSponza_Main_glTF_003_brickwall_02.tfmat
+    Type: Material
   - Handle: 10116346735310303328
     FilePath: Materials/NewSponza_Main_glTF_003_floor_01.tfmat
     Type: Material
   - Handle: 10118562631406347854
     FilePath: Materials/NewSponza_Main_glTF_003_metal_door.tfmat
     Type: Material
+  - Handle: 10133807801051088402
+    FilePath: Models/textures/stone_trims_01_Normal.png
+    Type: Texture2D
+  - Handle: 10139157269881421825
+    FilePath: Models/textures/stone_01_tile_BaseColor.png
+    Type: Texture2D
   - Handle: 10171153594186987636
     FilePath: Materials/NewSponza_Main_glTF_003_metal_door.tfmat
     Type: Material
@@ -734,6 +866,15 @@ AssetRegistry:
   - Handle: 10655101554912647496
     FilePath: Materials/NewSponza_Main_glTF_003_stone_trims_02.tfmat
     Type: Material
+  - Handle: 10658456737110383467
+    FilePath: Models/textures/roof_tiles_01_BaseColor.png
+    Type: Texture2D
+  - Handle: 10697641292122556379
+    FilePath: Models/textures/col_1stfloor_BaseColor.png
+    Type: Texture2D
+  - Handle: 10707512129006647081
+    FilePath: Materials/NewSponza_Main_glTF_003_light_bulb.tfmat
+    Type: Material
   - Handle: 10715428744357163995
     FilePath: Materials/NewSponza_Main_glTF_003_stone_trims_02.tfmat
     Type: Material
@@ -755,6 +896,9 @@ AssetRegistry:
   - Handle: 10949964503305512936
     FilePath: Materials/NewSponza_Main_Yup_003_ornament_01.tfmat
     Type: Material
+  - Handle: 10960281577877676094
+    FilePath: Models/textures/col_head_2ndfloor_03_Normal.png
+    Type: Texture2D
   - Handle: 10975566273870001553
     FilePath: Materials/NewSponza_Main_glTF_003_door_stoneframe_02.tfmat
     Type: Material
@@ -776,17 +920,26 @@ AssetRegistry:
   - Handle: 11187919208804927134
     FilePath: Models/textures/dirt_decal_01_dirt_decal_01_mask_gltf_alpha_dirt_decal_Opacity.png
     Type: Texture2D
+  - Handle: 11222285552933847228
+    FilePath: Models/textures/arch_stone_wall_01_Normal.png
+    Type: Texture2D
   - Handle: 11276309810017991989
     FilePath: Materials/NewSponza_Main_glTF_003_roof_tiles_01.tfmat
     Type: Material
   - Handle: 11311063532046864604
     FilePath: Materials/NewSponza_Main_glTF_003_stone_trims_01.tfmat
     Type: Material
+  - Handle: 11317564776761204905
+    FilePath: Models/textures/stone_trims_02_Normal.png
+    Type: Texture2D
   - Handle: 11351120890325022735
     FilePath: Materials/NewSponza_Main_Yup_003_door_stoneframe_01.tfmat
     Type: Material
   - Handle: 11414375816138592739
     FilePath: Models/textures/col_1stfloor_BaseColor.png
+    Type: Texture2D
+  - Handle: 11443929516524187990
+    FilePath: Models/textures/col_head_2ndfloor_02_Normal.png
     Type: Texture2D
   - Handle: 11460288567370463804
     FilePath: Materials/NewSponza_Main_glTF_003_glass.tfmat
@@ -800,6 +953,9 @@ AssetRegistry:
   - Handle: 11507603988184030244
     FilePath: Materials/NewSponza_Main_glTF_003_door_stoneframe_01.tfmat
     Type: Material
+  - Handle: 11514946921419973185
+    FilePath: Models/textures/ornament_01_Normal.png
+    Type: Texture2D
   - Handle: 11537673935994048627
     FilePath: Materials/NewSponza_Main_glTF_003_stones_01_tile.tfmat
     Type: Material
@@ -848,6 +1004,9 @@ AssetRegistry:
   - Handle: 11951738642056132079
     FilePath: Materials/NewSponza_Main_glTF_003_floor_01.tfmat
     Type: Material
+  - Handle: 11952563511424460261
+    FilePath: Models/textures/door_stoneframe_02_Normal.png
+    Type: Texture2D
   - Handle: 11957726342816046477
     FilePath: Materials/NewSponza_Main_glTF_003_arch_stone_wall_01.tfmat
     Type: Material
@@ -869,12 +1028,24 @@ AssetRegistry:
   - Handle: 12054331833747983779
     FilePath: Materials/NewSponza_Main_glTF_003_glass.tfmat
     Type: Material
+  - Handle: 12089867193721341087
+    FilePath: Models/textures/roof_tiles_01_Normal.png
+    Type: Texture2D
   - Handle: 12095328036655709755
     FilePath: Materials/NewSponza_Main_glTF_003_ceiling_plaster_02.tfmat
+    Type: Material
+  - Handle: 12111946072552620839
+    FilePath: Models/textures/stone_trims_02_BaseColor.png
+    Type: Texture2D
+  - Handle: 12141589407174202118
+    FilePath: Materials/NewSponza_Main_glTF_003_window_frame_01.tfmat
     Type: Material
   - Handle: 12153016782304055841
     FilePath: Materials/NewSponza_Main_glTF_003_door_stoneframe_02.tfmat
     Type: Material
+  - Handle: 12216756286103540117
+    FilePath: Models/textures/col_brickwall_01_BaseColor.png
+    Type: Texture2D
   - Handle: 12226427727917077147
     FilePath: Materials/NewSponza_Main_Yup_003_column_head_2ndfloor_03.tfmat
     Type: Material
@@ -938,14 +1109,23 @@ AssetRegistry:
   - Handle: 13172385674428414171
     FilePath: Materials/NewSponza_Main_Zup_003_column_head_2ndfloor_03.tfmat
     Type: Material
+  - Handle: 13223833206378713192
+    FilePath: Models/textures/ceiling_plaster_01_BaseColor.png
+    Type: Texture2D
   - Handle: 13258931739673036424
     FilePath: Materials/NewSponza_Main_Yup_003_stone_trims_01.tfmat
+    Type: Material
+  - Handle: 13261098042954088590
+    FilePath: Materials/NewSponza_Main_glTF_003_door_stoneframe_01.tfmat
     Type: Material
   - Handle: 13376875576384366067
     FilePath: Materials/NewSponza_Main_glTF_003_arch_stone_wall_01.tfmat
     Type: Material
   - Handle: 13400616274442393729
     FilePath: Materials/NewSponza_Main_Yup_003_window_frame_01.tfmat
+    Type: Material
+  - Handle: 13446653159717100528
+    FilePath: Materials/NewSponza_Main_glTF_003_column_1stfloor.tfmat
     Type: Material
   - Handle: 13496261369007823578
     FilePath: Models/textures/col_1stfloor_BaseColor.png
@@ -980,17 +1160,26 @@ AssetRegistry:
   - Handle: 13906749885938215177
     FilePath: Materials/NewSponza_Main_Zup_003_ceiling_plaster_01.tfmat
     Type: Material
+  - Handle: 13962439783831677771
+    FilePath: Materials/NewSponza_Main_glTF_003_column_head_2ndfloor_02.tfmat
+    Type: Material
   - Handle: 13968729753595326759
     FilePath: Materials/NewSponza_Main_glTF_003_ornament_01.tfmat
     Type: Material
   - Handle: 14001487238003948988
     FilePath: Materials/NewSponza_Main_Yup_003_ceiling_plaster_01.tfmat
     Type: Material
+  - Handle: 14042991117381439243
+    FilePath: Models/textures/col_head_2ndfloor_02_BaseColor.png
+    Type: Texture2D
   - Handle: 14118687958310054034
     FilePath: Materials/NewSponza_Main_Zup_003_glass.tfmat
     Type: Material
   - Handle: 14119432107242940146
     FilePath: Materials/NewSponza_Main_glTF_003_floor_01.tfmat
+    Type: Material
+  - Handle: 14226568807827170701
+    FilePath: Materials/NewSponza_Main_glTF_003_stones_01_tile.tfmat
     Type: Material
   - Handle: 14241195906346195089
     FilePath: Materials/NewSponza_Main_glTF_003_window_frame_01.tfmat
@@ -1160,6 +1349,9 @@ AssetRegistry:
   - Handle: 15845660337266132722
     FilePath: Materials/NewSponza_Main_glTF_003_ceiling_plaster_02.tfmat
     Type: Material
+  - Handle: 15860097345790383133
+    FilePath: Models/textures/wood_tile_01_Normal.png
+    Type: Texture2D
   - Handle: 15880668319889119086
     FilePath: Materials/NewSponza_Main_glTF_003_ceiling_plaster_02.tfmat
     Type: Material
@@ -1168,6 +1360,12 @@ AssetRegistry:
     Type: Material
   - Handle: 16002463509448069318
     FilePath: Models/textures/col_1stfloor_BaseColor.png
+    Type: Texture2D
+  - Handle: 16021595034768780300
+    FilePath: Materials/NewSponza_Main_glTF_003_ornament_01.tfmat
+    Type: Material
+  - Handle: 16025415003158304480
+    FilePath: Models/textures/dirt_decal_01_dirt_decal_01_mask_gltf_alpha_dirt_decal_Opacity.png
     Type: Texture2D
   - Handle: 16073492190768100354
     FilePath: Materials/NewSponza_Main_glTF_003_brickwall_02.tfmat
@@ -1199,18 +1397,27 @@ AssetRegistry:
   - Handle: 16431601101959527047
     FilePath: Materials/NewSponza_Main_glTF_003_floor_01.tfmat
     Type: Material
+  - Handle: 16467262316617680873
+    FilePath: Materials/NewSponza_Main_glTF_003_metal_door.tfmat
+    Type: Material
   - Handle: 16468926831369965650
     FilePath: Models/textures/dirt_decal_01_dirt_decal_01_mask_gltf_alpha_dirt_decal_Opacity.png
     Type: Texture2D
   - Handle: 16510390204574052939
     FilePath: Materials/NewSponza_Main_glTF_003_stone_trims_01.tfmat
     Type: Material
+  - Handle: 16519455000343133790
+    FilePath: Models/textures/wood_door_01_Normal.png
+    Type: Texture2D
   - Handle: 16580617729879232520
     FilePath: Models/textures/window_frame_01_BaseColor.png
     Type: Texture2D
   - Handle: 16643951205135464965
     FilePath: Materials/NewSponza_Main_glTF_003_column_1stfloor.tfmat
     Type: Material
+  - Handle: 16698451030987383340
+    FilePath: Models/textures/brickwall_02_Normal.png
+    Type: Texture2D
   - Handle: 16709865423504229901
     FilePath: Materials/NewSponza_Main_glTF_003_stones_2ndfloor.tfmat
     Type: Material
@@ -1241,6 +1448,9 @@ AssetRegistry:
   - Handle: 17021180460249587756
     FilePath: Materials/NewSponza_Main_glTF_003_stone_trims_02.tfmat
     Type: Material
+  - Handle: 17049694366480587093
+    FilePath: Materials/NewSponza_Main_glTF_003_dirt_decal.tfmat
+    Type: Material
   - Handle: 17113535595537299285
     FilePath: Models/NewSponza_Main_Zup_003.fbx
     Type: Mesh
@@ -1250,6 +1460,9 @@ AssetRegistry:
   - Handle: 17329328109093999587
     FilePath: Materials/NewSponza_Main_glTF_003_stones_01_tile.tfmat
     Type: Material
+  - Handle: 17349574517255436567
+    FilePath: Models/textures/floor_tiles_01_Normal.png
+    Type: Texture2D
   - Handle: 17350297874680810447
     FilePath: Models/textures/col_head_2ndfloor_02_BaseColor.png
     Type: Texture2D
@@ -1268,6 +1481,9 @@ AssetRegistry:
   - Handle: 17504755114405299546
     FilePath: Materials/NewSponza_Main_glTF_003_brickwall_01.tfmat
     Type: Material
+  - Handle: 17505398302259568398
+    FilePath: Models/textures/col_head_1stfloor_BaseColor.png
+    Type: Texture2D
   - Handle: 17523818207302030755
     FilePath: Materials/NewSponza_Main_glTF_003_stone_trims_02.tfmat
     Type: Material
@@ -1288,6 +1504,9 @@ AssetRegistry:
     Type: Material
   - Handle: 17677147675314388617
     FilePath: Models/textures/stone_trims_01_BaseColor.png
+    Type: Texture2D
+  - Handle: 17718977299573175909
+    FilePath: Models/textures/col_brickwall_01_Normal.png
     Type: Texture2D
   - Handle: 17724578258395158971
     FilePath: Materials/NewSponza_Main_glTF_003_column_head_1stfloor.tfmat
@@ -1310,6 +1529,9 @@ AssetRegistry:
   - Handle: 17819295481815379431
     FilePath: Materials/NewSponza_Main_glTF_003_column_head_1stfloor.tfmat
     Type: Material
+  - Handle: 17845405007868975531
+    FilePath: Materials/NewSponza_Main_glTF_003_mat28.tfmat
+    Type: Material
   - Handle: 17875908897929055287
     FilePath: Models/textures/ceiling_plaster_02_BaseColor.png
     Type: Texture2D
@@ -1322,6 +1544,9 @@ AssetRegistry:
   - Handle: 17992648059862121593
     FilePath: Scenes/Game.timefall
     Type: Scene
+  - Handle: 18024546542605606776
+    FilePath: Models/textures/stone_trims_01_BaseColor.png
+    Type: Texture2D
   - Handle: 18062145829549441833
     FilePath: Materials/NewSponza_Main_glTF_003_stones_01_tile.tfmat
     Type: Material
@@ -1331,6 +1556,12 @@ AssetRegistry:
   - Handle: 18099768355061728613
     FilePath: Materials/NewSponza_Main_glTF_003_column_brickwall_01.tfmat
     Type: Material
+  - Handle: 18160516261207791860
+    FilePath: Materials/NewSponza_Main_glTF_003_wood_01.tfmat
+    Type: Material
+  - Handle: 18213183359490971794
+    FilePath: Models/textures/col_1stfloor_Normal.png
+    Type: Texture2D
   - Handle: 18214178450955469143
     FilePath: Materials/NewSponza_Main_glTF_003_ornament_lion.tfmat
     Type: Material
@@ -1339,6 +1570,9 @@ AssetRegistry:
     Type: Material
   - Handle: 18321584808800210622
     FilePath: Models/textures/roof_tiles_01_BaseColor.png
+    Type: Texture2D
+  - Handle: 18351849064434269600
+    FilePath: Models/textures/brickwall_02_BaseColor.png
     Type: Texture2D
   - Handle: 18379774364708433976
     FilePath: Models/textures/stones_2ndfloor_01_BaseColor.png

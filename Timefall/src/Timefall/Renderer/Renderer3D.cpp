@@ -110,6 +110,7 @@ namespace Timefall
 		bool               LightsDirty = true;
 
 		Ref<Texture2D> WhiteTexture;
+		Ref<Texture2D> FlatNormalTexture;
 		Ref<Material>  DefaultMaterial;
 
 		std::vector<MeshSubmission> Submissions;
@@ -139,6 +140,7 @@ namespace Timefall
 		static constexpr uint32_t SHADOW_SAMPLER_SLOT = 2;     // units 0=diffuse, 1=specular
 		static constexpr uint32_t SPOT_SHADOW_SAMPLER_SLOT = 3;
 		static constexpr uint32_t POINT_SHADOW_SAMPLER_SLOT = 4;
+		static constexpr uint32_t NORMAL_SAMPLER_SLOT = 5;
 		static constexpr float    SHADOW_DEPTH_EXTENT = 6.0f;  // ortho slab = radius * this each way along the light
 
 		// Per-frame render-state cache (reset in BeginScene) to skip redundant GL state changes
@@ -171,6 +173,10 @@ namespace Timefall
 		uint32_t whiteTextureData = 0xffffffff;
 		s_Data.WhiteTexture->SetData(Buffer(&whiteTextureData, sizeof(uint32_t)));
 
+		s_Data.FlatNormalTexture = Texture2D::Create(TextureSpecification());
+		uint32_t flatNormalData = 0xffff8080; // RGBA8 LE -> (R=128, G=128, B=255, A=255) = tangent-space (0,0,1)
+		s_Data.FlatNormalTexture->SetData(Buffer(&flatNormalData, sizeof(uint32_t)));
+
 		s_Data.DefaultMaterial = CreateRef<Material>();
 
 		// Map sampler uniforms to texture units 0 (diffuse) and 1 (specular) once.
@@ -180,6 +186,7 @@ namespace Timefall
 		s_Data.LitShader->SetInt("u_ShadowMap", (int)Renderer3DData::SHADOW_SAMPLER_SLOT);
 		s_Data.LitShader->SetInt("u_SpotShadowMap", (int)Renderer3DData::SPOT_SHADOW_SAMPLER_SLOT);
 		s_Data.LitShader->SetInt("u_PointShadowMap", (int)Renderer3DData::POINT_SHADOW_SAMPLER_SLOT);
+		s_Data.LitShader->SetInt("u_NormalMap", (int)Renderer3DData::NORMAL_SAMPLER_SLOT);
 	}
 
 	void Renderer3D::Shutdown()
@@ -505,8 +512,13 @@ namespace Timefall
 				if (mat->SpecularMap != 0 && AssetManager::IsAssetHandleValid(mat->SpecularMap))
 					specular = AssetManager::GetAsset<Texture2D>(mat->SpecularMap);
 
+				Ref<Texture2D> normalMap = s_Data.FlatNormalTexture;
+				if (mat->NormalMap != 0 && AssetManager::IsAssetHandleValid(mat->NormalMap))
+					normalMap = AssetManager::GetAsset<Texture2D>(mat->NormalMap);
+
 				diffuse->Bind(0);
 				specular->Bind(1);
+				normalMap->Bind(Renderer3DData::NORMAL_SAMPLER_SLOT);
 				s_Data.CurrentMaterial = mat;
 			}
 

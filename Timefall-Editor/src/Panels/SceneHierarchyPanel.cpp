@@ -757,6 +757,29 @@ namespace Timefall
 						ImGui::Text("Specular Map");
 					}
 
+					// Normal map slot
+					{
+						std::string label = (mat->NormalMap != 0 && AssetManager::IsAssetHandleValid(mat->NormalMap))
+							? Project::GetActive()->GetEditorAssetManager()->GetMetadata(mat->NormalMap).FilePath.filename().string()
+							: "None";
+						ImGui::Button(label.c_str(), ImVec2(160.0f, 0.0f));
+						if (ImGui::BeginDragDropTarget())
+						{
+							if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+							{
+								AssetHandle handle = *(AssetHandle*)payload->Data;
+								if (AssetManager::GetAssetType(handle) == AssetType::Texture2D)
+								{
+									mat->NormalMap = handle;
+									changed = true;
+								}
+							}
+							ImGui::EndDragDropTarget();
+						}
+						ImGui::SameLine();
+						ImGui::Text("Normal Map");
+					}
+
 					if (changed)
 					{
 						auto path = Project::GetAssetDirectory()

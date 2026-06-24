@@ -19,7 +19,8 @@ namespace Timefall
 {
 	static constexpr uint32_t s_PostProcessFlags =
 		aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs |
-		aiProcess_JoinIdenticalVertices | aiProcess_OptimizeMeshes;
+		aiProcess_JoinIdenticalVertices | aiProcess_OptimizeMeshes |
+		aiProcess_CalcTangentSpace;
 
 	namespace
 	{
@@ -65,6 +66,16 @@ namespace Timefall
 					vert.TexCoord = mesh->HasTextureCoords(0)
 						? glm::vec2(mesh->mTextureCoords[0][v].x, mesh->mTextureCoords[0][v].y)
 						: glm::vec2(0.0f);
+					if (mesh->HasTangentsAndBitangents())
+					{
+						vert.Tangent   = { mesh->mTangents[v].x,   mesh->mTangents[v].y,   mesh->mTangents[v].z };
+						vert.Bitangent = { mesh->mBitangents[v].x, mesh->mBitangents[v].y, mesh->mBitangents[v].z };
+					}
+					else
+					{
+						vert.Tangent   = glm::vec3(0.0f);
+						vert.Bitangent = glm::vec3(0.0f);
+					}
 					vertices.push_back(vert);
 
 					mn = glm::min(mn, vert.Position);
@@ -143,6 +154,17 @@ namespace Timefall
 			AssetHandle handle = assetManager->ImportAsset(rel);
 			cache[key] = handle;
 			return handle;
+		}
+
+		// Normal maps land under different Assimp slots by format: glTF/FBX use NORMALS,
+		// OBJ's `map_bump`/`bump` lands under HEIGHT. Try both.
+		AssetHandle ImportNormalSlot(const aiMaterial* aimat, const std::filesystem::path& modelDir,
+			EditorAssetManager* assetManager, std::unordered_map<std::string, AssetHandle>& cache)
+		{
+			AssetHandle h = ImportTextureSlot(aimat, aiTextureType_NORMALS, modelDir, assetManager, cache);
+			if (h != 0)
+				return h;
+			return ImportTextureSlot(aimat, aiTextureType_HEIGHT, modelDir, assetManager, cache);
 		}
 	}
 
@@ -229,6 +251,7 @@ namespace Timefall
 
 			material->DiffuseMap  = ImportTextureSlot(aimat, aiTextureType_DIFFUSE,  modelDir, assetManager.get(), texCache);
 			material->SpecularMap = ImportTextureSlot(aimat, aiTextureType_SPECULAR, modelDir, assetManager.get(), texCache);
+			material->NormalMap   = ImportNormalSlot(aimat, modelDir, assetManager.get(), texCache);
 
 			aiString aiName;
 			aimat->Get(AI_MATKEY_NAME, aiName);

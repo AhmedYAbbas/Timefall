@@ -18,9 +18,11 @@ namespace Timefall
 			(float*)vertices.data(),
 			(uint32_t)(vertices.size() * sizeof(MeshVertex)));
 		vbo->SetLayout({
-			{ ShaderDataType::Float3, "a_Position" },
-			{ ShaderDataType::Float3, "a_Normal"   },
-			{ ShaderDataType::Float2, "a_TexCoord" },
+			{ ShaderDataType::Float3, "a_Position"  },
+			{ ShaderDataType::Float3, "a_Normal"    },
+			{ ShaderDataType::Float2, "a_TexCoord"  },
+			{ ShaderDataType::Float3, "a_Tangent"   },
+			{ ShaderDataType::Float3, "a_Bitangent" },
 		});
 		m_VertexArray->AddVertexBuffer(vbo);
 
@@ -53,6 +55,44 @@ namespace Timefall
 		sm.MinBounds = mn;
 		sm.MaxBounds = mx;
 		return sm;
+	}
+
+	// Accumulate per-vertex tangents from triangle edges and UV deltas, then orthonormalize.
+	// Used by the built-in primitives; imported meshes get tangents from Assimp instead.
+	static void ComputeTangents(std::vector<MeshVertex>& verts, const std::vector<uint32_t>& indices)
+	{
+		for (MeshVertex& v : verts) { v.Tangent = glm::vec3(0.0f); v.Bitangent = glm::vec3(0.0f); }
+
+		for (size_t i = 0; i + 2 < indices.size(); i += 3)
+		{
+			MeshVertex& v0 = verts[indices[i + 0]];
+			MeshVertex& v1 = verts[indices[i + 1]];
+			MeshVertex& v2 = verts[indices[i + 2]];
+
+			glm::vec3 e1 = v1.Position - v0.Position;
+			glm::vec3 e2 = v2.Position - v0.Position;
+			glm::vec2 d1 = v1.TexCoord - v0.TexCoord;
+			glm::vec2 d2 = v2.TexCoord - v0.TexCoord;
+
+			float denom = d1.x * d2.y - d2.x * d1.y;
+			float f = glm::abs(denom) < 1e-8f ? 0.0f : 1.0f / denom;
+
+			glm::vec3 t = f * (d2.y * e1 - d1.y * e2);
+			glm::vec3 b = f * (d1.x * e2 - d2.x * e1);
+
+			v0.Tangent += t; v1.Tangent += t; v2.Tangent += t;
+			v0.Bitangent += b; v1.Bitangent += b; v2.Bitangent += b;
+		}
+
+		for (MeshVertex& v : verts)
+		{
+			glm::vec3 n = v.Normal;
+			glm::vec3 t = v.Tangent - n * glm::dot(n, v.Tangent);   // Gram-Schmidt
+			v.Tangent = glm::length(t) > 1e-6f ? glm::normalize(t)
+			                                   : glm::vec3(1.0f, 0.0f, 0.0f);
+			v.Bitangent = glm::cross(n, v.Tangent) *
+				(glm::dot(glm::cross(n, v.Tangent), v.Bitangent) < 0.0f ? -1.0f : 1.0f);
+		}
 	}
 
 	Ref<MeshSource> MeshSource::CreateCube()
@@ -98,6 +138,7 @@ namespace Timefall
 			indices.insert(indices.end(), { v + 0, v + 1, v + 2, v + 2, v + 3, v + 0 });
 		}
 
+		ComputeTangents(vertices, indices);
 		return Create(vertices, indices, { FullRangeSubmesh(vertices, (uint32_t)indices.size()) });
 	}
 
@@ -141,6 +182,7 @@ namespace Timefall
 			}
 		}
 
+		ComputeTangents(vertices, indices);
 		return Create(vertices, indices, { FullRangeSubmesh(vertices, (uint32_t)indices.size()) });
 	}
 
@@ -155,6 +197,7 @@ namespace Timefall
 		// Wound so the geometric front face matches the +Y normal (consistent with the cube),
 		// which front-face shadow culling relies on.
 		std::vector<uint32_t> indices = { 0, 2, 1, 2, 0, 3 };
+		ComputeTangents(vertices, indices);
 		return Create(vertices, indices, { FullRangeSubmesh(vertices, (uint32_t)indices.size()) });
 	}
 }

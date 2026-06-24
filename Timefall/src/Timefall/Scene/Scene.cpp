@@ -198,6 +198,7 @@ namespace Timefall
 			// --- 3D pass (depth-tested) ---
 			RenderCommand::SetDepthTest(true);
 			Renderer3D::BeginScene(*mainCamera, cameraTransform);
+			Renderer3D::SetShadowSettings(m_ShadowSettings);
 			// Gather lights (must precede mesh submission — meshes read the Lights UBO).
 			{
 				auto lightView = m_Registry.view<TransformComponent, LightComponent>();
@@ -215,11 +216,13 @@ namespace Timefall
 								light.CastsShadows, light.ShadowSoftness, light.DepthBias);
 							break;
 						case LightComponent::LightType::Point:
-							Renderer3D::SubmitPointLight(position, light.Color, light.Intensity, light.Range);
+							Renderer3D::SubmitPointLight(position, light.Color, light.Intensity, light.Range,
+								light.CastsShadows, light.ShadowSoftness, light.DepthBias);
 							break;
 						case LightComponent::LightType::Spot:
 							Renderer3D::SubmitSpotLight(position, direction, light.Color, light.Intensity,
-								light.Range, light.InnerCutoff, light.OuterCutoff);
+								light.Range, light.InnerCutoff, light.OuterCutoff,
+								light.CastsShadows, light.ShadowSoftness, light.DepthBias);
 							break;
 					}
 				}

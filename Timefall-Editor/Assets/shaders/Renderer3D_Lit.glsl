@@ -9,6 +9,8 @@
 layout(location = 0) in vec3 a_Position;
 layout(location = 1) in vec3 a_Normal;
 layout(location = 2) in vec2 a_TexCoord;
+layout(location = 3) in vec3 a_Tangent;
+layout(location = 4) in vec3 a_Bitangent;
 
 layout(std140, binding = 0) uniform Camera
 {
@@ -21,14 +23,21 @@ uniform mat4 u_Model;
 uniform mat3 u_NormalMatrix;
 
 layout(location = 0) out vec3 v_WorldPos;
-layout(location = 1) out vec3 v_Normal;
-layout(location = 2) out vec2 v_TexCoord;
+layout(location = 1) out vec2 v_TexCoord;
+layout(location = 2) out mat3 v_TBN;   // occupies locations 2,3,4
 
 void main()
 {
 	vec4 world = u_Model * vec4(a_Position, 1.0);
 	v_WorldPos = world.xyz;
-	v_Normal = u_NormalMatrix * a_Normal;
+
+	vec3 N = normalize(u_NormalMatrix * a_Normal);
+	vec3 T = normalize(u_NormalMatrix * a_Tangent);
+	T = normalize(T - N * dot(N, T));                  // Gram-Schmidt re-orthogonalize
+	vec3 Bw = u_NormalMatrix * a_Bitangent;
+	vec3 B = cross(N, T) * sign(dot(cross(N, T), Bw)); // preserve UV handedness
+
+	v_TBN = mat3(T, B, N);
 	v_TexCoord = a_TexCoord;
 	gl_Position = u_ViewProjection * world;
 }
@@ -37,8 +46,8 @@ void main()
 #version 450 core
 
 layout(location = 0) in vec3 v_WorldPos;
-layout(location = 1) in vec3 v_Normal;
-layout(location = 2) in vec2 v_TexCoord;
+layout(location = 1) in vec2 v_TexCoord;
+layout(location = 2) in mat3 v_TBN;   // occupies locations 2,3,4
 
 layout(std140, binding = 0) uniform Camera
 {
@@ -103,6 +112,7 @@ uniform vec3  u_SpecularColor;
 uniform float u_Shininess;
 uniform sampler2D u_DiffuseMap;
 uniform sampler2D u_SpecularMap;
+uniform sampler2D u_NormalMap;
 uniform sampler2DArray u_ShadowMap;
 uniform sampler2DArray u_SpotShadowMap;
 uniform samplerCubeArray u_PointShadowMap;
@@ -378,7 +388,8 @@ float SamplePointShadow(vec3 worldPos, int i, vec3 N, vec3 L)
 
 void main()
 {
-	vec3 N = normalize(v_Normal);
+	vec3 mapN = texture(u_NormalMap, v_TexCoord).rgb * 2.0 - 1.0;
+	vec3 N = normalize(v_TBN * mapN);
 	vec3 V = normalize(u_CameraPosition - v_WorldPos);
 
 	float viewDepth = -(u_View * vec4(v_WorldPos, 1.0)).z;

@@ -42,6 +42,8 @@ namespace Timefall
 			material->DiffuseMap = m.as<uint64_t>();
 		if (auto m = node["SpecularMap"])
 			material->SpecularMap = m.as<uint64_t>();
+		if (auto m = node["NormalMap"])
+			material->NormalMap = m.as<uint64_t>();
 
 		return material;
 	}
@@ -59,6 +61,7 @@ namespace Timefall
 		out << YAML::Key << "Shininess" << YAML::Value << material->Shininess;
 		out << YAML::Key << "DiffuseMap" << YAML::Value << (uint64_t)material->DiffuseMap;
 		out << YAML::Key << "SpecularMap" << YAML::Value << (uint64_t)material->SpecularMap;
+		out << YAML::Key << "NormalMap" << YAML::Value << (uint64_t)material->NormalMap;
 
 		out << YAML::EndMap;
 		out << YAML::EndMap;

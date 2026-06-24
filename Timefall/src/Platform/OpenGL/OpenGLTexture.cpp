@@ -4,6 +4,8 @@
 
 #include <glad/glad.h>
 
+#include <cmath>
+
 namespace Timefall
 {
 	namespace Utils
@@ -45,10 +47,15 @@ namespace Timefall
 		m_InternalFormat = Utils::TimefallImageFormatToGLInternalFormat(m_Specification.Format);
 		m_DataFormat = Utils::TimefallImageFormatToGLDataFormat(m_Specification.Format);
 
-		glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
-		glTextureStorage2D(m_RendererID, 1, m_InternalFormat, m_Width, m_Height);
+		uint32_t mipLevels = m_Specification.GenerateMips
+			? 1 + (uint32_t)std::floor(std::log2((float)std::max(m_Width, m_Height)))
+			: 1;
 
-		glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
+		glTextureStorage2D(m_RendererID, mipLevels, m_InternalFormat, m_Width, m_Height);
+
+		glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER,
+			m_Specification.GenerateMips ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
 		glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -84,6 +91,9 @@ namespace Timefall
 		uint32_t bpp = m_DataFormat == GL_RGBA ? 4 : 3;
 		TF_CORE_ASSERT(data.Size == m_Width * m_Height * bpp, "Data must be entire texture");
 		glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, data.Data);
+
+		if (m_Specification.GenerateMips)
+			glGenerateTextureMipmap(m_RendererID);
 	}
 
 	void OpenGLTexture2D::SetData(const std::vector<uint8_t>& data, uint32_t dataFormat)
@@ -94,6 +104,9 @@ namespace Timefall
 		TF_CORE_ASSERT(data.size() == m_Width * m_Height * bpp, "Data must be entire texture");
 		m_DataFormat = dataFormat;
 		glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, data.data());
+
+		if (m_Specification.GenerateMips)
+			glGenerateTextureMipmap(m_RendererID);
 	}
 
 	void OpenGLTexture2D::Bind(int slot) const

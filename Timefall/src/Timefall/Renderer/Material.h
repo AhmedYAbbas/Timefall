@@ -16,6 +16,7 @@ namespace Timefall
 
 		AssetHandle DiffuseMap = 0;
 		AssetHandle SpecularMap = 0;
+		AssetHandle NormalMap = 0;
 
 		static AssetType GetStaticType() { return AssetType::Material; }
 		virtual AssetType GetType() const override { return GetStaticType(); }
