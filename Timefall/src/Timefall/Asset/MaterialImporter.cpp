@@ -32,18 +32,31 @@ namespace Timefall
 
 		Ref<Material> material = CreateRef<Material>();
 
-		if (auto c = node["DiffuseColor"])
-			material->DiffuseColor = { c[0].as<float>(), c[1].as<float>(), c[2].as<float>() };
-		if (auto c = node["SpecularColor"])
-			material->SpecularColor = { c[0].as<float>(), c[1].as<float>(), c[2].as<float>() };
-		if (auto s = node["Shininess"])
-			material->Shininess = s.as<float>();
-		if (auto m = node["DiffuseMap"])
-			material->DiffuseMap = m.as<uint64_t>();
-		if (auto m = node["SpecularMap"])
-			material->SpecularMap = m.as<uint64_t>();
+		// New (metallic-roughness) schema.
+		if (auto c = node["BaseColor"])
+			material->BaseColor = { c[0].as<float>(), c[1].as<float>(), c[2].as<float>() };
+		if (auto m = node["Metallic"])
+			material->Metallic = m.as<float>();
+		if (auto r = node["Roughness"])
+			material->Roughness = r.as<float>();
+		if (auto n = node["NormalStrength"])
+			material->NormalStrength = n.as<float>();
+		if (auto m = node["BaseColorMap"])
+			material->BaseColorMap = m.as<uint64_t>();
 		if (auto m = node["NormalMap"])
 			material->NormalMap = m.as<uint64_t>();
+		if (auto m = node["MetallicMap"])
+			material->MetallicMap = m.as<uint64_t>();
+		if (auto m = node["RoughnessMap"])
+			material->RoughnessMap = m.as<uint64_t>();
+		if (auto m = node["AOMap"])
+			material->AOMap = m.as<uint64_t>();
+
+		// Back-compat: migrate legacy Blinn-Phong .tfmat files.
+		if (auto c = node["DiffuseColor"]; c && !node["BaseColor"])
+			material->BaseColor = { c[0].as<float>(), c[1].as<float>(), c[2].as<float>() };
+		if (auto m = node["DiffuseMap"]; m && !node["BaseColorMap"])
+			material->BaseColorMap = m.as<uint64_t>();
 
 		return material;
 	}
@@ -54,14 +67,16 @@ namespace Timefall
 		out << YAML::BeginMap;
 		out << YAML::Key << "Material" << YAML::Value << YAML::BeginMap;
 
-		out << YAML::Key << "DiffuseColor" << YAML::Value << YAML::Flow
-			<< YAML::BeginSeq << material->DiffuseColor.x << material->DiffuseColor.y << material->DiffuseColor.z << YAML::EndSeq;
-		out << YAML::Key << "SpecularColor" << YAML::Value << YAML::Flow
-			<< YAML::BeginSeq << material->SpecularColor.x << material->SpecularColor.y << material->SpecularColor.z << YAML::EndSeq;
-		out << YAML::Key << "Shininess" << YAML::Value << material->Shininess;
-		out << YAML::Key << "DiffuseMap" << YAML::Value << (uint64_t)material->DiffuseMap;
-		out << YAML::Key << "SpecularMap" << YAML::Value << (uint64_t)material->SpecularMap;
+		out << YAML::Key << "BaseColor" << YAML::Value << YAML::Flow
+			<< YAML::BeginSeq << material->BaseColor.x << material->BaseColor.y << material->BaseColor.z << YAML::EndSeq;
+		out << YAML::Key << "Metallic" << YAML::Value << material->Metallic;
+		out << YAML::Key << "Roughness" << YAML::Value << material->Roughness;
+		out << YAML::Key << "NormalStrength" << YAML::Value << material->NormalStrength;
+		out << YAML::Key << "BaseColorMap" << YAML::Value << (uint64_t)material->BaseColorMap;
 		out << YAML::Key << "NormalMap" << YAML::Value << (uint64_t)material->NormalMap;
+		out << YAML::Key << "MetallicMap" << YAML::Value << (uint64_t)material->MetallicMap;
+		out << YAML::Key << "RoughnessMap" << YAML::Value << (uint64_t)material->RoughnessMap;
+		out << YAML::Key << "AOMap" << YAML::Value << (uint64_t)material->AOMap;
 
 		out << YAML::EndMap;
 		out << YAML::EndMap;

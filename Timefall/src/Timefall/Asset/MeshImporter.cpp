@@ -243,15 +243,24 @@ namespace Timefall
 			const aiMaterial* aimat = ascene->mMaterials[i];
 
 			Ref<Material> material = CreateRef<Material>();
-			aiColor3D diffuse(1.0f, 1.0f, 1.0f), specular(1.0f, 1.0f, 1.0f);
-			if (aimat->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse) == AI_SUCCESS)
-				material->DiffuseColor = { diffuse.r, diffuse.g, diffuse.b };
-			if (aimat->Get(AI_MATKEY_COLOR_SPECULAR, specular) == AI_SUCCESS)
-				material->SpecularColor = { specular.r, specular.g, specular.b };
 
-			material->DiffuseMap  = ImportTextureSlot(aimat, aiTextureType_DIFFUSE,  modelDir, assetManager.get(), texCache);
-			material->SpecularMap = ImportTextureSlot(aimat, aiTextureType_SPECULAR, modelDir, assetManager.get(), texCache);
-			material->NormalMap   = ImportNormalSlot(aimat, modelDir, assetManager.get(), texCache);
+			// Base color: glTF/PBR exporters use BASE_COLOR; fall back to legacy DIFFUSE.
+			aiColor4D baseColor(1.0f, 1.0f, 1.0f, 1.0f);
+			if (aimat->Get(AI_MATKEY_BASE_COLOR, baseColor) == AI_SUCCESS ||
+				aimat->Get(AI_MATKEY_COLOR_DIFFUSE, baseColor) == AI_SUCCESS)
+				material->BaseColor = { baseColor.r, baseColor.g, baseColor.b };
+
+			ai_real metallic = 0.0f, roughness = 1.0f;
+			if (aimat->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == AI_SUCCESS)
+				material->Metallic = metallic;
+			if (aimat->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) == AI_SUCCESS)
+				material->Roughness = roughness;
+
+			material->BaseColorMap = ImportTextureSlot(aimat, aiTextureType_DIFFUSE, modelDir, assetManager.get(), texCache);
+			material->NormalMap    = ImportNormalSlot(aimat, modelDir, assetManager.get(), texCache);
+			material->MetallicMap  = ImportTextureSlot(aimat, aiTextureType_METALNESS, modelDir, assetManager.get(), texCache);
+			material->RoughnessMap = ImportTextureSlot(aimat, aiTextureType_DIFFUSE_ROUGHNESS, modelDir, assetManager.get(), texCache);
+			material->AOMap        = ImportTextureSlot(aimat, aiTextureType_AMBIENT_OCCLUSION, modelDir, assetManager.get(), texCache);
 
 			aiString aiName;
 			aimat->Get(AI_MATKEY_NAME, aiName);

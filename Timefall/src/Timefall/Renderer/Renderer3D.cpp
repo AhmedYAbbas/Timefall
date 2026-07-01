@@ -145,10 +145,14 @@ namespace Timefall
 		Ref<VertexArray>   FullscreenVAO;  // empty VAO for the fullscreen triangle
 		PostProcessSettings PostProcess;
 
-		static constexpr uint32_t SHADOW_SAMPLER_SLOT = 2;     // units 0=diffuse, 1=specular
+		static constexpr uint32_t BASE_COLOR_SAMPLER_SLOT = 0;
+		static constexpr uint32_t METALLIC_SAMPLER_SLOT = 1;
+		static constexpr uint32_t SHADOW_SAMPLER_SLOT = 2;
 		static constexpr uint32_t SPOT_SHADOW_SAMPLER_SLOT = 3;
 		static constexpr uint32_t POINT_SHADOW_SAMPLER_SLOT = 4;
 		static constexpr uint32_t NORMAL_SAMPLER_SLOT = 5;
+		static constexpr uint32_t ROUGHNESS_SAMPLER_SLOT = 6;
+		static constexpr uint32_t AO_SAMPLER_SLOT = 7;
 		static constexpr float    SHADOW_DEPTH_EXTENT = 6.0f;  // ortho slab = radius * this each way along the light
 
 		// Per-frame render-state cache (reset in BeginScene) to skip redundant GL state changes
@@ -352,8 +356,10 @@ namespace Timefall
 
 		// Map sampler uniforms to texture units 0 (diffuse) and 1 (specular) once.
 		s_Data.LitShader->Bind();
-		s_Data.LitShader->SetInt("u_DiffuseMap", 0);
-		s_Data.LitShader->SetInt("u_SpecularMap", 1);
+		s_Data.LitShader->SetInt("u_BaseColorMap", (int)Renderer3DData::BASE_COLOR_SAMPLER_SLOT);
+		s_Data.LitShader->SetInt("u_MetallicMap", (int)Renderer3DData::METALLIC_SAMPLER_SLOT);
+		s_Data.LitShader->SetInt("u_RoughnessMap", (int)Renderer3DData::ROUGHNESS_SAMPLER_SLOT);
+		s_Data.LitShader->SetInt("u_AOMap", (int)Renderer3DData::AO_SAMPLER_SLOT);
 		s_Data.LitShader->SetInt("u_ShadowMap", (int)Renderer3DData::SHADOW_SAMPLER_SLOT);
 		s_Data.LitShader->SetInt("u_SpotShadowMap", (int)Renderer3DData::SPOT_SHADOW_SAMPLER_SLOT);
 		s_Data.LitShader->SetInt("u_PointShadowMap", (int)Renderer3DData::POINT_SHADOW_SAMPLER_SLOT);
@@ -571,24 +577,30 @@ namespace Timefall
 			const Material* mat = sub.Material.get();
 			if (mat != s_Data.CurrentMaterial)
 			{
-				s_Data.LitShader->SetFloat3("u_DiffuseColor", SRGBToLinear(mat->DiffuseColor));
-				s_Data.LitShader->SetFloat3("u_SpecularColor", SRGBToLinear(mat->SpecularColor));
-				s_Data.LitShader->SetFloat("u_Shininess", mat->Shininess);
+				s_Data.LitShader->SetFloat3("u_BaseColor", SRGBToLinear(mat->BaseColor));
+				s_Data.LitShader->SetFloat("u_Metallic", mat->Metallic);
+				s_Data.LitShader->SetFloat("u_Roughness", mat->Roughness);
+				s_Data.LitShader->SetFloat("u_NormalStrength", mat->NormalStrength);
 
-				Ref<Texture2D> diffuse = s_Data.WhiteTexture;
-				if (mat->DiffuseMap != 0 && AssetManager::IsAssetHandleValid(mat->DiffuseMap))
-					diffuse = AssetManager::GetAsset<Texture2D>(mat->DiffuseMap);
+				auto mapOrWhite = [&](AssetHandle h)
+				{
+					return (h != 0 && AssetManager::IsAssetHandleValid(h))
+						? AssetManager::GetAsset<Texture2D>(h) : s_Data.WhiteTexture;
+				};
 
-				Ref<Texture2D> specular = s_Data.WhiteTexture;
-				if (mat->SpecularMap != 0 && AssetManager::IsAssetHandleValid(mat->SpecularMap))
-					specular = AssetManager::GetAsset<Texture2D>(mat->SpecularMap);
+				Ref<Texture2D> baseColor = mapOrWhite(mat->BaseColorMap);
+				Ref<Texture2D> metallic  = mapOrWhite(mat->MetallicMap);
+				Ref<Texture2D> roughness = mapOrWhite(mat->RoughnessMap);
+				Ref<Texture2D> ao        = mapOrWhite(mat->AOMap);
 
 				Ref<Texture2D> normalMap = s_Data.FlatNormalTexture;
 				if (mat->NormalMap != 0 && AssetManager::IsAssetHandleValid(mat->NormalMap))
 					normalMap = AssetManager::GetAsset<Texture2D>(mat->NormalMap);
 
-				diffuse->BindAsSRGB(0);
-				specular->Bind(1);
+				baseColor->BindAsSRGB(Renderer3DData::BASE_COLOR_SAMPLER_SLOT);
+				metallic->Bind(Renderer3DData::METALLIC_SAMPLER_SLOT);
+				roughness->Bind(Renderer3DData::ROUGHNESS_SAMPLER_SLOT);
+				ao->Bind(Renderer3DData::AO_SAMPLER_SLOT);
 				normalMap->Bind(Renderer3DData::NORMAL_SAMPLER_SLOT);
 				s_Data.CurrentMaterial = mat;
 			}

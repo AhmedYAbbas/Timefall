@@ -107,11 +107,14 @@ layout(std140, binding = 4) uniform PointShadows
 
 uniform int u_EntityID;
 
-uniform vec3  u_DiffuseColor;
-uniform vec3  u_SpecularColor;
-uniform float u_Shininess;
-uniform sampler2D u_DiffuseMap;
-uniform sampler2D u_SpecularMap;
+uniform vec3  u_BaseColor;
+uniform float u_Metallic;
+uniform float u_Roughness;
+uniform float u_NormalStrength;
+uniform sampler2D u_BaseColorMap;
+uniform sampler2D u_MetallicMap;
+uniform sampler2D u_RoughnessMap;
+uniform sampler2D u_AOMap;
 uniform sampler2D u_NormalMap;
 uniform sampler2DArray u_ShadowMap;
 uniform sampler2DArray u_SpotShadowMap;
@@ -122,14 +125,54 @@ layout(location = 1) out int o_EntityID;
 
 const float c_AmbientStrength = 0.09f;
 
-// Blinn-Phong contribution of one light. L = surface->light (unit). radiance already folds in
-// the light color, intensity, and any attenuation/cone factor.
-vec3 BlinnPhong(vec3 N, vec3 V, vec3 L, vec3 radiance, vec3 matDiffuse, vec3 matSpecular, float shininess)
+const float PI = 3.14159265359;
+
+// GGX / Trowbridge-Reitz normal distribution.
+float D_GGX(float NdotH, float a)
 {
-	float diff = max(dot(N, L), 0.0);
-	vec3  H    = normalize(L + V);
-	float spec = pow(max(dot(N, H), 0.0), shininess);
-	return (diff * matDiffuse + spec * matSpecular) * radiance;
+	float a2 = a * a;
+	float d  = (NdotH * a2 - NdotH) * NdotH + 1.0;
+	return a2 / (PI * d * d);
+}
+
+// Height-correlated Smith visibility — already folds in the 1/(4·NdotV·NdotL) denominator.
+float V_SmithGGXCorrelated(float NdotV, float NdotL, float a)
+{
+	float a2   = a * a;
+	float ggxV = NdotL * sqrt(NdotV * NdotV * (1.0 - a2) + a2);
+	float ggxL = NdotV * sqrt(NdotL * NdotL * (1.0 - a2) + a2);
+	return 0.5 / max(ggxV + ggxL, 1e-5);
+}
+
+vec3 F_Schlick(float u, vec3 f0)
+{
+	float f = pow(1.0 - u, 5.0);
+	return f0 + (1.0 - f0) * f;
+}
+
+// Cook-Torrance contribution of one light. radiance folds in light color, intensity,
+// attenuation/cone, and shadow (point/spot); the directional caller applies its shadow outside.
+vec3 CookTorrance(vec3 N, vec3 V, vec3 L, vec3 radiance, vec3 albedo, float metallic, float roughness, vec3 F0)
+{
+	float NdotL = max(dot(N, L), 0.0);
+	if (NdotL <= 0.0)
+		return vec3(0.0);
+
+	vec3  H     = normalize(V + L);
+	float NdotV = max(dot(N, V), 1e-4);
+	float NdotH = max(dot(N, H), 0.0);
+	float LdotH = max(dot(L, H), 0.0);
+	float a     = roughness * roughness;
+
+	float D   = D_GGX(NdotH, a);
+	float Vis = V_SmithGGXCorrelated(NdotV, NdotL, a);
+	vec3  F   = F_Schlick(LdotH, F0);
+
+	vec3 specular = D * Vis * F;                       // V already carries 1/(4·NdotV·NdotL)
+	vec3 kD       = (vec3(1.0) - F) * (1.0 - metallic);
+	vec3 diffuse  = kD * albedo * (1.0 / PI);
+
+	return (diffuse + specular) * radiance * NdotL;
 }
 
 // Range-based attenuation: smoothly 1 at the light, 0 at distance == range.
@@ -389,17 +432,22 @@ float SamplePointShadow(vec3 worldPos, int i, vec3 N, vec3 L)
 void main()
 {
 	vec3 mapN = texture(u_NormalMap, v_TexCoord).rgb * 2.0 - 1.0;
-	vec3 N = normalize(v_TBN * mapN);
+	mapN.xy *= u_NormalStrength;
+	vec3 N = normalize(v_TBN * normalize(mapN));
 	vec3 V = normalize(u_CameraPosition - v_WorldPos);
 
 	float viewDepth = -(u_View * vec4(v_WorldPos, 1.0)).z;
 	int cascade = u_CascadeCount > 0 ? SelectCascade(viewDepth) : 0;
 
-	vec3 matDiffuse  = u_DiffuseColor  * texture(u_DiffuseMap,  v_TexCoord).rgb;
-	vec3 matSpecular = u_SpecularColor * texture(u_SpecularMap, v_TexCoord).rgb;
-	//vec3 matSpecular = vec3(0.4f);
+	vec3  albedo    = u_BaseColor * texture(u_BaseColorMap, v_TexCoord).rgb;
+	float metallic  = u_Metallic  * texture(u_MetallicMap,  v_TexCoord).r;
+	float roughness = clamp(u_Roughness * texture(u_RoughnessMap, v_TexCoord).r, 0.045, 1.0);
+	float ao        = texture(u_AOMap, v_TexCoord).r;
 
-	vec3 color = c_AmbientStrength * matDiffuse;
+	vec3 F0 = mix(vec3(0.04), albedo, metallic);
+
+	// Flat ambient placeholder (no IBL this pass). Metals read dark here — expected.
+	vec3 Lo = c_AmbientStrength * albedo * ao;
 
 	// Directional
 	for (int i = 0; i < u_DirCount; i++)
@@ -408,7 +456,7 @@ void main()
 		vec3 radiance = u_DirLights[i].Color.rgb * u_DirLights[i].Color.a;
 
 		float shadow = (i == 0 && u_CascadeCount > 0) ? ComputeSunShadow(v_WorldPos, viewDepth, cascade, N, L) : 0.0;
-		color += (1.0 - shadow) * BlinnPhong(N, V, L, radiance, matDiffuse, matSpecular, u_Shininess);
+		Lo += (1.0 - shadow) * CookTorrance(N, V, L, radiance, albedo, metallic, roughness, F0);
 	}
 
 	// Point
@@ -421,7 +469,7 @@ void main()
 		vec3 radiance = u_PointLights[i].Color.rgb * u_PointLights[i].Color.a * att;
 		if (u_PointShadowParams[i].x > 0.5)
 			radiance *= (1.0 - SamplePointShadow(v_WorldPos, i, N, L));
-		color += BlinnPhong(N, V, L, radiance, matDiffuse, matSpecular, u_Shininess);
+		Lo += CookTorrance(N, V, L, radiance, albedo, metallic, roughness, F0);
 	}
 
 	// Spot
@@ -444,15 +492,15 @@ void main()
 		vec3 radiance = u_SpotLights[i].Color.rgb * intensity * att * cone;
 		if (u_SpotShadowParams[i].x > 0.5)
 			radiance *= (1.0 - SampleSpotShadow(v_WorldPos, i, N, L));
-		color += BlinnPhong(N, V, L, radiance, matDiffuse, matSpecular, u_Shininess);
+		Lo += CookTorrance(N, V, L, radiance, albedo, metallic, roughness, F0);
 	}
 
 	if (u_VisualizeCascades == 1)
 	{
 		vec3 tints[4] = vec3[4](vec3(1.0, 0.4, 0.4), vec3(0.4, 1.0, 0.4), vec3(0.4, 0.4, 1.0), vec3(1.0, 1.0, 0.4));
-		color *= tints[cascade];
+		Lo *= tints[cascade];
 	}
 
-	o_Color = vec4(color, 1.0);
+	o_Color = vec4(Lo, 1.0);
 	o_EntityID = u_EntityID;
 }

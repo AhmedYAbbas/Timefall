@@ -707,14 +707,15 @@ namespace Timefall
 				if (mat)
 				{
 					bool changed = false;
-					changed |= ImGui::ColorEdit3("Diffuse", glm::value_ptr(mat->DiffuseColor));
-					changed |= ImGui::ColorEdit3("Specular", glm::value_ptr(mat->SpecularColor));
-					changed |= ImGui::DragFloat("Shininess", &mat->Shininess, 1.0f, 1.0f, 256.0f);
+					changed |= ImGui::ColorEdit3("Base Color", glm::value_ptr(mat->BaseColor));
+					changed |= ImGui::SliderFloat("Metallic", &mat->Metallic, 0.0f, 1.0f);
+					changed |= ImGui::SliderFloat("Roughness", &mat->Roughness, 0.0f, 1.0f);
+					changed |= ImGui::SliderFloat("Normal Strength", &mat->NormalStrength, 0.0f, 2.0f);
 
-					// Diffuse map slot
+					// Base Color map slot
 					{
-						std::string label = (mat->DiffuseMap != 0 && AssetManager::IsAssetHandleValid(mat->DiffuseMap))
-							? Project::GetActive()->GetEditorAssetManager()->GetMetadata(mat->DiffuseMap).FilePath.filename().string()
+						std::string label = (mat->BaseColorMap != 0 && AssetManager::IsAssetHandleValid(mat->BaseColorMap))
+							? Project::GetActive()->GetEditorAssetManager()->GetMetadata(mat->BaseColorMap).FilePath.filename().string()
 							: "None";
 						ImGui::Button(label.c_str(), ImVec2(160.0f, 0.0f));
 						if (ImGui::BeginDragDropTarget())
@@ -724,20 +725,20 @@ namespace Timefall
 								AssetHandle handle = *(AssetHandle*)payload->Data;
 								if (AssetManager::GetAssetType(handle) == AssetType::Texture2D)
 								{
-									mat->DiffuseMap = handle;
+									mat->BaseColorMap = handle;
 									changed = true;
 								}
 							}
 							ImGui::EndDragDropTarget();
 						}
 						ImGui::SameLine();
-						ImGui::Text("Diffuse Map");
+						ImGui::Text("Base Color Map");
 					}
 
-					// Specular map slot
+					// Metallic map slot
 					{
-						std::string label = (mat->SpecularMap != 0 && AssetManager::IsAssetHandleValid(mat->SpecularMap))
-							? Project::GetActive()->GetEditorAssetManager()->GetMetadata(mat->SpecularMap).FilePath.filename().string()
+						std::string label = (mat->MetallicMap != 0 && AssetManager::IsAssetHandleValid(mat->MetallicMap))
+							? Project::GetActive()->GetEditorAssetManager()->GetMetadata(mat->MetallicMap).FilePath.filename().string()
 							: "None";
 						ImGui::Button(label.c_str(), ImVec2(160.0f, 0.0f));
 						if (ImGui::BeginDragDropTarget())
@@ -747,14 +748,14 @@ namespace Timefall
 								AssetHandle handle = *(AssetHandle*)payload->Data;
 								if (AssetManager::GetAssetType(handle) == AssetType::Texture2D)
 								{
-									mat->SpecularMap = handle;
+									mat->MetallicMap = handle;
 									changed = true;
 								}
 							}
 							ImGui::EndDragDropTarget();
 						}
 						ImGui::SameLine();
-						ImGui::Text("Specular Map");
+						ImGui::Text("Metallic Map");
 					}
 
 					// Normal map slot
@@ -778,6 +779,52 @@ namespace Timefall
 						}
 						ImGui::SameLine();
 						ImGui::Text("Normal Map");
+					}
+
+					// Roughness map slot
+					{
+						std::string label = (mat->RoughnessMap != 0 && AssetManager::IsAssetHandleValid(mat->RoughnessMap))
+							? Project::GetActive()->GetEditorAssetManager()->GetMetadata(mat->RoughnessMap).FilePath.filename().string()
+							: "None";
+						ImGui::Button(label.c_str(), ImVec2(160.0f, 0.0f));
+						if (ImGui::BeginDragDropTarget())
+						{
+							if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+							{
+								AssetHandle handle = *(AssetHandle*)payload->Data;
+								if (AssetManager::GetAssetType(handle) == AssetType::Texture2D)
+								{
+									mat->RoughnessMap = handle;
+									changed = true;
+								}
+							}
+							ImGui::EndDragDropTarget();
+						}
+						ImGui::SameLine();
+						ImGui::Text("Roughness Map");
+					}
+
+					// AO map slot
+					{
+						std::string label = (mat->AOMap != 0 && AssetManager::IsAssetHandleValid(mat->AOMap))
+							? Project::GetActive()->GetEditorAssetManager()->GetMetadata(mat->AOMap).FilePath.filename().string()
+							: "None";
+						ImGui::Button(label.c_str(), ImVec2(160.0f, 0.0f));
+						if (ImGui::BeginDragDropTarget())
+						{
+							if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+							{
+								AssetHandle handle = *(AssetHandle*)payload->Data;
+								if (AssetManager::GetAssetType(handle) == AssetType::Texture2D)
+								{
+									mat->AOMap = handle;
+									changed = true;
+								}
+							}
+							ImGui::EndDragDropTarget();
+						}
+						ImGui::SameLine();
+						ImGui::Text("AO Map");
 					}
 
 					if (changed)
