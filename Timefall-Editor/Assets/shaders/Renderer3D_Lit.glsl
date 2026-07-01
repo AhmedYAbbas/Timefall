@@ -454,6 +454,5 @@ void main()
 	}
 
 	o_Color = vec4(color, 1.0);
-	o_Color.rgb = pow(o_Color.rgb, vec3(1.0/2.2)); // Gamma correction
 	o_EntityID = u_EntityID;
 }

@@ -43,6 +43,8 @@ namespace Timefall
 		virtual void SetData(const std::vector<uint8_t>& data, uint32_t dataFormat) = 0;
 
 		virtual void Bind(int slot = 0) const = 0;
+		// Bind an sRGB-decoding view of this texture's storage (for albedo/color maps).
+		virtual void BindAsSRGB(int slot = 0) const = 0;
 
 		virtual bool operator==(const Texture& other) const = 0;
 	};

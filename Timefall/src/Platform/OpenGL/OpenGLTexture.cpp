@@ -51,11 +51,11 @@ namespace Timefall
 			? 1 + (uint32_t)std::floor(std::log2((float)std::max(m_Width, m_Height)))
 			: 1;
 
+		m_MipLevels = mipLevels;
 		glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
 		glTextureStorage2D(m_RendererID, mipLevels, m_InternalFormat, m_Width, m_Height);
 
-		glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER,
-			m_Specification.GenerateMips ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+		glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, m_Specification.GenerateMips ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
 		glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -69,6 +69,8 @@ namespace Timefall
 	{
 		TF_PROFILE_FUNCTION();
 
+		if (m_SRGBView)
+			glDeleteTextures(1, &m_SRGBView);
 		glDeleteTextures(1, &m_RendererID);
 	}
 
@@ -114,5 +116,22 @@ namespace Timefall
 		TF_PROFILE_FUNCTION();
 
 		glBindTextureUnit(slot, m_RendererID);
+	}
+
+	void OpenGLTexture2D::BindAsSRGB(int slot) const
+	{
+		if (m_SRGBView == 0)
+		{
+			// RGBA8 <-> SRGB8_ALPHA8 and RGB8 <-> SRGB8 are view-compatible.
+			GLenum srgbFormat = (m_InternalFormat == GL_RGB8) ? GL_SRGB8 : GL_SRGB8_ALPHA8;
+			glGenTextures(1, &m_SRGBView);
+			glTextureView(m_SRGBView, GL_TEXTURE_2D, m_RendererID, srgbFormat, 0, m_MipLevels, 0, 1);
+
+			glTextureParameteri(m_SRGBView, GL_TEXTURE_MIN_FILTER, m_Specification.GenerateMips ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+			glTextureParameteri(m_SRGBView, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTextureParameteri(m_SRGBView, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTextureParameteri(m_SRGBView, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		}
+		glBindTextureUnit(slot, m_SRGBView);
 	}
 }

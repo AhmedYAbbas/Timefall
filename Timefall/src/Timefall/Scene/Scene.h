@@ -5,6 +5,7 @@
 #include "Timefall/Core/Timestep.h"
 #include "Timefall/Renderer/EditorCamera.h"
 #include "Timefall/Renderer/ShadowSettings.h"
+#include "Timefall/Renderer/PostProcessSettings.h"
 
 #include <entt.hpp>
 #include <box2d/id.h>
@@ -67,6 +68,9 @@ namespace Timefall
 
 		ShadowSettings& GetShadowSettings() { return m_ShadowSettings; }
 		const ShadowSettings& GetShadowSettings() const { return m_ShadowSettings; }
+
+		PostProcessSettings& GetPostProcessSettings() { return m_PostProcessSettings; }
+		const PostProcessSettings& GetPostProcessSettings() const { return m_PostProcessSettings; }
 
 		// Unprojects a viewport-relative pixel (top-left origin) to world (x, y) via the primary camera.
 		glm::vec2 ScreenToWorldPoint(const glm::vec2& viewportPixel);
@@ -134,6 +138,7 @@ namespace Timefall
 		std::unordered_map<UUID, entt::entity> m_EntityMap;
 
 		ShadowSettings m_ShadowSettings;
+		PostProcessSettings m_PostProcessSettings;
 
 		// Entities queued for deferred destruction (flushed at end of runtime update).
 		std::vector<entt::entity> m_EntitiesToDestroy;

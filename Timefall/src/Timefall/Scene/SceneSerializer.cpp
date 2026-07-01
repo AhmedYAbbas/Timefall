@@ -165,6 +165,54 @@ namespace Timefall
 		return out;
 	}
 
+	static const char* ToneMapOperatorToString(ToneMapOperator op)
+	{
+		switch (op)
+		{
+			case ToneMapOperator::None:              return "None";
+			case ToneMapOperator::Reinhard:          return "Reinhard";
+			case ToneMapOperator::ReinhardExtended:  return "ReinhardExtended";
+			case ToneMapOperator::Hable:             return "Hable";
+			case ToneMapOperator::ACESNarkowicz:     return "ACESNarkowicz";
+			case ToneMapOperator::ACESHill:          return "ACESHill";
+			case ToneMapOperator::AgX:               return "AgX";
+			case ToneMapOperator::KhronosPBRNeutral: return "KhronosPBRNeutral";
+		}
+		return "ACESHill";
+	}
+
+	static ToneMapOperator ToneMapOperatorFromString(const std::string& s)
+	{
+		if (s == "None")              return ToneMapOperator::None;
+		if (s == "Reinhard")          return ToneMapOperator::Reinhard;
+		if (s == "ReinhardExtended")  return ToneMapOperator::ReinhardExtended;
+		if (s == "Hable")             return ToneMapOperator::Hable;
+		if (s == "ACESNarkowicz")     return ToneMapOperator::ACESNarkowicz;
+		if (s == "ACESHill")          return ToneMapOperator::ACESHill;
+		if (s == "AgX")               return ToneMapOperator::AgX;
+		if (s == "KhronosPBRNeutral") return ToneMapOperator::KhronosPBRNeutral;
+		try { return (ToneMapOperator)std::stoul(s); } catch (...) { return ToneMapOperator::ACESHill; } // back-compat: older scenes stored the int
+	}
+
+	static const char* ShadowCullModeToString(ShadowCullMode m)
+	{
+		switch (m)
+		{
+			case ShadowCullMode::Back:  return "Back";
+			case ShadowCullMode::Front: return "Front";
+			case ShadowCullMode::None:  return "None";
+		}
+		return "Back";
+	}
+
+	static ShadowCullMode ShadowCullModeFromString(const std::string& s)
+	{
+		if (s == "Back")  return ShadowCullMode::Back;
+		if (s == "Front") return ShadowCullMode::Front;
+		if (s == "None")  return ShadowCullMode::None;
+		try { return (ShadowCullMode)std::stoul(s); } catch (...) { return ShadowCullMode::Back; } // back-compat: older scenes stored the int
+	}
+
 	SceneSerializer::SceneSerializer(const Ref<Scene>& scene)
 		: m_Scene(scene)
 	{
@@ -464,7 +512,7 @@ namespace Timefall
 	{
 		YAML::Emitter out;
 		out << YAML::BeginMap;
-		out << YAML::Key << "Scene" << YAML::Value << "Timefall Scene";
+		out << YAML::Key << "Scene" << YAML::Value << filepath.stem().string();
 
 		{
 			const ShadowSettings& s = m_Scene->m_ShadowSettings;
@@ -480,7 +528,16 @@ namespace Timefall
 			out << YAML::Key << "VisualizeCascades"    << YAML::Value << s.VisualizeCascades;
 			out << YAML::Key << "SpotShadowResolution" << YAML::Value << s.SpotShadowResolution;
 			out << YAML::Key << "PointShadowResolution" << YAML::Value << s.PointShadowResolution;
-			out << YAML::Key << "CullMode"             << YAML::Value << (uint32_t)s.CullMode;
+			out << YAML::Key << "CullMode"             << YAML::Value << ShadowCullModeToString(s.CullMode);
+			out << YAML::EndMap;
+		}
+
+		{
+			const PostProcessSettings& p = m_Scene->m_PostProcessSettings;
+			out << YAML::Key << "PostProcessSettings" << YAML::Value << YAML::BeginMap;
+			out << YAML::Key << "Operator"           << YAML::Value << ToneMapOperatorToString(p.Operator);
+			out << YAML::Key << "ExposureEV"         << YAML::Value << p.ExposureEV;
+			out << YAML::Key << "ReinhardWhitePoint" << YAML::Value << p.ReinhardWhitePoint;
 			out << YAML::EndMap;
 		}
 
@@ -544,7 +601,18 @@ namespace Timefall
 			if (shadows["VisualizeCascades"])    s.VisualizeCascades    = shadows["VisualizeCascades"].as<bool>();
 			if (shadows["SpotShadowResolution"]) s.SpotShadowResolution = shadows["SpotShadowResolution"].as<uint32_t>();
 			if (shadows["PointShadowResolution"]) s.PointShadowResolution = shadows["PointShadowResolution"].as<uint32_t>();
-			if (shadows["CullMode"])             s.CullMode             = (ShadowCullMode)shadows["CullMode"].as<uint32_t>();
+			if (shadows["CullMode"])             s.CullMode             = ShadowCullModeFromString(shadows["CullMode"].as<std::string>());
+		}
+
+		if (auto post = data["PostProcessSettings"])
+		{
+			PostProcessSettings& p = m_Scene->m_PostProcessSettings;
+			if (post["Operator"])           
+				p.Operator = ToneMapOperatorFromString(post["Operator"].as<std::string>());
+			if (post["ExposureEV"])         
+				p.ExposureEV = post["ExposureEV"].as<float>();
+			if (post["ReinhardWhitePoint"]) 
+				p.ReinhardWhitePoint = post["ReinhardWhitePoint"].as<float>();
 		}
 
 		if (auto entities = data["Entities"])

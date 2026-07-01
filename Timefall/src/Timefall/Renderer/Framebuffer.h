@@ -1,5 +1,7 @@
 #pragma once
 
+#include <glm/glm.hpp>
+
 namespace Timefall
 {
 	enum class FramebufferTextureFormat
@@ -8,6 +10,7 @@ namespace Timefall
 
 		// Color
 		RGBA8,
+		RGBA16F,
 		RED_INTEGER,
 
 		// Depth/Stencil
@@ -26,6 +29,9 @@ namespace Timefall
 		}
 
 		FramebufferTextureFormat TextureFormat = FramebufferTextureFormat::None;
+		// Non-zero aliases an existing GL texture/renderbuffer instead of creating one.
+		// The framebuffer does NOT own (delete) an aliased attachment.
+		uint32_t ExternalRendererID = 0;
 		// TODO: filtering/wraping
 	};
 
@@ -56,6 +62,11 @@ namespace Timefall
 
 		virtual const FramebufferSpecification& GetSpecification() const = 0;
 		virtual uint32_t GetColorAttachmentRendererID(uint32_t index = 0) const = 0;
+		virtual uint32_t GetDepthAttachmentRendererID() const = 0;
+
+		virtual void BindColorAttachment(uint32_t index, uint32_t slot) = 0;
+		virtual void BindForSingleColorDraw(uint32_t index) = 0;
+		virtual void ClearColorAttachmentF(uint32_t index, const glm::vec4& color) = 0;
 
 		virtual void Bind() = 0;
 		virtual void Unbind() = 0;

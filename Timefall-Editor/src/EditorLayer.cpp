@@ -143,6 +143,7 @@ namespace Timefall
 		// Render
 		Renderer2D::ResetStats();
 		m_Framebuffer->Bind();
+		Renderer3D::SetTargetFramebuffer(m_Framebuffer);
 		RenderCommand::Clear({ 0.1f, 0.1f, 0.1f, 1.0f });
 		m_Framebuffer->ClearColorAttachment(1, -1);
 
@@ -309,6 +310,7 @@ namespace Timefall
 		m_SceneHierarchyPanel.OnImGuiRender();
 		m_ContentBrowserPanel->OnImGuiRender(GetActiveScene());
 		m_ShadowSettingsPanel.OnImGuiRender(GetActiveScene());
+		m_PostProcessSettingsPanel.OnImGuiRender(GetActiveScene());
 
 		ImGui::Begin("Stats");
 

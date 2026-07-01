@@ -1,4 +1,4 @@
-Scene: Timefall Scene
+Scene: Sponza
 ShadowSettings:
   CascadeCount: 4
   ShadowMapResolution: 4096
@@ -11,7 +11,11 @@ ShadowSettings:
   VisualizeCascades: false
   SpotShadowResolution: 1024
   PointShadowResolution: 512
-  CullMode: 0
+  CullMode: Back
+PostProcessSettings:
+  Operator: KhronosPBRNeutral
+  ExposureEV: 0.5
+  ReinhardWhitePoint: 4
 Entities:
   - Entity: 11286399155895205009
     TagComponent:
@@ -8172,12 +8176,12 @@ Entities:
     TagComponent:
       Tag: Fill Light
     TransformComponent:
-      Position: [0, 0.8, 0]
+      Position: [0, 2.7570844, 0]
       Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
     LightComponent:
       Type: Point
-      Color: [0.9019608, 0.8509804, 0.7019608]
+      Color: [0, 0.7104249, 1]
       Intensity: 0.6
       Range: 10
       InnerCutoff: 12.5
@@ -8236,7 +8240,7 @@ Entities:
     LightComponent:
       Type: Directional
       Color: [1, 0.8627451, 0.627451]
-      Intensity: 0.9
+      Intensity: 1.05
       Range: 10
       InnerCutoff: 12.5
       OuterCutoff: 17.5

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Timefall/Renderer/Framebuffer.h"
+#include <glm/glm.hpp>
 
 namespace Timefall {
 	
@@ -14,6 +15,11 @@ namespace Timefall {
 
 		virtual const FramebufferSpecification& GetSpecification() const override { return m_Specification; }
 		virtual uint32_t GetColorAttachmentRendererID(uint32_t index) const override;
+		virtual uint32_t GetDepthAttachmentRendererID() const override { return m_DepthAttachment; }
+
+		virtual void BindColorAttachment(uint32_t index, uint32_t slot) override;
+		virtual void BindForSingleColorDraw(uint32_t index) override;
+		virtual void ClearColorAttachmentF(uint32_t index, const glm::vec4& color) override;
 
 		virtual void Bind() override;
 		virtual void Unbind() override;
@@ -23,6 +29,9 @@ namespace Timefall {
 		virtual void ClearColorAttachment(uint32_t attachmentIndex, int value) override;
 
 	private:
+		void DeleteOwnedAttachments();
+		void SetDrawBuffers();
+
 		uint32_t m_RendererID = 0;
 		FramebufferSpecification m_Specification;
 

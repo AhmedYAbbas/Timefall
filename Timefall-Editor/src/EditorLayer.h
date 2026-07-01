@@ -4,6 +4,7 @@
 #include "Panels/SceneHierarchyPanel.h"
 #include "Panels/ContentBrowserPanel.h"
 #include "Panels/ShadowSettingsPanel.h"
+#include "Panels/PostProcessSettingsPanel.h"
 
 #include <filesystem>
 
@@ -91,5 +92,6 @@ namespace Timefall
 		SceneHierarchyPanel m_SceneHierarchyPanel;
 		Scope<ContentBrowserPanel> m_ContentBrowserPanel;
 		ShadowSettingsPanel m_ShadowSettingsPanel;
+		PostProcessSettingsPanel m_PostProcessSettingsPanel;
 	};
 }

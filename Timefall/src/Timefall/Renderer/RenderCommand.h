@@ -34,6 +34,11 @@ namespace Timefall
 			s_RendererAPI->DrawLines(vertexArray, vertexCount);
 		}
 
+		static void DrawArrays(const Ref<VertexArray>& vertexArray, uint32_t vertexCount)
+		{
+			s_RendererAPI->DrawArrays(vertexArray, vertexCount);
+		}
+
 		inline static void SetLineWidth(float width)
 		{
 			s_RendererAPI->SetLineWidth(width);

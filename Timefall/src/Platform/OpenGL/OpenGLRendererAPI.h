@@ -16,6 +16,7 @@ namespace Timefall
 		virtual void DrawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCount = 0,
 			uint32_t indexOffset = 0, uint32_t baseVertex = 0) override;
 		virtual void DrawLines(const Ref<VertexArray>& vertexArray, uint32_t vertexCount) override;
+		virtual void DrawArrays(const Ref<VertexArray>& vertexArray, uint32_t vertexCount) override;
 
 		virtual void SetLineWidth(float width) override;
 

@@ -2,6 +2,8 @@
 
 #include "Timefall/Renderer/Renderer3D.h"
 
+#include "Timefall/Renderer/Framebuffer.h"
+#include "Timefall/Renderer/VertexArray.h"
 #include "Timefall/Renderer/Shader.h"
 #include "Timefall/Renderer/UniformBuffer.h"
 #include "Timefall/Renderer/RenderCommand.h"
@@ -137,6 +139,12 @@ namespace Timefall
 		std::vector<PointCaster> PointCasters;
 		bool               AnyPointCasts = false;
 
+		Ref<Framebuffer>   TargetFB;       // external LDR target (owns id+depth we alias)
+		Ref<Framebuffer>   HdrFB;          // internal RGBA16F scene buffer
+		Ref<Shader>        ResolveShader;
+		Ref<VertexArray>   FullscreenVAO;  // empty VAO for the fullscreen triangle
+		PostProcessSettings PostProcess;
+
 		static constexpr uint32_t SHADOW_SAMPLER_SLOT = 2;     // units 0=diffuse, 1=specular
 		static constexpr uint32_t SPOT_SHADOW_SAMPLER_SLOT = 3;
 		static constexpr uint32_t POINT_SHADOW_SAMPLER_SLOT = 4;
@@ -149,6 +157,169 @@ namespace Timefall
 	};
 
 	static Renderer3DData s_Data;
+
+	static glm::vec3 SRGBToLinear(const glm::vec3& c)
+	{
+		glm::vec3 lo = c / 12.92f;
+		glm::vec3 hi = glm::pow((c + 0.055f) / 1.055f, glm::vec3(2.4f));
+		return glm::vec3(
+			c.x <= 0.04045f ? lo.x : hi.x,
+			c.y <= 0.04045f ? lo.y : hi.y,
+			c.z <= 0.04045f ? lo.z : hi.z);
+	}
+
+	// Bounding-sphere fit: rotation-invariant size + origin snapped to the texel grid -> no shimmer.
+	static glm::mat4 FitOrthoToCorners(const glm::vec3 corners[8], const glm::vec3& lightDir,
+		uint32_t resolution, float& outRadius)
+	{
+		glm::vec3 center(0.0f);
+		for (int i = 0; i < 8; ++i) center += corners[i];
+		center /= 8.0f;
+
+		float radius = 0.0f;
+		for (int i = 0; i < 8; ++i) radius = glm::max(radius, glm::length(corners[i] - center));
+		outRadius = radius;
+
+		glm::vec3 dir = glm::normalize(lightDir);
+		glm::vec3 up = glm::abs(dir.y) > 0.99f ? glm::vec3(0.0f, 0.0f, 1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
+
+		// Snap the sphere center to whole-texel increments in light space.
+		float texelsPerUnit = float(resolution) / (2.0f * radius);
+		glm::mat4 toTexel = glm::scale(glm::mat4(1.0f), glm::vec3(texelsPerUnit)) * glm::lookAt(glm::vec3(0.0f), dir, up);
+		glm::mat4 toTexelInv = glm::inverse(toTexel);
+
+		glm::vec4 c = toTexel * glm::vec4(center, 1.0f);
+		c.x = glm::floor(c.x);
+		c.y = glm::floor(c.y);
+		center = glm::vec3(toTexelInv * c);
+
+		float depthExtent = radius * Renderer3DData::SHADOW_DEPTH_EXTENT;
+		glm::vec3 eye = center - dir * (radius * 2.0f);
+		glm::mat4 lightView = glm::lookAt(eye, center, up);
+		glm::mat4 lightProj = glm::ortho(-radius, radius, -radius, radius, -depthExtent, depthExtent);
+		return lightProj * lightView;
+	}
+
+	static void ComputeCascades(const glm::mat4& cameraViewProjection, const glm::mat4& cameraView,
+		const glm::vec3& lightDir, const ShadowSettings& settings, ShadowData& out)
+	{
+		const uint32_t cascadeCount = settings.CascadeCount;
+		const float maxShadowDistance = settings.MaxShadowDistance;
+		glm::mat4 invVP = glm::inverse(cameraViewProjection);
+
+		// Loop order puts near corners at even indices, far corners at odd, paired as edge k = (2k, 2k+1).
+		glm::vec3 corners[8];
+		int idx = 0;
+		for (int x = 0; x < 2; ++x)
+			for (int y = 0; y < 2; ++y)
+				for (int z = 0; z < 2; ++z)
+				{
+					glm::vec4 pt = invVP * glm::vec4(2.0f * x - 1.0f, 2.0f * y - 1.0f, 2.0f * z - 1.0f, 1.0f);
+					corners[idx++] = glm::vec3(pt) / pt.w;
+				}
+
+		// View looks down -z, so negate to get positive camera-space depth.
+		float camNear = -(cameraView * glm::vec4(corners[0], 1.0f)).z;
+		float camFar = -(cameraView * glm::vec4(corners[1], 1.0f)).z;
+		float shadowFar = glm::min(camFar, maxShadowDistance);
+
+		// Practical split: lerp of uniform and logarithmic distributions.
+		float splits[MAX_CASCADES];
+		for (uint32_t c = 0; c < cascadeCount; ++c)
+		{
+			float p = float(c + 1) / float(cascadeCount);
+			float logD = camNear * glm::pow(shadowFar / camNear, p);
+			float uniD = camNear + (shadowFar - camNear) * p;
+			splits[c] = glm::mix(uniD, logD, settings.SplitLambda);
+		}
+
+		float range = camFar - camNear;
+		float dNear = camNear;
+		for (uint32_t c = 0; c < cascadeCount; ++c)
+		{
+			float dFar = splits[c];
+			float tN = (dNear - camNear) / range;
+			float tF = (dFar - camNear) / range;
+
+			glm::vec3 slice[8];
+			for (int k = 0; k < 4; ++k)
+			{
+				const glm::vec3& nearC = corners[2 * k];
+				const glm::vec3& farC = corners[2 * k + 1];
+				glm::vec3 edge = farC - nearC;
+				slice[k] = nearC + edge * tN;
+				slice[k + 4] = nearC + edge * tF;
+			}
+
+			float radius = 0.0f;
+			out.LightViewProj[c] = FitOrthoToCorners(slice, lightDir, settings.ShadowMapResolution, radius);
+			out.CascadeTexelWorld[c] = (2.0f * radius) / float(settings.ShadowMapResolution);
+			out.CascadeDepthRange[c] = 2.0f * Renderer3DData::SHADOW_DEPTH_EXTENT * radius;
+			out.CascadeSplits[c] = dFar;
+			dNear = dFar;
+		}
+
+		out.CascadeCount = cascadeCount;
+		out.VisualizeCascades = settings.VisualizeCascades ? 1u : 0u;
+	}
+
+	static RendererAPI::FaceCull ToFaceCull(ShadowCullMode mode)
+	{
+		switch (mode)
+		{
+		case ShadowCullMode::Front: return RendererAPI::FaceCull::Front;
+		case ShadowCullMode::None:  return RendererAPI::FaceCull::None;
+		case ShadowCullMode::Back:
+		default:                    return RendererAPI::FaceCull::Back;
+		}
+	}
+
+	static glm::mat4 ComputeSpotMatrix(const glm::vec3& position, const glm::vec3& direction,
+		float range, float outerCutoffDegrees)
+	{
+		glm::vec3 dir = glm::normalize(direction);
+		glm::vec3 up = glm::abs(dir.y) > 0.99f ? glm::vec3(0.0f, 0.0f, 1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
+		glm::mat4 proj = glm::perspective(glm::radians(2.0f * outerCutoffDegrees), 1.0f, 0.05f, glm::max(range, 0.1f));
+		glm::mat4 view = glm::lookAt(position, position + dir, up);
+		return proj * view;
+	}
+
+	static const glm::vec3 s_CubeFaceDir[6] = {
+		{ 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 }
+	};
+	static const glm::vec3 s_CubeFaceUp[6] = {
+		{ 0, -1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 }, { 0, -1, 0 }, { 0, -1, 0 }
+	};
+
+	static void EnsureHdrFramebuffer()
+	{
+		const auto& target = s_Data.TargetFB;
+		if (!target)
+			return;
+
+		const FramebufferSpecification& tspec = target->GetSpecification();
+		bool needsRebuild = !s_Data.HdrFB ||
+			s_Data.HdrFB->GetSpecification().Width != tspec.Width ||
+			s_Data.HdrFB->GetSpecification().Height != tspec.Height;
+
+		if (!needsRebuild)
+			return;
+
+		FramebufferSpecification spec;
+		spec.Width = tspec.Width;
+		spec.Height = tspec.Height;
+
+		FramebufferTextureSpecification hdrColor(FramebufferTextureFormat::RGBA16F);
+
+		FramebufferTextureSpecification idAlias(FramebufferTextureFormat::RED_INTEGER);
+		idAlias.ExternalRendererID = target->GetColorAttachmentRendererID(1);
+
+		FramebufferTextureSpecification depthAlias(FramebufferTextureFormat::DEPTH24STENCIL8);
+		depthAlias.ExternalRendererID = target->GetDepthAttachmentRendererID();
+
+		spec.Attachments = { hdrColor, idAlias, depthAlias };
+		s_Data.HdrFB = Framebuffer::Create(spec);
+	}
 
 	void Renderer3D::Init()
 	{
@@ -187,10 +358,20 @@ namespace Timefall
 		s_Data.LitShader->SetInt("u_SpotShadowMap", (int)Renderer3DData::SPOT_SHADOW_SAMPLER_SLOT);
 		s_Data.LitShader->SetInt("u_PointShadowMap", (int)Renderer3DData::POINT_SHADOW_SAMPLER_SLOT);
 		s_Data.LitShader->SetInt("u_NormalMap", (int)Renderer3DData::NORMAL_SAMPLER_SLOT);
+
+		s_Data.ResolveShader = Shader::Create("assets/shaders/Renderer3D_Resolve.glsl");
+		s_Data.ResolveShader->Bind();
+		s_Data.ResolveShader->SetInt("u_HdrColor", 0);
+		s_Data.FullscreenVAO = VertexArray::Create();
 	}
 
 	void Renderer3D::Shutdown()
 	{
+	}
+
+	void Renderer3D::SetTargetFramebuffer(const Ref<Framebuffer>& target)
+	{
+		s_Data.TargetFB = target;
 	}
 
 	void Renderer3D::BeginScene(const EditorCamera& camera)
@@ -253,128 +434,10 @@ namespace Timefall
 				s_Data.PointShadowMap->GetCubeCount());
 	}
 
-	// Bounding-sphere fit: rotation-invariant size + origin snapped to the texel grid -> no shimmer.
-	static glm::mat4 FitOrthoToCorners(const glm::vec3 corners[8], const glm::vec3& lightDir,
-		uint32_t resolution, float& outRadius)
+	void Renderer3D::SetPostProcessSettings(const PostProcessSettings& settings)
 	{
-		glm::vec3 center(0.0f);
-		for (int i = 0; i < 8; ++i) center += corners[i];
-		center /= 8.0f;
-
-		float radius = 0.0f;
-		for (int i = 0; i < 8; ++i) radius = glm::max(radius, glm::length(corners[i] - center));
-		outRadius = radius;
-
-		glm::vec3 dir = glm::normalize(lightDir);
-		glm::vec3 up = glm::abs(dir.y) > 0.99f ? glm::vec3(0.0f, 0.0f, 1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
-
-		// Snap the sphere center to whole-texel increments in light space.
-		float texelsPerUnit = float(resolution) / (2.0f * radius);
-		glm::mat4 toTexel = glm::scale(glm::mat4(1.0f), glm::vec3(texelsPerUnit)) * glm::lookAt(glm::vec3(0.0f), dir, up);
-		glm::mat4 toTexelInv = glm::inverse(toTexel);
-
-		glm::vec4 c = toTexel * glm::vec4(center, 1.0f);
-		c.x = glm::floor(c.x);
-		c.y = glm::floor(c.y);
-		center = glm::vec3(toTexelInv * c);
-
-		float depthExtent = radius * Renderer3DData::SHADOW_DEPTH_EXTENT;
-		glm::vec3 eye = center - dir * (radius * 2.0f);
-		glm::mat4 lightView = glm::lookAt(eye, center, up);
-		glm::mat4 lightProj = glm::ortho(-radius, radius, -radius, radius, -depthExtent, depthExtent);
-		return lightProj * lightView;
+		s_Data.PostProcess = settings;
 	}
-
-	static void ComputeCascades(const glm::mat4& cameraViewProjection, const glm::mat4& cameraView,
-		const glm::vec3& lightDir, const ShadowSettings& settings, ShadowData& out)
-	{
-		const uint32_t cascadeCount = settings.CascadeCount;
-		const float maxShadowDistance = settings.MaxShadowDistance;
-		glm::mat4 invVP = glm::inverse(cameraViewProjection);
-
-		// Loop order puts near corners at even indices, far corners at odd, paired as edge k = (2k, 2k+1).
-		glm::vec3 corners[8];
-		int idx = 0;
-		for (int x = 0; x < 2; ++x)
-			for (int y = 0; y < 2; ++y)
-				for (int z = 0; z < 2; ++z)
-				{
-					glm::vec4 pt = invVP * glm::vec4(2.0f * x - 1.0f, 2.0f * y - 1.0f, 2.0f * z - 1.0f, 1.0f);
-					corners[idx++] = glm::vec3(pt) / pt.w;
-				}
-
-		// View looks down -z, so negate to get positive camera-space depth.
-		float camNear = -(cameraView * glm::vec4(corners[0], 1.0f)).z;
-		float camFar  = -(cameraView * glm::vec4(corners[1], 1.0f)).z;
-		float shadowFar = glm::min(camFar, maxShadowDistance);
-
-		// Practical split: lerp of uniform and logarithmic distributions.
-		float splits[MAX_CASCADES];
-		for (uint32_t c = 0; c < cascadeCount; ++c)
-		{
-			float p = float(c + 1) / float(cascadeCount);
-			float logD = camNear * glm::pow(shadowFar / camNear, p);
-			float uniD = camNear + (shadowFar - camNear) * p;
-			splits[c] = glm::mix(uniD, logD, settings.SplitLambda);
-		}
-
-		float range = camFar - camNear;
-		float dNear = camNear;
-		for (uint32_t c = 0; c < cascadeCount; ++c)
-		{
-			float dFar = splits[c];
-			float tN = (dNear - camNear) / range;
-			float tF = (dFar  - camNear) / range;
-
-			glm::vec3 slice[8];
-			for (int k = 0; k < 4; ++k)
-			{
-				const glm::vec3& nearC = corners[2 * k];
-				const glm::vec3& farC  = corners[2 * k + 1];
-				glm::vec3 edge = farC - nearC;
-				slice[k]     = nearC + edge * tN;
-				slice[k + 4] = nearC + edge * tF;
-			}
-
-			float radius = 0.0f;
-			out.LightViewProj[c] = FitOrthoToCorners(slice, lightDir, settings.ShadowMapResolution, radius);
-			out.CascadeTexelWorld[c] = (2.0f * radius) / float(settings.ShadowMapResolution);
-			out.CascadeDepthRange[c] = 2.0f * Renderer3DData::SHADOW_DEPTH_EXTENT * radius;
-			out.CascadeSplits[c] = dFar;
-			dNear = dFar;
-		}
-
-		out.CascadeCount = cascadeCount;
-		out.VisualizeCascades = settings.VisualizeCascades ? 1u : 0u;
-	}
-
-	static RendererAPI::FaceCull ToFaceCull(ShadowCullMode mode)
-	{
-		switch (mode)
-		{
-			case ShadowCullMode::Front: return RendererAPI::FaceCull::Front;
-			case ShadowCullMode::None:  return RendererAPI::FaceCull::None;
-			case ShadowCullMode::Back:
-			default:                    return RendererAPI::FaceCull::Back;
-		}
-	}
-
-	static glm::mat4 ComputeSpotMatrix(const glm::vec3& position, const glm::vec3& direction,
-		float range, float outerCutoffDegrees)
-	{
-		glm::vec3 dir = glm::normalize(direction);
-		glm::vec3 up = glm::abs(dir.y) > 0.99f ? glm::vec3(0.0f, 0.0f, 1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
-		glm::mat4 proj = glm::perspective(glm::radians(2.0f * outerCutoffDegrees), 1.0f, 0.05f, glm::max(range, 0.1f));
-		glm::mat4 view = glm::lookAt(position, position + dir, up);
-		return proj * view;
-	}
-
-	static const glm::vec3 s_CubeFaceDir[6] = {
-		{ 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 }
-	};
-	static const glm::vec3 s_CubeFaceUp[6] = {
-		{ 0, -1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 }, { 0, -1, 0 }, { 0, -1, 0 }
-	};
 
 	void Renderer3D::EndScene()
 	{
@@ -484,6 +547,14 @@ namespace Timefall
 		// Always upload so a point that stopped casting this frame clears its stale caster flag.
 		s_Data.PointShadowUniformBuffer->SetData(&s_Data.PointShadowBuffer, sizeof(PointShadowData));
 
+		// --- Bind HDR scene buffer for the lit pass (aliases target id+depth) ---
+		EnsureHdrFramebuffer();
+		if (s_Data.HdrFB)
+		{
+			s_Data.HdrFB->Bind();
+			s_Data.HdrFB->ClearColorAttachmentF(0, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+		}
+
 		s_Data.LitShader->Bind();
 		s_Data.SunShadowMap->BindForSampling(Renderer3DData::SHADOW_SAMPLER_SLOT);
 		s_Data.SpotShadowMap->BindForSampling(Renderer3DData::SPOT_SHADOW_SAMPLER_SLOT);
@@ -500,8 +571,8 @@ namespace Timefall
 			const Material* mat = sub.Material.get();
 			if (mat != s_Data.CurrentMaterial)
 			{
-				s_Data.LitShader->SetFloat3("u_DiffuseColor", mat->DiffuseColor);
-				s_Data.LitShader->SetFloat3("u_SpecularColor", mat->SpecularColor);
+				s_Data.LitShader->SetFloat3("u_DiffuseColor", SRGBToLinear(mat->DiffuseColor));
+				s_Data.LitShader->SetFloat3("u_SpecularColor", SRGBToLinear(mat->SpecularColor));
 				s_Data.LitShader->SetFloat("u_Shininess", mat->Shininess);
 
 				Ref<Texture2D> diffuse = s_Data.WhiteTexture;
@@ -516,7 +587,7 @@ namespace Timefall
 				if (mat->NormalMap != 0 && AssetManager::IsAssetHandleValid(mat->NormalMap))
 					normalMap = AssetManager::GetAsset<Texture2D>(mat->NormalMap);
 
-				diffuse->Bind(0);
+				diffuse->BindAsSRGB(0);
 				specular->Bind(1);
 				normalMap->Bind(Renderer3DData::NORMAL_SAMPLER_SLOT);
 				s_Data.CurrentMaterial = mat;
@@ -524,6 +595,25 @@ namespace Timefall
 
 			const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
 			RenderCommand::DrawIndexed(sub.Mesh->GetVertexArray(), sm.IndexCount, sm.BaseIndex, sm.BaseVertex);
+		}
+
+		// --- Resolve HDR -> LDR target. Writes color only; id+depth (shared) untouched. ---
+		if (s_Data.HdrFB && s_Data.TargetFB)
+		{
+			RenderCommand::SetDepthTest(false);
+			s_Data.TargetFB->BindForSingleColorDraw(0);
+
+			s_Data.ResolveShader->Bind();
+			s_Data.ResolveShader->SetFloat("u_ExposureEV", s_Data.PostProcess.ExposureEV);
+			s_Data.ResolveShader->SetInt("u_Operator", (int)s_Data.PostProcess.Operator);
+			s_Data.ResolveShader->SetFloat("u_WhitePoint", s_Data.PostProcess.ReinhardWhitePoint);
+			s_Data.HdrFB->BindColorAttachment(0, 0); // HDR color -> unit 0
+
+			RenderCommand::DrawArrays(s_Data.FullscreenVAO, 3);
+
+			// Restore full draw buffers ({color, id}) so the following 2D pass writes ids again.
+			s_Data.TargetFB->Bind();
+			RenderCommand::SetDepthTest(true);
 		}
 	}
 
@@ -555,9 +645,10 @@ namespace Timefall
 		if (s_Data.LightsBuffer.DirCount >= (int)MAX_DIR_LIGHTS)
 			return;
 
+		glm::vec3 linColor = SRGBToLinear(color);
 		GpuDirLight& light = s_Data.LightsBuffer.DirLights[s_Data.LightsBuffer.DirCount++];
 		light.Direction = glm::vec4(glm::normalize(direction), 0.0f);
-		light.Color     = glm::vec4(color, intensity);
+		light.Color     = glm::vec4(linColor, intensity);
 		s_Data.LightsDirty = true;
 
 		// First directional light flagged as a caster becomes the shadow sun.
@@ -576,10 +667,11 @@ namespace Timefall
 		if (s_Data.LightsBuffer.PointCount >= (int)MAX_POINT_LIGHTS)
 			return;
 
+		glm::vec3 linColor = SRGBToLinear(color);
 		uint32_t index = s_Data.LightsBuffer.PointCount;
 		GpuPointLight& light = s_Data.LightsBuffer.PointLights[s_Data.LightsBuffer.PointCount++];
 		light.Position = glm::vec4(position, range);
-		light.Color    = glm::vec4(color, intensity);
+		light.Color    = glm::vec4(linColor, intensity);
 		s_Data.LightsDirty = true;
 
 		if (castsShadows && s_Data.PointCasters.size() < MAX_POINT_LIGHTS)
@@ -602,6 +694,7 @@ namespace Timefall
 		if (s_Data.LightsBuffer.SpotCount >= (int)MAX_SPOT_LIGHTS)
 			return;
 
+		glm::vec3 linColor = SRGBToLinear(color);
 		float innerCos = glm::cos(glm::radians(innerCutoffDegrees));
 		float outerCos = glm::cos(glm::radians(outerCutoffDegrees));
 
@@ -609,7 +702,7 @@ namespace Timefall
 		GpuSpotLight& light = s_Data.LightsBuffer.SpotLights[s_Data.LightsBuffer.SpotCount++];
 		light.Position  = glm::vec4(position, 0.0f);
 		light.Direction = glm::vec4(glm::normalize(direction), 0.0f);
-		light.Color     = glm::vec4(color, 0.0f);
+		light.Color     = glm::vec4(linColor, 0.0f);
 		light.Params    = glm::vec4(range, innerCos, outerCos, intensity);
 		s_Data.LightsDirty = true;
 

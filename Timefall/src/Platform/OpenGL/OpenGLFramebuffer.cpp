@@ -34,22 +34,25 @@ namespace Timefall {
 			glBindRenderbuffer(GL_RENDERBUFFER, id);
 		}
 
-		static void AttachColorTexture(uint32_t id, int samples, GLenum internalFormat, GLenum format, uint32_t width, uint32_t height, int index)
+		static void AttachColorTexture(uint32_t id, int samples, GLenum internalFormat, GLenum format, uint32_t width, uint32_t height, int index, bool external = false)
 		{
 			bool multisampled = samples > 1;
-			if (multisampled)
+			if (!external)
 			{
-				glTexImage2DMultisample(TextureTarget(multisampled), samples, internalFormat, width, height, GL_FALSE);
-			}
-			else
-			{
-				glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
+				if (multisampled)
+				{
+					glTexImage2DMultisample(TextureTarget(multisampled), samples, internalFormat, width, height, GL_FALSE);
+				}
+				else
+				{
+					glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, nullptr);
 
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+				}
 			}
 
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + index, TextureTarget(multisampled), id, 0);
@@ -85,6 +88,7 @@ namespace Timefall {
 			switch (format)
 			{
 				case FramebufferTextureFormat::RGBA8:		return GL_RGBA8;
+				case FramebufferTextureFormat::RGBA16F:		return GL_RGBA16F;
 				case FramebufferTextureFormat::RED_INTEGER: return GL_RED_INTEGER;
 			}
 
@@ -110,8 +114,7 @@ namespace Timefall {
 	OpenGLFramebuffer::~OpenGLFramebuffer()
 	{
 		glDeleteFramebuffers(1, &m_RendererID);
-		glDeleteTextures((GLsizei)m_ColorAttachments.size(), m_ColorAttachments.data());
-		glDeleteRenderbuffers(1, &m_DepthAttachment);
+		DeleteOwnedAttachments();
 		m_ColorAttachments.clear();
 		m_DepthAttachment = 0;
 	}
@@ -121,8 +124,7 @@ namespace Timefall {
 		if (m_RendererID)
 		{
 			glDeleteFramebuffers(1, &m_RendererID);
-			glDeleteTextures((GLsizei)m_ColorAttachments.size(), m_ColorAttachments.data());
-			glDeleteRenderbuffers(1, &m_DepthAttachment);
+			DeleteOwnedAttachments();
 			m_ColorAttachments.clear();
 			m_DepthAttachment = 0;
 		}
@@ -136,18 +138,28 @@ namespace Timefall {
 		if (m_ColorAttachmentSpecifications.size())
 		{
 			m_ColorAttachments.resize(m_ColorAttachmentSpecifications.size());
-			Utils::CreateTextures(multisampled, (uint32_t)m_ColorAttachments.size(), m_ColorAttachments.data());
 
 			for (size_t i = 0; i < m_ColorAttachments.size(); ++i)
 			{
+				const auto& spec = m_ColorAttachmentSpecifications[i];
+				bool external = spec.ExternalRendererID != 0;
+
+				if (external)
+					m_ColorAttachments[i] = spec.ExternalRendererID;
+				else
+					Utils::CreateTextures(multisampled, 1, &m_ColorAttachments[i]);
+
 				Utils::BindTexture(multisampled, m_ColorAttachments[i]);
-				switch (m_ColorAttachmentSpecifications[i].TextureFormat)
+				switch (spec.TextureFormat)
 				{
 					case FramebufferTextureFormat::RGBA8:
-						Utils::AttachColorTexture(m_ColorAttachments[i], m_Specification.Samples, GL_RGBA8, GL_RGBA, m_Specification.Width, m_Specification.Height, (int)i);
+						Utils::AttachColorTexture(m_ColorAttachments[i], m_Specification.Samples, GL_RGBA8, GL_RGBA, m_Specification.Width, m_Specification.Height, (int)i, external);
+						break;
+					case FramebufferTextureFormat::RGBA16F:
+						Utils::AttachColorTexture(m_ColorAttachments[i], m_Specification.Samples, GL_RGBA16F, GL_RGBA, m_Specification.Width, m_Specification.Height, (int)i, external);
 						break;
 					case FramebufferTextureFormat::RED_INTEGER:
-						Utils::AttachColorTexture(m_ColorAttachments[i], m_Specification.Samples, GL_R32I, GL_RED_INTEGER, m_Specification.Width, m_Specification.Height, (int)i);
+						Utils::AttachColorTexture(m_ColorAttachments[i], m_Specification.Samples, GL_R32I, GL_RED_INTEGER, m_Specification.Width, m_Specification.Height, (int)i, external);
 						break;
 					default:
 						TF_CORE_ASSERT(false, "Unknown Framebuffer Color Texture Format!");
@@ -158,31 +170,30 @@ namespace Timefall {
 
 		if (m_DepthAttachmentSpecification.TextureFormat != FramebufferTextureFormat::None)
 		{
-			Utils::CreateRenderBuffers(1, &m_DepthAttachment);
-			Utils::BindRenderBuffer(m_DepthAttachment);
-
-			switch (m_DepthAttachmentSpecification.TextureFormat)
+			bool external = m_DepthAttachmentSpecification.ExternalRendererID != 0;
+			if (external)
 			{
-				case FramebufferTextureFormat::DEPTH24STENCIL8:
-					Utils::AttachDepthTexture(m_DepthAttachment, m_Specification.Samples, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL_ATTACHMENT, m_Specification.Width, m_Specification.Height);
-					break;
-				default:
-					TF_CORE_ASSERT(false, "Unknown Framebuffer Depth Texture Format!");
-					break;
+				m_DepthAttachment = m_DepthAttachmentSpecification.ExternalRendererID;
+				glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_DepthAttachment);
+			}
+			else
+			{
+				Utils::CreateRenderBuffers(1, &m_DepthAttachment);
+				Utils::BindRenderBuffer(m_DepthAttachment);
+
+				switch (m_DepthAttachmentSpecification.TextureFormat)
+				{
+					case FramebufferTextureFormat::DEPTH24STENCIL8:
+						Utils::AttachDepthTexture(m_DepthAttachment, m_Specification.Samples, GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL_ATTACHMENT, m_Specification.Width, m_Specification.Height);
+						break;
+					default:
+						TF_CORE_ASSERT(false, "Unknown Framebuffer Depth Texture Format!");
+						break;
+				}
 			}
 		}
 
-		if (m_ColorAttachments.size() > 1)
-		{
-			TF_CORE_ASSERT(m_ColorAttachments.size() <= 4, "Only 4 color attachments supported!");
-			GLenum buffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
-			glDrawBuffers((GLsizei)m_ColorAttachments.size(), buffers);
-		}
-		else if (m_ColorAttachments.empty())
-		{
-			// Only depth-pass
-			glDrawBuffer(GL_NONE);
-		}
+		SetDrawBuffers();
 
 		TF_CORE_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer is incomplete!");
 
@@ -199,6 +210,7 @@ namespace Timefall {
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
 		glViewport(0, 0, m_Specification.Width, m_Specification.Height);
+		SetDrawBuffers();
 	}
 
 	void OpenGLFramebuffer::Unbind()
@@ -239,6 +251,59 @@ namespace Timefall {
 		GLenum format = Utils::TimefallFBTextureFormatToGL(spec.TextureFormat);
 
 		glClearTexImage(m_ColorAttachments[attachmentIndex], 0, format, GL_INT, &value);
+	}
+
+	void OpenGLFramebuffer::SetDrawBuffers()
+	{
+		if (m_ColorAttachments.size() > 1)
+		{
+			TF_CORE_ASSERT(m_ColorAttachments.size() <= 4, "Only 4 color attachments supported!");
+			GLenum buffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+			glDrawBuffers((GLsizei)m_ColorAttachments.size(), buffers);
+		}
+		else if (m_ColorAttachments.empty())
+		{
+			glDrawBuffer(GL_NONE);
+		}
+		else
+		{
+			GLenum buf = GL_COLOR_ATTACHMENT0;
+			glDrawBuffers(1, &buf);
+		}
+	}
+
+	// Delete only attachments this framebuffer owns (ExternalRendererID == 0).
+	void OpenGLFramebuffer::DeleteOwnedAttachments()
+	{
+		for (size_t i = 0; i < m_ColorAttachments.size(); ++i)
+		{
+			if (i < m_ColorAttachmentSpecifications.size() &&
+				m_ColorAttachmentSpecifications[i].ExternalRendererID != 0)
+				continue;
+			glDeleteTextures(1, &m_ColorAttachments[i]);
+		}
+		if (m_DepthAttachmentSpecification.ExternalRendererID == 0 && m_DepthAttachment)
+			glDeleteRenderbuffers(1, &m_DepthAttachment);
+	}
+
+	void OpenGLFramebuffer::BindColorAttachment(uint32_t index, uint32_t slot)
+	{
+		TF_CORE_ASSERT(index < m_ColorAttachments.size(), "index is greater than the color attachments size");
+		glBindTextureUnit(slot, m_ColorAttachments[index]);
+	}
+
+	void OpenGLFramebuffer::BindForSingleColorDraw(uint32_t index)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
+		glViewport(0, 0, m_Specification.Width, m_Specification.Height);
+		GLenum buf = GL_COLOR_ATTACHMENT0 + index;
+		glDrawBuffers(1, &buf);
+	}
+
+	void OpenGLFramebuffer::ClearColorAttachmentF(uint32_t index, const glm::vec4& color)
+	{
+		TF_CORE_ASSERT(index < m_ColorAttachments.size(), "index is greater than the color attachments size");
+		glClearTexImage(m_ColorAttachments[index], 0, GL_RGBA, GL_FLOAT, &color.x);
 	}
 
 }
