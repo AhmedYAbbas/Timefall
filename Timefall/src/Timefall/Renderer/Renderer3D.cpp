@@ -153,6 +153,7 @@ namespace Timefall
 		static constexpr uint32_t NORMAL_SAMPLER_SLOT = 5;
 		static constexpr uint32_t ROUGHNESS_SAMPLER_SLOT = 6;
 		static constexpr uint32_t AO_SAMPLER_SLOT = 7;
+		static constexpr uint32_t EMISSIVE_SAMPLER_SLOT = 8;
 		static constexpr float    SHADOW_DEPTH_EXTENT = 6.0f;  // ortho slab = radius * this each way along the light
 
 		// Per-frame render-state cache (reset in BeginScene) to skip redundant GL state changes
@@ -360,6 +361,7 @@ namespace Timefall
 		s_Data.LitShader->SetInt("u_MetallicMap", (int)Renderer3DData::METALLIC_SAMPLER_SLOT);
 		s_Data.LitShader->SetInt("u_RoughnessMap", (int)Renderer3DData::ROUGHNESS_SAMPLER_SLOT);
 		s_Data.LitShader->SetInt("u_AOMap", (int)Renderer3DData::AO_SAMPLER_SLOT);
+		s_Data.LitShader->SetInt("u_EmissiveMap", (int)Renderer3DData::EMISSIVE_SAMPLER_SLOT);
 		s_Data.LitShader->SetInt("u_ShadowMap", (int)Renderer3DData::SHADOW_SAMPLER_SLOT);
 		s_Data.LitShader->SetInt("u_SpotShadowMap", (int)Renderer3DData::SPOT_SHADOW_SAMPLER_SLOT);
 		s_Data.LitShader->SetInt("u_PointShadowMap", (int)Renderer3DData::POINT_SHADOW_SAMPLER_SLOT);
@@ -581,6 +583,8 @@ namespace Timefall
 				s_Data.LitShader->SetFloat("u_Metallic", mat->Metallic);
 				s_Data.LitShader->SetFloat("u_Roughness", mat->Roughness);
 				s_Data.LitShader->SetFloat("u_NormalStrength", mat->NormalStrength);
+				s_Data.LitShader->SetFloat3("u_Emissive", SRGBToLinear(mat->Emissive));
+				s_Data.LitShader->SetFloat("u_EmissiveIntensity", mat->EmissiveIntensity);
 
 				auto mapOrWhite = [&](AssetHandle h)
 				{
@@ -592,6 +596,7 @@ namespace Timefall
 				Ref<Texture2D> metallic  = mapOrWhite(mat->MetallicMap);
 				Ref<Texture2D> roughness = mapOrWhite(mat->RoughnessMap);
 				Ref<Texture2D> ao        = mapOrWhite(mat->AOMap);
+				Ref<Texture2D> emissive  = mapOrWhite(mat->EmissiveMap);
 
 				Ref<Texture2D> normalMap = s_Data.FlatNormalTexture;
 				if (mat->NormalMap != 0 && AssetManager::IsAssetHandleValid(mat->NormalMap))
@@ -601,6 +606,7 @@ namespace Timefall
 				metallic->Bind(Renderer3DData::METALLIC_SAMPLER_SLOT);
 				roughness->Bind(Renderer3DData::ROUGHNESS_SAMPLER_SLOT);
 				ao->Bind(Renderer3DData::AO_SAMPLER_SLOT);
+				emissive->BindAsSRGB(Renderer3DData::EMISSIVE_SAMPLER_SLOT);
 				normalMap->Bind(Renderer3DData::NORMAL_SAMPLER_SLOT);
 				s_Data.CurrentMaterial = mat;
 			}

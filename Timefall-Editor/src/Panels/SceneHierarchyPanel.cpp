@@ -711,6 +711,8 @@ namespace Timefall
 					changed |= ImGui::SliderFloat("Metallic", &mat->Metallic, 0.0f, 1.0f);
 					changed |= ImGui::SliderFloat("Roughness", &mat->Roughness, 0.0f, 1.0f);
 					changed |= ImGui::SliderFloat("Normal Strength", &mat->NormalStrength, 0.0f, 2.0f);
+						changed |= ImGui::ColorEdit3("Emissive", glm::value_ptr(mat->Emissive));
+						changed |= ImGui::DragFloat("Emissive Intensity", &mat->EmissiveIntensity, 0.05f, 0.0f, 100.0f);
 
 					// Base Color map slot
 					{
@@ -825,6 +827,29 @@ namespace Timefall
 						}
 						ImGui::SameLine();
 						ImGui::Text("AO Map");
+					}
+
+					// Emissive map slot
+					{
+						std::string label = (mat->EmissiveMap != 0 && AssetManager::IsAssetHandleValid(mat->EmissiveMap))
+							? Project::GetActive()->GetEditorAssetManager()->GetMetadata(mat->EmissiveMap).FilePath.filename().string()
+							: "None";
+						ImGui::Button(label.c_str(), ImVec2(160.0f, 0.0f));
+						if (ImGui::BeginDragDropTarget())
+						{
+							if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+							{
+								AssetHandle handle = *(AssetHandle*)payload->Data;
+								if (AssetManager::GetAssetType(handle) == AssetType::Texture2D)
+								{
+									mat->EmissiveMap = handle;
+									changed = true;
+								}
+							}
+							ImGui::EndDragDropTarget();
+						}
+						ImGui::SameLine();
+						ImGui::Text("Emissive Map");
 					}
 
 					if (changed)

@@ -51,6 +51,12 @@ namespace Timefall
 			material->RoughnessMap = m.as<uint64_t>();
 		if (auto m = node["AOMap"])
 			material->AOMap = m.as<uint64_t>();
+		if (auto c = node["Emissive"])
+			material->Emissive = { c[0].as<float>(), c[1].as<float>(), c[2].as<float>() };
+		if (auto e = node["EmissiveIntensity"])
+			material->EmissiveIntensity = e.as<float>();
+		if (auto m = node["EmissiveMap"])
+			material->EmissiveMap = m.as<uint64_t>();
 
 		// Back-compat: migrate legacy Blinn-Phong .tfmat files.
 		if (auto c = node["DiffuseColor"]; c && !node["BaseColor"])
@@ -77,6 +83,10 @@ namespace Timefall
 		out << YAML::Key << "MetallicMap" << YAML::Value << (uint64_t)material->MetallicMap;
 		out << YAML::Key << "RoughnessMap" << YAML::Value << (uint64_t)material->RoughnessMap;
 		out << YAML::Key << "AOMap" << YAML::Value << (uint64_t)material->AOMap;
+		out << YAML::Key << "Emissive" << YAML::Value << YAML::Flow
+			<< YAML::BeginSeq << material->Emissive.x << material->Emissive.y << material->Emissive.z << YAML::EndSeq;
+		out << YAML::Key << "EmissiveIntensity" << YAML::Value << material->EmissiveIntensity;
+		out << YAML::Key << "EmissiveMap" << YAML::Value << (uint64_t)material->EmissiveMap;
 
 		out << YAML::EndMap;
 		out << YAML::EndMap;

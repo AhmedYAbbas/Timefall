@@ -111,10 +111,13 @@ uniform vec3  u_BaseColor;
 uniform float u_Metallic;
 uniform float u_Roughness;
 uniform float u_NormalStrength;
+uniform vec3  u_Emissive;
+uniform float u_EmissiveIntensity;
 uniform sampler2D u_BaseColorMap;
 uniform sampler2D u_MetallicMap;
 uniform sampler2D u_RoughnessMap;
 uniform sampler2D u_AOMap;
+uniform sampler2D u_EmissiveMap;
 uniform sampler2D u_NormalMap;
 uniform sampler2DArray u_ShadowMap;
 uniform sampler2DArray u_SpotShadowMap;
@@ -494,6 +497,8 @@ void main()
 			radiance *= (1.0 - SampleSpotShadow(v_WorldPos, i, N, L));
 		Lo += CookTorrance(N, V, L, radiance, albedo, metallic, roughness, F0);
 	}
+
+	Lo += u_Emissive * u_EmissiveIntensity * texture(u_EmissiveMap, v_TexCoord).rgb;
 
 	if (u_VisualizeCascades == 1)
 	{

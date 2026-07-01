@@ -256,11 +256,19 @@ namespace Timefall
 			if (aimat->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) == AI_SUCCESS)
 				material->Roughness = roughness;
 
-			material->BaseColorMap = ImportTextureSlot(aimat, aiTextureType_DIFFUSE, modelDir, assetManager.get(), texCache);
+			material->BaseColorMap = ImportTextureSlot(aimat, aiTextureType_BASE_COLOR, modelDir, assetManager.get(), texCache);
 			material->NormalMap    = ImportNormalSlot(aimat, modelDir, assetManager.get(), texCache);
 			material->MetallicMap  = ImportTextureSlot(aimat, aiTextureType_METALNESS, modelDir, assetManager.get(), texCache);
 			material->RoughnessMap = ImportTextureSlot(aimat, aiTextureType_DIFFUSE_ROUGHNESS, modelDir, assetManager.get(), texCache);
 			material->AOMap        = ImportTextureSlot(aimat, aiTextureType_AMBIENT_OCCLUSION, modelDir, assetManager.get(), texCache);
+
+			aiColor3D emissive(0.0f, 0.0f, 0.0f);
+			if (aimat->Get(AI_MATKEY_COLOR_EMISSIVE, emissive) == AI_SUCCESS)
+				material->Emissive = { emissive.r, emissive.g, emissive.b };
+			ai_real emissiveIntensity = 1.0f;
+			if (aimat->Get(AI_MATKEY_EMISSIVE_INTENSITY, emissiveIntensity) == AI_SUCCESS)
+				material->EmissiveIntensity = emissiveIntensity;
+			material->EmissiveMap = ImportTextureSlot(aimat, aiTextureType_EMISSIVE, modelDir, assetManager.get(), texCache);
 
 			aiString aiName;
 			aimat->Get(AI_MATKEY_NAME, aiName);

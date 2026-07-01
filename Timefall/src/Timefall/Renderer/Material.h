@@ -21,6 +21,10 @@ namespace Timefall
 		AssetHandle RoughnessMap = 0;  // linear, sampled .r
 		AssetHandle AOMap = 0;         // linear, sampled .r
 
+		glm::vec3 Emissive{ 0.0f, 0.0f, 0.0f };  // sRGB in picker, linearized on bind
+		float     EmissiveIntensity = 1.0f;
+		AssetHandle EmissiveMap = 0;             // sRGB
+
 		static AssetType GetStaticType() { return AssetType::Material; }
 		virtual AssetType GetType() const override { return GetStaticType(); }
 	};
