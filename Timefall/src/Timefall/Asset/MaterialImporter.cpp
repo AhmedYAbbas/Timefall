@@ -41,6 +41,12 @@ namespace Timefall
 			material->Roughness = r.as<float>();
 		if (auto n = node["NormalStrength"])
 			material->NormalStrength = n.as<float>();
+		if (auto a = node["AlphaMode"])
+			material->Alpha = AlphaModeFromString(a.as<std::string>());
+		if (auto o = node["Opacity"])
+			material->Opacity = o.as<float>();
+		if (auto c = node["AlphaCutoff"])
+			material->AlphaCutoff = c.as<float>();
 		if (auto m = node["BaseColorMap"])
 			material->BaseColorMap = m.as<uint64_t>();
 		if (auto m = node["NormalMap"])
@@ -78,6 +84,9 @@ namespace Timefall
 		out << YAML::Key << "Metallic" << YAML::Value << material->Metallic;
 		out << YAML::Key << "Roughness" << YAML::Value << material->Roughness;
 		out << YAML::Key << "NormalStrength" << YAML::Value << material->NormalStrength;
+		out << YAML::Key << "AlphaMode" << YAML::Value << std::string(AlphaModeToString(material->Alpha));
+		out << YAML::Key << "Opacity" << YAML::Value << material->Opacity;
+		out << YAML::Key << "AlphaCutoff" << YAML::Value << material->AlphaCutoff;
 		out << YAML::Key << "BaseColorMap" << YAML::Value << (uint64_t)material->BaseColorMap;
 		out << YAML::Key << "NormalMap" << YAML::Value << (uint64_t)material->NormalMap;
 		out << YAML::Key << "MetallicMap" << YAML::Value << (uint64_t)material->MetallicMap;

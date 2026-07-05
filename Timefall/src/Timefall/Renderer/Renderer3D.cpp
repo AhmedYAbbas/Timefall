@@ -568,8 +568,9 @@ namespace Timefall
 		s_Data.SpotShadowMap->BindForSampling(Renderer3DData::SPOT_SHADOW_SAMPLER_SLOT);
 		s_Data.PointShadowMap->BindForSampling(Renderer3DData::POINT_SHADOW_SAMPLER_SLOT);
 
-		s_Data.CurrentMaterial = nullptr;
-		for (const MeshSubmission& sub : s_Data.Submissions)
+		// Binds the submission's material (cached, since submissions are grouped by material)
+		// and issues its draw. Shared by the opaque and blended passes below.
+		auto drawSubmission = [&](const MeshSubmission& sub)
 		{
 			s_Data.LitShader->SetMat4("u_Model", sub.Transform);
 			glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(sub.Transform)));
@@ -585,6 +586,9 @@ namespace Timefall
 				s_Data.LitShader->SetFloat("u_NormalStrength", mat->NormalStrength);
 				s_Data.LitShader->SetFloat3("u_Emissive", SRGBToLinear(mat->Emissive));
 				s_Data.LitShader->SetFloat("u_EmissiveIntensity", mat->EmissiveIntensity);
+				s_Data.LitShader->SetInt("u_AlphaMode", (int)mat->Alpha);
+				s_Data.LitShader->SetFloat("u_Opacity", mat->Opacity);
+				s_Data.LitShader->SetFloat("u_AlphaCutoff", mat->AlphaCutoff);
 
 				auto mapOrWhite = [&](AssetHandle h)
 				{
@@ -613,6 +617,37 @@ namespace Timefall
 
 			const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
 			RenderCommand::DrawIndexed(sub.Mesh->GetVertexArray(), sm.IndexCount, sm.BaseIndex, sm.BaseVertex);
+		};
+
+		// Pass 1 — opaque + mask. Depth writes on; order-independent.
+		s_Data.CurrentMaterial = nullptr;
+		for (const MeshSubmission& sub : s_Data.Submissions)
+			if (sub.Material->Alpha != AlphaMode::Blend)
+				drawSubmission(sub);
+
+		// Pass 2 — blended. Must draw farthest-first and NOT write depth, so each
+		// transparent surface blends over everything already behind it.
+		std::vector<const MeshSubmission*> blended;
+		for (const MeshSubmission& sub : s_Data.Submissions)
+			if (sub.Material->Alpha == AlphaMode::Blend)
+				blended.push_back(&sub);
+
+		if (!blended.empty())
+		{
+			const glm::vec3 camPos = s_Data.CameraBuffer.CameraPosition;
+			std::sort(blended.begin(), blended.end(),
+				[&](const MeshSubmission* a, const MeshSubmission* b)
+				{
+					glm::vec3 da = glm::vec3(a->Transform[3]) - camPos;
+					glm::vec3 db = glm::vec3(b->Transform[3]) - camPos;
+					return glm::dot(da, da) > glm::dot(db, db);   // farthest first
+				});
+
+			RenderCommand::SetDepthWrite(false);
+			s_Data.CurrentMaterial = nullptr;
+			for (const MeshSubmission* sub : blended)
+				drawSubmission(*sub);
+			RenderCommand::SetDepthWrite(true);
 		}
 
 		// --- Resolve HDR -> LDR target. Writes color only; id+depth (shared) untouched. ---

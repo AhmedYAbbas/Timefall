@@ -107,6 +107,11 @@ namespace Timefall
             glDisable(GL_DEPTH_TEST);
     }
 
+    void OpenGLRendererAPI::SetDepthWrite(bool enabled)
+    {
+        glDepthMask(enabled ? GL_TRUE : GL_FALSE);
+    }
+
     void OpenGLRendererAPI::SetFaceCulling(FaceCull mode)
     {
         switch (mode)

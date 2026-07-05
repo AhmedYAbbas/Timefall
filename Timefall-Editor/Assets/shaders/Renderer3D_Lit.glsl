@@ -113,6 +113,9 @@ uniform float u_Roughness;
 uniform float u_NormalStrength;
 uniform vec3  u_Emissive;
 uniform float u_EmissiveIntensity;
+uniform int   u_AlphaMode;      // 0 opaque, 1 mask, 2 blend
+uniform float u_Opacity;        // base-color alpha factor
+uniform float u_AlphaCutoff;    // mask threshold
 uniform sampler2D u_BaseColorMap;
 uniform sampler2D u_MetallicMap;
 uniform sampler2D u_RoughnessMap;
@@ -473,7 +476,12 @@ void main()
 	float viewDepth = -(u_View * vec4(v_WorldPos, 1.0)).z;
 	int cascade = u_CascadeCount > 0 ? SelectCascade(viewDepth) : 0;
 
-	vec3  albedo    = u_BaseColor * texture(u_BaseColorMap, v_TexCoord).rgb;
+	vec4  baseSample = texture(u_BaseColorMap, v_TexCoord);
+	float alpha      = u_Opacity * baseSample.a;   // texture alpha is linear even on sRGB maps
+	if (u_AlphaMode == 1 && alpha < u_AlphaCutoff)  // Mask: cut the fragment out entirely
+		discard;
+
+	vec3  albedo    = u_BaseColor * baseSample.rgb;
 	// glTF packs metallic (B) + roughness (G) into one texture; a separately-authored
 	// grayscale map has R=G=B, so these channels are correct for both cases.
 	float metallic  = u_Metallic  * texture(u_MetallicMap,  v_TexCoord).b;
@@ -540,6 +548,7 @@ void main()
 		Lo *= tints[cascade];
 	}
 
-	o_Color = vec4(Lo, 1.0);
+	// Only Blend materials write a real alpha; Opaque/Mask stay fully solid.
+	o_Color = vec4(Lo, u_AlphaMode == 2 ? alpha : 1.0);
 	o_EntityID = u_EntityID;
 }

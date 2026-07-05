@@ -9,6 +9,9 @@ int/
 # Local design / planning docs (kept out of git)
 docs/
 
+# Local Claude Code guidance (kept out of git)
+CLAUDE.md
+
 # Visual Studio files and folders
 .vs/
 *.sln

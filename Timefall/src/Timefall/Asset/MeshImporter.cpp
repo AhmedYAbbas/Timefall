@@ -12,13 +12,14 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <assimp/GltfMaterial.h>
 
 #include <glm/glm.hpp>
 
 namespace Timefall
 {
 	static constexpr uint32_t s_PostProcessFlags =
-		aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs |
+		aiProcess_Triangulate | aiProcess_GenSmoothNormals | /* aiProcess_FlipUVs | */
 		aiProcess_JoinIdenticalVertices | aiProcess_OptimizeMeshes |
 		aiProcess_CalcTangentSpace;
 
@@ -255,6 +256,19 @@ namespace Timefall
 				material->Metallic = metallic;
 			if (aimat->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) == AI_SUCCESS)
 				material->Roughness = roughness;
+
+			// Transparency (glTF alphaMode). Formats without it stay Opaque.
+			material->Opacity = baseColor.a;   // baseColorFactor.a
+			aiString alphaMode;
+			if (aimat->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaMode) == AI_SUCCESS)
+			{
+				std::string mode = alphaMode.C_Str();
+				if (mode == "MASK")       material->Alpha = AlphaMode::Mask;
+				else if (mode == "BLEND") material->Alpha = AlphaMode::Blend;
+			}
+			ai_real alphaCutoff = 0.5f;
+			if (aimat->Get(AI_MATKEY_GLTF_ALPHACUTOFF, alphaCutoff) == AI_SUCCESS)
+				material->AlphaCutoff = alphaCutoff;
 
 			material->BaseColorMap = ImportTextureSlot(aimat, aiTextureType_BASE_COLOR, modelDir, assetManager.get(), texCache);
 			material->NormalMap    = ImportNormalSlot(aimat, modelDir, assetManager.get(), texCache);
