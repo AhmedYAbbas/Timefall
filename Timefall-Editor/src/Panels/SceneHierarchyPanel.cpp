@@ -383,6 +383,7 @@ namespace Timefall
 			DisplayAddComponentEntry<CircleRendererComponent>("Circle Renderer");
 			DisplayAddComponentEntry<MeshComponent>("Mesh");
 			DisplayAddComponentEntry<LightComponent>("Light");
+			DisplayAddComponentEntry<SkyLightComponent>("Sky Light");
 			DisplayAddComponentEntry<Rigidbody2DComponent>("Rigidbody 2D");
 			DisplayAddComponentEntry<BoxCollider2DComponent>("Box Collider 2D");
 			DisplayAddComponentEntry<CircleCollider2DComponent>("Circle Collider 2D");
@@ -920,6 +921,32 @@ namespace Timefall
 					ImGui::DragFloat("Depth Bias", &component.DepthBias, 0.05f, 0.0f, 5.0f);
 				}
 			}
+		});
+
+		DrawComponent<SkyLightComponent>("Sky Light", entity, [](auto& component)
+		{
+			ImGui::PushID("EnvironmentMap");
+			std::string label = (component.EnvironmentMap != 0 && AssetManager::IsAssetHandleValid(component.EnvironmentMap))
+				? Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.EnvironmentMap).FilePath.filename().string()
+				: "None";
+			ImGui::Button(label.c_str(), ImVec2(160.0f, 0.0f));
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+				{
+					AssetHandle handle = *(AssetHandle*)payload->Data;
+					if (AssetManager::GetAssetType(handle) == AssetType::Texture2D)
+						component.EnvironmentMap = handle;
+				}
+				ImGui::EndDragDropTarget();
+			}
+			ImGui::SameLine();
+			if (component.EnvironmentMap != 0) { if (ImGui::SmallButton("X")) component.EnvironmentMap = 0; ImGui::SameLine(); }
+			ImGui::Text("Environment (HDR)");
+			ImGui::PopID();
+
+			ImGui::DragFloat("Intensity", &component.Intensity, 0.02f, 0.0f, 20.0f);
+			ImGui::DragFloat("Rotation", &component.Rotation, 0.5f, 0.0f, 360.0f);
 		});
 
 		DrawComponent<Rigidbody2DComponent>("Rigidbody 2D", entity, [](auto& component)

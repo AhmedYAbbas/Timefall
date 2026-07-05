@@ -85,6 +85,7 @@ namespace Timefall
 		CopyComponent<CircleRendererComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<MeshComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<LightComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<SkyLightComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<CameraComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<ScriptComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<NativeScriptComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
@@ -227,6 +228,15 @@ namespace Timefall
 								light.CastsShadows, light.ShadowSoftness, light.DepthBias);
 							break;
 					}
+				}
+			}
+			{
+				auto skyView = m_Registry.view<SkyLightComponent>();
+				for (auto entity : skyView)
+				{
+					auto& sky = skyView.get<SkyLightComponent>(entity);
+					Renderer3D::SubmitEnvironment(sky.EnvironmentMap, sky.Intensity, sky.Rotation);
+					break; // first SkyLight wins, mirroring the shadow-sun rule
 				}
 			}
 			{
@@ -720,6 +730,15 @@ namespace Timefall
 			}
 		}
 		{
+			auto skyView = m_Registry.view<SkyLightComponent>();
+			for (auto entity : skyView)
+			{
+				auto& sky = skyView.get<SkyLightComponent>(entity);
+				Renderer3D::SubmitEnvironment(sky.EnvironmentMap, sky.Intensity, sky.Rotation);
+				break; // first SkyLight wins, mirroring the shadow-sun rule
+			}
+		}
+		{
 			auto view = m_Registry.view<TransformComponent, MeshComponent>();
 			for (auto entity : view)
 			{
@@ -821,6 +840,11 @@ namespace Timefall
 
 	template<>
 	TF_API void Scene::OnComponentAdded<LightComponent>(Entity entity, LightComponent& component)
+	{
+	}
+
+	template<>
+	TF_API void Scene::OnComponentAdded<SkyLightComponent>(Entity entity, SkyLightComponent& component)
 	{
 	}
 

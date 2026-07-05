@@ -446,6 +446,19 @@ namespace Timefall
 			out << YAML::EndMap; // LightComponent
 		}
 
+		if (entity.HasComponent<SkyLightComponent>())
+		{
+			out << YAML::Key << "SkyLightComponent";
+			out << YAML::BeginMap; // SkyLightComponent
+
+			auto& skyLight = entity.GetComponent<SkyLightComponent>();
+			out << YAML::Key << "EnvironmentMap" << YAML::Value << (uint64_t)skyLight.EnvironmentMap;
+			out << YAML::Key << "Intensity" << YAML::Value << skyLight.Intensity;
+			out << YAML::Key << "Rotation" << YAML::Value << skyLight.Rotation;
+
+			out << YAML::EndMap; // SkyLightComponent
+		}
+
 		if (entity.HasComponent<Rigidbody2DComponent>())
 		{
 			out << YAML::Key << "Rigidbody2DComponent";
@@ -838,6 +851,14 @@ namespace Timefall
 						lc.ShadowSoftness = lightComponent["ShadowSoftness"].as<float>();
 					if (lightComponent["DepthBias"])
 						lc.DepthBias = lightComponent["DepthBias"].as<float>();
+				}
+
+				if (auto skyLightComponent = entity["SkyLightComponent"])
+				{
+					auto& sl = deserializedEntity.AddComponent<SkyLightComponent>();
+					sl.EnvironmentMap = skyLightComponent["EnvironmentMap"].as<uint64_t>();
+					sl.Intensity      = skyLightComponent["Intensity"].as<float>();
+					sl.Rotation       = skyLightComponent["Rotation"].as<float>();
 				}
 
 				auto rigidbody2DComponent = entity["Rigidbody2DComponent"];

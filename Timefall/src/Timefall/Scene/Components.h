@@ -146,6 +146,16 @@ namespace Timefall
 		LightComponent(const LightComponent&) = default;
 	};
 
+	struct TF_API SkyLightComponent
+	{
+		AssetHandle EnvironmentMap = 0;
+		float Intensity = 1.0f;
+		float Rotation  = 0.0f;   // degrees
+
+		SkyLightComponent() = default;
+		SkyLightComponent(const SkyLightComponent&) = default;
+	};
+
 	namespace Utils
 	{
 		static const char* LightTypeToString(LightComponent::LightType type)
@@ -302,6 +312,7 @@ namespace Timefall
 		CircleRendererComponent,
 		MeshComponent,
 		LightComponent,
+		SkyLightComponent,
 		CameraComponent,
 		ScriptComponent,
 		Rigidbody2DComponent,

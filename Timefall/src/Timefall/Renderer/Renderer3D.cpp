@@ -159,6 +159,10 @@ namespace Timefall
 		// Per-frame render-state cache (reset in BeginScene) to skip redundant GL state changes
 		// across the many SubmitMesh calls of a frame.
 		const Material* CurrentMaterial = nullptr;
+
+		AssetHandle ActiveEnvironmentHandle = 0;
+		float       EnvIntensity = 1.0f;
+		float       EnvRotationRadians = 0.0f;
 	};
 
 	static Renderer3DData s_Data;
@@ -400,6 +404,7 @@ namespace Timefall
 		s_Data.AnyPointCasts = false;
 		s_Data.PointCasters.clear();
 		s_Data.CurrentMaterial = nullptr;
+		s_Data.ActiveEnvironmentHandle = 0;
 	}
 
 	void Renderer3D::BeginScene(const Camera& camera, const glm::mat4& transform)
@@ -420,6 +425,7 @@ namespace Timefall
 		s_Data.AnyPointCasts = false;
 		s_Data.PointCasters.clear();
 		s_Data.CurrentMaterial = nullptr;
+		s_Data.ActiveEnvironmentHandle = 0;
 	}
 
 	void Renderer3D::SetShadowSettings(const ShadowSettings& settings)
@@ -769,5 +775,12 @@ namespace Timefall
 		{
 			s_Data.SpotShadowBuffer.Params[index] = glm::vec4(0.0f);
 		}
+	}
+
+	void Renderer3D::SubmitEnvironment(AssetHandle environmentMap, float intensity, float rotationDegrees)
+	{
+		s_Data.ActiveEnvironmentHandle = environmentMap;
+		s_Data.EnvIntensity = intensity;
+		s_Data.EnvRotationRadians = glm::radians(rotationDegrees);
 	}
 }

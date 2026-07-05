@@ -108,7 +108,7 @@ namespace Timefall
 
 		bool isFloat = m_Specification.Format == ImageFormat::RGB32F;
 		GLenum type  = isFloat ? GL_FLOAT : GL_UNSIGNED_BYTE;
-		uint32_t bpc = isFloat ? 4u : 1u;                                  // bytes per channel
+		uint32_t bpc = isFloat ? 4u : 1u;
 		uint32_t channels = m_DataFormat == GL_RGBA ? 4u : 3u;
 		TF_CORE_ASSERT(data.Size == m_Width * m_Height * channels * bpc, "Data must be entire texture");
 
