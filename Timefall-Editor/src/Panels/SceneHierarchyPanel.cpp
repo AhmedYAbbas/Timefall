@@ -716,6 +716,7 @@ namespace Timefall
 
 					// Base Color map slot
 					{
+						ImGui::PushID("BaseColorMap");
 						std::string label = (mat->BaseColorMap != 0 && AssetManager::IsAssetHandleValid(mat->BaseColorMap))
 							? Project::GetActive()->GetEditorAssetManager()->GetMetadata(mat->BaseColorMap).FilePath.filename().string()
 							: "None";
@@ -735,10 +736,12 @@ namespace Timefall
 						}
 						ImGui::SameLine();
 						ImGui::Text("Base Color Map");
+						ImGui::PopID();
 					}
 
 					// Metallic map slot
 					{
+						ImGui::PushID("MetallicMap");
 						std::string label = (mat->MetallicMap != 0 && AssetManager::IsAssetHandleValid(mat->MetallicMap))
 							? Project::GetActive()->GetEditorAssetManager()->GetMetadata(mat->MetallicMap).FilePath.filename().string()
 							: "None";
@@ -758,10 +761,12 @@ namespace Timefall
 						}
 						ImGui::SameLine();
 						ImGui::Text("Metallic Map");
+						ImGui::PopID();
 					}
 
 					// Normal map slot
 					{
+						ImGui::PushID("NormalMap");
 						std::string label = (mat->NormalMap != 0 && AssetManager::IsAssetHandleValid(mat->NormalMap))
 							? Project::GetActive()->GetEditorAssetManager()->GetMetadata(mat->NormalMap).FilePath.filename().string()
 							: "None";
@@ -781,10 +786,12 @@ namespace Timefall
 						}
 						ImGui::SameLine();
 						ImGui::Text("Normal Map");
+						ImGui::PopID();
 					}
 
 					// Roughness map slot
 					{
+						ImGui::PushID("RoughnessMap");
 						std::string label = (mat->RoughnessMap != 0 && AssetManager::IsAssetHandleValid(mat->RoughnessMap))
 							? Project::GetActive()->GetEditorAssetManager()->GetMetadata(mat->RoughnessMap).FilePath.filename().string()
 							: "None";
@@ -804,10 +811,12 @@ namespace Timefall
 						}
 						ImGui::SameLine();
 						ImGui::Text("Roughness Map");
+						ImGui::PopID();
 					}
 
 					// AO map slot
 					{
+						ImGui::PushID("AOMap");
 						std::string label = (mat->AOMap != 0 && AssetManager::IsAssetHandleValid(mat->AOMap))
 							? Project::GetActive()->GetEditorAssetManager()->GetMetadata(mat->AOMap).FilePath.filename().string()
 							: "None";
@@ -827,10 +836,12 @@ namespace Timefall
 						}
 						ImGui::SameLine();
 						ImGui::Text("AO Map");
+						ImGui::PopID();
 					}
 
 					// Emissive map slot
 					{
+						ImGui::PushID("EmissiveMap");
 						std::string label = (mat->EmissiveMap != 0 && AssetManager::IsAssetHandleValid(mat->EmissiveMap))
 							? Project::GetActive()->GetEditorAssetManager()->GetMetadata(mat->EmissiveMap).FilePath.filename().string()
 							: "None";
@@ -850,6 +861,7 @@ namespace Timefall
 						}
 						ImGui::SameLine();
 						ImGui::Text("Emissive Map");
+						ImGui::PopID();
 					}
 
 					if (changed)

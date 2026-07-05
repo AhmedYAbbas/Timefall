@@ -474,8 +474,10 @@ void main()
 	int cascade = u_CascadeCount > 0 ? SelectCascade(viewDepth) : 0;
 
 	vec3  albedo    = u_BaseColor * texture(u_BaseColorMap, v_TexCoord).rgb;
-	float metallic  = u_Metallic  * texture(u_MetallicMap,  v_TexCoord).r;
-	float roughness = clamp(u_Roughness * texture(u_RoughnessMap, v_TexCoord).r, 0.045, 1.0);
+	// glTF packs metallic (B) + roughness (G) into one texture; a separately-authored
+	// grayscale map has R=G=B, so these channels are correct for both cases.
+	float metallic  = u_Metallic  * texture(u_MetallicMap,  v_TexCoord).b;
+	float roughness = clamp(u_Roughness * texture(u_RoughnessMap, v_TexCoord).g, 0.045, 1.0);
 	roughness = clamp(FilterRoughness(N, roughness), 0.045, 1.0);
 	float ao        = texture(u_AOMap, v_TexCoord).r;
 

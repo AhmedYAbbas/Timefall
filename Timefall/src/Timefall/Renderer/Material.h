@@ -17,8 +17,8 @@ namespace Timefall
 
 		AssetHandle BaseColorMap = 0;  // sRGB
 		AssetHandle NormalMap = 0;     // linear
-		AssetHandle MetallicMap = 0;   // linear, sampled .r
-		AssetHandle RoughnessMap = 0;  // linear, sampled .r
+		AssetHandle MetallicMap = 0;   // linear, sampled .b (glTF metal-rough packing)
+		AssetHandle RoughnessMap = 0;  // linear, sampled .g (glTF metal-rough packing)
 		AssetHandle AOMap = 0;         // linear, sampled .r
 
 		glm::vec3 Emissive{ 0.0f, 0.0f, 0.0f };  // sRGB in picker, linearized on bind

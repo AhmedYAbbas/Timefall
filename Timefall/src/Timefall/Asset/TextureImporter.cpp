@@ -22,9 +22,18 @@ namespace Timefall
 		Buffer data;
 		stbi_set_flip_vertically_on_load(1);
 
+		// Grayscale (1) and gray+alpha (2) maps expand to RGB so the shader's per-channel reads
+		// (.r AO, .g roughness, .b metallic) all see the gray value; packed RGB/RGBA maps load as-is.
+		int reqChannels = 0;
+		{
+			int probeW, probeH, probeChannels;
+			if (stbi_info(path.string().c_str(), &probeW, &probeH, &probeChannels) && probeChannels < 3)
+				reqChannels = 3;
+		}
+
 		{
 			TF_PROFILE_SCOPE("stbi_load() - TextureImporter::ImportTexture2D");
-			data.Data = stbi_load(path.string().c_str(), &width, &height, &channels, 0);
+			data.Data = stbi_load(path.string().c_str(), &width, &height, &channels, reqChannels);
 		}
 
 		if (!data.Data)
@@ -33,14 +42,15 @@ namespace Timefall
 			return nullptr;
 		}
 
-		// TODO: This is a bit hacky, we should probably have a better way to determine the size of the data
-		data.Size = width * height * channels;
+		// stbi reports the file's native channel count even when it converts to reqChannels.
+		int loadedChannels = reqChannels != 0 ? reqChannels : channels;
+		data.Size = width * height * loadedChannels;
 
 		TextureSpecification spec;
 		spec.Width = width;
 		spec.Height = height;
 
-		switch (channels)
+		switch (loadedChannels)
 		{
 		case 3:
 			spec.Format = ImageFormat::RGB8;
@@ -48,6 +58,10 @@ namespace Timefall
 		case 4:
 			spec.Format = ImageFormat::RGBA8;
 			break;
+		default:
+			TF_CORE_ERROR("TextureImporter - Unsupported channel count {0} for {1}", loadedChannels, path.string());
+			data.Release();
+			return nullptr;
 		}
 
 		Ref<Texture2D> texture = Texture2D::Create(spec, data);

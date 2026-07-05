@@ -37,6 +37,18 @@ namespace Timefall
 			TF_CORE_ASSERT(false, "Unknown ImageFormat!");
 			return 0;
 		}
+
+		// Hardware max anisotropy, queried once and capped (16x is the visual point of diminishing returns).
+		static float MaxAnisotropy()
+		{
+			static float value = []
+			{
+				GLfloat maxAniso = 1.0f;
+				glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAniso);
+				return std::min(maxAniso, 16.0f);
+			}();
+			return value;
+		}
 	}
 
 	OpenGLTexture2D::OpenGLTexture2D(const TextureSpecification& spec, Buffer data)
@@ -60,6 +72,10 @@ namespace Timefall
 
 		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+		// Anisotropic filtering: kills grazing-angle mip over-blur (radial smear on floors/walls).
+		if (m_Specification.GenerateMips)
+			glTextureParameterf(m_RendererID, GL_TEXTURE_MAX_ANISOTROPY, Utils::MaxAnisotropy());
 
 		if (data)
 			SetData(data);
@@ -131,6 +147,9 @@ namespace Timefall
 			glTextureParameteri(m_SRGBView, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			glTextureParameteri(m_SRGBView, GL_TEXTURE_WRAP_S, GL_REPEAT);
 			glTextureParameteri(m_SRGBView, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+			if (m_Specification.GenerateMips)
+				glTextureParameterf(m_SRGBView, GL_TEXTURE_MAX_ANISOTROPY, Utils::MaxAnisotropy());
 		}
 		glBindTextureUnit(slot, m_SRGBView);
 	}
