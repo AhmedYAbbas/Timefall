@@ -22,6 +22,36 @@ namespace Timefall
 		Buffer data;
 		stbi_set_flip_vertically_on_load(1);
 
+		bool isHDR = stbi_is_hdr(path.string().c_str());
+
+		if (isHDR)
+		{
+			// Equirectangular HDR: keep full float precision, RGB, no mips (only the
+			// equirect->cube pass ever samples it).
+			float* pixels;
+			{
+				TF_PROFILE_SCOPE("stbi_loadf() - TextureImporter::LoadTexture2D (HDR)");
+				pixels = stbi_loadf(path.string().c_str(), &width, &height, &channels, 3);
+			}
+			if (!pixels)
+			{
+				TF_CORE_ERROR("TextureImporter - Failed to load HDR: {0}", path.string());
+				return nullptr;
+			}
+
+			TextureSpecification spec;
+			spec.Width = width;
+			spec.Height = height;
+			spec.Format = ImageFormat::RGB32F;
+			spec.GenerateMips = false;
+
+			data.Data = (uint8_t*)pixels;
+			data.Size = (uint64_t)width * height * 3 * sizeof(float);
+			Ref<Texture2D> texture = Texture2D::Create(spec, data);
+			stbi_image_free(pixels);
+			return texture;
+		}
+
 		// Grayscale (1) and gray+alpha (2) maps expand to RGB so the shader's per-channel reads
 		// (.r AO, .g roughness, .b metallic) all see the gray value; packed RGB/RGBA maps load as-is.
 		int reqChannels = 0;

@@ -17,7 +17,7 @@ namespace Timefall
 				case ImageFormat::R8:		return GL_RED;
 				case ImageFormat::RGB8:		return GL_RGB;
 				case ImageFormat::RGBA8:	return GL_RGBA;
-				case ImageFormat::RGB32F:	return GL_RGB32F;
+				case ImageFormat::RGB32F:	return GL_RGB;   // base format for float upload
 			}
 
 			TF_CORE_ASSERT(false, "Unknown ImageFormat!");
@@ -106,9 +106,13 @@ namespace Timefall
 	{
 		TF_PROFILE_FUNCTION();
 
-		uint32_t bpp = m_DataFormat == GL_RGBA ? 4 : 3;
-		TF_CORE_ASSERT(data.Size == m_Width * m_Height * bpp, "Data must be entire texture");
-		glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, data.Data);
+		bool isFloat = m_Specification.Format == ImageFormat::RGB32F;
+		GLenum type  = isFloat ? GL_FLOAT : GL_UNSIGNED_BYTE;
+		uint32_t bpc = isFloat ? 4u : 1u;                                  // bytes per channel
+		uint32_t channels = m_DataFormat == GL_RGBA ? 4u : 3u;
+		TF_CORE_ASSERT(data.Size == m_Width * m_Height * channels * bpc, "Data must be entire texture");
+
+		glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, type, data.Data);
 
 		if (m_Specification.GenerateMips)
 			glGenerateTextureMipmap(m_RendererID);
@@ -136,6 +140,15 @@ namespace Timefall
 
 	void OpenGLTexture2D::BindAsSRGB(int slot) const
 	{
+		// sRGB views are only valid/meaningful for 8-bit unorm textures. Float (HDR) and other
+		// formats are already linear, so bind them raw (an sRGB texture view would be an invalid
+		// view-class mismatch and sample as black).
+		if (m_InternalFormat != GL_RGB8 && m_InternalFormat != GL_RGBA8)
+		{
+			glBindTextureUnit(slot, m_RendererID);
+			return;
+		}
+
 		if (m_SRGBView == 0)
 		{
 			// RGBA8 <-> SRGB8_ALPHA8 and RGB8 <-> SRGB8 are view-compatible.
