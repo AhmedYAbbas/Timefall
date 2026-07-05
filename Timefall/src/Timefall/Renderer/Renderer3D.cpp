@@ -10,6 +10,7 @@
 #include "Timefall/Renderer/Texture.h"
 #include "Timefall/Renderer/ShadowMap.h"
 #include "Timefall/Renderer/CubeShadowMap.h"
+#include "Timefall/Renderer/Environment.h"
 #include "Timefall/Asset/AssetManager.h"
 #include "Timefall/Asset/EditorAssetManager.h"
 
@@ -163,6 +164,8 @@ namespace Timefall
 		AssetHandle ActiveEnvironmentHandle = 0;
 		float       EnvIntensity = 1.0f;
 		float       EnvRotationRadians = 0.0f;
+		std::unordered_map<AssetHandle, Ref<Environment>> EnvironmentCache;
+		Ref<Environment> ActiveEnvironment;
 	};
 
 	static Renderer3DData s_Data;
@@ -405,6 +408,7 @@ namespace Timefall
 		s_Data.PointCasters.clear();
 		s_Data.CurrentMaterial = nullptr;
 		s_Data.ActiveEnvironmentHandle = 0;
+		s_Data.ActiveEnvironment = nullptr;
 	}
 
 	void Renderer3D::BeginScene(const Camera& camera, const glm::mat4& transform)
@@ -426,6 +430,7 @@ namespace Timefall
 		s_Data.PointCasters.clear();
 		s_Data.CurrentMaterial = nullptr;
 		s_Data.ActiveEnvironmentHandle = 0;
+		s_Data.ActiveEnvironment = nullptr;
 	}
 
 	void Renderer3D::SetShadowSettings(const ShadowSettings& settings)
@@ -782,5 +787,23 @@ namespace Timefall
 		s_Data.ActiveEnvironmentHandle = environmentMap;
 		s_Data.EnvIntensity = intensity;
 		s_Data.EnvRotationRadians = glm::radians(rotationDegrees);
+		s_Data.ActiveEnvironment = nullptr;
+
+		if (environmentMap == 0 || !AssetManager::IsAssetHandleValid(environmentMap))
+			return;
+
+		if (s_Data.EnvironmentCache.contains(environmentMap))
+		{
+			s_Data.ActiveEnvironment = s_Data.EnvironmentCache.at(environmentMap);
+			return;
+		}
+
+		Ref<Texture2D> equirect = AssetManager::GetAsset<Texture2D>(environmentMap);
+		if (!equirect)
+			return;
+
+		Ref<Environment> env = Environment::Create(equirect);
+		s_Data.EnvironmentCache[environmentMap] = env;
+		s_Data.ActiveEnvironment = env;
 	}
 }
