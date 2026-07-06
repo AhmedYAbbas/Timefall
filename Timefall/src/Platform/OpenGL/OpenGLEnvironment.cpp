@@ -58,6 +58,50 @@ namespace Timefall
 		// Env-map mips feed the specular prefilter's solid-angle sampling (Tasks 6-7).
 		glGenerateTextureMipmap(m_Skybox->GetRendererID());
 
+		// --- Diffuse irradiance (cosine convolution of the env cubemap) ---
+		const uint32_t irrSize = 32;
+		m_Irradiance = TextureCube::Create(irrSize, 1);
+		{
+			Ref<Shader> irrShader = Shader::Create("assets/shaders/Renderer3D_IrradianceConvolve.glsl");
+			irrShader->Bind();
+			irrShader->SetInt("u_EnvMap", 0);
+			m_Skybox->BindForSampling(0);
+			glViewport(0, 0, irrSize, irrSize);
+			for (uint32_t face = 0; face < 6; ++face)
+			{
+				irrShader->SetMat4("u_ViewProjection", s_CaptureProj * s_CaptureViews[face]);
+				glNamedFramebufferTextureLayer(m_CaptureFBO, GL_COLOR_ATTACHMENT0, m_Irradiance->GetRendererID(), 0, (GLint)face);
+				glClear(GL_COLOR_BUFFER_BIT);
+				RenderCommand::DrawIndexed(m_CubeMesh->GetVertexArray(), sm.IndexCount, sm.BaseIndex, sm.BaseVertex);
+			}
+		}
+
+		// --- Prefiltered specular (GGX importance sampling, roughness per mip) ---
+		const uint32_t preSize = 128;
+		m_PrefilterMips = 5;
+		m_Prefilter = TextureCube::Create(preSize, m_PrefilterMips);
+		{
+			Ref<Shader> preShader = Shader::Create("assets/shaders/Renderer3D_Prefilter.glsl");
+			preShader->Bind();
+			preShader->SetInt("u_EnvMap", 0);
+			preShader->SetFloat("u_EnvResolution", (float)envSize);
+			m_Skybox->BindForSampling(0);
+			for (uint32_t mip = 0; mip < m_PrefilterMips; ++mip)
+			{
+				uint32_t mipSize = preSize >> mip;
+				glViewport(0, 0, (GLsizei)mipSize, (GLsizei)mipSize);
+				float roughness = (float)mip / (float)(m_PrefilterMips - 1);
+				preShader->SetFloat("u_Roughness", roughness);
+				for (uint32_t face = 0; face < 6; ++face)
+				{
+					preShader->SetMat4("u_ViewProjection", s_CaptureProj * s_CaptureViews[face]);
+					glNamedFramebufferTextureLayer(m_CaptureFBO, GL_COLOR_ATTACHMENT0, m_Prefilter->GetRendererID(), (GLint)mip, (GLint)face);
+					glClear(GL_COLOR_BUFFER_BIT);
+					RenderCommand::DrawIndexed(m_CubeMesh->GetVertexArray(), sm.IndexCount, sm.BaseIndex, sm.BaseVertex);
+				}
+			}
+		}
+
 		glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)prevFBO);
 		glViewport(prevVP[0], prevVP[1], prevVP[2], prevVP[3]);
 		RenderCommand::SetDepthTest(true);

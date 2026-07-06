@@ -50,6 +50,28 @@ namespace Timefall
 		uint32_t _Padding   = 0;
 	};
 
+	// std140 mirror of the Material UBO block in Renderer3D_Lit.glsl.
+	struct MaterialData
+	{
+		glm::vec3 BaseColor = glm::vec3(1.0f); float Metallic = 0.0f;   // vec3 + float share one 16B slot
+		glm::vec3 Emissive  = glm::vec3(0.0f); float Roughness = 1.0f;
+		float NormalStrength    = 1.0f;
+		float EmissiveIntensity = 1.0f;
+		float Opacity           = 1.0f;
+		float AlphaCutoff       = 0.5f;
+		int32_t AlphaMode       = 0;
+		float _Pad0 = 0.0f, _Pad1 = 0.0f, _Pad2 = 0.0f;
+	};
+
+	// std140 mirror of the Environment UBO block in Renderer3D_Lit.glsl.
+	struct EnvironmentData
+	{
+		float EnvIntensity    = 1.0f;
+		float EnvRotation     = 0.0f;
+		float MaxReflectionLod = 4.0f;
+		int32_t HasEnvironment = 0;
+	};
+
 	struct MeshSubmission
 	{
 		glm::mat4       Transform;
@@ -112,6 +134,12 @@ namespace Timefall
 		LightsData         LightsBuffer;
 		bool               LightsDirty = true;
 
+		Ref<UniformBuffer> MaterialUniformBuffer;
+		MaterialData       MaterialBuffer;
+
+		Ref<UniformBuffer> EnvironmentUniformBuffer;
+		EnvironmentData    EnvironmentBuffer;
+
 		Ref<Texture2D> WhiteTexture;
 		Ref<Texture2D> FlatNormalTexture;
 		Ref<Material>  DefaultMaterial;
@@ -156,7 +184,9 @@ namespace Timefall
 		static constexpr uint32_t ROUGHNESS_SAMPLER_SLOT = 6;
 		static constexpr uint32_t AO_SAMPLER_SLOT = 7;
 		static constexpr uint32_t EMISSIVE_SAMPLER_SLOT = 8;
-		static constexpr uint32_t SKYBOX_SAMPLER_SLOT = 11;    // IRRADIANCE=9, PREFILTER=10 reserved for IBL
+		static constexpr uint32_t IRRADIANCE_SAMPLER_SLOT = 9;
+		static constexpr uint32_t PREFILTER_SAMPLER_SLOT = 10;
+		static constexpr uint32_t SKYBOX_SAMPLER_SLOT = 11;
 		static constexpr float    SHADOW_DEPTH_EXTENT = 6.0f;  // ortho slab = radius * this each way along the light
 
 		// Per-frame render-state cache (reset in BeginScene) to skip redundant GL state changes
@@ -353,6 +383,8 @@ namespace Timefall
 		s_Data.ShadowUniformBuffer = UniformBuffer::Create(sizeof(ShadowData), 2);
 		s_Data.SpotShadowUniformBuffer = UniformBuffer::Create(sizeof(SpotShadowData), 3);
 		s_Data.PointShadowUniformBuffer = UniformBuffer::Create(sizeof(PointShadowData), 4);
+		s_Data.MaterialUniformBuffer = UniformBuffer::Create(sizeof(MaterialData), 5);
+		s_Data.EnvironmentUniformBuffer = UniformBuffer::Create(sizeof(EnvironmentData), 6);
 
 		s_Data.WhiteTexture = Texture2D::Create(TextureSpecification());
 		uint32_t whiteTextureData = 0xffffffff;
@@ -375,6 +407,8 @@ namespace Timefall
 		s_Data.LitShader->SetInt("u_SpotShadowMap", (int)Renderer3DData::SPOT_SHADOW_SAMPLER_SLOT);
 		s_Data.LitShader->SetInt("u_PointShadowMap", (int)Renderer3DData::POINT_SHADOW_SAMPLER_SLOT);
 		s_Data.LitShader->SetInt("u_NormalMap", (int)Renderer3DData::NORMAL_SAMPLER_SLOT);
+		s_Data.LitShader->SetInt("u_IrradianceMap", (int)Renderer3DData::IRRADIANCE_SAMPLER_SLOT);
+		s_Data.LitShader->SetInt("u_PrefilterMap", (int)Renderer3DData::PREFILTER_SAMPLER_SLOT);
 
 		s_Data.ResolveShader = Shader::Create("assets/shaders/Renderer3D_Resolve.glsl");
 		s_Data.ResolveShader->Bind();
@@ -585,6 +619,21 @@ namespace Timefall
 		s_Data.SpotShadowMap->BindForSampling(Renderer3DData::SPOT_SHADOW_SAMPLER_SLOT);
 		s_Data.PointShadowMap->BindForSampling(Renderer3DData::POINT_SHADOW_SAMPLER_SLOT);
 
+		if (s_Data.ActiveEnvironment)
+		{
+			s_Data.ActiveEnvironment->GetIrradianceMap()->BindForSampling(Renderer3DData::IRRADIANCE_SAMPLER_SLOT);
+			s_Data.ActiveEnvironment->GetPrefilterMap()->BindForSampling(Renderer3DData::PREFILTER_SAMPLER_SLOT);
+			s_Data.EnvironmentBuffer.HasEnvironment = 1;
+			s_Data.EnvironmentBuffer.EnvIntensity = s_Data.EnvIntensity;
+			s_Data.EnvironmentBuffer.EnvRotation = s_Data.EnvRotationRadians;
+			s_Data.EnvironmentBuffer.MaxReflectionLod = (float)(s_Data.ActiveEnvironment->GetPrefilterMipLevels() - 1);
+		}
+		else
+		{
+			s_Data.EnvironmentBuffer.HasEnvironment = 0;
+		}
+		s_Data.EnvironmentUniformBuffer->SetData(&s_Data.EnvironmentBuffer, sizeof(EnvironmentData));
+
 		// Binds the submission's material (cached, since submissions are grouped by material)
 		// and issues its draw. Shared by the opaque and blended passes below.
 		auto drawSubmission = [&](const MeshSubmission& sub)
@@ -597,15 +646,16 @@ namespace Timefall
 			const Material* mat = sub.Material.get();
 			if (mat != s_Data.CurrentMaterial)
 			{
-				s_Data.LitShader->SetFloat3("u_BaseColor", SRGBToLinear(mat->BaseColor));
-				s_Data.LitShader->SetFloat("u_Metallic", mat->Metallic);
-				s_Data.LitShader->SetFloat("u_Roughness", mat->Roughness);
-				s_Data.LitShader->SetFloat("u_NormalStrength", mat->NormalStrength);
-				s_Data.LitShader->SetFloat3("u_Emissive", SRGBToLinear(mat->Emissive));
-				s_Data.LitShader->SetFloat("u_EmissiveIntensity", mat->EmissiveIntensity);
-				s_Data.LitShader->SetInt("u_AlphaMode", (int)mat->Alpha);
-				s_Data.LitShader->SetFloat("u_Opacity", mat->Opacity);
-				s_Data.LitShader->SetFloat("u_AlphaCutoff", mat->AlphaCutoff);
+				s_Data.MaterialBuffer.BaseColor = SRGBToLinear(mat->BaseColor);
+				s_Data.MaterialBuffer.Metallic = mat->Metallic;
+				s_Data.MaterialBuffer.Roughness = mat->Roughness;
+				s_Data.MaterialBuffer.NormalStrength = mat->NormalStrength;
+				s_Data.MaterialBuffer.Emissive = SRGBToLinear(mat->Emissive);
+				s_Data.MaterialBuffer.EmissiveIntensity = mat->EmissiveIntensity;
+				s_Data.MaterialBuffer.AlphaMode = (int)mat->Alpha;
+				s_Data.MaterialBuffer.Opacity = mat->Opacity;
+				s_Data.MaterialBuffer.AlphaCutoff = mat->AlphaCutoff;
+				s_Data.MaterialUniformBuffer->SetData(&s_Data.MaterialBuffer, sizeof(MaterialData));
 
 				auto mapOrWhite = [&](AssetHandle h)
 				{

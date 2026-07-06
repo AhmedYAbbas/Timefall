@@ -736,6 +736,11 @@ namespace Timefall
 							ImGui::EndDragDropTarget();
 						}
 						ImGui::SameLine();
+						if (mat->BaseColorMap != 0)
+						{
+							if (ImGui::SmallButton("X")) { mat->BaseColorMap = 0; changed = true; }
+							ImGui::SameLine();
+						}
 						ImGui::Text("Base Color Map");
 						ImGui::PopID();
 					}
@@ -761,6 +766,11 @@ namespace Timefall
 							ImGui::EndDragDropTarget();
 						}
 						ImGui::SameLine();
+						if (mat->MetallicMap != 0)
+						{
+							if (ImGui::SmallButton("X")) { mat->MetallicMap = 0; changed = true; }
+							ImGui::SameLine();
+						}
 						ImGui::Text("Metallic Map");
 						ImGui::PopID();
 					}
@@ -786,6 +796,11 @@ namespace Timefall
 							ImGui::EndDragDropTarget();
 						}
 						ImGui::SameLine();
+						if (mat->NormalMap != 0)
+						{
+							if (ImGui::SmallButton("X")) { mat->NormalMap = 0; changed = true; }
+							ImGui::SameLine();
+						}
 						ImGui::Text("Normal Map");
 						ImGui::PopID();
 					}
@@ -811,6 +826,11 @@ namespace Timefall
 							ImGui::EndDragDropTarget();
 						}
 						ImGui::SameLine();
+						if (mat->RoughnessMap != 0)
+						{
+							if (ImGui::SmallButton("X")) { mat->RoughnessMap = 0; changed = true; }
+							ImGui::SameLine();
+						}
 						ImGui::Text("Roughness Map");
 						ImGui::PopID();
 					}
@@ -836,6 +856,11 @@ namespace Timefall
 							ImGui::EndDragDropTarget();
 						}
 						ImGui::SameLine();
+						if (mat->AOMap != 0)
+						{
+							if (ImGui::SmallButton("X")) { mat->AOMap = 0; changed = true; }
+							ImGui::SameLine();
+						}
 						ImGui::Text("AO Map");
 						ImGui::PopID();
 					}
@@ -861,6 +886,11 @@ namespace Timefall
 							ImGui::EndDragDropTarget();
 						}
 						ImGui::SameLine();
+						if (mat->EmissiveMap != 0)
+						{
+							if (ImGui::SmallButton("X")) { mat->EmissiveMap = 0; changed = true; }
+							ImGui::SameLine();
+						}
 						ImGui::Text("Emissive Map");
 						ImGui::PopID();
 					}

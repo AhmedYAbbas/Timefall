@@ -107,15 +107,17 @@ layout(std140, binding = 4) uniform PointShadows
 
 uniform int u_EntityID;
 
-uniform vec3  u_BaseColor;
-uniform float u_Metallic;
-uniform float u_Roughness;
-uniform float u_NormalStrength;
-uniform vec3  u_Emissive;
-uniform float u_EmissiveIntensity;
-uniform int   u_AlphaMode;      // 0 opaque, 1 mask, 2 blend
-uniform float u_Opacity;        // base-color alpha factor
-uniform float u_AlphaCutoff;    // mask threshold
+layout(std140, binding = 5) uniform Material
+{
+	vec3  u_BaseColor;  float u_Metallic;         // vec3 + float share one 16B slot
+	vec3  u_Emissive;   float u_Roughness;
+	float u_NormalStrength;
+	float u_EmissiveIntensity;
+	float u_Opacity;                              // base-color alpha factor
+	float u_AlphaCutoff;                          // mask threshold
+	int   u_AlphaMode;                            // 0 opaque, 1 mask, 2 blend
+};
+
 uniform sampler2D u_BaseColorMap;
 uniform sampler2D u_MetallicMap;
 uniform sampler2D u_RoughnessMap;
@@ -125,6 +127,17 @@ uniform sampler2D u_NormalMap;
 uniform sampler2DArray u_ShadowMap;
 uniform sampler2DArray u_SpotShadowMap;
 uniform samplerCubeArray u_PointShadowMap;
+
+uniform samplerCube u_IrradianceMap;
+uniform samplerCube u_PrefilterMap;
+
+layout(std140, binding = 6) uniform Environment
+{
+	float u_EnvIntensity;
+	float u_EnvRotation;
+	float u_MaxReflectionLod;
+	int   u_HasEnvironment;
+};
 
 layout(location = 0) out vec4 o_Color;
 layout(location = 1) out int o_EntityID;
@@ -165,6 +178,24 @@ vec2 EnvBRDFApprox(float NdotV, float roughness)
 	vec4 r = roughness * c0 + c1;
 	float a004 = min(r.x * r.x, exp2(-9.28 * NdotV)) * r.x + r.y;
 	return vec2(-1.04, 1.04) * a004 + r.zw;
+}
+
+vec3 rotateY(vec3 v, float a)
+{
+	float c = cos(a), s = sin(a);
+	return vec3(c * v.x + s * v.z, v.y, -s * v.x + c * v.z);
+}
+
+// Roughness-aware Fresnel for ambient (Sébastien Lagarde).
+vec3 F_SchlickRoughness(float cosTheta, vec3 F0, float roughness)
+{
+	return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+// Horizon-based specular occlusion from diffuse AO (Lagarde, "Moving Frostbite to PBR").
+float SpecularOcclusion(float NdotV, float ao, float roughness)
+{
+	return clamp(pow(NdotV + ao, exp2(-16.0 * roughness - 1.0)) - 1.0 + ao, 0.0, 1.0);
 }
 
 // Improved geometric specular AA (Kaplanyan 2016): bump roughness by the sub-pixel
@@ -491,8 +522,29 @@ void main()
 
 	vec3 F0 = mix(vec3(0.04), albedo, metallic);
 
-	// Flat ambient placeholder (no IBL this pass). Metals read dark here — expected.
-	vec3 Lo = c_AmbientStrength * albedo * ao;
+	vec3 Lo;
+	if (u_HasEnvironment != 0)
+	{
+		float NdotV = max(dot(N, V), 1e-4);
+		vec3  Nr = rotateY(N, u_EnvRotation);
+		vec3  Rr = rotateY(reflect(-V, N), u_EnvRotation);
+
+		vec3 F  = F_SchlickRoughness(NdotV, F0, roughness);
+		vec3 kD = (1.0 - F) * (1.0 - metallic);
+
+		vec3 diffuseIBL  = texture(u_IrradianceMap, Nr).rgb * albedo;
+		vec3 prefiltered = textureLod(u_PrefilterMap, Rr, roughness * u_MaxReflectionLod).rgb;
+		vec2 dfg         = EnvBRDFApprox(NdotV, roughness);
+		vec3 specularIBL = prefiltered * (F0 * dfg.x + dfg.y);
+
+		float specAO = SpecularOcclusion(NdotV, ao, roughness);
+		Lo = (kD * diffuseIBL * ao + specularIBL * specAO) * u_EnvIntensity;
+	}
+	else
+	{
+		// No environment: preserve the original flat-ambient behavior.
+		Lo = c_AmbientStrength * albedo * ao;
+	}
 
 	// Directional
 	for (int i = 0; i < u_DirCount; i++)
