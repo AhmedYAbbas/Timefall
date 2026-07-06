@@ -1,4 +1,4 @@
-Scene: Timefall Scene
+Scene: Game
 ShadowSettings:
   CascadeCount: 4
   ShadowMapResolution: 4096
@@ -11,8 +11,23 @@ ShadowSettings:
   VisualizeCascades: false
   SpotShadowResolution: 4096
   PointShadowResolution: 1024
-  CullMode: 0
+  CullMode: Back
+PostProcessSettings:
+  Operator: ACESHill
+  ExposureEV: 0
+  ReinhardWhitePoint: 4
 Entities:
+  - Entity: 15788810272703170838
+    TagComponent:
+      Tag: SkyLight
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    SkyLightComponent:
+      EnvironmentMap: 15562484090310629946
+      Intensity: 1
+      Rotation: 45
   - Entity: 15085579748686129622
     TagComponent:
       Tag: Empty Entity
@@ -90,24 +105,24 @@ Entities:
     TagComponent:
       Tag: Sphere
     TransformComponent:
-      Position: [-1.3905451, 1.5563576, 1.4480224]
+      Position: [-1.3714772, 1.1198618, 1.4480224]
       Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
     MeshComponent:
       Mesh: 2
       Submesh: 0
-      Material: 0
+      Material: 13685818033819561994
   - Entity: 10746470915613893352
     TagComponent:
       Tag: Cube
     TransformComponent:
-      Position: [2.1371999, 1.4069128, 0.1536668]
+      Position: [-0.1240136, 1.2263744, 0.46898106]
       Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
     MeshComponent:
       Mesh: 1
       Submesh: 0
-      Material: 0
+      Material: 17541711539439424707
   - Entity: 3312706573496031648
     TagComponent:
       Tag: Plane
@@ -118,7 +133,7 @@ Entities:
     MeshComponent:
       Mesh: 3
       Submesh: 0
-      Material: 0
+      Material: 13685818033819561994
   - Entity: 8068055778448417359
     TagComponent:
       Tag: Directional Light
