@@ -243,11 +243,13 @@ vec3 CookTorrance(vec3 N, vec3 V, vec3 L, vec3 radiance, vec3 albedo, float meta
 	return (diffuse + specular) * radiance * NdotL;
 }
 
-// Range-based attenuation: smoothly 1 at the light, 0 at distance == range.
+// Physical inverse-square falloff with Karis range windowing (smooth cutoff to 0 at range).
 float Attenuate(float dist, float range)
 {
-	float x = clamp(1.0 - (dist * dist) / (range * range), 0.0, 1.0);
-	return x * x;
+	float d2     = dist * dist;
+	float factor = d2 / (range * range);                    // (d/r)^2
+	float window = clamp(1.0 - factor * factor, 0.0, 1.0);  // 1 - (d/r)^4
+	return (window * window) / max(d2, 1e-4);               // 1/d^2 · window^2
 }
 
 const float BLOCKER_SEARCH_TEXELS = 24.0;
