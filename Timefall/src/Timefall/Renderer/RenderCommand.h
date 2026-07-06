@@ -54,6 +54,11 @@ namespace Timefall
 			s_RendererAPI->SetDepthWrite(enabled);
 		}
 
+		inline static void SetDepthFunc(RendererAPI::DepthFunc func)
+		{
+			s_RendererAPI->SetDepthFunc(func);
+		}
+
 		inline static void SetFaceCulling(RendererAPI::FaceCull mode)
 		{
 			s_RendererAPI->SetFaceCulling(mode);

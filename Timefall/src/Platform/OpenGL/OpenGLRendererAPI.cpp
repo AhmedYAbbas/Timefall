@@ -112,6 +112,11 @@ namespace Timefall
         glDepthMask(enabled ? GL_TRUE : GL_FALSE);
     }
 
+    void OpenGLRendererAPI::SetDepthFunc(DepthFunc func)
+    {
+        glDepthFunc(func == DepthFunc::LessEqual ? GL_LEQUAL : GL_LESS);
+    }
+
     void OpenGLRendererAPI::SetFaceCulling(FaceCull mode)
     {
         switch (mode)

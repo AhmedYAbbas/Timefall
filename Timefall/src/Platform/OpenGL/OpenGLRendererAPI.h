@@ -22,6 +22,7 @@ namespace Timefall
 
 		virtual void SetDepthTest(bool enabled) override;
 		virtual void SetDepthWrite(bool enabled) override;
+		virtual void SetDepthFunc(DepthFunc func) override;
 		virtual void SetFaceCulling(FaceCull mode) override;
 	};
 }

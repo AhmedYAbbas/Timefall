@@ -143,6 +143,7 @@ namespace Timefall
 		Ref<Framebuffer>   TargetFB;       // external LDR target (owns id+depth we alias)
 		Ref<Framebuffer>   HdrFB;          // internal RGBA16F scene buffer
 		Ref<Shader>        ResolveShader;
+		Ref<Shader>        SkyboxShader;
 		Ref<VertexArray>   FullscreenVAO;  // empty VAO for the fullscreen triangle
 		PostProcessSettings PostProcess;
 
@@ -155,6 +156,7 @@ namespace Timefall
 		static constexpr uint32_t ROUGHNESS_SAMPLER_SLOT = 6;
 		static constexpr uint32_t AO_SAMPLER_SLOT = 7;
 		static constexpr uint32_t EMISSIVE_SAMPLER_SLOT = 8;
+		static constexpr uint32_t SKYBOX_SAMPLER_SLOT = 11;    // IRRADIANCE=9, PREFILTER=10 reserved for IBL
 		static constexpr float    SHADOW_DEPTH_EXTENT = 6.0f;  // ortho slab = radius * this each way along the light
 
 		// Per-frame render-state cache (reset in BeginScene) to skip redundant GL state changes
@@ -378,6 +380,10 @@ namespace Timefall
 		s_Data.ResolveShader->Bind();
 		s_Data.ResolveShader->SetInt("u_HdrColor", 0);
 		s_Data.FullscreenVAO = VertexArray::Create();
+
+		s_Data.SkyboxShader = Shader::Create("assets/shaders/Renderer3D_Skybox.glsl");
+		s_Data.SkyboxShader->Bind();
+		s_Data.SkyboxShader->SetInt("u_Skybox", (int)Renderer3DData::SKYBOX_SAMPLER_SLOT);
 	}
 
 	void Renderer3D::Shutdown()
@@ -635,6 +641,29 @@ namespace Timefall
 		for (const MeshSubmission& sub : s_Data.Submissions)
 			if (sub.Material->Alpha != AlphaMode::Blend)
 				drawSubmission(sub);
+
+		// Skybox — fill un-covered background before the transparent pass so blended
+		// surfaces composite over it. LEQUAL lets the far-plane sky pass where depth is
+		// still 1.0 (nothing drawn); front-face cull renders the inside of the cube.
+		if (s_Data.ActiveEnvironment)
+		{
+			RenderCommand::SetDepthFunc(RendererAPI::DepthFunc::LessEqual);
+			RenderCommand::SetFaceCulling(RendererAPI::FaceCull::Front);
+			s_Data.SkyboxShader->Bind();
+			s_Data.SkyboxShader->SetFloat("u_EnvRotation", s_Data.EnvRotationRadians);
+			s_Data.ActiveEnvironment->GetSkyboxMap()->BindForSampling(Renderer3DData::SKYBOX_SAMPLER_SLOT);
+
+			const Submesh& sky = s_Data.CubeMesh->GetSubmeshes()[0];
+			RenderCommand::DrawIndexed(s_Data.CubeMesh->GetVertexArray(), sky.IndexCount, sky.BaseIndex, sky.BaseVertex);
+
+			RenderCommand::SetFaceCulling(RendererAPI::FaceCull::Back);
+			RenderCommand::SetDepthFunc(RendererAPI::DepthFunc::Less);
+
+			// Restore the lit program for the transparent pass: SetX uploads to the
+			// currently-bound program, so the skybox's shader must not stay bound.
+			s_Data.LitShader->Bind();
+			s_Data.CurrentMaterial = nullptr;
+		}
 
 		// Pass 2 — blended. Must draw farthest-first and NOT write depth, so each
 		// transparent surface blends over everything already behind it.

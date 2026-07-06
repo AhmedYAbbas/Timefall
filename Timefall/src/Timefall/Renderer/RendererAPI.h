@@ -19,6 +19,11 @@ namespace Timefall
 			None = 0, Front, Back
 		};
 
+		enum class DepthFunc
+		{
+			Less = 0, LessEqual
+		};
+
 	public:
 		virtual ~RendererAPI() = default;
 
@@ -35,6 +40,7 @@ namespace Timefall
 
 		virtual void SetDepthTest(bool enabled) = 0;
 		virtual void SetDepthWrite(bool enabled) = 0;
+		virtual void SetDepthFunc(DepthFunc func) = 0;
 		virtual void SetFaceCulling(FaceCull mode) = 0;
 
 		inline static API GetAPI() { return s_API; }
