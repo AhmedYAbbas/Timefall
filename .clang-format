@@ -1,0 +1,68 @@
+# Timefall engine style — derived from existing code + owner choices (2026-07-09)
+Language: Cpp
+BasedOnStyle: LLVM
+Standard: c++20
+
+UseTab: ForContinuationAndIndentation
+IndentWidth: 4
+TabWidth: 4
+ContinuationIndentWidth: 4
+ColumnLimit: 140
+
+# Allman everywhere except enums, so short enums can stay on one line
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterClass: true
+  AfterControlStatement: Always
+  AfterEnum: false
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
+  AfterExternBlock: true
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeLambdaBody: false
+  BeforeWhile: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: true
+NamespaceIndentation: All
+FixNamespaceComments: false
+AccessModifierOffset: -4
+IndentCaseLabels: true
+
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+AlignAfterOpenBracket: DontAlign
+AlignOperands: DontAlign
+AlignConsecutiveAssignments: None
+AlignConsecutiveDeclarations: None
+AlignTrailingComments:
+  Kind: Never
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeTernaryOperators: true
+
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortEnumsOnASingleLine: true
+AllowShortLambdasOnASingleLine: All
+
+Cpp11BracedListStyle: true
+SpaceBeforeCpp11BracedList: false
+
+BreakConstructorInitializers: BeforeColon
+PackConstructorInitializers: Never
+ConstructorInitializerIndentWidth: 4
+
+# owner prefers brace-less single-statement bodies (never on the same line as the if)
+RemoveBracesLLVM: true
+
+SortIncludes: Never
+SortUsingDeclarations: Never
+
+MaxEmptyLinesToKeep: 1

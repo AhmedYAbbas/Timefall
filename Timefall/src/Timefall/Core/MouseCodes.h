@@ -1,5 +1,8 @@
 #pragma once
 
+// hand-aligned key/button tables
+// clang-format off
+
 namespace Timefall
 {
 	typedef enum class TF_API MouseCode : uint16_t
@@ -39,3 +42,4 @@ namespace Timefall
 #define TF_MOUSE_BUTTON_LEFT   ::Timefall::Mouse::LeftButton
 #define TF_MOUSE_BUTTON_RIGHT  ::Timefall::Mouse::RightButton
 #define TF_MOUSE_BUTTON_MIDDLE ::Timefall::Mouse::MiddleButton
+// clang-format on
