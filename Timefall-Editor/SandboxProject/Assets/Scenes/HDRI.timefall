@@ -1,0 +1,568 @@
+Scene: HDRI
+ShadowSettings:
+  CascadeCount: 4
+  ShadowMapResolution: 2048
+  MaxShadowDistance: 100
+  SplitLambda: 0.85
+  CascadeBlend: 0.1
+  BlockerSearchSamples: 16
+  PCFSamples: 16
+  SoftShadows: true
+  VisualizeCascades: false
+  SpotShadowResolution: 1024
+  PointShadowResolution: 512
+  CullMode: Back
+PostProcessSettings:
+  Operator: KhronosPBRNeutral
+  ExposureEV: 0
+  ReinhardWhitePoint: 4
+Entities:
+  - Entity: 7120775562336544797
+    TagComponent:
+      Tag: Cerberus00_Fixed
+    TransformComponent:
+      Position: [-148.61244, -97.12254, 40.601177]
+      Rotation: [-6.062515e-13, 5.119497e-12, 1.5849417]
+      Scale: [0.99999285, 0.9997019, 0.9999989]
+    RelationshipComponent:
+      Parent: 2181378318000397875
+      Children:
+        []
+    MeshComponent:
+      Mesh: 11317502586226960060
+      Submesh: 0
+      Material: 2830451208351194033
+  - Entity: 2181378318000397875
+    TagComponent:
+      Tag: Cerberus00_Fixed_$AssimpFbx$_GeometricTranslation
+    TransformComponent:
+      Position: [2.2559846e-06, 93.72016, 4.0966383e-06]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    RelationshipComponent:
+      Parent: 11556573170712399623
+      Children:
+        - 7120775562336544797
+  - Entity: 11556573170712399623
+    TagComponent:
+      Tag: Cerberus00_Fixed_$AssimpFbx$_PreRotation
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [-1.5707964, -0, 0]
+      Scale: [1, 1, 1]
+    RelationshipComponent:
+      Parent: 4489840310980664033
+      Children:
+        - 2181378318000397875
+  - Entity: 4489840310980664033
+    TagComponent:
+      Tag: Pistol
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [0.1, 0.1, 0.1]
+    RelationshipComponent:
+      Parent: 0
+      Children:
+        - 11556573170712399623
+  - Entity: 676243458437117164
+    TagComponent:
+      Tag: mjolnir_low
+    TransformComponent:
+      Position: [-1613.7554, 735.5527, -4.8428774e-06]
+      Rotation: [-1.5707965, -0, 0]
+      Scale: [100, 99.984566, 99.984566]
+    RelationshipComponent:
+      Parent: 8678694183763249012
+      Children:
+        []
+    MeshComponent:
+      Mesh: 8354323671287998876
+      Submesh: 0
+      Material: 11042770758084421453
+  - Entity: 8678694183763249012
+    TagComponent:
+      Tag: Mjolnir
+    TransformComponent:
+      Position: [-3.5, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [0.01, 0.01, 0.01]
+    RelationshipComponent:
+      Parent: 0
+      Children:
+        - 676243458437117164
+  - Entity: 924170084324839656
+    TagComponent:
+      Tag: Sun
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [1.6942029, 1.1919374, -2.460226]
+      Scale: [0.99999857, 0.99999857, 0.9999994]
+    RelationshipComponent:
+      Parent: 0
+      Children:
+        []
+    LightComponent:
+      Type: Directional
+      Color: [1, 0.6486486, 0]
+      Intensity: 0
+      Range: 10
+      InnerCutoff: 12.5
+      OuterCutoff: 17.5
+      CastsShadows: false
+      ShadowSoftness: 0.5
+      DepthBias: 1
+  - Entity: 529567986033407227
+    TagComponent:
+      Tag: Sphere 1R1M
+    TransformComponent:
+      Position: [7.5, 7.5, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    RelationshipComponent:
+      Parent: 0
+      Children:
+        []
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 13157151902221591703
+  - Entity: 13786435937484797051
+    TagComponent:
+      Tag: Sphere 1R0.8M
+    TransformComponent:
+      Position: [7.5, 6, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 12523357617976001215
+  - Entity: 17649965838305658931
+    TagComponent:
+      Tag: Sphere 1R0.6M
+    TransformComponent:
+      Position: [7.5, 4.5, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 6658665633006356833
+  - Entity: 14644941707150195373
+    TagComponent:
+      Tag: Sphere 1R0.4M
+    TransformComponent:
+      Position: [7.5, 3, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 9477221099742625519
+  - Entity: 5957968402348721421
+    TagComponent:
+      Tag: Sphere 1R0.2M
+    TransformComponent:
+      Position: [7.5, 1.5, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 163625833800349623
+  - Entity: 2783563801792303574
+    TagComponent:
+      Tag: Sphere 0.8R0.2M
+    TransformComponent:
+      Position: [7.5, 1.5, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    RelationshipComponent:
+      Parent: 0
+      Children:
+        []
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 0
+  - Entity: 1790308131071234355
+    TagComponent:
+      Tag: Sphere 0.8R1M
+    TransformComponent:
+      Position: [6, 7.5, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 17020995994238028813
+  - Entity: 13651096892625561037
+    TagComponent:
+      Tag: Sphere 0.8R0.8M
+    TransformComponent:
+      Position: [6, 6, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 10209049615577650739
+  - Entity: 612983093199429020
+    TagComponent:
+      Tag: Sphere 0.8R0.6M
+    TransformComponent:
+      Position: [6, 4.5, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 22222079176040993
+  - Entity: 17381618072777674363
+    TagComponent:
+      Tag: Sphere 0.8R0.4M
+    TransformComponent:
+      Position: [6, 3, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 13259644199612407734
+  - Entity: 11612371364846759194
+    TagComponent:
+      Tag: Sphere 0.8R0.2M
+    TransformComponent:
+      Position: [6, 1.5, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 12510010595030254634
+  - Entity: 7264950483620445736
+    TagComponent:
+      Tag: Sphere 0.6R1M
+    TransformComponent:
+      Position: [4.5, 7.5, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 9085183870629551208
+  - Entity: 9682201257178907164
+    TagComponent:
+      Tag: Sphere 0.6R0.8M
+    TransformComponent:
+      Position: [4.5, 6, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 10868603500350429190
+  - Entity: 18334899968967365322
+    TagComponent:
+      Tag: Sphere 0.6R0.6M
+    TransformComponent:
+      Position: [4.5, 4.5, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 13592080844872063697
+  - Entity: 403757888280952010
+    TagComponent:
+      Tag: Sphere 0.6R0.4M
+    TransformComponent:
+      Position: [4.5, 3, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 6417440869080314310
+  - Entity: 1945342172659227236
+    TagComponent:
+      Tag: Sphere 0.6R0M
+    TransformComponent:
+      Position: [4.5, 1.5, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 5023678126556456
+  - Entity: 14663383812791341327
+    TagComponent:
+      Tag: Sphere 0.4R1M
+    TransformComponent:
+      Position: [3, 7.5, -5.9604645e-08]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 10650653725621581096
+  - Entity: 12498126626825796448
+    TagComponent:
+      Tag: Sphere 0.4R0.8M
+    TransformComponent:
+      Position: [3, 6, -5.9604645e-08]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 10533824804087631898
+  - Entity: 9007410782013417877
+    TagComponent:
+      Tag: Sphere 0.4R0.6M
+    TransformComponent:
+      Position: [3, 4.5, -5.9604645e-08]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 16820263703512655641
+  - Entity: 1686028093102627207
+    TagComponent:
+      Tag: Sphere 0.4R0.4M
+    TransformComponent:
+      Position: [3, 3, -5.9604645e-08]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 16734397713221497595
+  - Entity: 10947352297812343187
+    TagComponent:
+      Tag: Sphere 0.4R0.2M
+    TransformComponent:
+      Position: [3, 1.5, -5.9604645e-08]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 12537064472872499247
+  - Entity: 13042194418756100379
+    TagComponent:
+      Tag: Sphere 0.2R1M
+    TransformComponent:
+      Position: [1.5003585, 7.5, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 1963195812791991844
+  - Entity: 8745972673247698806
+    TagComponent:
+      Tag: Sphere 0.2R0.8M
+    TransformComponent:
+      Position: [1.5003585, 6, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 2141238930407950415
+  - Entity: 7503063339918109064
+    TagComponent:
+      Tag: Sphere 0.2R0.6M
+    TransformComponent:
+      Position: [1.5003585, 4.5, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 1709707472408230098
+  - Entity: 10913438715218835109
+    TagComponent:
+      Tag: Sphere 0.2R0.4M
+    TransformComponent:
+      Position: [1.5003585, 3, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 4640345138897363774
+  - Entity: 537756812796050103
+    TagComponent:
+      Tag: Sphere 0.2R0.2M
+    TransformComponent:
+      Position: [1.5003585, 1.5, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 13338148508408913692
+  - Entity: 6042306065120980260
+    TagComponent:
+      Tag: Sphere 0R1M
+    TransformComponent:
+      Position: [0, 7.5, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 17124268305964944029
+  - Entity: 16759950726143245840
+    TagComponent:
+      Tag: Sphere 0R0.8M
+    TransformComponent:
+      Position: [0, 6, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 4460324659363987123
+  - Entity: 16690759633717410435
+    TagComponent:
+      Tag: Sphere 0R0.6M
+    TransformComponent:
+      Position: [0, 4.5, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 7455256167843681850
+  - Entity: 13890776528088559923
+    TagComponent:
+      Tag: Sphere 0R0.4M
+    TransformComponent:
+      Position: [0, 3, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 595830309971914159
+  - Entity: 400828109916249143
+    TagComponent:
+      Tag: Sphere 0R0.2M
+    TransformComponent:
+      Position: [0, 1.5, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 9141145179011180697
+  - Entity: 13709501203130790824
+    TagComponent:
+      Tag: Sphere 1R0M
+    TransformComponent:
+      Position: [7.5, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 7927966331309398561
+  - Entity: 6265148550357371193
+    TagComponent:
+      Tag: Sphere 0.8R0M
+    TransformComponent:
+      Position: [6, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 4709467780681365973
+  - Entity: 1400937356078305545
+    TagComponent:
+      Tag: Sphere 0.6R0M
+    TransformComponent:
+      Position: [4.5, -2.9802322e-08, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 8531313568962270457
+  - Entity: 15816581950147259770
+    TagComponent:
+      Tag: Sphere 0.4R0M
+    TransformComponent:
+      Position: [3, -2.9802322e-08, -5.9604645e-08]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 11094836748567801464
+  - Entity: 2371223958192827659
+    TagComponent:
+      Tag: Sphere 0.2R0M
+    TransformComponent:
+      Position: [1.5003585, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 562995986808841660
+  - Entity: 16823660651689417220
+    TagComponent:
+      Tag: Sphere 0R0M
+    TransformComponent:
+      Position: [-0.029831115, -1.2293458e-07, 6.1034953e-05]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 12362494779949233641
+  - Entity: 18303738559783303804
+    TagComponent:
+      Tag: Skybox
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    SkyLightComponent:
+      EnvironmentMap: 15562484090310629946
+      Intensity: 1
+      Rotation: 0
+  - Entity: 6378182095781707484
+    TagComponent:
+      Tag: Camera
+    TransformComponent:
+      Position: [-5.5, 3.8, 14.338681]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    RelationshipComponent:
+      Parent: 0
+      Children:
+        []
+    CameraComponent:
+      Camera:
+        ProjectionType: 0
+        PerspectiveFOV: 90
+        PerspectiveNear: 0.01
+        PerspectiveFar: 1000
+        OrthographicSize: 10
+        OrthographicNear: -1
+        OrthographicFar: 1
+      Primary: true
+      FixedAspectRatio: false
+    ScriptComponent:
+      ModuleName: Sandbox.EditorCameraController
+      ScriptFields:
+        - Name: MoveSpeed
+          Type: Float
+          Data: 2

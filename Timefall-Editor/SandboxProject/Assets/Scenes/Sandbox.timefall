@@ -1,16 +1,22 @@
-Scene: Timefall Scene
+Scene: Sandbox
+ShadowSettings:
+  CascadeCount: 4
+  ShadowMapResolution: 2048
+  MaxShadowDistance: 100
+  SplitLambda: 0.85
+  CascadeBlend: 0.1
+  BlockerSearchSamples: 16
+  PCFSamples: 16
+  SoftShadows: true
+  VisualizeCascades: false
+  SpotShadowResolution: 1024
+  PointShadowResolution: 512
+  CullMode: Back
+PostProcessSettings:
+  Operator: ACESHill
+  ExposureEV: 0
+  ReinhardWhitePoint: 4
 Entities:
-  - Entity: 6736949857612898333
-    TagComponent:
-      Tag: Cap_2_37
-    TransformComponent:
-      Position: [0, 0, 0]
-      Rotation: [0, -0, 0]
-      Scale: [1, 1, 1]
-    RelationshipComponent:
-      Parent: 662473034145728842
-      Children:
-        []
   - Entity: 11613976290812070016
     TagComponent:
       Tag: Rounding_2_5
@@ -5706,6 +5712,9 @@ Entities:
       Range: 10
       InnerCutoff: 12.5
       OuterCutoff: 17.5
+      CastsShadows: false
+      ShadowSoftness: 0.5
+      DepthBias: 1
   - Entity: 15101987036167359853
     TagComponent:
       Tag: Mesh
@@ -5717,24 +5726,17 @@ Entities:
       Mesh: 2
       Submesh: 0
       Material: 17541711539439424707
-  - Entity: 6378182095781707484
+  - Entity: 6736949857612898333
     TagComponent:
-      Tag: Camera
+      Tag: Cap_2_37
     TransformComponent:
-      Position: [19.389494, 0, 163.35646]
+      Position: [0, 0, 0]
       Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
-    CameraComponent:
-      Camera:
-        ProjectionType: 0
-        PerspectiveFOV: 45
-        PerspectiveNear: 0.01
-        PerspectiveFar: 1000
-        OrthographicSize: 10
-        OrthographicNear: -1
-        OrthographicFar: 1
-      Primary: true
-      FixedAspectRatio: false
+    RelationshipComponent:
+      Parent: 662473034145728842
+      Children:
+        []
   - Entity: 12458859788637080806
     TagComponent:
       Tag: Sandbox
@@ -5751,12 +5753,12 @@ Entities:
     ManagedComponents:
       - TypeName: Sandbox.BlockTag
         Fields:
-          - Name: Kind
-            Type: Int32
-            Data: 5
           - Name: Weight
             Type: Float
             Data: 0
+          - Name: Kind
+            Type: Int32
+            Data: 5
           - Name: Color
             Type: Vector4
             Data: [0.10038614, 1, 0, 0]

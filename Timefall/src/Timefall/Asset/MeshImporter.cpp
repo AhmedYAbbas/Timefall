@@ -252,10 +252,8 @@ namespace Timefall
 				material->BaseColor = { baseColor.r, baseColor.g, baseColor.b };
 
 			ai_real metallic = 0.0f, roughness = 1.0f;
-			if (aimat->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == AI_SUCCESS)
-				material->Metallic = metallic;
-			if (aimat->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) == AI_SUCCESS)
-				material->Roughness = roughness;
+			bool hasMetallicFactor  = aimat->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == AI_SUCCESS;
+			bool hasRoughnessFactor = aimat->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) == AI_SUCCESS;
 
 			// Transparency (glTF alphaMode). Formats without it stay Opaque.
 			material->Opacity = baseColor.a;   // baseColorFactor.a
@@ -270,11 +268,23 @@ namespace Timefall
 			if (aimat->Get(AI_MATKEY_GLTF_ALPHACUTOFF, alphaCutoff) == AI_SUCCESS)
 				material->AlphaCutoff = alphaCutoff;
 
-			material->BaseColorMap = ImportTextureSlot(aimat, aiTextureType_BASE_COLOR, modelDir, assetManager.get(), texCache);
+			// DIFFUSE falls back to BASE_COLOR inside ImportTextureSlot, covering both legacy and PBR exports.
+			material->BaseColorMap = ImportTextureSlot(aimat, aiTextureType_DIFFUSE, modelDir, assetManager.get(), texCache);
 			material->NormalMap    = ImportNormalSlot(aimat, modelDir, assetManager.get(), texCache);
 			material->MetallicMap  = ImportTextureSlot(aimat, aiTextureType_METALNESS, modelDir, assetManager.get(), texCache);
 			material->RoughnessMap = ImportTextureSlot(aimat, aiTextureType_DIFFUSE_ROUGHNESS, modelDir, assetManager.get(), texCache);
+			// glTF occlusion lands under LIGHTMAP in Assimp; other formats use AMBIENT_OCCLUSION.
 			material->AOMap        = ImportTextureSlot(aimat, aiTextureType_AMBIENT_OCCLUSION, modelDir, assetManager.get(), texCache);
+			if (material->AOMap == 0)
+				material->AOMap    = ImportTextureSlot(aimat, aiTextureType_LIGHTMAP, modelDir, assetManager.get(), texCache);
+
+			// Shading is factor × map (white map when absent): with a map and no explicit factor,
+			// 1.0 is the neutral multiplier; without either, stay dielectric (0) / fully rough (1).
+			material->Metallic  = hasMetallicFactor  ? (float)metallic  : (material->MetallicMap ? 1.0f : 0.0f);
+			material->Roughness = hasRoughnessFactor ? (float)roughness : 1.0f;
+			// FBX-derived roughness (from shininess) can land outside [0,1].
+			material->Metallic  = glm::clamp(material->Metallic, 0.0f, 1.0f);
+			material->Roughness = glm::clamp(material->Roughness, 0.0f, 1.0f);
 
 			aiColor3D emissive(0.0f, 0.0f, 0.0f);
 			if (aimat->Get(AI_MATKEY_COLOR_EMISSIVE, emissive) == AI_SUCCESS)

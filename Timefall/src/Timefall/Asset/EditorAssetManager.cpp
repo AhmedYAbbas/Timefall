@@ -16,9 +16,11 @@ namespace Timefall
 		{ ".jpg", AssetType::Texture2D },
 		{ ".jpeg", AssetType::Texture2D },
 		{ ".hdr", AssetType::Texture2D },
+		{ ".tga", AssetType::Texture2D },
 		{ ".tfmat", AssetType::Material },
 		{ ".obj", AssetType::Mesh },
 		{ ".fbx", AssetType::Mesh },
+		{ ".FBX", AssetType::Mesh },
 		{ ".gltf", AssetType::Mesh },
 		{ ".glb", AssetType::Mesh }
 	};

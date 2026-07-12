@@ -5,9 +5,18 @@ AssetRegistry:
   - Handle: 1629979007247442
     FilePath: Materials/NewSponza_Main_glTF_003_door_stoneframe_02.tfmat
     Type: Material
+  - Handle: 5023678126556456
+    FilePath: Materials/0.6R0.2M.tfmat
+    Type: Material
   - Handle: 9495426766371611
     FilePath: Materials/NewSponza_Main_glTF_003_stone_trims_02.tfmat
     Type: Material
+  - Handle: 22222079176040993
+    FilePath: Materials/0.8R0.6M.tfmat
+    Type: Material
+  - Handle: 39883239206099856
+    FilePath: Models/pkg_e_knight_anim/pkg_e_knight_anim/Exports/FBX/Knight_USD_002.fbx
+    Type: Mesh
   - Handle: 58876257795163803
     FilePath: Models/textures/ornament_01_BaseColor.png
     Type: Texture2D
@@ -23,6 +32,9 @@ AssetRegistry:
   - Handle: 123369235331081475
     FilePath: Models/textures/dirt_decal_01_dirt_decal_01_mask_gltf_alpha_dirt_decal_Opacity.png
     Type: Texture2D
+  - Handle: 163625833800349623
+    FilePath: Materials/1R0.2M.tfmat
+    Type: Material
   - Handle: 182545799455387449
     FilePath: Materials/NewSponza_Main_glTF_003_stone_trims_02.tfmat
     Type: Material
@@ -77,6 +89,9 @@ AssetRegistry:
   - Handle: 562568720782291267
     FilePath: Models/textures/stone_01_tile_BaseColor.png
     Type: Texture2D
+  - Handle: 562995986808841660
+    FilePath: Materials/0.2R0M.tfmat
+    Type: Material
   - Handle: 563584026805422010
     FilePath: Models/textures/metal_door_01_BaseColor.png
     Type: Texture2D
@@ -88,6 +103,9 @@ AssetRegistry:
     Type: Texture2D
   - Handle: 577928816296118909
     FilePath: Materials/NewSponza_Main_glTF_003_wood_01.tfmat
+    Type: Material
+  - Handle: 595830309971914159
+    FilePath: Materials/0R0.4M.tfmat
     Type: Material
   - Handle: 603474383332309660
     FilePath: Models/textures/brickwall_01_BaseColor.png
@@ -128,6 +146,9 @@ AssetRegistry:
   - Handle: 816492475494591028
     FilePath: Materials/NewSponza_Main_glTF_003_column_brickwall_01.tfmat
     Type: Material
+  - Handle: 824621505818031535
+    FilePath: Models/Cerberus_by_Andrew_Maximov/Cerberus_by_Andrew_Maximov/Textures/Cerberus_N.tga
+    Type: Texture2D
   - Handle: 826831357191090534
     FilePath: Models/textures/stone_trims_02_Roughnessstone_trims_02_Metalness.png
     Type: Texture2D
@@ -173,6 +194,9 @@ AssetRegistry:
   - Handle: 1017633702071453673
     FilePath: Models/textures/stones_2ndfloor_01_Normal.png
     Type: Texture2D
+  - Handle: 1043799686911911062
+    FilePath: Models/Cerberus_by_Andrew_Maximov/Cerberus_by_Andrew_Maximov/Cerberus_LP.FBX
+    Type: Mesh
   - Handle: 1078223208608830810
     FilePath: Models/textures/stones_2ndfloor_01_Roughnessstones_2ndfloor_01_Metalness.png
     Type: Texture2D
@@ -287,6 +311,9 @@ AssetRegistry:
   - Handle: 1698110893601457734
     FilePath: Models/textures/col_1stfloor_BaseColor.png
     Type: Texture2D
+  - Handle: 1709707472408230098
+    FilePath: Materials/0.2R0.6M.tfmat
+    Type: Material
   - Handle: 1726043383061027032
     FilePath: Materials/NewSponza_Main_glTF_003_brickwall_01.tfmat
     Type: Material
@@ -308,9 +335,15 @@ AssetRegistry:
   - Handle: 1860329522833529660
     FilePath: Materials/NewSponza_Main_Yup_003_column_1stfloor.tfmat
     Type: Material
+  - Handle: 1864714543335356448
+    FilePath: Models/Cerberus_by_Andrew_Maximov/Cerberus_by_Andrew_Maximov/Textures/Cerberus_A.tga
+    Type: Texture2D
   - Handle: 1922377990890871273
     FilePath: Models/textures/door_stoneframe_02_Normal.png
     Type: Texture2D
+  - Handle: 1963195812791991844
+    FilePath: Materials/0.2R1M.tfmat
+    Type: Material
   - Handle: 1975952440946110048
     FilePath: Models/textures/stones_2ndfloor_01_Roughnessstones_2ndfloor_01_Metalness.png
     Type: Texture2D
@@ -329,6 +362,12 @@ AssetRegistry:
   - Handle: 2096807967030852017
     FilePath: Models/textures/stone_trims_02_Normal.png
     Type: Texture2D
+  - Handle: 2109344143701629191
+    FilePath: Textures/suburban_garden_4k.hdr
+    Type: Texture2D
+  - Handle: 2141238930407950415
+    FilePath: Materials/0.2R0.8M.tfmat
+    Type: Material
   - Handle: 2142619074186290023
     FilePath: Materials/NewSponza_Main_glTF_003_stone_trims_02.tfmat
     Type: Material
@@ -443,6 +482,9 @@ AssetRegistry:
   - Handle: 2830407622982238548
     FilePath: Models/textures/ceiling_plaster_01_BaseColor.png
     Type: Texture2D
+  - Handle: 2830451208351194033
+    FilePath: Materials/Cerberus_LP_08 - Default.tfmat
+    Type: Material
   - Handle: 2830775506428480820
     FilePath: Models/textures/col_head_2ndfloor_03_Roughnesscol_head_2ndfloor_03_Metalness.png
     Type: Texture2D
@@ -515,6 +557,9 @@ AssetRegistry:
   - Handle: 3154742464426533035
     FilePath: Materials/NewSponza_Main_glTF_003_column_head_2ndfloor_03.tfmat
     Type: Material
+  - Handle: 3213729238864398691
+    FilePath: Models/Mjolnir low/mjolnir_hammer_ao.jpg
+    Type: Texture2D
   - Handle: 3234916630763242972
     FilePath: Models/textures/stones_2ndfloor_01_BaseColor.png
     Type: Texture2D
@@ -524,6 +569,9 @@ AssetRegistry:
   - Handle: 3264318730705660466
     FilePath: Materials/NewSponza_Main_glTF_003_column_brickwall_01.tfmat
     Type: Material
+  - Handle: 3277194806055225830
+    FilePath: Models/Mjolnir low/mjolnir_hammer_diffuse.jpg
+    Type: Texture2D
   - Handle: 3325689236206251441
     FilePath: Materials/NewSponza_Main_glTF_003_column_head_2ndfloor_02.tfmat
     Type: Material
@@ -704,6 +752,9 @@ AssetRegistry:
   - Handle: 4455032944908378297
     FilePath: Materials/NewSponza_Main_Yup_003_stone_trims_02.tfmat
     Type: Material
+  - Handle: 4460324659363987123
+    FilePath: Materials/0R0.8M.tfmat
+    Type: Material
   - Handle: 4470091526919337262
     FilePath: Models/textures/door_stoneframe_02_Roughnessdoor_stoneframe_02_Metalness.png
     Type: Texture2D
@@ -728,6 +779,9 @@ AssetRegistry:
   - Handle: 4636497990441444270
     FilePath: Materials/NewSponza_Main_glTF_003_stones_2ndfloor.tfmat
     Type: Material
+  - Handle: 4640345138897363774
+    FilePath: Materials/0.2R0.4M.tfmat
+    Type: Material
   - Handle: 4646118965831786229
     FilePath: Materials/NewSponza_Main_glTF_003_lamp_glass_01.tfmat
     Type: Material
@@ -746,6 +800,9 @@ AssetRegistry:
   - Handle: 4692763047446664247
     FilePath: Models/textures/arch_stone_wall_01_Roughnessarch_stone_wall_01_Metalness.png
     Type: Texture2D
+  - Handle: 4709467780681365973
+    FilePath: Materials/0.8R0M.tfmat
+    Type: Material
   - Handle: 4714060932714836217
     FilePath: Models/textures/ceiling_plaster_01_BaseColor.png
     Type: Texture2D
@@ -770,8 +827,14 @@ AssetRegistry:
   - Handle: 4878985972924195165
     FilePath: Materials/NewSponza_Main_glTF_003_column_head_2ndfloor_02.tfmat
     Type: Material
+  - Handle: 4879173149753514074
+    FilePath: Models/Cerberus_by_Andrew_Maximov/Cerberus_by_Andrew_Maximov/Cerberus_LP.FBX
+    Type: Mesh
   - Handle: 4886490485502260407
     FilePath: Models/textures/door_stoneframe_01_BaseColor.png
+    Type: Texture2D
+  - Handle: 4894766520666497003
+    FilePath: Models/Mjolnir low/mjolnir_hammer_roughness.jpg
     Type: Texture2D
   - Handle: 4896906028102947012
     FilePath: Models/pkg_a_curtains/textures/curtain_fabric_Normal.png
@@ -845,6 +908,9 @@ AssetRegistry:
   - Handle: 5336225549057902045
     FilePath: Models/textures/brickwall_02_BaseColor.png
     Type: Texture2D
+  - Handle: 5352065261053768532
+    FilePath: Textures/NewMaterial.tfmat
+    Type: Material
   - Handle: 5356010452518196169
     FilePath: Materials/NewSponza_Main_Zup_003_light_bulb.tfmat
     Type: Material
@@ -1067,6 +1133,9 @@ AssetRegistry:
   - Handle: 6314478136443897408
     FilePath: Models/textures/metal_door_01_BaseColor.png
     Type: Texture2D
+  - Handle: 6333067995592684197
+    FilePath: Materials/NewMaterial.tfmat
+    Type: Material
   - Handle: 6337263782878973328
     FilePath: Models/textures/window_frame_01_BaseColor.png
     Type: Texture2D
@@ -1076,6 +1145,12 @@ AssetRegistry:
   - Handle: 6405131864093912638
     FilePath: Materials/NewSponza_Main_glTF_003_ceiling_plaster_02.tfmat
     Type: Material
+  - Handle: 6417440869080314310
+    FilePath: Materials/0.6R0.4M.tfmat
+    Type: Material
+  - Handle: 6478589818259321401
+    FilePath: Scenes/HDRI.timefall
+    Type: Scene
   - Handle: 6498071192691832611
     FilePath: Textures/Fish.png
     Type: Texture2D
@@ -1106,6 +1181,12 @@ AssetRegistry:
   - Handle: 6633624056411408900
     FilePath: Materials/NewSponza_Main_glTF_003_brickwall_01.tfmat
     Type: Material
+  - Handle: 6658665633006356833
+    FilePath: Materials/1R0.6M.tfmat
+    Type: Material
+  - Handle: 6671449995152054679
+    FilePath: Models/pkg_e_knight_anim/pkg_e_knight_anim/Exports/FBX/Knight_USD_002.fbx
+    Type: Mesh
   - Handle: 6675432546661338283
     FilePath: Models/textures/ceiling_plaster_02_BaseColor.png
     Type: Texture2D
@@ -1187,6 +1268,9 @@ AssetRegistry:
   - Handle: 7029268731930045439
     FilePath: Materials/NewSponza_Main_glTF_003_column_1stfloor.tfmat
     Type: Material
+  - Handle: 7055346610663074635
+    FilePath: Materials/Cerberus_LP_08 - Default.tfmat
+    Type: Material
   - Handle: 7070537662043284141
     FilePath: Models/textures/stones_2ndfloor_01_BaseColor.png
     Type: Texture2D
@@ -1238,6 +1322,9 @@ AssetRegistry:
   - Handle: 7449649034065412509
     FilePath: Materials/NewSponza_Main_glTF_003_wood_01.tfmat
     Type: Material
+  - Handle: 7455256167843681850
+    FilePath: Materials/0R0.6M.tfmat
+    Type: Material
   - Handle: 7478356087048770995
     FilePath: Models/textures/lionhead_01_BaseColor.png
     Type: Texture2D
@@ -1280,6 +1367,9 @@ AssetRegistry:
   - Handle: 7639499035860189695
     FilePath: Models/textures/lionhead_01_Normal.png
     Type: Texture2D
+  - Handle: 7652249524652456801
+    FilePath: Materials/Cerberus_LP_08 - Default.tfmat
+    Type: Material
   - Handle: 7662402820878928037
     FilePath: Materials/NewSponza_Main_glTF_003_arch_stone_wall_01.tfmat
     Type: Material
@@ -1316,6 +1406,9 @@ AssetRegistry:
   - Handle: 7866333212674813833
     FilePath: Models/textures/window_frame_01_Roughnesswindow_frame_01_Metalness.png
     Type: Texture2D
+  - Handle: 7877653308458830731
+    FilePath: Models/Cerberus_by_Andrew_Maximov/Cerberus_by_Andrew_Maximov/Textures/Cerberus_M.tga
+    Type: Texture2D
   - Handle: 7899203908944992103
     FilePath: Models/textures/col_brickwall_01_Roughnesscol_brickwall_01_Metalness.png
     Type: Texture2D
@@ -1325,6 +1418,9 @@ AssetRegistry:
   - Handle: 7906784542647889604
     FilePath: Models/textures/window_frame_01_Roughnesswindow_frame_01_Metalness.png
     Type: Texture2D
+  - Handle: 7927966331309398561
+    FilePath: Materials/1R0M.tfmat
+    Type: Material
   - Handle: 7965089102157482617
     FilePath: Materials/NewSponza_Main_glTF_003_door_stoneframe_02.tfmat
     Type: Material
@@ -1409,6 +1505,9 @@ AssetRegistry:
   - Handle: 8336629228006329468
     FilePath: Models/textures/col_head_2ndfloor_03_BaseColor.png
     Type: Texture2D
+  - Handle: 8354323671287998876
+    FilePath: Models/Mjolnir low/mjolnir_low.fbx
+    Type: Mesh
   - Handle: 8384738514536216175
     FilePath: Models/textures/col_brickwall_01_BaseColor.png
     Type: Texture2D
@@ -1432,6 +1531,9 @@ AssetRegistry:
     Type: Texture2D
   - Handle: 8517244588584606912
     FilePath: Materials/NewSponza_Main_glTF_003_dirt_decal.tfmat
+    Type: Material
+  - Handle: 8531313568962270457
+    FilePath: Materials/0.6R0M.tfmat
     Type: Material
   - Handle: 8578833675041005375
     FilePath: Models/NewSponza_Main_glTF_003.gltf
@@ -1508,6 +1610,9 @@ AssetRegistry:
   - Handle: 9049673651036944083
     FilePath: Materials/NewSponza_Main_glTF_003_mat28.tfmat
     Type: Material
+  - Handle: 9085183870629551208
+    FilePath: Materials/0.6R1M.tfmat
+    Type: Material
   - Handle: 9104491848492259876
     FilePath: Models/textures/stone_01_tile_Normal.png
     Type: Texture2D
@@ -1520,8 +1625,14 @@ AssetRegistry:
   - Handle: 9137949915340065677
     FilePath: Models/textures/wood_door_01_Normal.png
     Type: Texture2D
+  - Handle: 9141145179011180697
+    FilePath: Materials/0R0.2M.tfmat
+    Type: Material
   - Handle: 9146695312759600097
     FilePath: Models/textures/lionhead_01_BaseColor.png
+    Type: Texture2D
+  - Handle: 9165326794667936341
+    FilePath: Models/Mjolnir low/mjolnir_hammer_normal.jpg
     Type: Texture2D
   - Handle: 9241413219764115919
     FilePath: Models/textures/stones_2ndfloor_01_BaseColor.png
@@ -1549,6 +1660,9 @@ AssetRegistry:
     Type: Material
   - Handle: 9460004680923113673
     FilePath: Materials/NewSponza_Main_glTF_003_window_frame_01.tfmat
+    Type: Material
+  - Handle: 9477221099742625519
+    FilePath: Materials/1R0.4M.tfmat
     Type: Material
   - Handle: 9480697870618950835
     FilePath: Materials/NewSponza_Main_glTF_003_metal_door.tfmat
@@ -1712,6 +1826,9 @@ AssetRegistry:
   - Handle: 10202993525167571467
     FilePath: Models/textures/col_1stfloor_Normal.png
     Type: Texture2D
+  - Handle: 10209049615577650739
+    FilePath: Materials/0.8R0.8M.tfmat
+    Type: Material
   - Handle: 10222574343602716879
     FilePath: Materials/NewSponza_Main_glTF_003_glass.tfmat
     Type: Material
@@ -1772,6 +1889,9 @@ AssetRegistry:
   - Handle: 10516908716520452056
     FilePath: Materials/NewSponza_Main_glTF_003_stone_trims_01.tfmat
     Type: Material
+  - Handle: 10533824804087631898
+    FilePath: Materials/0.4R0.8M.tfmat
+    Type: Material
   - Handle: 10541177945639529480
     FilePath: Materials/NewSponza_Main_glTF_003_ornament_lion.tfmat
     Type: Material
@@ -1790,6 +1910,9 @@ AssetRegistry:
   - Handle: 10618784100293845623
     FilePath: Models/textures/ceiling_plaster_01_Roughnessceiling_plaster_01_Metalness.png
     Type: Texture2D
+  - Handle: 10650653725621581096
+    FilePath: Materials/0.4R1M.tfmat
+    Type: Material
   - Handle: 10655101554912647496
     FilePath: Materials/NewSponza_Main_glTF_003_stone_trims_02.tfmat
     Type: Material
@@ -1820,6 +1943,9 @@ AssetRegistry:
   - Handle: 10827812814396103330
     FilePath: Models/textures/col_head_2ndfloor_03_Normal.png
     Type: Texture2D
+  - Handle: 10868603500350429190
+    FilePath: Materials/0.6R0.8M.tfmat
+    Type: Material
   - Handle: 10881208318959472590
     FilePath: Materials/NewSponza_Main_glTF_003_window_frame_01.tfmat
     Type: Material
@@ -1868,9 +1994,18 @@ AssetRegistry:
   - Handle: 11027929223434648072
     FilePath: Models/textures/col_1stfloor_BaseColor.png
     Type: Texture2D
+  - Handle: 11042770758084421453
+    FilePath: Materials/mjolnir_low_mjolnir_hammer.tfmat
+    Type: Material
+  - Handle: 11047355534222587801
+    FilePath: Textures/suburban_garden_4k.hdr
+    Type: Texture2D
   - Handle: 11067105206373889463
     FilePath: Models/textures/col_head_2ndfloor_03_BaseColor.png
     Type: Texture2D
+  - Handle: 11094836748567801464
+    FilePath: Materials/0.4R0M.tfmat
+    Type: Material
   - Handle: 11097874591782674085
     FilePath: Materials/NewSponza_Main_glTF_003_metal_door.tfmat
     Type: Material
@@ -1916,6 +2051,9 @@ AssetRegistry:
   - Handle: 11311063532046864604
     FilePath: Materials/NewSponza_Main_glTF_003_stone_trims_01.tfmat
     Type: Material
+  - Handle: 11317502586226960060
+    FilePath: Models/Cerberus_by_Andrew_Maximov/Cerberus_by_Andrew_Maximov/Cerberus_LP.FBX
+    Type: Mesh
   - Handle: 11317564776761204905
     FilePath: Models/textures/stone_trims_02_Normal.png
     Type: Texture2D
@@ -1994,6 +2132,9 @@ AssetRegistry:
   - Handle: 11632465839784870273
     FilePath: Materials/NewSponza_Main_glTF_003_lamp_glass_01.tfmat
     Type: Material
+  - Handle: 11655733192010515565
+    FilePath: Models/Cerberus_by_Andrew_Maximov/Cerberus_by_Andrew_Maximov/Cerberus_LP.FBX
+    Type: None
   - Handle: 11656162794543652298
     FilePath: Models/textures/col_1stfloor_BaseColor.png
     Type: Texture2D
@@ -2111,11 +2252,17 @@ AssetRegistry:
   - Handle: 12264378725583475408
     FilePath: Models/textures/stones_2ndfloor_01_BaseColor.png
     Type: Texture2D
+  - Handle: 12266488157195029245
+    FilePath: Models/pkg_e_knight_anim/pkg_e_knight_anim/Exports/FBX/Knight_USD_002.fbx
+    Type: Mesh
   - Handle: 12299620052017746763
     FilePath: Models/textures/col_head_2ndfloor_02_Normal.png
     Type: Texture2D
   - Handle: 12341441295008411430
     FilePath: Materials/NewSponza_Main_glTF_003_window_frame_01.tfmat
+    Type: Material
+  - Handle: 12362494779949233641
+    FilePath: Materials/0R0M.tfmat
     Type: Material
   - Handle: 12369589466974805421
     FilePath: Models/textures/stones_2ndfloor_01_Normal.png
@@ -2141,6 +2288,9 @@ AssetRegistry:
   - Handle: 12463705279305853621
     FilePath: Materials/NewSponza_Main_glTF_003_column_head_2ndfloor_03.tfmat
     Type: Material
+  - Handle: 12466440302943117739
+    FilePath: Models/pkg_e_knight_anim/pkg_e_knight_anim/Exports/FBX/Knight_USD_002.fbx
+    Type: Mesh
   - Handle: 12467196532948916173
     FilePath: Materials/NewSponza_Main_Yup_003_ceiling_plaster_02.tfmat
     Type: Material
@@ -2156,9 +2306,18 @@ AssetRegistry:
   - Handle: 12498381504213818832
     FilePath: Models/textures/metal_door_01_Roughnessmetal_door_01_Metalness.png
     Type: Texture2D
+  - Handle: 12510010595030254634
+    FilePath: Materials/0.8R0.2M.tfmat
+    Type: Material
+  - Handle: 12523357617976001215
+    FilePath: Materials/1R0.8M.tfmat
+    Type: Material
   - Handle: 12524893150824150033
     FilePath: Models/NewSponza_Main_glTF_003.gltf
     Type: Mesh
+  - Handle: 12537064472872499247
+    FilePath: Materials/0.4R0.2M.tfmat
+    Type: Material
   - Handle: 12538322133451287059
     FilePath: Models/textures/col_head_1stfloor_Normal.png
     Type: Texture2D
@@ -2185,6 +2344,9 @@ AssetRegistry:
     Type: Texture2D
   - Handle: 12697138957944811423
     FilePath: Materials/NewSponza_Main_glTF_003_ornament_01.tfmat
+    Type: Material
+  - Handle: 12712211189311484959
+    FilePath: Materials/Cerberus_LP_08 - Default.tfmat
     Type: Material
   - Handle: 12724135603766042875
     FilePath: Materials/NewSponza_Main_glTF_003_wood_01.tfmat
@@ -2267,6 +2429,9 @@ AssetRegistry:
   - Handle: 13137674138894505875
     FilePath: Models/textures/col_head_2ndfloor_02_BaseColor.png
     Type: Texture2D
+  - Handle: 13157151902221591703
+    FilePath: Materials/1R1M.tfmat
+    Type: Material
   - Handle: 13172385674428414171
     FilePath: Materials/NewSponza_Main_Zup_003_column_head_2ndfloor_03.tfmat
     Type: Material
@@ -2291,6 +2456,9 @@ AssetRegistry:
   - Handle: 13258931739673036424
     FilePath: Materials/NewSponza_Main_Yup_003_stone_trims_01.tfmat
     Type: Material
+  - Handle: 13259644199612407734
+    FilePath: Materials/0.8R0.4M.tfmat
+    Type: Material
   - Handle: 13261098042954088590
     FilePath: Materials/NewSponza_Main_glTF_003_door_stoneframe_01.tfmat
     Type: Material
@@ -2300,6 +2468,12 @@ AssetRegistry:
   - Handle: 13330500233212097345
     FilePath: Models/textures/arch_stone_wall_01_BaseColor.png
     Type: Texture2D
+  - Handle: 13334445696599894863
+    FilePath: Materials/NewMaterial.tfmat
+    Type: Material
+  - Handle: 13338148508408913692
+    FilePath: Materials/0.2R0.2M.tfmat
+    Type: Material
   - Handle: 13342087859457974754
     FilePath: Models/textures/brickwall_01_Normal.png
     Type: Texture2D
@@ -2335,6 +2509,9 @@ AssetRegistry:
     Type: Material
   - Handle: 13586590649080667005
     FilePath: Materials/NewSponza_Main_glTF_003_stone_trims_01.tfmat
+    Type: Material
+  - Handle: 13592080844872063697
+    FilePath: Materials/0.6R0.6M.tfmat
     Type: Material
   - Handle: 13609387312247448238
     FilePath: Models/textures/ceiling_plaster_01_BaseColor.png
@@ -2435,6 +2612,9 @@ AssetRegistry:
   - Handle: 14411960436898312992
     FilePath: Materials/NewSponza_Main_glTF_003_column_head_2ndfloor_02.tfmat
     Type: Material
+  - Handle: 14450478857356587816
+    FilePath: Models/Cerberus_by_Andrew_Maximov/Cerberus_by_Andrew_Maximov/Textures/Raw/Cerberus_AO.tga
+    Type: Texture2D
   - Handle: 14462861204957243074
     FilePath: Materials/NewSponza_Main_glTF_003_brickwall_02.tfmat
     Type: Material
@@ -2756,6 +2936,9 @@ AssetRegistry:
   - Handle: 15974233004893775127
     FilePath: Materials/NewSponza_Main_glTF_003_door_stoneframe_02.tfmat
     Type: Material
+  - Handle: 15979646346836440049
+    FilePath: Models/Cerberus_by_Andrew_Maximov/Cerberus_by_Andrew_Maximov/Textures/Cerberus_R.tga
+    Type: Texture2D
   - Handle: 15984917871069615207
     FilePath: Models/textures/brickwall_01_Roughnessbrickwall_01_Metalness.png
     Type: Texture2D
@@ -2873,6 +3056,9 @@ AssetRegistry:
   - Handle: 16620669889475490322
     FilePath: Models/textures/brickwall_01_BaseColor.png
     Type: Texture2D
+  - Handle: 16627085724211029000
+    FilePath: Models/Mjolnir low/mjolnir_hammer_metallic.jpg
+    Type: Texture2D
   - Handle: 16643951205135464965
     FilePath: Materials/NewSponza_Main_glTF_003_column_1stfloor.tfmat
     Type: Material
@@ -2888,12 +3074,21 @@ AssetRegistry:
   - Handle: 16724004097025467110
     FilePath: Models/textures/lionhead_01_BaseColor.png
     Type: Texture2D
+  - Handle: 16734397713221497595
+    FilePath: Materials/0.4R0.4M.tfmat
+    Type: Material
   - Handle: 16759275579225220500
     FilePath: Materials/NewSponza_Main_glTF_003_stone_trims_01.tfmat
     Type: Material
   - Handle: 16784068528894382757
     FilePath: Models/textures/roof_tiles_01_Normal.png
     Type: Texture2D
+  - Handle: 16820263703512655641
+    FilePath: Materials/0.4R0.6M.tfmat
+    Type: Material
+  - Handle: 16827637636565985253
+    FilePath: Materials/NewMaterial.tfmat
+    Type: Material
   - Handle: 16834319912822500958
     FilePath: Models/textures/arch_stone_wall_01_Normal.png
     Type: Texture2D
@@ -2930,6 +3125,9 @@ AssetRegistry:
   - Handle: 17012328088587087366
     FilePath: Materials/NewSponza_Main_glTF_003_ornament_lion.tfmat
     Type: Material
+  - Handle: 17020995994238028813
+    FilePath: Materials/0.8R1M.tfmat
+    Type: Material
   - Handle: 17021003538323819858
     FilePath: Models/textures/lionhead_01_Normal.png
     Type: Texture2D
@@ -2948,6 +3146,9 @@ AssetRegistry:
   - Handle: 17116708617558383395
     FilePath: Models/pkg_a_curtains/textures/curtain_fabric_green_BaseColor.png
     Type: Texture2D
+  - Handle: 17124268305964944029
+    FilePath: Materials/0R1M.tfmat
+    Type: Material
   - Handle: 17130446411758126447
     FilePath: Models/textures/ceiling_plaster_02_BaseColor.png
     Type: Texture2D
@@ -3017,6 +3218,9 @@ AssetRegistry:
   - Handle: 17616018019049878041
     FilePath: Materials/NewSponza_Main_glTF_003_column_1stfloor.tfmat
     Type: Material
+  - Handle: 17666505121800471305
+    FilePath: Models/pkg_e_knight_anim/pkg_e_knight_anim/Exports/FBX/Knight_USD_002.fbx
+    Type: Mesh
   - Handle: 17674552904424454909
     FilePath: Materials/NewSponza_Main_Zup_003_column_brickwall_01.tfmat
     Type: Material
