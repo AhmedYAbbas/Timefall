@@ -20,6 +20,7 @@ layout(location = 0) out vec4 o_Color;
 uniform sampler2D u_Equirect;
 
 const vec2 invAtan = vec2(0.1591, 0.3183); // 1/(2pi), 1/pi
+const float MAX_RADIANCE = 1.0e6; // safety ceiling against pathological source texels
 
 vec2 SampleSphericalMap(vec3 dir)
 {
@@ -32,5 +33,6 @@ vec2 SampleSphericalMap(vec3 dir)
 void main()
 {
 	vec3 dir = normalize(v_LocalPos);
-	o_Color = vec4(texture(u_Equirect, SampleSphericalMap(dir)).rgb, 1.0);
+	vec3 color = texture(u_Equirect, SampleSphericalMap(dir)).rgb;
+	o_Color = vec4(clamp(color, vec3(0.0), vec3(MAX_RADIANCE)), 1.0);
 }

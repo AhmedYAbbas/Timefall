@@ -14,7 +14,8 @@ namespace Timefall
 		: m_Size(size), m_MipLevels(mipLevels == 0 ? 1 : mipLevels)
 	{
 		glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &m_RendererID);
-		glTextureStorage2D(m_RendererID, (GLsizei)m_MipLevels, GL_RGBA16F, (GLsizei)size, (GLsizei)size);
+		// RGBA32F: HDRI suns exceed half-float max (65504) and turn Inf/NaN in 16F.
+		glTextureStorage2D(m_RendererID, (GLsizei)m_MipLevels, GL_RGBA32F, (GLsizei)size, (GLsizei)size);
 
 		glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER,
 			m_MipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);

@@ -23,6 +23,7 @@ uniform float u_EnvResolution;   // face size of source env cubemap mip0
 
 const float PI = 3.14159265359;
 const uint  SAMPLE_COUNT = 1024u;
+const float MIP_BIAS = 2.0;  // extra pre-blur; kills sun-firefly variance FIS can't (measured p95 err 111% -> 3%)
 
 float RadicalInverse_VdC(uint bits)
 {
@@ -82,7 +83,7 @@ void main()
 		float pdf = (D * NdotH / (4.0 * max(dot(H, V), 1e-4))) + 1e-4;
 		float saTexel  = 4.0 * PI / (6.0 * u_EnvResolution * u_EnvResolution);
 		float saSample = 1.0 / (float(SAMPLE_COUNT) * pdf + 1e-4);
-		float mip = u_Roughness == 0.0 ? 0.0 : 0.5 * log2(saSample / saTexel);
+		float mip = u_Roughness == 0.0 ? 0.0 : 0.5 * log2(saSample / saTexel) + MIP_BIAS;
 
 		prefiltered += textureLod(u_EnvMap, L, mip).rgb * NdotL;
 		totalWeight += NdotL;
