@@ -709,9 +709,9 @@ namespace Timefall
 				{
 					bool changed = false;
 					changed |= ImGui::ColorEdit3("Base Color", glm::value_ptr(mat->BaseColor));
-					changed |= ImGui::SliderFloat("Metallic", &mat->Metallic, 0.0f, 1.0f);
-					changed |= ImGui::SliderFloat("Roughness", &mat->Roughness, 0.0f, 1.0f);
-					changed |= ImGui::SliderFloat("Normal Strength", &mat->NormalStrength, 0.0f, 2.0f);
+					changed |= ImGui::DragFloat("Metallic", &mat->Metallic, 0.005f, 0.0f, 1.0f);
+					changed |= ImGui::DragFloat("Roughness", &mat->Roughness, 0.005f, 0.0f, 1.0f);
+					changed |= ImGui::DragFloat("Normal Strength", &mat->NormalStrength, 0.05f, 0.0f, 2.0f);
 						changed |= ImGui::ColorEdit3("Emissive", glm::value_ptr(mat->Emissive));
 						changed |= ImGui::DragFloat("Emissive Intensity", &mat->EmissiveIntensity, 0.05f, 0.0f, 100.0f);
 
