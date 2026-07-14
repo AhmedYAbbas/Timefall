@@ -34,19 +34,16 @@ namespace Timefall
 			std::map<std::filesystem::path, uint32_t> Children;
 
 			TreeNode(const std::filesystem::path& path, AssetHandle handle)
-				: Path(path), Handle(handle)
-			{
-			}
+				: Path(path),
+				  Handle(handle)
+			{}
 		};
 
 		std::vector<TreeNode> m_TreeNodes;
 
 		std::map<std::filesystem::path, std::vector<std::filesystem::path>> m_AssetTree;
 
-		enum class Mode
-		{
-			Asset = 0, Filesystem = 1
-		};
+		enum class Mode { Asset = 0, Filesystem = 1 };
 
 		Mode m_Mode = Mode::Asset;
 	};

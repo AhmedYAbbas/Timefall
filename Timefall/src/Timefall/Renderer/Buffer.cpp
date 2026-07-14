@@ -10,7 +10,7 @@ namespace Timefall
 	{
 		switch (Renderer::GetAPI())
 		{
-			case RendererAPI::API::None:   TF_CORE_ASSERT(false, "RendererAPI::None is not currently supported!"); return nullptr;
+			case RendererAPI::API::None: TF_CORE_ASSERT(false, "RendererAPI::None is not currently supported!"); return nullptr;
 			case RendererAPI::API::OpenGL: return CreateRef<OpenGLVertexBuffer>(size);
 		}
 
@@ -22,7 +22,7 @@ namespace Timefall
 	{
 		switch (Renderer::GetAPI())
 		{
-			case RendererAPI::API::None:   TF_CORE_ASSERT(false, "RendererAPI::None is not currently supported!"); return nullptr;
+			case RendererAPI::API::None: TF_CORE_ASSERT(false, "RendererAPI::None is not currently supported!"); return nullptr;
 			case RendererAPI::API::OpenGL: return CreateRef<OpenGLVertexBuffer>(vertices, size);
 		}
 
@@ -34,7 +34,7 @@ namespace Timefall
 	{
 		switch (Renderer::GetAPI())
 		{
-			case RendererAPI::API::None:   TF_CORE_ASSERT(false, "RendererAPI::None is not currently supported!"); return nullptr;
+			case RendererAPI::API::None: TF_CORE_ASSERT(false, "RendererAPI::None is not currently supported!"); return nullptr;
 			case RendererAPI::API::OpenGL: return CreateRef<OpenGLIndexBuffer>(indices, count);
 		}
 

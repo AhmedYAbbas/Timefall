@@ -9,11 +9,11 @@ namespace Timefall
 {
 	Scope<Window> Window::Create(const WindowProps& props)
 	{
-	#ifdef TF_PLATFORM_WINDOWS
+#ifdef TF_PLATFORM_WINDOWS
 		return CreateScope<WindowsWindow>(props);
-	#else
+#else
 		TF_CORE_ASSERT(false, "Unknown platform!");
 		return nullptr;
-	#endif
+#endif
 	}
 }

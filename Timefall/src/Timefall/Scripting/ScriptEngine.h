@@ -8,13 +8,23 @@
 
 namespace Timefall
 {
-	enum class TF_API ScriptFieldType
-	{
+	enum class TF_API ScriptFieldType {
 		None = 0,
-		Float, Double,
-		Bool, Char, SByte, Int16, Int32, Int64,
-		Byte, UInt16, UInt32, UInt64,
-		Vector2, Vector3, Vector4,
+		Float,
+		Double,
+		Bool,
+		Char,
+		SByte,
+		Int16,
+		Int32,
+		Int64,
+		Byte,
+		UInt16,
+		UInt32,
+		UInt64,
+		Vector2,
+		Vector3,
+		Vector4,
 		Entity
 	};
 
@@ -29,20 +39,15 @@ namespace Timefall
 	{
 		ScriptField Field;
 
-		ScriptFieldInstance()
-		{
-			memset(m_Buffer, 0, sizeof(m_Buffer));
-		}
+		ScriptFieldInstance() { memset(m_Buffer, 0, sizeof(m_Buffer)); }
 
-		template<typename T>
-		T GetValue()
+		template <typename T> T GetValue()
 		{
 			static_assert(sizeof(T) <= 16, "Type too large!");
 			return *(T*)m_Buffer;
 		}
 
-		template<typename T>
-		void SetValue(T value)
+		template <typename T> void SetValue(T value)
 		{
 			static_assert(sizeof(T) <= 16, "Type too large!");
 			memcpy(m_Buffer, &value, sizeof(T));
@@ -57,7 +62,6 @@ namespace Timefall
 		friend class ScriptInstance;
 	};
 
-
 	using ScriptFieldMap = std::unordered_map<std::wstring, ScriptFieldInstance>; // entityID -> (fieldName -> field instance)
 
 	class Scene;
@@ -69,7 +73,8 @@ namespace Timefall
 		ScriptClass() = default;
 
 		ScriptClass(const std::wstring& assemblyPath, const std::wstring& typeName)
-			: m_AssemblyPath(assemblyPath), m_TypeName(typeName)
+			: m_AssemblyPath(assemblyPath),
+			  m_TypeName(typeName)
 		{}
 
 		~ScriptClass() = default;
@@ -80,8 +85,7 @@ namespace Timefall
 		}
 
 		// Typed getter (template must be in header)
-		template<typename T>
-		T GetMethod(const wchar_t* methodName, const wchar_t* delegateTypeName = nullptr) const
+		template <typename T> T GetMethod(const wchar_t* methodName, const wchar_t* delegateTypeName = nullptr) const
 		{
 			void* fn = nullptr;
 			if (!TryGetFunctionPointer(methodName, delegateTypeName, &fn))
@@ -93,7 +97,7 @@ namespace Timefall
 		// Invoke helper that casts and calls the function pointer.
 		// Usage:
 		//   myClass.Invoke<void(*)(int)>(L"PrintInt", L"MyNamespace.PrintIntDelegate, Timefall-ScriptCore", 123);
-		template<typename T, typename... Args>
+		template <typename T, typename... Args>
 		auto InvokeMethod(const wchar_t* methodName, const wchar_t* delegateTypeName, Args&&... args) const
 			-> std::invoke_result_t<T, Args...>
 		{
@@ -131,16 +135,14 @@ namespace Timefall
 		Ref<ScriptClass> GetScriptClass() const { return m_ScriptClass; }
 		void* GetManagedInstance() const { return m_Instance; }
 
-		template<typename T>
-		T GetFieldValue(const std::wstring& fieldName)
+		template <typename T> T GetFieldValue(const std::wstring& fieldName)
 		{
 			T value{};
 			GetFieldValueRaw(fieldName, &value);
 			return value;
 		}
-		
-		template<typename T>
-		void SetFieldValue(const std::wstring& fieldName, const T& value)
+
+		template <typename T> void SetFieldValue(const std::wstring& fieldName, const T& value)
 		{
 			SetFieldValueRaw(fieldName, (void*)&value);
 		}
@@ -173,11 +175,13 @@ namespace Timefall
 		static void OnUpdateEntity(Entity entity, Timestep ts);
 
 		static bool LoadAssembly(const std::filesystem::path& runtimeConfigPath);
-		static void RegisterEntityTypes(const wchar_t* typeName, const wchar_t* assemblyName, const wchar_t** fieldNames, const wchar_t** fieldTypeNames, int fieldCount);
+		static void RegisterEntityTypes(const wchar_t* typeName, const wchar_t* assemblyName, const wchar_t** fieldNames,
+			const wchar_t** fieldTypeNames, int fieldCount);
 
 		// User-defined component schemas (C# Component subclasses). Registered from the app
 		// assembly scan; rebuilt on hot-reload alongside the entity classes.
-		static void RegisterComponentTypes(const wchar_t* typeName, const wchar_t* assemblyName, const wchar_t** fieldNames, const wchar_t** fieldTypeNames, int fieldCount);
+		static void RegisterComponentTypes(const wchar_t* typeName, const wchar_t* assemblyName, const wchar_t** fieldNames,
+			const wchar_t** fieldTypeNames, int fieldCount);
 		static Ref<ScriptClass> GetComponentClass(const std::wstring& name);
 		static const std::unordered_map<std::wstring, Ref<ScriptClass>>& GetComponentClasses();
 
@@ -207,23 +211,23 @@ namespace Timefall
 		{
 			switch (fieldType)
 			{
-				case ScriptFieldType::None:     return L"None";
-				case ScriptFieldType::Float:    return L"Float";
-				case ScriptFieldType::Double:   return L"Double";
-				case ScriptFieldType::Bool:     return L"Bool";
-				case ScriptFieldType::Char:     return L"Char";
-				case ScriptFieldType::SByte:    return L"SByte";
-				case ScriptFieldType::Int16:    return L"Int16";
-				case ScriptFieldType::Int32:    return L"Int32";
-				case ScriptFieldType::Int64:    return L"Int64";
-				case ScriptFieldType::Byte:     return L"Byte";
-				case ScriptFieldType::UInt16:   return L"UInt16";
-				case ScriptFieldType::UInt32:   return L"UInt32";
-				case ScriptFieldType::UInt64:   return L"UInt64";
-				case ScriptFieldType::Vector2:  return L"Vector2";
-				case ScriptFieldType::Vector3:  return L"Vector3";
-				case ScriptFieldType::Vector4:  return L"Vector4";
-				case ScriptFieldType::Entity:   return L"Entity";
+				case ScriptFieldType::None: return L"None";
+				case ScriptFieldType::Float: return L"Float";
+				case ScriptFieldType::Double: return L"Double";
+				case ScriptFieldType::Bool: return L"Bool";
+				case ScriptFieldType::Char: return L"Char";
+				case ScriptFieldType::SByte: return L"SByte";
+				case ScriptFieldType::Int16: return L"Int16";
+				case ScriptFieldType::Int32: return L"Int32";
+				case ScriptFieldType::Int64: return L"Int64";
+				case ScriptFieldType::Byte: return L"Byte";
+				case ScriptFieldType::UInt16: return L"UInt16";
+				case ScriptFieldType::UInt32: return L"UInt32";
+				case ScriptFieldType::UInt64: return L"UInt64";
+				case ScriptFieldType::Vector2: return L"Vector2";
+				case ScriptFieldType::Vector3: return L"Vector3";
+				case ScriptFieldType::Vector4: return L"Vector4";
+				case ScriptFieldType::Entity: return L"Entity";
 			}
 
 			TF_CORE_ASSERT(false, "Unknown ScriptFieldType");
@@ -232,23 +236,40 @@ namespace Timefall
 
 		inline ScriptFieldType ScriptFieldTypeFromString(const std::wstring& typeName)
 		{
-			if (typeName == L"None")     return ScriptFieldType::None;
-			if (typeName == L"Float")    return ScriptFieldType::Float;
-			if (typeName == L"Double")   return ScriptFieldType::Double;
-			if (typeName == L"Bool")     return ScriptFieldType::Bool;
-			if (typeName == L"Char")     return ScriptFieldType::Char;
-			if (typeName == L"SByte")    return ScriptFieldType::SByte;
-			if (typeName == L"Int16")    return ScriptFieldType::Int16;
-			if (typeName == L"Int32")    return ScriptFieldType::Int32;
-			if (typeName == L"Int64")    return ScriptFieldType::Int64;
-			if (typeName == L"Byte")     return ScriptFieldType::Byte;
-			if (typeName == L"UInt16")   return ScriptFieldType::UInt16;
-			if (typeName == L"UInt32")   return ScriptFieldType::UInt32;
-			if (typeName == L"UInt64")   return ScriptFieldType::UInt64;
-			if (typeName == L"Vector2")  return ScriptFieldType::Vector2;
-			if (typeName == L"Vector3")  return ScriptFieldType::Vector3;
-			if (typeName == L"Vector4")  return ScriptFieldType::Vector4;
-			if (typeName == L"Entity")   return ScriptFieldType::Entity;
+			if (typeName == L"None")
+				return ScriptFieldType::None;
+			if (typeName == L"Float")
+				return ScriptFieldType::Float;
+			if (typeName == L"Double")
+				return ScriptFieldType::Double;
+			if (typeName == L"Bool")
+				return ScriptFieldType::Bool;
+			if (typeName == L"Char")
+				return ScriptFieldType::Char;
+			if (typeName == L"SByte")
+				return ScriptFieldType::SByte;
+			if (typeName == L"Int16")
+				return ScriptFieldType::Int16;
+			if (typeName == L"Int32")
+				return ScriptFieldType::Int32;
+			if (typeName == L"Int64")
+				return ScriptFieldType::Int64;
+			if (typeName == L"Byte")
+				return ScriptFieldType::Byte;
+			if (typeName == L"UInt16")
+				return ScriptFieldType::UInt16;
+			if (typeName == L"UInt32")
+				return ScriptFieldType::UInt32;
+			if (typeName == L"UInt64")
+				return ScriptFieldType::UInt64;
+			if (typeName == L"Vector2")
+				return ScriptFieldType::Vector2;
+			if (typeName == L"Vector3")
+				return ScriptFieldType::Vector3;
+			if (typeName == L"Vector4")
+				return ScriptFieldType::Vector4;
+			if (typeName == L"Entity")
+				return ScriptFieldType::Entity;
 
 			TF_CORE_ASSERT(false, "Unknown ScriptFieldType name");
 			return ScriptFieldType::None;

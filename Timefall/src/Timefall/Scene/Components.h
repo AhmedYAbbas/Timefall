@@ -25,8 +25,7 @@ namespace Timefall
 		IDComponent(const IDComponent&) = default;
 		IDComponent(const UUID& uuid)
 			: ID(uuid)
-		{
-		}
+		{}
 	};
 
 	struct TF_API TagComponent
@@ -37,38 +36,31 @@ namespace Timefall
 		TagComponent(const TagComponent&) = default;
 		TagComponent(const std::string& tag)
 			: Tag(tag)
-		{
-		}
+		{}
 	};
 
 	struct TF_API TransformComponent
 	{
-		glm::vec3 Translation { 0.0f };
-		glm::vec3 Rotation { 0.0f };
-		glm::vec3 Scale { 1.0f };
+		glm::vec3 Translation{0.0f};
+		glm::vec3 Rotation{0.0f};
+		glm::vec3 Scale{1.0f};
 
 		TransformComponent() = default;
 		TransformComponent(const TransformComponent&) = default;
 		TransformComponent(const glm::vec3& position)
 			: Translation(position)
-		{
-		}
+		{}
 
 		// Composes this component's LOCAL transform (T * R * S). Rotation is Euler radians.
 		// World transform is resolved by Entity::GetWorldTransform() (it must walk the parent chain).
 		glm::mat4 GetLocalTransform() const
 		{
-			return glm::translate(glm::mat4(1.0f), Translation)
-				* glm::toMat4(glm::quat(Rotation))
-				* glm::scale(glm::mat4(1.0f), Scale);
+			return glm::translate(glm::mat4(1.0f), Translation) * glm::toMat4(glm::quat(Rotation)) * glm::scale(glm::mat4(1.0f), Scale);
 		}
 
 		// Overwrites local T/R/S by decomposing a local matrix. Lossless under uniform scale;
 		// drops shear/perspective it cannot represent. Used by reparent / SetWorldTransform.
-		void SetLocalTransform(const glm::mat4& transform)
-		{
-			Math::DecomposeTransform(transform, Translation, Rotation, Scale);
-		}
+		void SetLocalTransform(const glm::mat4& transform) { Math::DecomposeTransform(transform, Translation, Rotation, Scale); }
 	};
 
 	// Scene-graph link. Added lazily (only on parented entities) — absence means a root entity.
@@ -85,7 +77,7 @@ namespace Timefall
 
 	struct TF_API SpriteRendererComponent
 	{
-		glm::vec4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
+		glm::vec4 Color{1.0f, 1.0f, 1.0f, 1.0f};
 		AssetHandle Texture = 0;
 		float TilingFactor = 1.0f;
 
@@ -93,13 +85,12 @@ namespace Timefall
 		SpriteRendererComponent(const SpriteRendererComponent&) = default;
 		SpriteRendererComponent(const glm::vec4& color)
 			: Color(color)
-		{
-		}
+		{}
 	};
-	
+
 	struct TF_API CircleRendererComponent
 	{
-		glm::vec4 Color{ 1.0f, 1.0f, 1.0f, 1.0f };
+		glm::vec4 Color{1.0f, 1.0f, 1.0f, 1.0f};
 		float Thickness = 1.0f;
 		float Fade = 0.005f;
 
@@ -107,16 +98,15 @@ namespace Timefall
 		CircleRendererComponent(const CircleRendererComponent&) = default;
 		CircleRendererComponent(const glm::vec4& color)
 			: Color(color)
-		{
-		}
+		{}
 	};
 
 	// References a MeshSource asset + a submesh index. Mesh == 0 renders nothing.
 	struct TF_API MeshComponent
 	{
-		AssetHandle Mesh = 0;       // 0 -> nothing; built-in primitives use reserved handles 1/2/3
-		uint32_t    Submesh = 0;
-		AssetHandle Material = 0;   // 0 -> engine default material
+		AssetHandle Mesh = 0; // 0 -> nothing; built-in primitives use reserved handles 1/2/3
+		uint32_t Submesh = 0;
+		AssetHandle Material = 0; // 0 -> engine default material
 
 		MeshComponent() = default;
 		MeshComponent(const MeshComponent&) = default;
@@ -127,7 +117,7 @@ namespace Timefall
 		enum class LightType : uint8_t { Directional = 0, Point = 1, Spot = 2 };
 
 		LightType Type = LightType::Directional;
-		glm::vec3 Color{ 1.0f, 1.0f, 1.0f };
+		glm::vec3 Color{1.0f, 1.0f, 1.0f};
 		float Intensity = 1.0f;
 
 		// Point / Spot: distance at which the light fades to zero.
@@ -138,9 +128,9 @@ namespace Timefall
 		float OuterCutoff = 17.5f;
 
 		// Directional only: cascaded PCSS shadows.
-		bool  CastsShadows   = false;
-		float ShadowSoftness = 0.5f;   // [0..1] -> PCSS light size
-		float DepthBias      = 1.0f;   // multiplier on the shadow depth bias
+		bool CastsShadows = false;
+		float ShadowSoftness = 0.5f; // [0..1] -> PCSS light size
+		float DepthBias = 1.0f; // multiplier on the shadow depth bias
 
 		LightComponent() = default;
 		LightComponent(const LightComponent&) = default;
@@ -150,7 +140,7 @@ namespace Timefall
 	{
 		AssetHandle EnvironmentMap = 0;
 		float Intensity = 1.0f;
-		float Rotation  = 0.0f;   // degrees
+		float Rotation = 0.0f; // degrees
 
 		SkyLightComponent() = default;
 		SkyLightComponent(const SkyLightComponent&) = default;
@@ -163,8 +153,8 @@ namespace Timefall
 			switch (type)
 			{
 				case LightComponent::LightType::Directional: return "Directional";
-				case LightComponent::LightType::Point:       return "Point";
-				case LightComponent::LightType::Spot:        return "Spot";
+				case LightComponent::LightType::Point: return "Point";
+				case LightComponent::LightType::Spot: return "Spot";
 			}
 			TF_CORE_ASSERT(false, "Unknown LightType");
 			return "Directional";
@@ -172,9 +162,12 @@ namespace Timefall
 
 		static LightComponent::LightType LightTypeFromString(const std::string& type)
 		{
-			if (type == "Directional") return LightComponent::LightType::Directional;
-			if (type == "Point")       return LightComponent::LightType::Point;
-			if (type == "Spot")        return LightComponent::LightType::Spot;
+			if (type == "Directional")
+				return LightComponent::LightType::Directional;
+			if (type == "Point")
+				return LightComponent::LightType::Point;
+			if (type == "Spot")
+				return LightComponent::LightType::Spot;
 
 			TF_CORE_ASSERT(false, "Unknown LightType string");
 			return LightComponent::LightType::Directional;
@@ -199,19 +192,13 @@ namespace Timefall
 		ScriptComponent(const ScriptComponent&) = default;
 		ScriptComponent(const std::wstring& moduleName)
 			: ModuleName(moduleName)
-		{
-		}
+		{}
 	};
 
 	// Physics
 	struct TF_API Rigidbody2DComponent
 	{
-		enum class BodyType
-		{
-			Static = 0,
-			Kinematic = 1,
-			Dynamic = 2
-		};
+		enum class BodyType { Static = 0, Kinematic = 1, Dynamic = 2 };
 
 		BodyType Type = BodyType::Static;
 		bool FixedRotation = false;
@@ -222,8 +209,8 @@ namespace Timefall
 
 	struct TF_API BoxCollider2DComponent
 	{
-		glm::vec2 Offset{ 0.0f };
-		glm::vec2 Size{ 0.5f };
+		glm::vec2 Offset{0.0f};
+		glm::vec2 Size{0.5f};
 
 		// TODO: move to physics materials
 		float Density = 1.0f;
@@ -236,7 +223,7 @@ namespace Timefall
 
 	struct TF_API CircleCollider2DComponent
 	{
-		glm::vec2 Offset{ 0.0f };
+		glm::vec2 Offset{0.0f};
 		float Radius = 0.5f;
 
 		// TODO: move to physics materials
@@ -247,19 +234,18 @@ namespace Timefall
 		CircleCollider2DComponent() = default;
 		CircleCollider2DComponent(const CircleCollider2DComponent&) = default;
 	};
-	
+
 	struct TF_API TextComponent
 	{
 		std::string Text;
 		Ref<Font> FontAsset = Font::GetDefault();
-		glm::vec4 Color{ 1.0f };
+		glm::vec4 Color{1.0f};
 		float Kerning = 0.0f;
 		float LineSpacing = 0.0f;
 
 		TextComponent() = default;
 		TextComponent(const TextComponent&) = default;
 	};
-
 
 	class ScriptableEntity;
 	struct TF_API NativeScriptComponent
@@ -269,11 +255,13 @@ namespace Timefall
 		ScriptableEntity* (*InstantiateScript)();
 		void (*DestroyScript)(NativeScriptComponent*);
 
-		template<typename T>
-		void Bind()
+		template <typename T> void Bind()
 		{
 			InstantiateScript = []() { return static_cast<ScriptableEntity*>(new T()); };
-			DestroyScript = [](NativeScriptComponent* nsc) { delete nsc->Instance; nsc->Instance = nullptr; };
+			DestroyScript = [](NativeScriptComponent* nsc) {
+				delete nsc->Instance;
+				nsc->Instance = nullptr;
+			};
 		}
 
 		operator bool() const { return Instance; }
@@ -300,25 +288,10 @@ namespace Timefall
 		ManagedComponentStorage(const ManagedComponentStorage&) = default;
 	};
 
-	template<typename... T>
-	struct TF_API ComponentGroup
-	{
-	};
+	template <typename... T> struct TF_API ComponentGroup
+	{};
 
-	using AllComponents = ComponentGroup<
-		TransformComponent,
-		RelationshipComponent,
-		SpriteRendererComponent,
-		CircleRendererComponent,
-		MeshComponent,
-		LightComponent,
-		SkyLightComponent,
-		CameraComponent,
-		ScriptComponent,
-		Rigidbody2DComponent,
-		BoxCollider2DComponent,
-		CircleCollider2DComponent,
-		TextComponent,
-		ManagedComponentStorage,
-		NativeScriptComponent>;
+	using AllComponents = ComponentGroup<TransformComponent, RelationshipComponent, SpriteRendererComponent, CircleRendererComponent,
+		MeshComponent, LightComponent, SkyLightComponent, CameraComponent, ScriptComponent, Rigidbody2DComponent, BoxCollider2DComponent,
+		CircleCollider2DComponent, TextComponent, ManagedComponentStorage, NativeScriptComponent>;
 }

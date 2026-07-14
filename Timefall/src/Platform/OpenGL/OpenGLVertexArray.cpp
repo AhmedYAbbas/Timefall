@@ -10,17 +10,17 @@ namespace Timefall
 	{
 		switch (type)
 		{
-			case ShaderDataType::Float:    return GL_FLOAT;
-			case ShaderDataType::Float2:   return GL_FLOAT;
-			case ShaderDataType::Float3:   return GL_FLOAT;
-			case ShaderDataType::Float4:   return GL_FLOAT;
-			case ShaderDataType::Mat3:     return GL_FLOAT;
-			case ShaderDataType::Mat4:     return GL_FLOAT;
-			case ShaderDataType::Int:	   return GL_INT;
-			case ShaderDataType::Int2:     return GL_INT;
-			case ShaderDataType::Int3:     return GL_INT;
-			case ShaderDataType::Int4:     return GL_INT;
-			case ShaderDataType::Bool:     return GL_BOOL;
+			case ShaderDataType::Float: return GL_FLOAT;
+			case ShaderDataType::Float2: return GL_FLOAT;
+			case ShaderDataType::Float3: return GL_FLOAT;
+			case ShaderDataType::Float4: return GL_FLOAT;
+			case ShaderDataType::Mat3: return GL_FLOAT;
+			case ShaderDataType::Mat4: return GL_FLOAT;
+			case ShaderDataType::Int: return GL_INT;
+			case ShaderDataType::Int2: return GL_INT;
+			case ShaderDataType::Int3: return GL_INT;
+			case ShaderDataType::Int4: return GL_INT;
+			case ShaderDataType::Bool: return GL_BOOL;
 		}
 
 		TF_CORE_ASSERT(false, "Unknown ShaderDataType!");
@@ -75,12 +75,8 @@ namespace Timefall
 				case ShaderDataType::Float4:
 				{
 					glEnableVertexAttribArray(m_VertexBufferIndex);
-					glVertexAttribPointer(m_VertexBufferIndex,
-						element.GetComponentCount(),
-						ShaderDataTypeToGLBaseType(element.Type),
-						element.Normalized ? GL_TRUE : GL_FALSE,
-						layout.GetStride(),
-						(const void*)element.Offset);
+					glVertexAttribPointer(m_VertexBufferIndex, element.GetComponentCount(), ShaderDataTypeToGLBaseType(element.Type),
+						element.Normalized ? GL_TRUE : GL_FALSE, layout.GetStride(), (const void*)element.Offset);
 					m_VertexBufferIndex++;
 					break;
 				}
@@ -91,11 +87,8 @@ namespace Timefall
 				case ShaderDataType::Bool:
 				{
 					glEnableVertexAttribArray(m_VertexBufferIndex);
-					glVertexAttribIPointer(m_VertexBufferIndex,
-						element.GetComponentCount(),
-						ShaderDataTypeToGLBaseType(element.Type),
-						layout.GetStride(),
-						(const void*)element.Offset);
+					glVertexAttribIPointer(m_VertexBufferIndex, element.GetComponentCount(), ShaderDataTypeToGLBaseType(element.Type),
+						layout.GetStride(), (const void*)element.Offset);
 					m_VertexBufferIndex++;
 					break;
 				}
@@ -106,19 +99,14 @@ namespace Timefall
 					for (uint8_t i = 0; i < count; i++)
 					{
 						glEnableVertexAttribArray(m_VertexBufferIndex);
-						glVertexAttribPointer(m_VertexBufferIndex,
-							count,
-							ShaderDataTypeToGLBaseType(element.Type),
-							element.Normalized ? GL_TRUE : GL_FALSE,
-							layout.GetStride(),
-							(const void*)(sizeof(float) * count * i));
+						glVertexAttribPointer(m_VertexBufferIndex, count, ShaderDataTypeToGLBaseType(element.Type),
+							element.Normalized ? GL_TRUE : GL_FALSE, layout.GetStride(), (const void*)(sizeof(float) * count * i));
 						glVertexAttribDivisor(m_VertexBufferIndex, 1);
 						m_VertexBufferIndex++;
 					}
 					break;
 				}
-				default:
-					TF_CORE_ASSERT(false, "Unknown ShaderDataType!");
+				default: TF_CORE_ASSERT(false, "Unknown ShaderDataType!");
 			}
 		}
 

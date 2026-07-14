@@ -28,57 +28,73 @@ namespace Timefall
 		float _Padding = 0.0f;
 	};
 
-	static constexpr uint32_t MAX_DIR_LIGHTS   = 4;
+	static constexpr uint32_t MAX_DIR_LIGHTS = 4;
 	static constexpr uint32_t MAX_POINT_LIGHTS = 32;
-	static constexpr uint32_t MAX_SPOT_LIGHTS  = 16;
+	static constexpr uint32_t MAX_SPOT_LIGHTS = 16;
 
 	// std140 mirrors of the Lights UBO block in Renderer3D_Lit.glsl. All vec4 -> 16-byte aligned.
-	struct GpuDirLight   { glm::vec4 Direction; glm::vec4 Color; };               // Color.a = intensity
-	struct GpuPointLight { glm::vec4 Position;  glm::vec4 Color; };               // Position.w = range, Color.a = intensity
-	struct GpuSpotLight  { glm::vec4 Position;  glm::vec4 Direction; glm::vec4 Color; glm::vec4 Params; };
+	struct GpuDirLight
+	{
+		glm::vec4 Direction;
+		glm::vec4 Color;
+	}; // Color.a = intensity
+	struct GpuPointLight
+	{
+		glm::vec4 Position;
+		glm::vec4 Color;
+	}; // Position.w = range, Color.a = intensity
+	struct GpuSpotLight
+	{
+		glm::vec4 Position;
+		glm::vec4 Direction;
+		glm::vec4 Color;
+		glm::vec4 Params;
+	};
 	// Spot: Position.xyz = position, Direction.xyz = direction, Color.rgb = color,
 	//       Params = (range, innerCos, outerCos, intensity)
 
 	struct LightsData
 	{
-		GpuDirLight   DirLights[MAX_DIR_LIGHTS];
+		GpuDirLight DirLights[MAX_DIR_LIGHTS];
 		GpuPointLight PointLights[MAX_POINT_LIGHTS];
-		GpuSpotLight  SpotLights[MAX_SPOT_LIGHTS];
-		uint32_t DirCount   = 0;
+		GpuSpotLight SpotLights[MAX_SPOT_LIGHTS];
+		uint32_t DirCount = 0;
 		uint32_t PointCount = 0;
-		uint32_t SpotCount  = 0;
-		uint32_t _Padding   = 0;
+		uint32_t SpotCount = 0;
+		uint32_t _Padding = 0;
 	};
 
 	// std140 mirror of the Material UBO block in Renderer3D_Lit.glsl.
 	struct MaterialData
 	{
-		glm::vec3 BaseColor = glm::vec3(1.0f); float Metallic = 0.0f;   // vec3 + float share one 16B slot
-		glm::vec3 Emissive  = glm::vec3(0.0f); float Roughness = 1.0f;
-		float NormalStrength    = 1.0f;
+		glm::vec3 BaseColor = glm::vec3(1.0f);
+		float Metallic = 0.0f; // vec3 + float share one 16B slot
+		glm::vec3 Emissive = glm::vec3(0.0f);
+		float Roughness = 1.0f;
+		float NormalStrength = 1.0f;
 		float EmissiveIntensity = 1.0f;
-		float Opacity           = 1.0f;
-		float AlphaCutoff       = 0.5f;
-		int32_t AlphaMode       = 0;
+		float Opacity = 1.0f;
+		float AlphaCutoff = 0.5f;
+		int32_t AlphaMode = 0;
 		float _Pad0 = 0.0f, _Pad1 = 0.0f, _Pad2 = 0.0f;
 	};
 
 	// std140 mirror of the Environment UBO block in Renderer3D_Lit.glsl.
 	struct EnvironmentData
 	{
-		float EnvIntensity    = 1.0f;
-		float EnvRotation     = 0.0f;
+		float EnvIntensity = 1.0f;
+		float EnvRotation = 0.0f;
 		float MaxReflectionLod = 4.0f;
 		int32_t HasEnvironment = 0;
 	};
 
 	struct MeshSubmission
 	{
-		glm::mat4       Transform;
+		glm::mat4 Transform;
 		Ref<MeshSource> Mesh;
-		uint32_t        SubmeshIndex;
-		Ref<Material>   Material;
-		int             EntityID;
+		uint32_t SubmeshIndex;
+		Ref<Material> Material;
+		int EntityID;
 	};
 
 	static constexpr uint32_t MAX_CASCADES = 4;
@@ -87,17 +103,17 @@ namespace Timefall
 	struct ShadowData
 	{
 		glm::mat4 LightViewProj[MAX_CASCADES];
-		glm::vec4 CascadeSplits;            // far view-depth of each cascade
-		glm::vec4 CascadeTexelWorld;        // world units per shadow texel, per cascade
-		glm::vec4 CascadeDepthRange;        // world depth mapped to [0,1] per cascade
-		uint32_t  CascadeCount = 0;
-		uint32_t  VisualizeCascades = 0;
-		float     LightSize = 0.08f;       // PCSS light size (from the sun's ShadowSoftness)
-		float     DepthBias = 1.0f;        // multiplier on the shader depth bias
-		float     CascadeBlend = 0.1f;     // boundary blend band (fraction of cascade extent)
-		int32_t   BlockerSamples = 16;     // PCSS blocker search taps
-		int32_t   PCFSamples = 16;         // PCSS / fixed-PCF filter taps
-		int32_t   SoftShadows = 1;         // 1 = PCSS, 0 = fixed-kernel PCF
+		glm::vec4 CascadeSplits; // far view-depth of each cascade
+		glm::vec4 CascadeTexelWorld; // world units per shadow texel, per cascade
+		glm::vec4 CascadeDepthRange; // world depth mapped to [0,1] per cascade
+		uint32_t CascadeCount = 0;
+		uint32_t VisualizeCascades = 0;
+		float LightSize = 0.08f; // PCSS light size (from the sun's ShadowSoftness)
+		float DepthBias = 1.0f; // multiplier on the shader depth bias
+		float CascadeBlend = 0.1f; // boundary blend band (fraction of cascade extent)
+		int32_t BlockerSamples = 16; // PCSS blocker search taps
+		int32_t PCFSamples = 16; // PCSS / fixed-PCF filter taps
+		int32_t SoftShadows = 1; // 1 = PCSS, 0 = fixed-kernel PCF
 	};
 
 	// std140 mirror of the SpotShadows UBO block. Indexed by spot light index.
@@ -116,63 +132,63 @@ namespace Timefall
 	struct PointCaster
 	{
 		glm::vec3 Position;
-		float     Far;
-		uint32_t  Layer;
+		float Far;
+		uint32_t Layer;
 	};
 
 	struct Renderer3DData
 	{
-		Ref<MeshSource>    CubeMesh;
-		Ref<MeshSource>    SphereMesh;
-		Ref<MeshSource>    PlaneMesh;
+		Ref<MeshSource> CubeMesh;
+		Ref<MeshSource> SphereMesh;
+		Ref<MeshSource> PlaneMesh;
 
-		Ref<Shader>        LitShader;
+		Ref<Shader> LitShader;
 		Ref<UniformBuffer> CameraUniformBuffer;
-		CameraData         CameraBuffer;
+		CameraData CameraBuffer;
 
 		Ref<UniformBuffer> LightsUniformBuffer;
-		LightsData         LightsBuffer;
-		bool               LightsDirty = true;
+		LightsData LightsBuffer;
+		bool LightsDirty = true;
 
 		Ref<UniformBuffer> MaterialUniformBuffer;
-		MaterialData       MaterialBuffer;
+		MaterialData MaterialBuffer;
 
 		Ref<UniformBuffer> EnvironmentUniformBuffer;
-		EnvironmentData    EnvironmentBuffer;
+		EnvironmentData EnvironmentBuffer;
 
 		Ref<Texture2D> WhiteTexture;
 		Ref<Texture2D> FlatNormalTexture;
-		Ref<Material>  DefaultMaterial;
+		Ref<Material> DefaultMaterial;
 
 		std::vector<MeshSubmission> Submissions;
 
-		Ref<ShadowMap>     SunShadowMap;
-		Ref<Shader>        ShadowDepthShader;
-		Ref<Shader>        PointShadowDepthShader;
+		Ref<ShadowMap> SunShadowMap;
+		Ref<Shader> ShadowDepthShader;
+		Ref<Shader> PointShadowDepthShader;
 		Ref<UniformBuffer> ShadowUniformBuffer;
-		ShadowData         ShadowBuffer;
-		bool               SunCastsShadow = false;
-		glm::vec3          SunDirection{ 0.0f, -1.0f, 0.0f };
-		float              SunShadowSoftness = 0.5f;
-		float              SunDepthBias = 1.0f;
-		ShadowSettings     Shadows;
+		ShadowData ShadowBuffer;
+		bool SunCastsShadow = false;
+		glm::vec3 SunDirection{0.0f, -1.0f, 0.0f};
+		float SunShadowSoftness = 0.5f;
+		float SunDepthBias = 1.0f;
+		ShadowSettings Shadows;
 
-		Ref<ShadowMap>     SpotShadowMap;
+		Ref<ShadowMap> SpotShadowMap;
 		Ref<UniformBuffer> SpotShadowUniformBuffer;
-		SpotShadowData     SpotShadowBuffer;
-		bool               AnySpotCasts = false;
+		SpotShadowData SpotShadowBuffer;
+		bool AnySpotCasts = false;
 
 		Ref<CubeShadowMap> PointShadowMap;
 		Ref<UniformBuffer> PointShadowUniformBuffer;
-		PointShadowData    PointShadowBuffer;
+		PointShadowData PointShadowBuffer;
 		std::vector<PointCaster> PointCasters;
-		bool               AnyPointCasts = false;
+		bool AnyPointCasts = false;
 
-		Ref<Framebuffer>   TargetFB;       // external LDR target (owns id+depth we alias)
-		Ref<Framebuffer>   HdrFB;          // internal RGBA16F scene buffer
-		Ref<Shader>        ResolveShader;
-		Ref<Shader>        SkyboxShader;
-		Ref<VertexArray>   FullscreenVAO;  // empty VAO for the fullscreen triangle
+		Ref<Framebuffer> TargetFB; // external LDR target (owns id+depth we alias)
+		Ref<Framebuffer> HdrFB; // internal RGBA16F scene buffer
+		Ref<Shader> ResolveShader;
+		Ref<Shader> SkyboxShader;
+		Ref<VertexArray> FullscreenVAO; // empty VAO for the fullscreen triangle
 		PostProcessSettings PostProcess;
 
 		static constexpr uint32_t BASE_COLOR_SAMPLER_SLOT = 0;
@@ -187,15 +203,15 @@ namespace Timefall
 		static constexpr uint32_t IRRADIANCE_SAMPLER_SLOT = 9;
 		static constexpr uint32_t PREFILTER_SAMPLER_SLOT = 10;
 		static constexpr uint32_t SKYBOX_SAMPLER_SLOT = 11;
-		static constexpr float    SHADOW_DEPTH_EXTENT = 6.0f;  // ortho slab = radius * this each way along the light
+		static constexpr float SHADOW_DEPTH_EXTENT = 6.0f; // ortho slab = radius * this each way along the light
 
 		// Per-frame render-state cache (reset in BeginScene) to skip redundant GL state changes
 		// across the many SubmitMesh calls of a frame.
 		const Material* CurrentMaterial = nullptr;
 
 		AssetHandle ActiveEnvironmentHandle = 0;
-		float       EnvIntensity = 1.0f;
-		float       EnvRotationRadians = 0.0f;
+		float EnvIntensity = 1.0f;
+		float EnvRotationRadians = 0.0f;
 		std::unordered_map<AssetHandle, Ref<Environment>> EnvironmentCache;
 		Ref<Environment> ActiveEnvironment;
 	};
@@ -206,22 +222,20 @@ namespace Timefall
 	{
 		glm::vec3 lo = c / 12.92f;
 		glm::vec3 hi = glm::pow((c + 0.055f) / 1.055f, glm::vec3(2.4f));
-		return glm::vec3(
-			c.x <= 0.04045f ? lo.x : hi.x,
-			c.y <= 0.04045f ? lo.y : hi.y,
-			c.z <= 0.04045f ? lo.z : hi.z);
+		return glm::vec3(c.x <= 0.04045f ? lo.x : hi.x, c.y <= 0.04045f ? lo.y : hi.y, c.z <= 0.04045f ? lo.z : hi.z);
 	}
 
 	// Bounding-sphere fit: rotation-invariant size + origin snapped to the texel grid -> no shimmer.
-	static glm::mat4 FitOrthoToCorners(const glm::vec3 corners[8], const glm::vec3& lightDir,
-		uint32_t resolution, float& outRadius)
+	static glm::mat4 FitOrthoToCorners(const glm::vec3 corners[8], const glm::vec3& lightDir, uint32_t resolution, float& outRadius)
 	{
 		glm::vec3 center(0.0f);
-		for (int i = 0; i < 8; ++i) center += corners[i];
+		for (int i = 0; i < 8; ++i)
+			center += corners[i];
 		center /= 8.0f;
 
 		float radius = 0.0f;
-		for (int i = 0; i < 8; ++i) radius = glm::max(radius, glm::length(corners[i] - center));
+		for (int i = 0; i < 8; ++i)
+			radius = glm::max(radius, glm::length(corners[i] - center));
 		outRadius = radius;
 
 		glm::vec3 dir = glm::normalize(lightDir);
@@ -244,8 +258,8 @@ namespace Timefall
 		return lightProj * lightView;
 	}
 
-	static void ComputeCascades(const glm::mat4& cameraViewProjection, const glm::mat4& cameraView,
-		const glm::vec3& lightDir, const ShadowSettings& settings, ShadowData& out)
+	static void ComputeCascades(const glm::mat4& cameraViewProjection, const glm::mat4& cameraView, const glm::vec3& lightDir,
+		const ShadowSettings& settings, ShadowData& out)
 	{
 		const uint32_t cascadeCount = settings.CascadeCount;
 		const float maxShadowDistance = settings.MaxShadowDistance;
@@ -311,15 +325,14 @@ namespace Timefall
 	{
 		switch (mode)
 		{
-		case ShadowCullMode::Front: return RendererAPI::FaceCull::Front;
-		case ShadowCullMode::None:  return RendererAPI::FaceCull::None;
-		case ShadowCullMode::Back:
-		default:                    return RendererAPI::FaceCull::Back;
+			case ShadowCullMode::Front: return RendererAPI::FaceCull::Front;
+			case ShadowCullMode::None: return RendererAPI::FaceCull::None;
+			case ShadowCullMode::Back:
+			default: return RendererAPI::FaceCull::Back;
 		}
 	}
 
-	static glm::mat4 ComputeSpotMatrix(const glm::vec3& position, const glm::vec3& direction,
-		float range, float outerCutoffDegrees)
+	static glm::mat4 ComputeSpotMatrix(const glm::vec3& position, const glm::vec3& direction, float range, float outerCutoffDegrees)
 	{
 		glm::vec3 dir = glm::normalize(direction);
 		glm::vec3 up = glm::abs(dir.y) > 0.99f ? glm::vec3(0.0f, 0.0f, 1.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
@@ -328,12 +341,8 @@ namespace Timefall
 		return proj * view;
 	}
 
-	static const glm::vec3 s_CubeFaceDir[6] = {
-		{ 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 }
-	};
-	static const glm::vec3 s_CubeFaceUp[6] = {
-		{ 0, -1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 }, { 0, -1, 0 }, { 0, -1, 0 }
-	};
+	static const glm::vec3 s_CubeFaceDir[6] = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
+	static const glm::vec3 s_CubeFaceUp[6] = {{0, -1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}, {0, -1, 0}, {0, -1, 0}};
 
 	static void EnsureHdrFramebuffer()
 	{
@@ -342,9 +351,8 @@ namespace Timefall
 			return;
 
 		const FramebufferSpecification& tspec = target->GetSpecification();
-		bool needsRebuild = !s_Data.HdrFB ||
-			s_Data.HdrFB->GetSpecification().Width != tspec.Width ||
-			s_Data.HdrFB->GetSpecification().Height != tspec.Height;
+		bool needsRebuild = !s_Data.HdrFB || s_Data.HdrFB->GetSpecification().Width != tspec.Width
+			|| s_Data.HdrFB->GetSpecification().Height != tspec.Height;
 
 		if (!needsRebuild)
 			return;
@@ -361,15 +369,15 @@ namespace Timefall
 		FramebufferTextureSpecification depthAlias(FramebufferTextureFormat::DEPTH24STENCIL8);
 		depthAlias.ExternalRendererID = target->GetDepthAttachmentRendererID();
 
-		spec.Attachments = { hdrColor, idAlias, depthAlias };
+		spec.Attachments = {hdrColor, idAlias, depthAlias};
 		s_Data.HdrFB = Framebuffer::Create(spec);
 	}
 
 	void Renderer3D::Init()
 	{
-		s_Data.CubeMesh   = MeshSource::CreateCube();
+		s_Data.CubeMesh = MeshSource::CreateCube();
 		s_Data.SphereMesh = MeshSource::CreateSphere();
-		s_Data.PlaneMesh  = MeshSource::CreatePlane();
+		s_Data.PlaneMesh = MeshSource::CreatePlane();
 
 		s_Data.LitShader = Shader::Create("assets/shaders/Renderer3D_Lit.glsl");
 		s_Data.ShadowDepthShader = Shader::Create("assets/shaders/Renderer3D_ShadowDepth.glsl");
@@ -420,9 +428,7 @@ namespace Timefall
 		s_Data.SkyboxShader->SetInt("u_Skybox", (int)Renderer3DData::SKYBOX_SAMPLER_SLOT);
 	}
 
-	void Renderer3D::Shutdown()
-	{
-	}
+	void Renderer3D::Shutdown() {}
 
 	void Renderer3D::SetTargetFramebuffer(const Ref<Framebuffer>& target)
 	{
@@ -479,8 +485,8 @@ namespace Timefall
 		s_Data.Shadows.CascadeCount = glm::clamp(s_Data.Shadows.CascadeCount, 1u, ShadowSettings::MaxCascades);
 		s_Data.Shadows.ShadowMapResolution = glm::max(s_Data.Shadows.ShadowMapResolution, 1u);
 
-		if (s_Data.SunShadowMap->GetResolution() != s_Data.Shadows.ShadowMapResolution ||
-			s_Data.SunShadowMap->GetLayerCount() != s_Data.Shadows.CascadeCount)
+		if (s_Data.SunShadowMap->GetResolution() != s_Data.Shadows.ShadowMapResolution
+			|| s_Data.SunShadowMap->GetLayerCount() != s_Data.Shadows.CascadeCount)
 		{
 			s_Data.SunShadowMap = ShadowMap::Create(s_Data.Shadows.ShadowMapResolution, s_Data.Shadows.CascadeCount);
 		}
@@ -489,8 +495,7 @@ namespace Timefall
 			s_Data.SpotShadowMap = ShadowMap::Create(s_Data.Shadows.SpotShadowResolution, MAX_SPOT_LIGHTS);
 
 		if (s_Data.PointShadowMap->GetResolution() != s_Data.Shadows.PointShadowResolution)
-			s_Data.PointShadowMap = CubeShadowMap::Create(s_Data.Shadows.PointShadowResolution,
-				s_Data.PointShadowMap->GetCubeCount());
+			s_Data.PointShadowMap = CubeShadowMap::Create(s_Data.Shadows.PointShadowResolution, s_Data.PointShadowMap->GetCubeCount());
 	}
 
 	void Renderer3D::SetPostProcessSettings(const PostProcessSettings& settings)
@@ -517,8 +522,8 @@ namespace Timefall
 		// Shadow depth pass: one draw set per cascade layer.
 		if (s_Data.SunCastsShadow)
 		{
-			ComputeCascades(s_Data.CameraBuffer.ViewProjection, s_Data.CameraBuffer.View, s_Data.SunDirection,
-				s_Data.Shadows, s_Data.ShadowBuffer);
+			ComputeCascades(
+				s_Data.CameraBuffer.ViewProjection, s_Data.CameraBuffer.View, s_Data.SunDirection, s_Data.Shadows, s_Data.ShadowBuffer);
 			s_Data.ShadowBuffer.LightSize = s_Data.SunShadowSoftness * 0.16f;
 			s_Data.ShadowBuffer.DepthBias = s_Data.SunDepthBias;
 			s_Data.ShadowUniformBuffer->SetData(&s_Data.ShadowBuffer, sizeof(ShadowData));
@@ -636,8 +641,7 @@ namespace Timefall
 
 		// Binds the submission's material (cached, since submissions are grouped by material)
 		// and issues its draw. Shared by the opaque and blended passes below.
-		auto drawSubmission = [&](const MeshSubmission& sub)
-		{
+		auto drawSubmission = [&](const MeshSubmission& sub) {
 			s_Data.LitShader->SetMat4("u_Model", sub.Transform);
 			glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(sub.Transform)));
 			s_Data.LitShader->SetMat3("u_NormalMatrix", normalMatrix);
@@ -657,17 +661,15 @@ namespace Timefall
 				s_Data.MaterialBuffer.AlphaCutoff = mat->AlphaCutoff;
 				s_Data.MaterialUniformBuffer->SetData(&s_Data.MaterialBuffer, sizeof(MaterialData));
 
-				auto mapOrWhite = [&](AssetHandle h)
-				{
-					return (h != 0 && AssetManager::IsAssetHandleValid(h))
-						? AssetManager::GetAsset<Texture2D>(h) : s_Data.WhiteTexture;
+				auto mapOrWhite = [&](AssetHandle h) {
+					return (h != 0 && AssetManager::IsAssetHandleValid(h)) ? AssetManager::GetAsset<Texture2D>(h) : s_Data.WhiteTexture;
 				};
 
 				Ref<Texture2D> baseColor = mapOrWhite(mat->BaseColorMap);
-				Ref<Texture2D> metallic  = mapOrWhite(mat->MetallicMap);
+				Ref<Texture2D> metallic = mapOrWhite(mat->MetallicMap);
 				Ref<Texture2D> roughness = mapOrWhite(mat->RoughnessMap);
-				Ref<Texture2D> ao        = mapOrWhite(mat->AOMap);
-				Ref<Texture2D> emissive  = mapOrWhite(mat->EmissiveMap);
+				Ref<Texture2D> ao = mapOrWhite(mat->AOMap);
+				Ref<Texture2D> emissive = mapOrWhite(mat->EmissiveMap);
 
 				Ref<Texture2D> normalMap = s_Data.FlatNormalTexture;
 				if (mat->NormalMap != 0 && AssetManager::IsAssetHandleValid(mat->NormalMap))
@@ -725,13 +727,11 @@ namespace Timefall
 		if (!blended.empty())
 		{
 			const glm::vec3 camPos = s_Data.CameraBuffer.CameraPosition;
-			std::sort(blended.begin(), blended.end(),
-				[&](const MeshSubmission* a, const MeshSubmission* b)
-				{
-					glm::vec3 da = glm::vec3(a->Transform[3]) - camPos;
-					glm::vec3 db = glm::vec3(b->Transform[3]) - camPos;
-					return glm::dot(da, da) > glm::dot(db, db);   // farthest first
-				});
+			std::sort(blended.begin(), blended.end(), [&](const MeshSubmission* a, const MeshSubmission* b) {
+				glm::vec3 da = glm::vec3(a->Transform[3]) - camPos;
+				glm::vec3 db = glm::vec3(b->Transform[3]) - camPos;
+				return glm::dot(da, da) > glm::dot(db, db); // farthest first
+			});
 
 			RenderCommand::SetDepthWrite(false);
 			s_Data.CurrentMaterial = nullptr;
@@ -760,14 +760,14 @@ namespace Timefall
 		}
 	}
 
-	void Renderer3D::SubmitMesh(const glm::mat4& transform, const Ref<MeshSource>& mesh, uint32_t submeshIndex,
-		const Ref<Material>& material, int entityID)
+	void Renderer3D::SubmitMesh(
+		const glm::mat4& transform, const Ref<MeshSource>& mesh, uint32_t submeshIndex, const Ref<Material>& material, int entityID)
 	{
 		if (!mesh || submeshIndex >= mesh->GetSubmeshes().size())
 			return;
 
 		const Ref<Material>& mat = material ? material : s_Data.DefaultMaterial;
-		s_Data.Submissions.push_back({ transform, mesh, submeshIndex, mat, entityID });
+		s_Data.Submissions.push_back({transform, mesh, submeshIndex, mat, entityID});
 	}
 
 	Ref<Material> Renderer3D::GetDefaultMaterial()
@@ -777,13 +777,13 @@ namespace Timefall
 
 	void Renderer3D::RegisterBuiltInMeshes(EditorAssetManager& assetManager)
 	{
-		assetManager.AddMemoryOnlyAsset(BuiltInMesh::Cube,   s_Data.CubeMesh,   "Cube",   AssetType::Mesh);
+		assetManager.AddMemoryOnlyAsset(BuiltInMesh::Cube, s_Data.CubeMesh, "Cube", AssetType::Mesh);
 		assetManager.AddMemoryOnlyAsset(BuiltInMesh::Sphere, s_Data.SphereMesh, "Sphere", AssetType::Mesh);
-		assetManager.AddMemoryOnlyAsset(BuiltInMesh::Plane,  s_Data.PlaneMesh,  "Plane",  AssetType::Mesh);
+		assetManager.AddMemoryOnlyAsset(BuiltInMesh::Plane, s_Data.PlaneMesh, "Plane", AssetType::Mesh);
 	}
 
-	void Renderer3D::SubmitDirectionalLight(const glm::vec3& direction, const glm::vec3& color, float intensity,
-		bool castsShadows, float shadowSoftness, float depthBias)
+	void Renderer3D::SubmitDirectionalLight(
+		const glm::vec3& direction, const glm::vec3& color, float intensity, bool castsShadows, float shadowSoftness, float depthBias)
 	{
 		if (s_Data.LightsBuffer.DirCount >= (int)MAX_DIR_LIGHTS)
 			return;
@@ -791,7 +791,7 @@ namespace Timefall
 		glm::vec3 linColor = SRGBToLinear(color);
 		GpuDirLight& light = s_Data.LightsBuffer.DirLights[s_Data.LightsBuffer.DirCount++];
 		light.Direction = glm::vec4(glm::normalize(direction), 0.0f);
-		light.Color     = glm::vec4(linColor, intensity);
+		light.Color = glm::vec4(linColor, intensity);
 		s_Data.LightsDirty = true;
 
 		// First directional light flagged as a caster becomes the shadow sun.
@@ -804,8 +804,8 @@ namespace Timefall
 		}
 	}
 
-	void Renderer3D::SubmitPointLight(const glm::vec3& position, const glm::vec3& color, float intensity, float range,
-		bool castsShadows, float shadowSoftness, float depthBias)
+	void Renderer3D::SubmitPointLight(const glm::vec3& position, const glm::vec3& color, float intensity, float range, bool castsShadows,
+		float shadowSoftness, float depthBias)
 	{
 		if (s_Data.LightsBuffer.PointCount >= (int)MAX_POINT_LIGHTS)
 			return;
@@ -814,13 +814,13 @@ namespace Timefall
 		uint32_t index = s_Data.LightsBuffer.PointCount;
 		GpuPointLight& light = s_Data.LightsBuffer.PointLights[s_Data.LightsBuffer.PointCount++];
 		light.Position = glm::vec4(position, range);
-		light.Color    = glm::vec4(linColor, intensity);
+		light.Color = glm::vec4(linColor, intensity);
 		s_Data.LightsDirty = true;
 
 		if (castsShadows && s_Data.PointCasters.size() < MAX_POINT_LIGHTS)
 		{
 			uint32_t layer = (uint32_t)s_Data.PointCasters.size();
-			s_Data.PointCasters.push_back({ position, glm::max(range, 0.1f), layer });
+			s_Data.PointCasters.push_back({position, glm::max(range, 0.1f), layer});
 			s_Data.PointShadowBuffer.Params[index] = glm::vec4(1.0f, shadowSoftness * 0.10f, depthBias, (float)layer);
 			s_Data.AnyPointCasts = true;
 		}
@@ -830,9 +830,8 @@ namespace Timefall
 		}
 	}
 
-	void Renderer3D::SubmitSpotLight(const glm::vec3& position, const glm::vec3& direction, const glm::vec3& color,
-		float intensity, float range, float innerCutoffDegrees, float outerCutoffDegrees,
-		bool castsShadows, float shadowSoftness, float depthBias)
+	void Renderer3D::SubmitSpotLight(const glm::vec3& position, const glm::vec3& direction, const glm::vec3& color, float intensity,
+		float range, float innerCutoffDegrees, float outerCutoffDegrees, bool castsShadows, float shadowSoftness, float depthBias)
 	{
 		if (s_Data.LightsBuffer.SpotCount >= (int)MAX_SPOT_LIGHTS)
 			return;
@@ -843,10 +842,10 @@ namespace Timefall
 
 		uint32_t index = s_Data.LightsBuffer.SpotCount;
 		GpuSpotLight& light = s_Data.LightsBuffer.SpotLights[s_Data.LightsBuffer.SpotCount++];
-		light.Position  = glm::vec4(position, 0.0f);
+		light.Position = glm::vec4(position, 0.0f);
 		light.Direction = glm::vec4(glm::normalize(direction), 0.0f);
-		light.Color     = glm::vec4(linColor, 0.0f);
-		light.Params    = glm::vec4(range, innerCos, outerCos, intensity);
+		light.Color = glm::vec4(linColor, 0.0f);
+		light.Params = glm::vec4(range, innerCos, outerCos, intensity);
 		s_Data.LightsDirty = true;
 
 		if (castsShadows)

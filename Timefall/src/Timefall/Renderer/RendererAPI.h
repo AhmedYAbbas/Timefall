@@ -9,20 +9,11 @@ namespace Timefall
 	class TF_API RendererAPI
 	{
 	public:
-		enum class API
-		{
-			None = 0, OpenGL = 1
-		};
+		enum class API { None = 0, OpenGL = 1 };
 
-		enum class FaceCull
-		{
-			None = 0, Front, Back
-		};
+		enum class FaceCull { None = 0, Front, Back };
 
-		enum class DepthFunc
-		{
-			Less = 0, LessEqual
-		};
+		enum class DepthFunc { Less = 0, LessEqual };
 
 	public:
 		virtual ~RendererAPI() = default;
@@ -31,8 +22,8 @@ namespace Timefall
 		virtual void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) = 0;
 		virtual void Clear(const glm::vec4& color) = 0;
 
-		virtual void DrawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCount = 0,
-			uint32_t indexOffset = 0, uint32_t baseVertex = 0) = 0;
+		virtual void DrawIndexed(
+			const Ref<VertexArray>& vertexArray, uint32_t indexCount = 0, uint32_t indexOffset = 0, uint32_t baseVertex = 0) = 0;
 		virtual void DrawLines(const Ref<VertexArray>& vertexArray, uint32_t vertexCount) = 0;
 		virtual void DrawArrays(const Ref<VertexArray>& vertexArray, uint32_t vertexCount) = 0;
 

@@ -13,7 +13,6 @@ namespace Timefall
 			return {};
 		}
 
-
 		std::streampos end = stream.tellg();
 		stream.seekg(0, std::ios::beg);
 		uint64_t size = end - stream.tellg();

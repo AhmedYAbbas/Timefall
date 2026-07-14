@@ -1,5 +1,8 @@
 #pragma once
 
+// hand-aligned key/button tables
+// clang-format off
+
 namespace Timefall
 {
 	typedef enum class KeyCode : uint16_t
@@ -270,3 +273,4 @@ namespace Timefall
 #define TF_KEY_RIGHT_ALT       ::Timefall::Key::RightAlt
 #define TF_KEY_RIGHT_SUPER     ::Timefall::Key::RightSuper
 #define TF_KEY_MENU            ::Timefall::Key::Menu
+// clang-format on

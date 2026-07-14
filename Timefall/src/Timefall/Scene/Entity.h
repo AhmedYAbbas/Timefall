@@ -14,14 +14,9 @@ namespace Timefall
 		Entity(const Entity& other) = default;
 		Entity(entt::entity entity, Scene* scene);
 
-		template<typename T>
-		bool HasComponent()
-		{
-			return m_Scene->m_Registry.any_of<T>(m_EntityHandle);
-		}
+		template <typename T> bool HasComponent() { return m_Scene->m_Registry.any_of<T>(m_EntityHandle); }
 
-		template<typename T, typename... Args>
-		T& AddComponent(Args&&... args)
+		template <typename T, typename... Args> T& AddComponent(Args&&... args)
 		{
 			TF_CORE_ASSERT(!HasComponent<T>(), "Entity already has the component you're trying to add!");
 			T& component = m_Scene->m_Registry.emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
@@ -29,25 +24,22 @@ namespace Timefall
 
 			return component;
 		}
-		
-		template<typename T, typename... Args>
-		T& AddOrReplaceComponent(Args&&... args)
+
+		template <typename T, typename... Args> T& AddOrReplaceComponent(Args&&... args)
 		{
-			T& component = m_Scene->m_Registry.emplace_or_replace	<T>(m_EntityHandle, std::forward<Args>(args)...);
+			T& component = m_Scene->m_Registry.emplace_or_replace<T>(m_EntityHandle, std::forward<Args>(args)...);
 			m_Scene->OnComponentAdded<T>(*this, component);
 
 			return component;
 		}
 
-		template<typename T>
-		T& GetComponent()
+		template <typename T> T& GetComponent()
 		{
 			TF_CORE_ASSERT(HasComponent<T>(), "Entity does not have the component you're trying to retrieve!");
 			return m_Scene->m_Registry.get<T>(m_EntityHandle);
 		}
 
-		template<typename T>
-		void RemoveComponent()
+		template <typename T> void RemoveComponent()
 		{
 			TF_CORE_ASSERT(HasComponent<T>(), "Entity does not have the component you're trying to remove!");
 			m_Scene->m_Registry.remove<T>(m_EntityHandle);
@@ -83,10 +75,10 @@ namespace Timefall
 		glm::vec3 GetWorldTranslation();
 		void SetWorldTranslation(const glm::vec3& translation);
 
-		glm::vec3 GetWorldRotation();              // Euler radians
+		glm::vec3 GetWorldRotation(); // Euler radians
 		void SetWorldRotation(const glm::vec3& rotation);
 
-		glm::vec3 GetWorldScale();                 // read-only (lossyScale): no setter by design
+		glm::vec3 GetWorldScale(); // read-only (lossyScale): no setter by design
 
 		// World transform of this entity's parent (identity if it has no parent). Helper for the above.
 		glm::mat4 GetParentWorldTransform();
@@ -98,7 +90,7 @@ namespace Timefall
 		bool operator!=(const Entity& other) const { return !(*this == other); }
 
 	private:
-		entt::entity m_EntityHandle{ entt::null };
+		entt::entity m_EntityHandle{entt::null};
 		Scene* m_Scene = nullptr;
 
 		friend class SceneSerializer;

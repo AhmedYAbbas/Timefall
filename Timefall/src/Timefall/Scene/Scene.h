@@ -11,7 +11,7 @@
 #include <box2d/id.h>
 #include <glm/glm.hpp>
 
-namespace Timefall 
+namespace Timefall
 {
 	class Entity;
 
@@ -80,23 +80,14 @@ namespace Timefall
 
 		inline void SetPaused(bool paused) { m_IsPaused = paused; }
 
-		inline void Step(int frames = 1) { m_StepFrames = frames;}
+		inline void Step(int frames = 1) { m_StepFrames = frames; }
 
-		template<typename... Components>
-		auto GetAllEntitiesWithUsingOwningGroup() 
-		{
-			return m_Registry.group<Components...>();
-		}
+		template <typename... Components> auto GetAllEntitiesWithUsingOwningGroup() { return m_Registry.group<Components...>(); }
 
-		template<typename... Components>
-		auto GetAllEntitiesWithUsingView() 
-		{
-			return m_Registry.view<Components...>();
-		}
+		template <typename... Components> auto GetAllEntitiesWithUsingView() { return m_Registry.view<Components...>(); }
 
 	private:
-		template<typename T>
-		TF_API void OnComponentAdded(Entity entity, T& component);
+		template <typename T> TF_API void OnComponentAdded(Entity entity, T& component);
 
 		void OnPhysics2DStart();
 		void OnPhysics2DStop();

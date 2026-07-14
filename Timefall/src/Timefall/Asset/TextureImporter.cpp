@@ -82,16 +82,12 @@ namespace Timefall
 
 		switch (loadedChannels)
 		{
-		case 3:
-			spec.Format = ImageFormat::RGB8;
-			break;
-		case 4:
-			spec.Format = ImageFormat::RGBA8;
-			break;
-		default:
-			TF_CORE_ERROR("TextureImporter - Unsupported channel count {0} for {1}", loadedChannels, path.string());
-			data.Release();
-			return nullptr;
+			case 3: spec.Format = ImageFormat::RGB8; break;
+			case 4: spec.Format = ImageFormat::RGBA8; break;
+			default:
+				TF_CORE_ERROR("TextureImporter - Unsupported channel count {0} for {1}", loadedChannels, path.string());
+				data.Release();
+				return nullptr;
 		}
 
 		Ref<Texture2D> texture = Texture2D::Create(spec, data);

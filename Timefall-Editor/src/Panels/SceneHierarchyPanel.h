@@ -25,8 +25,7 @@ namespace Timefall
 		void DrawEntityNode(Entity entity);
 		void DrawComponents(Entity entity);
 
-		template<typename T>
-		void DisplayAddComponentEntry(const std::string& entryName);
+		template <typename T> void DisplayAddComponentEntry(const std::string& entryName);
 
 		// Applies the pending reparent / create-child / delete captured during the tree draw.
 		// Deferred so structural edits never mutate the registry mid-iteration.

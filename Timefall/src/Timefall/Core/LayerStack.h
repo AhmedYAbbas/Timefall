@@ -28,10 +28,8 @@ namespace Timefall
 		std::vector<Layer*>::const_reverse_iterator rbegin() const { return m_Layers.rbegin(); }
 		std::vector<Layer*>::const_reverse_iterator rend() const { return m_Layers.rend(); }
 
-
 	private:
 		std::vector<Layer*> m_Layers;
 		unsigned int m_LayerInsertIndex = 0;
 	};
 }
-

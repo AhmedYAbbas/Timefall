@@ -14,6 +14,7 @@ public:
 	virtual void OnUpdate(Timefall::Timestep ts) override;
 	virtual void OnEvent(Timefall::Event& e) override;
 	virtual void OnImGuiRender() override;
+
 private:
 	Timefall::OrthographicCameraController m_CameraController;
 

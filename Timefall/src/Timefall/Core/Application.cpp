@@ -86,7 +86,6 @@ namespace Timefall
 		}
 	}
 
-
 	void Application::Run()
 	{
 		TF_PROFILE_FUNCTION();
@@ -139,7 +138,7 @@ namespace Timefall
 			m_Minimized = true;
 			return false;
 		}
-		
+
 		m_Minimized = false;
 		Renderer::OnWindowResize(e.GetWidth(), e.GetHeight());
 

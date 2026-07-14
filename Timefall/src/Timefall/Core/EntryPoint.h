@@ -4,7 +4,7 @@
 
 #ifdef TF_PLATFORM_WINDOWS
 
-int main (int argc, char** argv)
+int main(int argc, char** argv)
 {
 	Timefall::Log::Init();
 

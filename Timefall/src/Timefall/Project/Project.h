@@ -33,7 +33,7 @@ namespace Timefall
 			TF_CORE_ASSERT(s_ActiveProject, "Project not initialized!");
 			return GetProjectDirectory() / s_ActiveProject->m_Config.AssetDirectory;
 		}
-		
+
 		static std::filesystem::path GetAssetRegistryPath()
 		{
 			TF_CORE_ASSERT(s_ActiveProject, "Project not initialized!");

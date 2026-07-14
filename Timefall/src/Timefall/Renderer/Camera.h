@@ -10,8 +10,7 @@ namespace Timefall
 		Camera() = default;
 		Camera(const glm::mat4& projection)
 			: m_Projection(projection)
-		{
-		}
+		{}
 
 		virtual ~Camera() = default;
 

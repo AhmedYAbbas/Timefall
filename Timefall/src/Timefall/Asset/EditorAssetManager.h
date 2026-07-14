@@ -24,8 +24,7 @@ namespace Timefall
 
 		// Seed an in-memory asset (built-in primitives, runtime-created) under a fixed handle.
 		// Visible to the registry/content browser but never serialized to disk.
-		void AddMemoryOnlyAsset(AssetHandle handle, const Ref<Asset>& asset,
-			const std::filesystem::path& virtualPath, AssetType type);
+		void AddMemoryOnlyAsset(AssetHandle handle, const Ref<Asset>& asset, const std::filesystem::path& virtualPath, AssetType type);
 
 		const AssetMetadata& GetMetadata(AssetHandle handle) const;
 		const AssetRegistry& GetAssetRegistry() const { return m_AssetRegistry; }

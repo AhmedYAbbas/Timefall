@@ -12,8 +12,7 @@
 
 namespace YAML
 {
-	template<>
-	struct convert<glm::vec2>
+	template <> struct convert<glm::vec2>
 	{
 		static Node encode(const glm::vec2& rhs)
 		{
@@ -35,8 +34,7 @@ namespace YAML
 		}
 	};
 
-	template<>
-	struct convert<glm::vec3>
+	template <> struct convert<glm::vec3>
 	{
 		static Node encode(const glm::vec3& v)
 		{
@@ -59,8 +57,7 @@ namespace YAML
 		}
 	};
 
-	template<>
-	struct convert<glm::vec4>
+	template <> struct convert<glm::vec4>
 	{
 		static Node encode(const glm::vec4& v)
 		{
@@ -84,8 +81,7 @@ namespace YAML
 		}
 	};
 
-	template<>
-	struct convert<std::wstring>
+	template <> struct convert<std::wstring>
 	{
 		static Node encode(const std::wstring& wstr)
 		{
@@ -106,8 +102,7 @@ namespace YAML
 		}
 	};
 
-	template<>
-	struct convert < Timefall::UUID >
+	template <> struct convert<Timefall::UUID>
 	{
 		static Node encode(const Timefall::UUID& uuid)
 		{
@@ -126,17 +121,15 @@ namespace YAML
 
 namespace Timefall
 {
-#define WRITE_SCRIPT_FIELD(FieldType, Type)           \
-			case ScriptFieldType::FieldType:          \
-				out << scriptField.GetValue<Type>();  \
-				break
+#define WRITE_SCRIPT_FIELD(FieldType, Type)                                                                                                \
+	case ScriptFieldType::FieldType: out << scriptField.GetValue<Type>(); break
 
-#define READ_SCRIPT_FIELD(FieldType, Type)             \
-	case ScriptFieldType::FieldType:                   \
-	{                                                  \
-		Type data = scriptField["Data"].as<Type>();    \
-		fieldInstance.SetValue(data);                  \
-		break;                                         \
+#define READ_SCRIPT_FIELD(FieldType, Type)                                                                                                 \
+	case ScriptFieldType::FieldType:                                                                                                       \
+	{                                                                                                                                      \
+		Type data = scriptField["Data"].as<Type>();                                                                                        \
+		fieldInstance.SetValue(data);                                                                                                      \
+		break;                                                                                                                             \
 	}
 
 	YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec2& v)
@@ -169,13 +162,13 @@ namespace Timefall
 	{
 		switch (op)
 		{
-			case ToneMapOperator::None:              return "None";
-			case ToneMapOperator::Reinhard:          return "Reinhard";
-			case ToneMapOperator::ReinhardExtended:  return "ReinhardExtended";
-			case ToneMapOperator::Hable:             return "Hable";
-			case ToneMapOperator::ACESNarkowicz:     return "ACESNarkowicz";
-			case ToneMapOperator::ACESHill:          return "ACESHill";
-			case ToneMapOperator::AgX:               return "AgX";
+			case ToneMapOperator::None: return "None";
+			case ToneMapOperator::Reinhard: return "Reinhard";
+			case ToneMapOperator::ReinhardExtended: return "ReinhardExtended";
+			case ToneMapOperator::Hable: return "Hable";
+			case ToneMapOperator::ACESNarkowicz: return "ACESNarkowicz";
+			case ToneMapOperator::ACESHill: return "ACESHill";
+			case ToneMapOperator::AgX: return "AgX";
 			case ToneMapOperator::KhronosPBRNeutral: return "KhronosPBRNeutral";
 		}
 		return "ACESHill";
@@ -183,40 +176,64 @@ namespace Timefall
 
 	static ToneMapOperator ToneMapOperatorFromString(const std::string& s)
 	{
-		if (s == "None")              return ToneMapOperator::None;
-		if (s == "Reinhard")          return ToneMapOperator::Reinhard;
-		if (s == "ReinhardExtended")  return ToneMapOperator::ReinhardExtended;
-		if (s == "Hable")             return ToneMapOperator::Hable;
-		if (s == "ACESNarkowicz")     return ToneMapOperator::ACESNarkowicz;
-		if (s == "ACESHill")          return ToneMapOperator::ACESHill;
-		if (s == "AgX")               return ToneMapOperator::AgX;
-		if (s == "KhronosPBRNeutral") return ToneMapOperator::KhronosPBRNeutral;
-		try { return (ToneMapOperator)std::stoul(s); } catch (...) { return ToneMapOperator::ACESHill; } // back-compat: older scenes stored the int
+		if (s == "None")
+			return ToneMapOperator::None;
+		if (s == "Reinhard")
+			return ToneMapOperator::Reinhard;
+		if (s == "ReinhardExtended")
+			return ToneMapOperator::ReinhardExtended;
+		if (s == "Hable")
+			return ToneMapOperator::Hable;
+		if (s == "ACESNarkowicz")
+			return ToneMapOperator::ACESNarkowicz;
+		if (s == "ACESHill")
+			return ToneMapOperator::ACESHill;
+		if (s == "AgX")
+			return ToneMapOperator::AgX;
+		if (s == "KhronosPBRNeutral")
+			return ToneMapOperator::KhronosPBRNeutral;
+		try
+		{
+			return (ToneMapOperator)std::stoul(s);
+		}
+		catch (...)
+		{
+			return ToneMapOperator::ACESHill;
+		} // back-compat: older scenes stored the int
 	}
 
 	static const char* ShadowCullModeToString(ShadowCullMode m)
 	{
 		switch (m)
 		{
-			case ShadowCullMode::Back:  return "Back";
+			case ShadowCullMode::Back: return "Back";
 			case ShadowCullMode::Front: return "Front";
-			case ShadowCullMode::None:  return "None";
+			case ShadowCullMode::None: return "None";
 		}
 		return "Back";
 	}
 
 	static ShadowCullMode ShadowCullModeFromString(const std::string& s)
 	{
-		if (s == "Back")  return ShadowCullMode::Back;
-		if (s == "Front") return ShadowCullMode::Front;
-		if (s == "None")  return ShadowCullMode::None;
-		try { return (ShadowCullMode)std::stoul(s); } catch (...) { return ShadowCullMode::Back; } // back-compat: older scenes stored the int
+		if (s == "Back")
+			return ShadowCullMode::Back;
+		if (s == "Front")
+			return ShadowCullMode::Front;
+		if (s == "None")
+			return ShadowCullMode::None;
+		try
+		{
+			return (ShadowCullMode)std::stoul(s);
+		}
+		catch (...)
+		{
+			return ShadowCullMode::Back;
+		} // back-compat: older scenes stored the int
 	}
 
 	SceneSerializer::SceneSerializer(const Ref<Scene>& scene)
 		: m_Scene(scene)
-	{
-	}
+	{}
 
 	static void SerializeEntity(YAML::Emitter& out, Entity entity)
 	{
@@ -317,22 +334,22 @@ namespace Timefall
 					ScriptFieldInstance& scriptField = entityFields.at(name);
 					switch (field.Type)
 					{
-						WRITE_SCRIPT_FIELD(Float,   float);
-						WRITE_SCRIPT_FIELD(Double,  double);
-						WRITE_SCRIPT_FIELD(Bool,    bool);
-						WRITE_SCRIPT_FIELD(Char,    char);
-						WRITE_SCRIPT_FIELD(SByte,   int8_t);
-						WRITE_SCRIPT_FIELD(Int16,   int16_t);
-						WRITE_SCRIPT_FIELD(Int32,   int32_t);
-						WRITE_SCRIPT_FIELD(Int64,   int64_t);
-						WRITE_SCRIPT_FIELD(Byte,    uint8_t);
-						WRITE_SCRIPT_FIELD(UInt16,  uint16_t);
-						WRITE_SCRIPT_FIELD(UInt32,  uint32_t);
-						WRITE_SCRIPT_FIELD(UInt64,  uint64_t);
+						WRITE_SCRIPT_FIELD(Float, float);
+						WRITE_SCRIPT_FIELD(Double, double);
+						WRITE_SCRIPT_FIELD(Bool, bool);
+						WRITE_SCRIPT_FIELD(Char, char);
+						WRITE_SCRIPT_FIELD(SByte, int8_t);
+						WRITE_SCRIPT_FIELD(Int16, int16_t);
+						WRITE_SCRIPT_FIELD(Int32, int32_t);
+						WRITE_SCRIPT_FIELD(Int64, int64_t);
+						WRITE_SCRIPT_FIELD(Byte, uint8_t);
+						WRITE_SCRIPT_FIELD(UInt16, uint16_t);
+						WRITE_SCRIPT_FIELD(UInt32, uint32_t);
+						WRITE_SCRIPT_FIELD(UInt64, uint64_t);
 						WRITE_SCRIPT_FIELD(Vector2, glm::vec2);
 						WRITE_SCRIPT_FIELD(Vector3, glm::vec3);
 						WRITE_SCRIPT_FIELD(Vector4, glm::vec4);
-						WRITE_SCRIPT_FIELD(Entity,  UUID);
+						WRITE_SCRIPT_FIELD(Entity, UUID);
 					}
 					out << YAML::EndMap; // ScriptField
 				}
@@ -362,22 +379,22 @@ namespace Timefall
 						out << YAML::Key << "Data" << YAML::Value;
 						switch (scriptField.Field.Type)
 						{
-							WRITE_SCRIPT_FIELD(Float,   float);
-							WRITE_SCRIPT_FIELD(Double,  double);
-							WRITE_SCRIPT_FIELD(Bool,    bool);
-							WRITE_SCRIPT_FIELD(Char,    char);
-							WRITE_SCRIPT_FIELD(SByte,   int8_t);
-							WRITE_SCRIPT_FIELD(Int16,   int16_t);
-							WRITE_SCRIPT_FIELD(Int32,   int32_t);
-							WRITE_SCRIPT_FIELD(Int64,   int64_t);
-							WRITE_SCRIPT_FIELD(Byte,    uint8_t);
-							WRITE_SCRIPT_FIELD(UInt16,  uint16_t);
-							WRITE_SCRIPT_FIELD(UInt32,  uint32_t);
-							WRITE_SCRIPT_FIELD(UInt64,  uint64_t);
+							WRITE_SCRIPT_FIELD(Float, float);
+							WRITE_SCRIPT_FIELD(Double, double);
+							WRITE_SCRIPT_FIELD(Bool, bool);
+							WRITE_SCRIPT_FIELD(Char, char);
+							WRITE_SCRIPT_FIELD(SByte, int8_t);
+							WRITE_SCRIPT_FIELD(Int16, int16_t);
+							WRITE_SCRIPT_FIELD(Int32, int32_t);
+							WRITE_SCRIPT_FIELD(Int64, int64_t);
+							WRITE_SCRIPT_FIELD(Byte, uint8_t);
+							WRITE_SCRIPT_FIELD(UInt16, uint16_t);
+							WRITE_SCRIPT_FIELD(UInt32, uint32_t);
+							WRITE_SCRIPT_FIELD(UInt64, uint64_t);
 							WRITE_SCRIPT_FIELD(Vector2, glm::vec2);
 							WRITE_SCRIPT_FIELD(Vector3, glm::vec3);
 							WRITE_SCRIPT_FIELD(Vector4, glm::vec4);
-							WRITE_SCRIPT_FIELD(Entity,  UUID);
+							WRITE_SCRIPT_FIELD(Entity, UUID);
 						}
 						out << YAML::EndMap; // Field
 					}
@@ -400,7 +417,7 @@ namespace Timefall
 
 			out << YAML::EndMap; // SpriteRendererComponent
 		}
-		
+
 		if (entity.HasComponent<CircleRendererComponent>())
 		{
 			out << YAML::Key << "CircleRendererComponent";
@@ -420,8 +437,8 @@ namespace Timefall
 			out << YAML::BeginMap; // MeshComponent
 
 			auto& meshComponent = entity.GetComponent<MeshComponent>();
-			out << YAML::Key << "Mesh"     << YAML::Value << (uint64_t)meshComponent.Mesh;
-			out << YAML::Key << "Submesh"  << YAML::Value << meshComponent.Submesh;
+			out << YAML::Key << "Mesh" << YAML::Value << (uint64_t)meshComponent.Mesh;
+			out << YAML::Key << "Submesh" << YAML::Value << meshComponent.Submesh;
 			out << YAML::Key << "Material" << YAML::Value << (uint64_t)meshComponent.Material;
 
 			out << YAML::EndMap; // MeshComponent
@@ -502,7 +519,7 @@ namespace Timefall
 
 			out << YAML::EndMap; // CircleCollider2DComponent
 		}
-		
+
 		if (entity.HasComponent<TextComponent>())
 		{
 			out << YAML::Key << "TextComponent";
@@ -530,34 +547,33 @@ namespace Timefall
 		{
 			const ShadowSettings& s = m_Scene->m_ShadowSettings;
 			out << YAML::Key << "ShadowSettings" << YAML::Value << YAML::BeginMap;
-			out << YAML::Key << "CascadeCount"         << YAML::Value << s.CascadeCount;
-			out << YAML::Key << "ShadowMapResolution"  << YAML::Value << s.ShadowMapResolution;
-			out << YAML::Key << "MaxShadowDistance"    << YAML::Value << s.MaxShadowDistance;
-			out << YAML::Key << "SplitLambda"          << YAML::Value << s.SplitLambda;
-			out << YAML::Key << "CascadeBlend"         << YAML::Value << s.CascadeBlend;
+			out << YAML::Key << "CascadeCount" << YAML::Value << s.CascadeCount;
+			out << YAML::Key << "ShadowMapResolution" << YAML::Value << s.ShadowMapResolution;
+			out << YAML::Key << "MaxShadowDistance" << YAML::Value << s.MaxShadowDistance;
+			out << YAML::Key << "SplitLambda" << YAML::Value << s.SplitLambda;
+			out << YAML::Key << "CascadeBlend" << YAML::Value << s.CascadeBlend;
 			out << YAML::Key << "BlockerSearchSamples" << YAML::Value << s.BlockerSearchSamples;
-			out << YAML::Key << "PCFSamples"           << YAML::Value << s.PCFSamples;
-			out << YAML::Key << "SoftShadows"          << YAML::Value << s.SoftShadows;
-			out << YAML::Key << "VisualizeCascades"    << YAML::Value << s.VisualizeCascades;
+			out << YAML::Key << "PCFSamples" << YAML::Value << s.PCFSamples;
+			out << YAML::Key << "SoftShadows" << YAML::Value << s.SoftShadows;
+			out << YAML::Key << "VisualizeCascades" << YAML::Value << s.VisualizeCascades;
 			out << YAML::Key << "SpotShadowResolution" << YAML::Value << s.SpotShadowResolution;
 			out << YAML::Key << "PointShadowResolution" << YAML::Value << s.PointShadowResolution;
-			out << YAML::Key << "CullMode"             << YAML::Value << ShadowCullModeToString(s.CullMode);
+			out << YAML::Key << "CullMode" << YAML::Value << ShadowCullModeToString(s.CullMode);
 			out << YAML::EndMap;
 		}
 
 		{
 			const PostProcessSettings& p = m_Scene->m_PostProcessSettings;
 			out << YAML::Key << "PostProcessSettings" << YAML::Value << YAML::BeginMap;
-			out << YAML::Key << "Operator"           << YAML::Value << ToneMapOperatorToString(p.Operator);
-			out << YAML::Key << "ExposureEV"         << YAML::Value << p.ExposureEV;
+			out << YAML::Key << "Operator" << YAML::Value << ToneMapOperatorToString(p.Operator);
+			out << YAML::Key << "ExposureEV" << YAML::Value << p.ExposureEV;
 			out << YAML::Key << "ReinhardWhitePoint" << YAML::Value << p.ReinhardWhitePoint;
 			out << YAML::EndMap;
 		}
 
 		out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
-		m_Scene->m_Registry.view<entt::entity>().each([&](auto entityID)
-		{
-			Entity entity = { entityID, m_Scene.get() };
+		m_Scene->m_Registry.view<entt::entity>().each([&](auto entityID) {
+			Entity entity = {entityID, m_Scene.get()};
 			if (!entity)
 				return;
 
@@ -582,8 +598,8 @@ namespace Timefall
 		strStream << stream.rdbuf();
 
 		YAML::Node data;
-		
-		try 
+
+		try
 		{
 			data = YAML::Load(strStream.str());
 		}
@@ -592,7 +608,7 @@ namespace Timefall
 			TF_CORE_ERROR("Failed to parse scene file '{0}': {1}", filepath.string(), e.what());
 			return false;
 		}
-		
+
 		if (!data["Scene"])
 			return false;
 
@@ -603,28 +619,40 @@ namespace Timefall
 		if (auto shadows = data["ShadowSettings"])
 		{
 			ShadowSettings& s = m_Scene->m_ShadowSettings;
-			if (shadows["CascadeCount"])         s.CascadeCount         = shadows["CascadeCount"].as<uint32_t>();
-			if (shadows["ShadowMapResolution"])  s.ShadowMapResolution  = shadows["ShadowMapResolution"].as<uint32_t>();
-			if (shadows["MaxShadowDistance"])    s.MaxShadowDistance    = shadows["MaxShadowDistance"].as<float>();
-			if (shadows["SplitLambda"])          s.SplitLambda          = shadows["SplitLambda"].as<float>();
-			if (shadows["CascadeBlend"])         s.CascadeBlend         = shadows["CascadeBlend"].as<float>();
-			if (shadows["BlockerSearchSamples"]) s.BlockerSearchSamples = shadows["BlockerSearchSamples"].as<uint32_t>();
-			if (shadows["PCFSamples"])           s.PCFSamples           = shadows["PCFSamples"].as<uint32_t>();
-			if (shadows["SoftShadows"])          s.SoftShadows          = shadows["SoftShadows"].as<bool>();
-			if (shadows["VisualizeCascades"])    s.VisualizeCascades    = shadows["VisualizeCascades"].as<bool>();
-			if (shadows["SpotShadowResolution"]) s.SpotShadowResolution = shadows["SpotShadowResolution"].as<uint32_t>();
-			if (shadows["PointShadowResolution"]) s.PointShadowResolution = shadows["PointShadowResolution"].as<uint32_t>();
-			if (shadows["CullMode"])             s.CullMode             = ShadowCullModeFromString(shadows["CullMode"].as<std::string>());
+			if (shadows["CascadeCount"])
+				s.CascadeCount = shadows["CascadeCount"].as<uint32_t>();
+			if (shadows["ShadowMapResolution"])
+				s.ShadowMapResolution = shadows["ShadowMapResolution"].as<uint32_t>();
+			if (shadows["MaxShadowDistance"])
+				s.MaxShadowDistance = shadows["MaxShadowDistance"].as<float>();
+			if (shadows["SplitLambda"])
+				s.SplitLambda = shadows["SplitLambda"].as<float>();
+			if (shadows["CascadeBlend"])
+				s.CascadeBlend = shadows["CascadeBlend"].as<float>();
+			if (shadows["BlockerSearchSamples"])
+				s.BlockerSearchSamples = shadows["BlockerSearchSamples"].as<uint32_t>();
+			if (shadows["PCFSamples"])
+				s.PCFSamples = shadows["PCFSamples"].as<uint32_t>();
+			if (shadows["SoftShadows"])
+				s.SoftShadows = shadows["SoftShadows"].as<bool>();
+			if (shadows["VisualizeCascades"])
+				s.VisualizeCascades = shadows["VisualizeCascades"].as<bool>();
+			if (shadows["SpotShadowResolution"])
+				s.SpotShadowResolution = shadows["SpotShadowResolution"].as<uint32_t>();
+			if (shadows["PointShadowResolution"])
+				s.PointShadowResolution = shadows["PointShadowResolution"].as<uint32_t>();
+			if (shadows["CullMode"])
+				s.CullMode = ShadowCullModeFromString(shadows["CullMode"].as<std::string>());
 		}
 
 		if (auto post = data["PostProcessSettings"])
 		{
 			PostProcessSettings& p = m_Scene->m_PostProcessSettings;
-			if (post["Operator"])           
+			if (post["Operator"])
 				p.Operator = ToneMapOperatorFromString(post["Operator"].as<std::string>());
-			if (post["ExposureEV"])         
+			if (post["ExposureEV"])
 				p.ExposureEV = post["ExposureEV"].as<float>();
-			if (post["ReinhardWhitePoint"]) 
+			if (post["ReinhardWhitePoint"])
 				p.ReinhardWhitePoint = post["ReinhardWhitePoint"].as<float>();
 		}
 
@@ -659,10 +687,8 @@ namespace Timefall
 					rc.Parent = relationshipComponent["Parent"].as<uint64_t>();
 
 					if (auto children = relationshipComponent["Children"])
-					{
 						for (auto child : children)
 							rc.Children.push_back(child.as<uint64_t>());
-					}
 				}
 
 				if (auto cameraComponent = entity["CameraComponent"])
@@ -758,7 +784,7 @@ namespace Timefall
 								ScriptFieldType type = Utils::ScriptFieldTypeFromString(typeString);
 
 								ScriptFieldInstance& fieldInstance = componentData.Fields[name];
-								fieldInstance.Field = ScriptField{ name, type };
+								fieldInstance.Field = ScriptField{name, type};
 
 								switch (type)
 								{
@@ -808,7 +834,7 @@ namespace Timefall
 					if (spriteRendererComponent["TilingFactor"])
 						src.TilingFactor = spriteRendererComponent["TilingFactor"].as<float>();
 				}
-				
+
 				if (auto circleRendererComponent = entity["CircleRendererComponent"])
 				{
 					auto& crc = deserializedEntity.AddComponent<CircleRendererComponent>();
@@ -839,10 +865,10 @@ namespace Timefall
 				if (auto lightComponent = entity["LightComponent"])
 				{
 					auto& lc = deserializedEntity.AddComponent<LightComponent>();
-					lc.Type        = Utils::LightTypeFromString(lightComponent["Type"].as<std::string>());
-					lc.Color       = lightComponent["Color"].as<glm::vec3>();
-					lc.Intensity   = lightComponent["Intensity"].as<float>();
-					lc.Range       = lightComponent["Range"].as<float>();
+					lc.Type = Utils::LightTypeFromString(lightComponent["Type"].as<std::string>());
+					lc.Color = lightComponent["Color"].as<glm::vec3>();
+					lc.Intensity = lightComponent["Intensity"].as<float>();
+					lc.Range = lightComponent["Range"].as<float>();
 					lc.InnerCutoff = lightComponent["InnerCutoff"].as<float>();
 					lc.OuterCutoff = lightComponent["OuterCutoff"].as<float>();
 					if (lightComponent["CastsShadows"])
@@ -857,8 +883,8 @@ namespace Timefall
 				{
 					auto& sl = deserializedEntity.AddComponent<SkyLightComponent>();
 					sl.EnvironmentMap = skyLightComponent["EnvironmentMap"].as<uint64_t>();
-					sl.Intensity      = skyLightComponent["Intensity"].as<float>();
-					sl.Rotation       = skyLightComponent["Rotation"].as<float>();
+					sl.Intensity = skyLightComponent["Intensity"].as<float>();
+					sl.Rotation = skyLightComponent["Rotation"].as<float>();
 				}
 
 				auto rigidbody2DComponent = entity["Rigidbody2DComponent"];
@@ -892,7 +918,7 @@ namespace Timefall
 					cc2d.Restitution = circleCollider2DComponent["Restitution"].as<float>();
 					deserializedEntity.GetScene()->SetRestitutionThreshold(circleCollider2DComponent["RestitutionThreshold"].as<float>());
 				}
-				
+
 				auto textComponent = entity["TextComponent"];
 				if (textComponent)
 				{

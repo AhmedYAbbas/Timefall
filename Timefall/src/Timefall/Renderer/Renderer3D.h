@@ -17,9 +17,9 @@ namespace Timefall
 
 	namespace BuiltInMesh
 	{
-		static constexpr uint64_t Cube   = 1;
+		static constexpr uint64_t Cube = 1;
 		static constexpr uint64_t Sphere = 2;
-		static constexpr uint64_t Plane  = 3;
+		static constexpr uint64_t Plane = 3;
 	}
 
 	class TF_API Renderer3D
@@ -45,13 +45,13 @@ namespace Timefall
 
 		static void RegisterBuiltInMeshes(EditorAssetManager& assetManager);
 
-		static void SubmitDirectionalLight(const glm::vec3& direction, const glm::vec3& color, float intensity,
-			bool castsShadows = false, float shadowSoftness = 0.5f, float depthBias = 1.0f);
+		static void SubmitDirectionalLight(const glm::vec3& direction, const glm::vec3& color, float intensity, bool castsShadows = false,
+			float shadowSoftness = 0.5f, float depthBias = 1.0f);
 		static void SubmitPointLight(const glm::vec3& position, const glm::vec3& color, float intensity, float range,
 			bool castsShadows = false, float shadowSoftness = 0.5f, float depthBias = 1.0f);
-		static void SubmitSpotLight(const glm::vec3& position, const glm::vec3& direction, const glm::vec3& color,
-			float intensity, float range, float innerCutoffDegrees, float outerCutoffDegrees,
-			bool castsShadows = false, float shadowSoftness = 0.5f, float depthBias = 1.0f);
+		static void SubmitSpotLight(const glm::vec3& position, const glm::vec3& direction, const glm::vec3& color, float intensity,
+			float range, float innerCutoffDegrees, float outerCutoffDegrees, bool castsShadows = false, float shadowSoftness = 0.5f,
+			float depthBias = 1.0f);
 
 		static void SubmitEnvironment(AssetHandle environmentMap, float intensity, float rotationDegrees);
 	};

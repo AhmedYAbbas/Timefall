@@ -1,7 +1,7 @@
 project "Timefall"
 	kind "SharedLib"
 	language "C++"
-	cppdialect "C++20"
+	cppdialect "C++23"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("int/" .. outputdir .. "/%{prj.name}")
@@ -103,6 +103,7 @@ project "Timefall"
 		defines "TF_DEBUG"
 		runtime "Debug"
 		symbols "on"
+		editandcontinue "Off" -- EnC (/ZI) corrupts incremental builds under /std:c++23preview
 
 	filter "configurations:Release"
 		defines "TF_RELEASE"

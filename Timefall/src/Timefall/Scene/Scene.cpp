@@ -17,15 +17,11 @@
 
 namespace Timefall
 {
-	Scene::Scene()
-	{
-	}
+	Scene::Scene() {}
 
-	Scene::~Scene()
-	{
-	}
+	Scene::~Scene() {}
 
-	template<typename T>
+	template <typename T>
 	static void CopyComponent(entt::registry& dst, const entt::registry& src, const std::unordered_map<UUID, entt::entity>& enttMap)
 	{
 		auto view = src.view<T>();
@@ -40,15 +36,13 @@ namespace Timefall
 		}
 	}
 
-	template<typename T>
-	static void CopyComponentIfExists(Entity dst, Entity src)
+	template <typename T> static void CopyComponentIfExists(Entity dst, Entity src)
 	{
 		if (src.HasComponent<T>())
 			dst.AddOrReplaceComponent<T>(src.GetComponent<T>());
 	}
 
-	template<typename... Component>
-	static void CopyComponentIfExists(ComponentGroup<Component...>, Entity dst, Entity src)
+	template <typename... Component> static void CopyComponentIfExists(ComponentGroup<Component...>, Entity dst, Entity src)
 	{
 		(CopyComponentIfExists<Component>(dst, src), ...);
 	}
@@ -111,7 +105,7 @@ namespace Timefall
 			auto view = m_Registry.view<ScriptComponent>();
 			for (auto e : view)
 			{
-				Entity entity{ e, this };
+				Entity entity{e, this};
 				ScriptEngine::OnCreateEntity(entity);
 			}
 		}
@@ -147,22 +141,21 @@ namespace Timefall
 					auto view = m_Registry.view<ScriptComponent>();
 					for (auto e : view)
 					{
-						Entity entity{ e, this };
+						Entity entity{e, this};
 						ScriptEngine::OnUpdateEntity(entity, ts);
 					}
 				}
 
-				m_Registry.view<NativeScriptComponent>().each([=](auto entity, NativeScriptComponent& nsc)
+				m_Registry.view<NativeScriptComponent>().each([=](auto entity, NativeScriptComponent& nsc) {
+					if (!nsc)
 					{
-						if (!nsc)
-						{
-							nsc.Instance = nsc.InstantiateScript();
-							nsc.Instance->m_Entity = Entity{ entity, this };
-							nsc.Instance->OnCreate();
-						}
+						nsc.Instance = nsc.InstantiateScript();
+						nsc.Instance->m_Entity = Entity{entity, this};
+						nsc.Instance->OnCreate();
+					}
 
-						nsc.Instance->OnUpdate(ts);
-					});
+					nsc.Instance->OnUpdate(ts);
+				});
 			}
 
 			// Physics
@@ -173,7 +166,7 @@ namespace Timefall
 				auto view = m_Registry.view<Rigidbody2DComponent>();
 				for (auto e : view)
 				{
-					Entity entity = { e, this };
+					Entity entity = {e, this};
 					if (m_PhysicsBodiesMap.contains(entity))
 						SyncTransformFromBody(entity, m_PhysicsBodiesMap[entity]);
 				}
@@ -190,7 +183,7 @@ namespace Timefall
 				if (camera.Primary)
 				{
 					mainCamera = &camera.Camera;
-					cameraTransform = Entity{ entity, this }.GetWorldTransform();
+					cameraTransform = Entity{entity, this}.GetWorldTransform();
 				}
 			}
 		}
@@ -208,24 +201,23 @@ namespace Timefall
 				for (auto entity : lightView)
 				{
 					auto& light = lightView.get<LightComponent>(entity);
-					glm::mat4 world = Entity{ entity, this }.GetWorldTransform();
+					glm::mat4 world = Entity{entity, this}.GetWorldTransform();
 					glm::vec3 position = glm::vec3(world[3]);
 					glm::vec3 direction = glm::normalize(glm::mat3(world) * glm::vec3(0.0f, 0.0f, -1.0f));
 
 					switch (light.Type)
 					{
 						case LightComponent::LightType::Directional:
-							Renderer3D::SubmitDirectionalLight(direction, light.Color, light.Intensity,
-								light.CastsShadows, light.ShadowSoftness, light.DepthBias);
+							Renderer3D::SubmitDirectionalLight(
+								direction, light.Color, light.Intensity, light.CastsShadows, light.ShadowSoftness, light.DepthBias);
 							break;
 						case LightComponent::LightType::Point:
-							Renderer3D::SubmitPointLight(position, light.Color, light.Intensity, light.Range,
-								light.CastsShadows, light.ShadowSoftness, light.DepthBias);
+							Renderer3D::SubmitPointLight(position, light.Color, light.Intensity, light.Range, light.CastsShadows,
+								light.ShadowSoftness, light.DepthBias);
 							break;
 						case LightComponent::LightType::Spot:
-							Renderer3D::SubmitSpotLight(position, direction, light.Color, light.Intensity,
-								light.Range, light.InnerCutoff, light.OuterCutoff,
-								light.CastsShadows, light.ShadowSoftness, light.DepthBias);
+							Renderer3D::SubmitSpotLight(position, direction, light.Color, light.Intensity, light.Range, light.InnerCutoff,
+								light.OuterCutoff, light.CastsShadows, light.ShadowSoftness, light.DepthBias);
 							break;
 					}
 				}
@@ -250,7 +242,7 @@ namespace Timefall
 					Ref<Material> material = (mesh.Material != 0 && AssetManager::IsAssetHandleValid(mesh.Material))
 						? AssetManager::GetAsset<Material>(mesh.Material)
 						: Renderer3D::GetDefaultMaterial();
-					Renderer3D::SubmitMesh(Entity{ entity, this }.GetWorldTransform(), meshSource, mesh.Submesh, material, (int)entity);
+					Renderer3D::SubmitMesh(Entity{entity, this}.GetWorldTransform(), meshSource, mesh.Submesh, material, (int)entity);
 				}
 			}
 			Renderer3D::EndScene();
@@ -265,7 +257,7 @@ namespace Timefall
 				for (auto entity : group)
 				{
 					auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-					Renderer2D::DrawSprite(Entity{ entity, this }.GetWorldTransform(), sprite, (int)entity);
+					Renderer2D::DrawSprite(Entity{entity, this}.GetWorldTransform(), sprite, (int)entity);
 				}
 			}
 
@@ -275,17 +267,18 @@ namespace Timefall
 				for (auto entity : group)
 				{
 					auto [crc, transform] = group.get<CircleRendererComponent, TransformComponent>(entity);
-					Renderer2D::DrawCircle(Entity{ entity, this }.GetWorldTransform(), crc.Color, crc.Thickness, crc.Fade, (int)entity);
+					Renderer2D::DrawCircle(Entity{entity, this}.GetWorldTransform(), crc.Color, crc.Thickness, crc.Fade, (int)entity);
 				}
 			}
-			
+
 			// Draw texts
 			{
 				auto group = m_Registry.group<TextComponent>(entt::get<TransformComponent>);
 				for (auto entity : group)
 				{
 					auto [textComponent, transform] = group.get<TextComponent, TransformComponent>(entity);
-					Renderer2D::DrawString(textComponent.Text, textComponent.FontAsset, Entity{ entity, this }.GetWorldTransform(), {textComponent.Color, textComponent.Kerning, textComponent.LineSpacing}, (int)entity);
+					Renderer2D::DrawString(textComponent.Text, textComponent.FontAsset, Entity{entity, this}.GetWorldTransform(),
+						{textComponent.Color, textComponent.Kerning, textComponent.LineSpacing}, (int)entity);
 				}
 			}
 
@@ -308,7 +301,7 @@ namespace Timefall
 				auto view = m_Registry.view<Rigidbody2DComponent>();
 				for (auto e : view)
 				{
-					Entity entity = { e, this };
+					Entity entity = {e, this};
 					if (m_PhysicsBodiesMap.contains(entity))
 						SyncTransformFromBody(entity, m_PhysicsBodiesMap[entity]);
 				}
@@ -338,9 +331,7 @@ namespace Timefall
 		{
 			auto& camera = view.get<CameraComponent>(entity);
 			if (!camera.FixedAspectRatio)
-			{
 				camera.Camera.SetViewportSize(width, height);
-			}
 		}
 	}
 
@@ -351,7 +342,7 @@ namespace Timefall
 		{
 			const auto& camera = view.get<CameraComponent>(entity);
 			if (camera.Primary)
-				return Entity{ entity, this };
+				return Entity{entity, this};
 		}
 
 		return {};
@@ -400,7 +391,7 @@ namespace Timefall
 
 	Entity Scene::CreateEntityWithUUID(const UUID& uuid, const std::string& tag, Entity parent)
 	{
-		Entity entity = { m_Registry.create(), this };
+		Entity entity = {m_Registry.create(), this};
 		entity.AddComponent<IDComponent>(uuid);
 		entity.AddComponent<TransformComponent>();
 		TagComponent& tagComp = entity.AddComponent<TagComponent>();
@@ -531,7 +522,7 @@ namespace Timefall
 			if (!m_Registry.valid(handle))
 				continue;
 
-			DestroyEntity(Entity{ handle, this });
+			DestroyEntity(Entity{handle, this});
 		}
 
 		m_EntitiesToDestroy.clear();
@@ -594,7 +585,7 @@ namespace Timefall
 		{
 			const TagComponent& tc = view.get<TagComponent>(entity);
 			if (tc.Tag == name)
-				return Entity{ entity, this };
+				return Entity{entity, this};
 		}
 		return {};
 	}
@@ -602,14 +593,14 @@ namespace Timefall
 	Entity Scene::GetEntityByUUID(const UUID& uuid)
 	{
 		if (m_EntityMap.find(uuid) != m_EntityMap.end())
-			return Entity{ m_EntityMap.at(uuid), this };
+			return Entity{m_EntityMap.at(uuid), this};
 
 		return {};
 	}
 
 	void Scene::OnPhysics2DStart()
 	{
-		b2Vec2 gravity{ 0.0f, -9.81f };
+		b2Vec2 gravity{0.0f, -9.81f};
 		b2WorldDef worldDef = b2DefaultWorldDef();
 		worldDef.gravity = gravity;
 		worldDef.restitutionThreshold = m_RestitutionThreshold;
@@ -618,7 +609,7 @@ namespace Timefall
 		auto view = m_Registry.view<Rigidbody2DComponent>();
 		for (auto e : view)
 		{
-			Entity entity = { e, this };
+			Entity entity = {e, this};
 			auto& rb2d = entity.GetComponent<Rigidbody2DComponent>();
 
 			// Box2D lives in world space; build the body from the entity's WORLD transform so a
@@ -639,7 +630,8 @@ namespace Timefall
 			{
 				auto& bc2d = entity.GetComponent<BoxCollider2DComponent>();
 
-				b2Polygon boxShape = b2MakeOffsetBox(bc2d.Size.x * worldScale.x, bc2d.Size.y * worldScale.y, b2Vec2(bc2d.Offset.x, bc2d.Offset.y), b2MakeRot(0));
+				b2Polygon boxShape = b2MakeOffsetBox(
+					bc2d.Size.x * worldScale.x, bc2d.Size.y * worldScale.y, b2Vec2(bc2d.Offset.x, bc2d.Offset.y), b2MakeRot(0));
 				b2ShapeDef shapeDef = b2DefaultShapeDef();
 				shapeDef.density = bc2d.Density;
 				shapeDef.material.friction = bc2d.Friction;
@@ -651,7 +643,7 @@ namespace Timefall
 			{
 				auto& cc2d = entity.GetComponent<CircleCollider2DComponent>();
 
-				b2Circle circleShape{ {cc2d.Offset.x, cc2d.Offset.y}, worldScale.x * cc2d.Radius };
+				b2Circle circleShape{{cc2d.Offset.x, cc2d.Offset.y}, worldScale.x * cc2d.Radius};
 				b2ShapeDef shapeDef = b2DefaultShapeDef();
 				shapeDef.density = cc2d.Density;
 				shapeDef.material.friction = cc2d.Friction;
@@ -671,8 +663,7 @@ namespace Timefall
 		b2Vec2 position = b2Body_GetPosition(body);
 		float angle = b2Rot_GetAngle(b2Body_GetRotation(body));
 
-		bool isParented = entity.HasComponent<RelationshipComponent>()
-			&& entity.GetComponent<RelationshipComponent>().Parent != 0;
+		bool isParented = entity.HasComponent<RelationshipComponent>() && entity.GetComponent<RelationshipComponent>().Parent != 0;
 
 		if (isParented)
 		{
@@ -681,8 +672,8 @@ namespace Timefall
 			// come from physics. (A dynamic body under a script-MOVED parent is unsupported —
 			// physics overwrites the parent-driven motion every frame.)
 			glm::vec3 worldTranslation = entity.GetWorldTranslation();
-			entity.SetWorldTranslation({ position.x, position.y, worldTranslation.z });
-			entity.SetWorldRotation({ 0.0f, 0.0f, angle });
+			entity.SetWorldTranslation({position.x, position.y, worldTranslation.z});
+			entity.SetWorldRotation({0.0f, 0.0f, angle});
 		}
 		else
 		{
@@ -707,24 +698,23 @@ namespace Timefall
 			for (auto entity : lightView)
 			{
 				auto& light = lightView.get<LightComponent>(entity);
-				glm::mat4 world = Entity{ entity, this }.GetWorldTransform();
+				glm::mat4 world = Entity{entity, this}.GetWorldTransform();
 				glm::vec3 position = glm::vec3(world[3]);
 				glm::vec3 direction = glm::normalize(glm::mat3(world) * glm::vec3(0.0f, 0.0f, -1.0f));
 
 				switch (light.Type)
 				{
 					case LightComponent::LightType::Directional:
-						Renderer3D::SubmitDirectionalLight(direction, light.Color, light.Intensity,
-							light.CastsShadows, light.ShadowSoftness, light.DepthBias);
+						Renderer3D::SubmitDirectionalLight(
+							direction, light.Color, light.Intensity, light.CastsShadows, light.ShadowSoftness, light.DepthBias);
 						break;
 					case LightComponent::LightType::Point:
-						Renderer3D::SubmitPointLight(position, light.Color, light.Intensity, light.Range,
-							light.CastsShadows, light.ShadowSoftness, light.DepthBias);
+						Renderer3D::SubmitPointLight(
+							position, light.Color, light.Intensity, light.Range, light.CastsShadows, light.ShadowSoftness, light.DepthBias);
 						break;
 					case LightComponent::LightType::Spot:
-						Renderer3D::SubmitSpotLight(position, direction, light.Color, light.Intensity,
-							light.Range, light.InnerCutoff, light.OuterCutoff,
-							light.CastsShadows, light.ShadowSoftness, light.DepthBias);
+						Renderer3D::SubmitSpotLight(position, direction, light.Color, light.Intensity, light.Range, light.InnerCutoff,
+							light.OuterCutoff, light.CastsShadows, light.ShadowSoftness, light.DepthBias);
 						break;
 				}
 			}
@@ -749,7 +739,7 @@ namespace Timefall
 				Ref<Material> material = (mesh.Material != 0 && AssetManager::IsAssetHandleValid(mesh.Material))
 					? AssetManager::GetAsset<Material>(mesh.Material)
 					: Renderer3D::GetDefaultMaterial();
-				Renderer3D::SubmitMesh(Entity{ entity, this }.GetWorldTransform(), meshSource, mesh.Submesh, material, (int)entity);
+				Renderer3D::SubmitMesh(Entity{entity, this}.GetWorldTransform(), meshSource, mesh.Submesh, material, (int)entity);
 			}
 		}
 		Renderer3D::EndScene();
@@ -764,7 +754,7 @@ namespace Timefall
 			for (auto entity : group)
 			{
 				auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-				Renderer2D::DrawSprite(Entity{ entity, this }.GetWorldTransform(), sprite, (int)entity);
+				Renderer2D::DrawSprite(Entity{entity, this}.GetWorldTransform(), sprite, (int)entity);
 			}
 		}
 
@@ -774,7 +764,7 @@ namespace Timefall
 			for (auto entity : group)
 			{
 				auto [crc, transform] = group.get<CircleRendererComponent, TransformComponent>(entity);
-				Renderer2D::DrawCircle(Entity{ entity, this }.GetWorldTransform(), crc.Color, crc.Thickness, crc.Fade, (int)entity);
+				Renderer2D::DrawCircle(Entity{entity, this}.GetWorldTransform(), crc.Color, crc.Thickness, crc.Fade, (int)entity);
 			}
 		}
 
@@ -784,102 +774,53 @@ namespace Timefall
 			for (auto entity : group)
 			{
 				auto [textComponent, transform] = group.get<TextComponent, TransformComponent>(entity);
-				Renderer2D::DrawString(textComponent.Text, textComponent.FontAsset, Entity{ entity, this }.GetWorldTransform(), {textComponent.Color, textComponent.Kerning, textComponent.LineSpacing}, (int)entity);
+				Renderer2D::DrawString(textComponent.Text, textComponent.FontAsset, Entity{entity, this}.GetWorldTransform(),
+					{textComponent.Color, textComponent.Kerning, textComponent.LineSpacing}, (int)entity);
 			}
 		}
 
 		Renderer2D::EndScene();
 	}
 
-	template<typename T>
-	TF_API void Scene::OnComponentAdded(Entity entity, T& component)
+	template <typename T> TF_API void Scene::OnComponentAdded(Entity entity, T& component)
 	{
-		//static_assert(false);
+		// static_assert(false);
 	}
 
-	template<>
-	TF_API void Scene::OnComponentAdded<IDComponent>(Entity entity, IDComponent& component)
-	{
-	}
+	template <> TF_API void Scene::OnComponentAdded<IDComponent>(Entity entity, IDComponent& component) {}
 
-	template<>
-	TF_API void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformComponent& component)
-	{
-	}
+	template <> TF_API void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformComponent& component) {}
 
-	template<>
-	TF_API void Scene::OnComponentAdded<RelationshipComponent>(Entity entity, RelationshipComponent& component)
-	{
-	}
+	template <> TF_API void Scene::OnComponentAdded<RelationshipComponent>(Entity entity, RelationshipComponent& component) {}
 
-	template<>
-	TF_API void Scene::OnComponentAdded<CameraComponent>(Entity entity, CameraComponent& component)
+	template <> TF_API void Scene::OnComponentAdded<CameraComponent>(Entity entity, CameraComponent& component)
 	{
 		component.Camera.SetViewportSize(m_ViewportWidth, m_ViewportHeight);
 	}
 
-	template<>
-	TF_API void Scene::OnComponentAdded<ScriptComponent>(Entity entity, ScriptComponent& component)
-	{
-	}
+	template <> TF_API void Scene::OnComponentAdded<ScriptComponent>(Entity entity, ScriptComponent& component) {}
 
-	template<>
-	TF_API void Scene::OnComponentAdded<SpriteRendererComponent>(Entity entity, SpriteRendererComponent& component)
-	{
-	}
-	
-	template<>
-	TF_API void Scene::OnComponentAdded<CircleRendererComponent>(Entity entity, CircleRendererComponent& component)
-	{
-	}
+	template <> TF_API void Scene::OnComponentAdded<SpriteRendererComponent>(Entity entity, SpriteRendererComponent& component) {}
 
-	template<>
-	TF_API void Scene::OnComponentAdded<MeshComponent>(Entity entity, MeshComponent& component)
-	{
-	}
+	template <> TF_API void Scene::OnComponentAdded<CircleRendererComponent>(Entity entity, CircleRendererComponent& component) {}
 
-	template<>
-	TF_API void Scene::OnComponentAdded<LightComponent>(Entity entity, LightComponent& component)
-	{
-	}
+	template <> TF_API void Scene::OnComponentAdded<MeshComponent>(Entity entity, MeshComponent& component) {}
 
-	template<>
-	TF_API void Scene::OnComponentAdded<SkyLightComponent>(Entity entity, SkyLightComponent& component)
-	{
-	}
+	template <> TF_API void Scene::OnComponentAdded<LightComponent>(Entity entity, LightComponent& component) {}
 
-	template<>
-	TF_API void Scene::OnComponentAdded<TagComponent>(Entity entity, TagComponent& component)
-	{
-	}
+	template <> TF_API void Scene::OnComponentAdded<SkyLightComponent>(Entity entity, SkyLightComponent& component) {}
 
-	template<>
-	TF_API void Scene::OnComponentAdded<NativeScriptComponent>(Entity entity, NativeScriptComponent& component)
-	{
-	}
+	template <> TF_API void Scene::OnComponentAdded<TagComponent>(Entity entity, TagComponent& component) {}
 
-	template<>
-	TF_API void Scene::OnComponentAdded<Rigidbody2DComponent>(Entity entity, Rigidbody2DComponent& component)
-	{
-	}
+	template <> TF_API void Scene::OnComponentAdded<NativeScriptComponent>(Entity entity, NativeScriptComponent& component) {}
 
-	template<>
-	TF_API void Scene::OnComponentAdded<BoxCollider2DComponent>(Entity entity, BoxCollider2DComponent& component)
-	{
-	}
+	template <> TF_API void Scene::OnComponentAdded<Rigidbody2DComponent>(Entity entity, Rigidbody2DComponent& component) {}
 
-	template<>
-	TF_API void Scene::OnComponentAdded<CircleCollider2DComponent>(Entity entity, CircleCollider2DComponent& component)
-	{
-	}
-	
-	template<>
-	TF_API void Scene::OnComponentAdded<TextComponent>(Entity entity, TextComponent& component)
-	{
-	}
+	template <> TF_API void Scene::OnComponentAdded<BoxCollider2DComponent>(Entity entity, BoxCollider2DComponent& component) {}
 
-	template<>
-	TF_API void Scene::OnComponentAdded<ManagedComponentStorage>(Entity entity, ManagedComponentStorage& component)
-	{
-	}
+	template <> TF_API void Scene::OnComponentAdded<CircleCollider2DComponent>(Entity entity, CircleCollider2DComponent& component) {}
+
+	template <> TF_API void Scene::OnComponentAdded<TextComponent>(Entity entity, TextComponent& component) {}
+
+	template <> TF_API void Scene::OnComponentAdded<ManagedComponentStorage>(Entity entity, ManagedComponentStorage& component) {}
 }

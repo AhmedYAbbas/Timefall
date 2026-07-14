@@ -3,8 +3,9 @@
 #include "Timefall/Renderer/Framebuffer.h"
 #include <glm/glm.hpp>
 
-namespace Timefall {
-	
+namespace Timefall
+{
+
 	class TF_API OpenGLFramebuffer : public Framebuffer
 	{
 	public:

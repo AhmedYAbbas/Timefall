@@ -27,9 +27,9 @@ namespace Timefall::UI
 			if (m_Set)
 				ImGui::PopStyleColor();
 		}
+
 	private:
 		bool m_Set = false;
 	};
-
 
 }

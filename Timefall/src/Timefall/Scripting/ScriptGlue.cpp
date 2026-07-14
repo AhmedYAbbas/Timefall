@@ -41,7 +41,7 @@ namespace Timefall
 		std::wstring wide = WidenAscii(typeName);
 		for (auto e : scene->GetAllEntitiesWithUsingView<ManagedComponentStorage>())
 		{
-			Entity entity{ e, scene };
+			Entity entity{e, scene};
 			if (entity.GetComponent<ManagedComponentStorage>().Components.count(wide))
 				result.push_back(entity.GetUUID());
 		}
@@ -51,35 +51,30 @@ namespace Timefall
 
 	extern "C"
 	{
-		__declspec(dllexport)
-		void NativeLog(const char* str, int parameter)
+		__declspec(dllexport) void NativeLog(const char* str, int parameter)
 		{
 			std::cout << str << ", " << parameter << '\n';
 		}
 
-		__declspec(dllexport)
-		void NativeLog_Vector(glm::vec3* vec, glm::vec3* outResult)
+		__declspec(dllexport) void NativeLog_Vector(glm::vec3* vec, glm::vec3* outResult)
 		{
 			std::cout << *vec << '\n';
 
 			*outResult = glm::normalize(*vec);
 		}
 
-		__declspec(dllexport)
-		float NativeLog_VectorDot(glm::vec3* vec)
+		__declspec(dllexport) float NativeLog_VectorDot(glm::vec3* vec)
 		{
 			std::cout << *vec << '\n';
 			return glm::dot(*vec, *vec);
 		}
 
-		__declspec(dllexport)
-		void* GetScriptInstance(UUID entityID)
+		__declspec(dllexport) void* GetScriptInstance(UUID entityID)
 		{
 			return ScriptEngine::GetManagedInstance(entityID);
 		}
 
-		__declspec(dllexport)
-		bool Entity_HasComponent(UUID entityID, const char* componentTypeFullName)
+		__declspec(dllexport) bool Entity_HasComponent(UUID entityID, const char* componentTypeFullName)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -97,8 +92,7 @@ namespace Timefall
 			return storage.Components.find(WidenAscii(componentTypeFullName)) != storage.Components.end();
 		}
 
-		__declspec(dllexport)
-		uint64_t Entity_FindEntityByName(const char* name)
+		__declspec(dllexport) uint64_t Entity_FindEntityByName(const char* name)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -110,8 +104,7 @@ namespace Timefall
 			return entity.GetUUID();
 		}
 
-		__declspec(dllexport)
-		uint64_t Scene_CreateEntity(const char* name)
+		__declspec(dllexport) uint64_t Scene_CreateEntity(const char* name)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -120,8 +113,7 @@ namespace Timefall
 			return entity.GetUUID();
 		}
 
-		__declspec(dllexport)
-		void Entity_Destroy(UUID entityID)
+		__declspec(dllexport) void Entity_Destroy(UUID entityID)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -138,8 +130,7 @@ namespace Timefall
 			scene->SubmitToDestroyEntity(entity);
 		}
 
-		__declspec(dllexport)
-		void Entity_AddComponent(UUID entityID, const char* componentTypeFullName)
+		__declspec(dllexport) void Entity_AddComponent(UUID entityID, const char* componentTypeFullName)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -157,8 +148,7 @@ namespace Timefall
 			ScriptEngine::AddManagedComponent(entity, WidenAscii(componentTypeFullName));
 		}
 
-		__declspec(dllexport)
-		void Entity_RemoveComponent(UUID entityID, const char* componentTypeFullName)
+		__declspec(dllexport) void Entity_RemoveComponent(UUID entityID, const char* componentTypeFullName)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -179,8 +169,8 @@ namespace Timefall
 			storage.Components.erase(WidenAscii(componentTypeFullName));
 		}
 
-		__declspec(dllexport)
-		void ManagedComponent_GetField(UUID entityID, const wchar_t* typeName, const wchar_t* fieldName, void* outValue, int size)
+		__declspec(dllexport) void ManagedComponent_GetField(
+			UUID entityID, const wchar_t* typeName, const wchar_t* fieldName, void* outValue, int size)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -203,8 +193,8 @@ namespace Timefall
 			memcpy(outValue, fieldIt->second.Data(), n);
 		}
 
-		__declspec(dllexport)
-		void ManagedComponent_SetField(UUID entityID, const wchar_t* typeName, const wchar_t* fieldName, void* value, int size)
+		__declspec(dllexport) void ManagedComponent_SetField(
+			UUID entityID, const wchar_t* typeName, const wchar_t* fieldName, void* value, int size)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -225,8 +215,7 @@ namespace Timefall
 			memcpy(fieldIt->second.Data(), value, n);
 		}
 
-		__declspec(dllexport)
-		void SpriteRendererComponent_GetColor(UUID entityID, glm::vec4* outColor)
+		__declspec(dllexport) void SpriteRendererComponent_GetColor(UUID entityID, glm::vec4* outColor)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -237,8 +226,7 @@ namespace Timefall
 			*outColor = entity.GetComponent<SpriteRendererComponent>().Color;
 		}
 
-		__declspec(dllexport)
-		void SpriteRendererComponent_SetColor(UUID entityID, glm::vec4* color)
+		__declspec(dllexport) void SpriteRendererComponent_SetColor(UUID entityID, glm::vec4* color)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -249,8 +237,7 @@ namespace Timefall
 			entity.GetComponent<SpriteRendererComponent>().Color = *color;
 		}
 
-		__declspec(dllexport)
-		void TransformComponent_GetTranslation(UUID entityID, glm::vec3* outTranslation)
+		__declspec(dllexport) void TransformComponent_GetTranslation(UUID entityID, glm::vec3* outTranslation)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -260,8 +247,7 @@ namespace Timefall
 			*outTranslation = entity.GetComponent<TransformComponent>().Translation;
 		}
 
-		__declspec(dllexport)
-		void TransformComponent_SetTranslation(UUID entityID, glm::vec3* translation)
+		__declspec(dllexport) void TransformComponent_SetTranslation(UUID entityID, glm::vec3* translation)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -271,8 +257,7 @@ namespace Timefall
 			entity.GetComponent<TransformComponent>().Translation = *translation;
 		}
 
-		__declspec(dllexport)
-		void TransformComponent_GetRotation(UUID entityID, glm::vec3* outRotation)
+		__declspec(dllexport) void TransformComponent_GetRotation(UUID entityID, glm::vec3* outRotation)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -282,8 +267,7 @@ namespace Timefall
 			*outRotation = entity.GetComponent<TransformComponent>().Rotation; // Euler radians
 		}
 
-		__declspec(dllexport)
-		void TransformComponent_SetRotation(UUID entityID, glm::vec3* rotation)
+		__declspec(dllexport) void TransformComponent_SetRotation(UUID entityID, glm::vec3* rotation)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -293,8 +277,7 @@ namespace Timefall
 			entity.GetComponent<TransformComponent>().Rotation = *rotation; // Euler radians
 		}
 
-		__declspec(dllexport)
-		void TransformComponent_GetScale(UUID entityID, glm::vec3* outScale)
+		__declspec(dllexport) void TransformComponent_GetScale(UUID entityID, glm::vec3* outScale)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -304,8 +287,7 @@ namespace Timefall
 			*outScale = entity.GetComponent<TransformComponent>().Scale;
 		}
 
-		__declspec(dllexport)
-		void TransformComponent_SetScale(UUID entityID, glm::vec3* scale)
+		__declspec(dllexport) void TransformComponent_SetScale(UUID entityID, glm::vec3* scale)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -315,8 +297,7 @@ namespace Timefall
 			entity.GetComponent<TransformComponent>().Scale = *scale;
 		}
 
-		__declspec(dllexport)
-		void TransformComponent_GetWorldTranslation(UUID entityID, glm::vec3* outTranslation)
+		__declspec(dllexport) void TransformComponent_GetWorldTranslation(UUID entityID, glm::vec3* outTranslation)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -326,8 +307,7 @@ namespace Timefall
 			*outTranslation = entity.GetWorldTranslation();
 		}
 
-		__declspec(dllexport)
-		void TransformComponent_SetWorldTranslation(UUID entityID, glm::vec3* translation)
+		__declspec(dllexport) void TransformComponent_SetWorldTranslation(UUID entityID, glm::vec3* translation)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -337,8 +317,7 @@ namespace Timefall
 			entity.SetWorldTranslation(*translation);
 		}
 
-		__declspec(dllexport)
-		void TransformComponent_GetWorldRotation(UUID entityID, glm::vec3* outRotation)
+		__declspec(dllexport) void TransformComponent_GetWorldRotation(UUID entityID, glm::vec3* outRotation)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -348,8 +327,7 @@ namespace Timefall
 			*outRotation = entity.GetWorldRotation(); // Euler radians
 		}
 
-		__declspec(dllexport)
-		void TransformComponent_SetWorldRotation(UUID entityID, glm::vec3* rotation)
+		__declspec(dllexport) void TransformComponent_SetWorldRotation(UUID entityID, glm::vec3* rotation)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -359,8 +337,7 @@ namespace Timefall
 			entity.SetWorldRotation(*rotation); // Euler radians
 		}
 
-		__declspec(dllexport)
-		void TransformComponent_GetWorldScale(UUID entityID, glm::vec3* outScale)
+		__declspec(dllexport) void TransformComponent_GetWorldScale(UUID entityID, glm::vec3* outScale)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -370,8 +347,7 @@ namespace Timefall
 			*outScale = entity.GetWorldScale(); // read-only lossy scale
 		}
 
-		__declspec(dllexport)
-		void Entity_SetParent(UUID childID, UUID parentID)
+		__declspec(dllexport) void Entity_SetParent(UUID childID, UUID parentID)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -382,8 +358,7 @@ namespace Timefall
 			scene->SetParent(child, parent);
 		}
 
-		__declspec(dllexport)
-		uint64_t Entity_GetParent(UUID entityID)
+		__declspec(dllexport) uint64_t Entity_GetParent(UUID entityID)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -394,8 +369,7 @@ namespace Timefall
 			return entity.GetComponent<RelationshipComponent>().Parent;
 		}
 
-		__declspec(dllexport)
-		int Entity_GetChildrenCount(UUID entityID)
+		__declspec(dllexport) int Entity_GetChildrenCount(UUID entityID)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -406,8 +380,7 @@ namespace Timefall
 			return (int)entity.GetComponent<RelationshipComponent>().Children.size();
 		}
 
-		__declspec(dllexport)
-		void Entity_GetChildren(UUID entityID, uint64_t* outChildren, int count)
+		__declspec(dllexport) void Entity_GetChildren(UUID entityID, uint64_t* outChildren, int count)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -421,16 +394,14 @@ namespace Timefall
 				outChildren[i] = children[i];
 		}
 
-		__declspec(dllexport)
-		int Entity_GetEntitiesWithComponentCount(const char* componentTypeFullName)
+		__declspec(dllexport) int Entity_GetEntitiesWithComponentCount(const char* componentTypeFullName)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
 			return (int)CollectEntitiesWithComponent(scene, componentTypeFullName).size();
 		}
 
-		__declspec(dllexport)
-		void Entity_GetEntitiesWithComponent(const char* componentTypeFullName, uint64_t* outEntities, int count)
+		__declspec(dllexport) void Entity_GetEntitiesWithComponent(const char* componentTypeFullName, uint64_t* outEntities, int count)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -442,9 +413,7 @@ namespace Timefall
 				outEntities[i] = result[i]; // UUID -> uint64_t via implicit conversion
 		}
 
-		
-		__declspec(dllexport)
-		void Rigidbody2DComponent_ApplyLinearImpulse(UUID entityID, glm::vec2* impulse, glm::vec2* point, bool wake)
+		__declspec(dllexport) void Rigidbody2DComponent_ApplyLinearImpulse(UUID entityID, glm::vec2* impulse, glm::vec2* point, bool wake)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -461,9 +430,9 @@ namespace Timefall
 			b2BodyId body = physicsBodiesMap[entity];
 			b2Body_ApplyLinearImpulse(body, b2Vec2(impulse->x, impulse->y), b2Vec2(point->x, point->y), wake);
 		}
-		
-		__declspec(dllexport)
-		void Rigidbody2DComponent_ApplyLinearImpulseToCenter(UUID entityID, glm::vec2* impulse, glm::vec2* point, bool wake)
+
+		__declspec(dllexport) void Rigidbody2DComponent_ApplyLinearImpulseToCenter(
+			UUID entityID, glm::vec2* impulse, glm::vec2* point, bool wake)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -481,8 +450,7 @@ namespace Timefall
 			b2Body_ApplyLinearImpulseToCenter(body, b2Vec2(impulse->x, impulse->y), wake);
 		}
 
-		__declspec(dllexport)
-		void Rigidbody2DComponent_GetLinearVelocity(UUID entityID, glm::vec2* outLinearVelocity)
+		__declspec(dllexport) void Rigidbody2DComponent_GetLinearVelocity(UUID entityID, glm::vec2* outLinearVelocity)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -500,8 +468,7 @@ namespace Timefall
 			*outLinearVelocity = glm::vec2(linearVelocity.x, linearVelocity.y);
 		}
 
-		__declspec(dllexport)
-		Rigidbody2DComponent::BodyType Rigidbody2DComponent_GetBodyType(UUID entityID)
+		__declspec(dllexport) Rigidbody2DComponent::BodyType Rigidbody2DComponent_GetBodyType(UUID entityID)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -518,8 +485,7 @@ namespace Timefall
 			return (Rigidbody2DComponent::BodyType)b2Body_GetType(body);
 		}
 
-		__declspec(dllexport)
-		void Rigidbody2DComponent_SetBodyType(UUID entityID, Rigidbody2DComponent::BodyType bodyType)
+		__declspec(dllexport) void Rigidbody2DComponent_SetBodyType(UUID entityID, Rigidbody2DComponent::BodyType bodyType)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -536,8 +502,7 @@ namespace Timefall
 			b2Body_SetType(body, (b2BodyType)bodyType);
 		}
 
-		__declspec(dllexport)
-		const char* TextComponent_GetText(UUID entityID)
+		__declspec(dllexport) const char* TextComponent_GetText(UUID entityID)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -554,8 +519,7 @@ namespace Timefall
 			return tc.Text.c_str();
 		}
 
-		__declspec(dllexport)
-		void TextComponent_SetText(UUID entityID, const char* text)
+		__declspec(dllexport) void TextComponent_SetText(UUID entityID, const char* text)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -567,8 +531,7 @@ namespace Timefall
 			tc.Text = text;
 		}
 
-		__declspec(dllexport)
-		void TextComponent_GetColor(UUID entityID, glm::vec4* color)
+		__declspec(dllexport) void TextComponent_GetColor(UUID entityID, glm::vec4* color)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -587,8 +550,7 @@ namespace Timefall
 			*color = tc.Color;
 		}
 
-		__declspec(dllexport)
-		void TextComponent_SetColor(UUID entityID, glm::vec4* color)
+		__declspec(dllexport) void TextComponent_SetColor(UUID entityID, glm::vec4* color)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -600,8 +562,7 @@ namespace Timefall
 			tc.Color = *color;
 		}
 
-		__declspec(dllexport)
-		float TextComponent_GetKerning(UUID entityID)
+		__declspec(dllexport) float TextComponent_GetKerning(UUID entityID)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -618,8 +579,7 @@ namespace Timefall
 			return tc.Kerning;
 		}
 
-		__declspec(dllexport)
-		void TextComponent_SetKerning(UUID entityID, float kerning)
+		__declspec(dllexport) void TextComponent_SetKerning(UUID entityID, float kerning)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -631,8 +591,7 @@ namespace Timefall
 			tc.Kerning = kerning;
 		}
 
-		__declspec(dllexport)
-		float TextComponent_GetLineSpacing(UUID entityID)
+		__declspec(dllexport) float TextComponent_GetLineSpacing(UUID entityID)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -649,8 +608,7 @@ namespace Timefall
 			return tc.LineSpacing;
 		}
 
-		__declspec(dllexport)
-		void TextComponent_SetLineSpacing(UUID entityID, float lineSpacing)
+		__declspec(dllexport) void TextComponent_SetLineSpacing(UUID entityID, float lineSpacing)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			TF_CORE_ASSERT(scene, "Scene context is null");
@@ -662,50 +620,42 @@ namespace Timefall
 			tc.LineSpacing = lineSpacing;
 		}
 
-		__declspec(dllexport)
-		bool Input_IsKeyDown(KeyCode keycode)
+		__declspec(dllexport) bool Input_IsKeyDown(KeyCode keycode)
 		{
 			return Input::IsKeyDown(keycode);
 		}
 
-		__declspec(dllexport)
-		bool Input_IsKeyPressedThisFrame(KeyCode keycode)
+		__declspec(dllexport) bool Input_IsKeyPressedThisFrame(KeyCode keycode)
 		{
 			return Input::IsKeyPressedThisFrame(keycode);
 		}
 
-		__declspec(dllexport)
-		bool Input_IsKeyReleasedThisFrame(KeyCode keycode)
+		__declspec(dllexport) bool Input_IsKeyReleasedThisFrame(KeyCode keycode)
 		{
 			return Input::IsKeyReleasedThisFrame(keycode);
 		}
 
-		__declspec(dllexport)
-		bool Input_IsMouseButtonDown(MouseCode button)
+		__declspec(dllexport) bool Input_IsMouseButtonDown(MouseCode button)
 		{
 			return Input::IsMouseButtonDown(button);
 		}
 
-		__declspec(dllexport)
-		bool Input_IsMouseButtonPressedThisFrame(MouseCode button)
+		__declspec(dllexport) bool Input_IsMouseButtonPressedThisFrame(MouseCode button)
 		{
 			return Input::IsMouseButtonPressedThisFrame(button);
 		}
 
-		__declspec(dllexport)
-		bool Input_IsMouseButtonReleasedThisFrame(MouseCode button)
+		__declspec(dllexport) bool Input_IsMouseButtonReleasedThisFrame(MouseCode button)
 		{
 			return Input::IsMouseButtonReleasedThisFrame(button);
 		}
 
-		__declspec(dllexport)
-		void Input_GetMousePosition(glm::vec2* outPosition)
+		__declspec(dllexport) void Input_GetMousePosition(glm::vec2* outPosition)
 		{
 			*outPosition = Input::GetViewportMousePosition();
 		}
 
-		__declspec(dllexport)
-		void Input_GetMouseWorldPosition(glm::vec2* outPosition)
+		__declspec(dllexport) void Input_GetMouseWorldPosition(glm::vec2* outPosition)
 		{
 			Scene* scene = ScriptEngine::GetSceneContext();
 			if (!scene)
@@ -716,50 +666,52 @@ namespace Timefall
 			*outPosition = scene->ScreenToWorldPoint(Input::GetViewportMousePosition());
 		}
 
-		__declspec(dllexport)
-		void Native_RegisterEntityTypes(const wchar_t* typeName, const wchar_t* assemblyName, const wchar_t** fieldNames, const wchar_t** fieldTypeNames, int fieldCount)
+		__declspec(dllexport) void Native_RegisterEntityTypes(const wchar_t* typeName, const wchar_t* assemblyName,
+			const wchar_t** fieldNames, const wchar_t** fieldTypeNames, int fieldCount)
 		{
 			ScriptEngine::RegisterEntityTypes(typeName, assemblyName, fieldNames, fieldTypeNames, fieldCount);
 		}
 
-		__declspec(dllexport)
-		void Native_RegisterComponentTypes(const wchar_t* typeName, const wchar_t* assemblyName, const wchar_t** fieldNames, const wchar_t** fieldTypeNames, int fieldCount)
+		__declspec(dllexport) void Native_RegisterComponentTypes(const wchar_t* typeName, const wchar_t* assemblyName,
+			const wchar_t** fieldNames, const wchar_t** fieldTypeNames, int fieldCount)
 		{
 			ScriptEngine::RegisterComponentTypes(typeName, assemblyName, fieldNames, fieldTypeNames, fieldCount);
 		}
 
-		__declspec(dllexport)
-		void SceneManager_LoadScene(const char* name)
+		__declspec(dllexport) void SceneManager_LoadScene(const char* name)
 		{
 			SceneManager::LoadScene(name ? name : "");
 		}
 	}
 
-	template<typename... T>
-	static void RegisterComponent()
+	template <typename... T> static void RegisterComponent()
 	{
-		([]()
-		{
-			std::string_view typeName = typeid(T).name();
-			size_t pos = typeName.find_last_of(':'); // Assume all component types are in the Timefall namespace, so we can trim the namespace from the type name
-			std::string_view componentStructName = typeName.substr(pos + 1);
-			std::string managedComponentTypeName = std::format("Timefall.{}", componentStructName);
-			// TODO: Need to check if managedComponentTypeName actually exists in the loaded assemblies
-			s_EntityHasComponentFuncs[managedComponentTypeName] = [](Entity entity) { return entity.HasComponent<T>(); };
-			s_EntityAddComponentFuncs[managedComponentTypeName] = [](Entity entity) { entity.AddComponent<T>(); };
-			s_EntityRemoveComponentFuncs[managedComponentTypeName] = [](Entity entity) { if (entity.HasComponent<T>()) entity.RemoveComponent<T>(); };
-			s_EntityGetEntitiesWithFuncs[managedComponentTypeName] = [](Scene* scene, std::vector<UUID>& out) {
-				for (auto e : scene->GetAllEntitiesWithUsingView<T>())
-				{
-					Entity entity{ e, scene };
-					out.push_back(entity.GetUUID());
-				}
-			};
-		}(), ...);
+		(
+			[]() {
+				std::string_view typeName = typeid(T).name();
+				size_t pos = typeName.find_last_of(
+					':'); // Assume all component types are in the Timefall namespace, so we can trim the namespace from the type name
+				std::string_view componentStructName = typeName.substr(pos + 1);
+				std::string managedComponentTypeName = std::format("Timefall.{}", componentStructName);
+				// TODO: Need to check if managedComponentTypeName actually exists in the loaded assemblies
+				s_EntityHasComponentFuncs[managedComponentTypeName] = [](Entity entity) { return entity.HasComponent<T>(); };
+				s_EntityAddComponentFuncs[managedComponentTypeName] = [](Entity entity) { entity.AddComponent<T>(); };
+				s_EntityRemoveComponentFuncs[managedComponentTypeName] = [](Entity entity) {
+					if (entity.HasComponent<T>())
+						entity.RemoveComponent<T>();
+				};
+				s_EntityGetEntitiesWithFuncs[managedComponentTypeName] = [](Scene* scene, std::vector<UUID>& out) {
+					for (auto e : scene->GetAllEntitiesWithUsingView<T>())
+					{
+						Entity entity{e, scene};
+						out.push_back(entity.GetUUID());
+					}
+				};
+			}(),
+			...);
 	}
 
-	template<typename... T>
-	static void RegisterComponent(ComponentGroup<T...>)
+	template <typename... T> static void RegisterComponent(ComponentGroup<T...>)
 	{
 		RegisterComponent<T...>();
 	}

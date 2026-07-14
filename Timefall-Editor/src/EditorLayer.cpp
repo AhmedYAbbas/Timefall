@@ -25,7 +25,8 @@ namespace Timefall
 	static Ref<Font> s_Font;
 
 	EditorLayer::EditorLayer()
-		: Layer("EditorLayer"), m_CameraController(1280.0f / 720.0f)
+		: Layer("EditorLayer"),
+		  m_CameraController(1280.0f / 720.0f)
 	{
 		s_Font = Font::GetDefault();
 	}
@@ -41,7 +42,7 @@ namespace Timefall
 		m_StopIcon = TextureImporter::LoadTexture2D("resources/icons/StopButton.png");
 
 		FramebufferSpecification fbSpec;
-		fbSpec.Attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::DEPTH };
+		fbSpec.Attachments = {FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::DEPTH};
 		fbSpec.Width = 1280;
 		fbSpec.Height = 720;
 		m_Framebuffer = Framebuffer::Create(fbSpec);
@@ -144,13 +145,13 @@ namespace Timefall
 		Renderer2D::ResetStats();
 		m_Framebuffer->Bind();
 		Renderer3D::SetTargetFramebuffer(m_Framebuffer);
-		RenderCommand::Clear({ 0.1f, 0.1f, 0.1f, 1.0f });
+		RenderCommand::Clear({0.1f, 0.1f, 0.1f, 1.0f});
 		m_Framebuffer->ClearColorAttachment(1, -1);
 
 		// Feed the viewport-relative mouse (top-left origin) to the engine so scripts get world input.
 		{
 			auto [mouseScreenX, mouseScreenY] = ImGui::GetMousePos();
-			Input::SetViewportMousePosition({ mouseScreenX - m_ViewportBounds[0].x, mouseScreenY - m_ViewportBounds[0].y });
+			Input::SetViewportMousePosition({mouseScreenX - m_ViewportBounds[0].x, mouseScreenY - m_ViewportBounds[0].y});
 		}
 
 		switch (m_SceneState)
@@ -187,7 +188,7 @@ namespace Timefall
 		if (mouseX >= 0 && mouseX < viewportSize.x && mouseY >= 0 && mouseY < viewportSize.y)
 		{
 			int data = m_Framebuffer->ReadPixel(1, mouseX, mouseY);
-			m_HoveredEntity = data == -1 ?  Entity() : Entity{ (entt::entity)data, GetActiveScene().get() };
+			m_HoveredEntity = data == -1 ? Entity() : Entity{(entt::entity)data, GetActiveScene().get()};
 		}
 
 		OnOverlayRender();
@@ -282,7 +283,7 @@ namespace Timefall
 
 				if (ImGui::MenuItem("Save Scene", "Ctrl + S"))
 					SaveScene();
-				
+
 				if (ImGui::MenuItem("Save Scene As...", "Ctrl + Shift + S"))
 					SaveSceneAs();
 
@@ -329,18 +330,18 @@ namespace Timefall
 		ImGui::End();
 
 		ImGui::Begin("Settings");
-			ImGui::Checkbox("Show Physics Colliders", &m_ShowPhysicsColliders);
-			ImGui::Image((ImTextureID)(uint64_t)s_Font->GetAtlasTexture()->GetRendererID(), { 512, 512 }, { 0, 1 }, { 1, 0 });
+		ImGui::Checkbox("Show Physics Colliders", &m_ShowPhysicsColliders);
+		ImGui::Image((ImTextureID)(uint64_t)s_Font->GetAtlasTexture()->GetRendererID(), {512, 512}, {0, 1}, {1, 0});
 		ImGui::End();
 
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
 		ImGui::Begin("Viewport");
 
 		auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
 		auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
 		auto viewportOffset = ImGui::GetWindowPos();
-		m_ViewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
-		m_ViewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
+		m_ViewportBounds[0] = {viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y};
+		m_ViewportBounds[1] = {viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y};
 
 		m_ViewportFocused = ImGui::IsWindowFocused();
 		m_ViewportHovered = ImGui::IsWindowHovered();
@@ -348,10 +349,10 @@ namespace Timefall
 		Application::Get().GetImGuiLayer()->BlockEvents(!m_ViewportHovered);
 
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-		m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
+		m_ViewportSize = {viewportPanelSize.x, viewportPanelSize.y};
 
 		uint32_t textureID = m_Framebuffer->GetColorAttachmentRendererID();
-		ImGui::Image((void*)(uint64_t)textureID, viewportPanelSize, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+		ImGui::Image((void*)(uint64_t)textureID, viewportPanelSize, ImVec2{0, 1}, ImVec2{1, 0});
 
 		if (ImGui::BeginDragDropTarget())
 		{
@@ -371,7 +372,8 @@ namespace Timefall
 			{
 				ImGuizmo::SetOrthographic(false);
 				ImGuizmo::SetDrawlist();
-				ImGuizmo::SetRect(m_ViewportBounds[0].x, m_ViewportBounds[0].y, m_ViewportBounds[1].x - m_ViewportBounds[0].x, m_ViewportBounds[1].y - m_ViewportBounds[0].y);
+				ImGuizmo::SetRect(m_ViewportBounds[0].x, m_ViewportBounds[0].y, m_ViewportBounds[1].x - m_ViewportBounds[0].x,
+					m_ViewportBounds[1].y - m_ViewportBounds[0].y);
 
 				// Runtime Camera
 				// auto cameraEntity = GetActiveScene()->GetPrimaryCameraEntity();
@@ -394,11 +396,10 @@ namespace Timefall
 				if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
 					snapValue = 5.0f;
 
-				float snapValues[3] = { snapValue, snapValue, snapValue };
+				float snapValues[3] = {snapValue, snapValue, snapValue};
 
-				ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
-					(ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL, glm::value_ptr(transform),
-					nullptr, snap ? snapValues : nullptr);
+				ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection), (ImGuizmo::OPERATION)m_GizmoType,
+					ImGuizmo::LOCAL, glm::value_ptr(transform), nullptr, snap ? snapValues : nullptr);
 
 				if (ImGuizmo::IsUsing())
 				{
@@ -419,18 +420,19 @@ namespace Timefall
 
 	void EditorLayer::UI_Toolbar()
 	{
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 2 });
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 0, 0 });
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2{ 0, 0 });
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 2});
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{0, 0});
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2{0, 0});
 
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.0f, 0.0f, 0.0f, 0.0f});
 		auto& color = ImGui::GetStyle().Colors;
 		const auto& buttonHovered = color[ImGuiCol_ButtonHovered];
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f });
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f});
 		const auto& buttonActive = color[ImGuiCol_ButtonActive];
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ buttonActive.x, buttonActive.y, buttonActive.z, 0.5f });
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{buttonActive.x, buttonActive.y, buttonActive.z, 0.5f});
 
-		ImGui::Begin("##Toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+		ImGui::Begin(
+			"##Toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
 		bool toolbarEnabled = (bool)GetActiveScene();
 
@@ -450,7 +452,9 @@ namespace Timefall
 		{
 			Ref<Texture2D> icon = (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Simulate) ? m_PlayIcon : m_StopIcon;
 			std::string id = std::to_string(icon->GetRendererID());
-			if (ImGui::ImageButton(id.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled)
+			if (ImGui::ImageButton(id.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1),
+					ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor)
+				&& toolbarEnabled)
 			{
 				if (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Simulate)
 					OnScenePlay();
@@ -467,7 +471,9 @@ namespace Timefall
 
 			Ref<Texture2D> icon = (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play) ? m_SimulateIcon : m_StopIcon;
 			std::string id = std::to_string(icon->GetRendererID());
-			if (ImGui::ImageButton(id.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled)
+			if (ImGui::ImageButton(id.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1),
+					ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor)
+				&& toolbarEnabled)
 			{
 				if (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play)
 					OnSceneSimulate();
@@ -483,7 +489,9 @@ namespace Timefall
 			{
 				Ref<Texture2D> icon = m_PauseIcon;
 				std::string id = std::to_string(icon->GetRendererID());
-				if (ImGui::ImageButton(id.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled)
+				if (ImGui::ImageButton(id.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0),
+						ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor)
+					&& toolbarEnabled)
 					GetActiveScene()->SetPaused(!isPaused);
 			}
 
@@ -494,7 +502,9 @@ namespace Timefall
 				{
 					Ref<Texture2D> icon = m_StepIcon;
 					std::string id = std::to_string(icon->GetRendererID());
-					if (ImGui::ImageButton(id.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled)
+					if (ImGui::ImageButton(id.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0),
+							ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor)
+						&& toolbarEnabled)
 						GetActiveScene()->Step();
 				}
 			}
@@ -565,14 +575,9 @@ namespace Timefall
 				break;
 			case Key::R:
 				if (control)
-				{
 					ScriptEngine::ReloadAssembly();
-				}
-				else
-				{
-					if (!ImGuizmo::IsUsing())
-						m_GizmoType = ImGuizmo::OPERATION::SCALE;
-				}
+				else if (!ImGuizmo::IsUsing())
+					m_GizmoType = ImGuizmo::OPERATION::SCALE;
 				break;
 			case Key::Delete:
 			{
@@ -607,7 +612,7 @@ namespace Timefall
 	{
 		// TODO: if a project is dropped in, probably open it
 
-		//AssetManager::ImportAsset();
+		// AssetManager::ImportAsset();
 
 		return true;
 	}
@@ -671,7 +676,8 @@ namespace Timefall
 		}
 
 		// Spot gizmo: a cone opening along the direction, half-angle = outer cutoff, length = range.
-		static void DrawSpotLightGizmo(const glm::vec3& pos, const glm::vec3& dir, float outerCutoffDeg, float range, const glm::vec4& color)
+		static void DrawSpotLightGizmo(
+			const glm::vec3& pos, const glm::vec3& dir, float outerCutoffDeg, float range, const glm::vec4& color)
 		{
 			float length = range;
 			float radius = length * std::tan(outerCutoffDeg * (GIZMO_TWO_PI / 360.0f)); // deg -> rad
@@ -698,7 +704,8 @@ namespace Timefall
 			if (!camera)
 				return;
 
-			Renderer2D::BeginScene(camera.GetComponent<CameraComponent>().Camera, camera.GetComponent<TransformComponent>().GetLocalTransform());
+			Renderer2D::BeginScene(
+				camera.GetComponent<CameraComponent>().Camera, camera.GetComponent<TransformComponent>().GetLocalTransform());
 		}
 		else
 		{
@@ -746,15 +753,13 @@ namespace Timefall
 					Renderer2D::DrawCircle(transform, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 0.01f);
 				}
 			}
-
 		}
 
 		// Light gizmo — shown only for the selected light (editor-only; lights have no geometry of
 		// their own). Drawn in the light's color so it doubles as a color readout.
 		if (m_SceneState != SceneState::Play)
 		{
-			if (Entity selected = m_SceneHierarchyPanel.GetSelectedEntity();
-				selected.IsValid() && selected.HasComponent<LightComponent>())
+			if (Entity selected = m_SceneHierarchyPanel.GetSelectedEntity(); selected.IsValid() && selected.HasComponent<LightComponent>())
 			{
 				auto& lc = selected.GetComponent<LightComponent>();
 
@@ -765,15 +770,9 @@ namespace Timefall
 
 				switch (lc.Type)
 				{
-					case LightComponent::LightType::Directional:
-						DrawDirectionalLightGizmo(pos, dir, color);
-						break;
-					case LightComponent::LightType::Point:
-						DrawPointLightGizmo(pos, color);
-						break;
-					case LightComponent::LightType::Spot:
-						DrawSpotLightGizmo(pos, dir, lc.OuterCutoff, lc.Range, color);
-						break;
+					case LightComponent::LightType::Directional: DrawDirectionalLightGizmo(pos, dir, color); break;
+					case LightComponent::LightType::Point: DrawPointLightGizmo(pos, color); break;
+					case LightComponent::LightType::Spot: DrawSpotLightGizmo(pos, dir, lc.OuterCutoff, lc.Range, color); break;
 				}
 			}
 		}
@@ -810,18 +809,31 @@ namespace Timefall
 					}
 
 					glm::vec3 corners[8] = {
-						{ min.x, min.y, min.z }, { max.x, min.y, min.z },
-						{ max.x, max.y, min.z }, { min.x, max.y, min.z },
-						{ min.x, min.y, max.z }, { max.x, min.y, max.z },
-						{ max.x, max.y, max.z }, { min.x, max.y, max.z },
+						{min.x, min.y, min.z},
+						{max.x, min.y, min.z},
+						{max.x, max.y, min.z},
+						{min.x, max.y, min.z},
+						{min.x, min.y, max.z},
+						{max.x, min.y, max.z},
+						{max.x, max.y, max.z},
+						{min.x, max.y, max.z},
 					};
 					for (int i = 0; i < 8; i++)
 						corners[i] = glm::vec3(worldTransform * glm::vec4(corners[i], 1.0f));
 
 					static const int edges[12][2] = {
-						{0,1},{1,2},{2,3},{3,0}, // z = min face
-						{4,5},{5,6},{6,7},{7,4}, // z = max face
-						{0,4},{1,5},{2,6},{3,7}, // connectors
+						{0, 1},
+						{1, 2},
+						{2, 3},
+						{3, 0}, // z = min face
+						{4, 5},
+						{5, 6},
+						{6, 7},
+						{7, 4}, // z = max face
+						{0, 4},
+						{1, 5},
+						{2, 6},
+						{3, 7}, // connectors
 					};
 					for (const auto& e : edges)
 						Renderer2D::DrawLine(corners[e[0]], corners[e[1]], outlineColor);

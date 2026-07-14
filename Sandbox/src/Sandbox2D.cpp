@@ -8,27 +8,27 @@
 #include <glm/gtc/type_ptr.hpp>
 
 static const uint32_t s_MapWidth = 24;
-static const char* s_TileMap =
-"GGGGGGGGGGGRGGGGGGGGGGGG"
-"GGGGGGGGGGGRGGGGGGGGGGGG"
-"GGGGGGGGGGGRGGGGGGGGGGGG"
-"GGGGGGGGGGGRGGGGGGGGGGGG"
-"GGGGGGGGGGGRRRRRRRRRRRRR"
-"GGGGGGGGGGGRGGGGGGGGGGGG"
-"GGGGGGGGGGGRGGGGGGGGGGGG"
-"GGGGGGGGGGRGGGGGGGGGGGGG"
-"GGGGGGGGGRGGGGGGGGGGGGGG"
-"GGGGGGGGRGGGGGGGGGGGGGGG"
-"GGGGGGGRGGGGGGGGGGGGGGGG"
-"GGGGGGRGGGGGGGGGGGGGGGGG"
-"RRRRRRGGGGGGGGGGGGGGGGGG"
-"GGGGGGGGGGGGGGGGGGGGGGGG"
-"RRRRRRRRRRRRRRRRRRRRRRRR";
+static const char* s_TileMap = "GGGGGGGGGGGRGGGGGGGGGGGG"
+							   "GGGGGGGGGGGRGGGGGGGGGGGG"
+							   "GGGGGGGGGGGRGGGGGGGGGGGG"
+							   "GGGGGGGGGGGRGGGGGGGGGGGG"
+							   "GGGGGGGGGGGRRRRRRRRRRRRR"
+							   "GGGGGGGGGGGRGGGGGGGGGGGG"
+							   "GGGGGGGGGGGRGGGGGGGGGGGG"
+							   "GGGGGGGGGGRGGGGGGGGGGGGG"
+							   "GGGGGGGGGRGGGGGGGGGGGGGG"
+							   "GGGGGGGGRGGGGGGGGGGGGGGG"
+							   "GGGGGGGRGGGGGGGGGGGGGGGG"
+							   "GGGGGGRGGGGGGGGGGGGGGGGG"
+							   "RRRRRRGGGGGGGGGGGGGGGGGG"
+							   "GGGGGGGGGGGGGGGGGGGGGGGG"
+							   "RRRRRRRRRRRRRRRRRRRRRRRR";
 
 Sandbox2D::Sandbox2D()
-	: Layer("Sandbox2D"), m_CameraController(1280.0f / 720.0f), m_QuadColor({0.2f, 0.2f, 0.8f, 1.0f})
-{
-}
+	: Layer("Sandbox2D"),
+	  m_CameraController(1280.0f / 720.0f),
+	  m_QuadColor({0.2f, 0.2f, 0.8f, 1.0f})
+{}
 
 void Sandbox2D::OnAttach()
 {
@@ -68,7 +68,6 @@ void Sandbox2D::OnUpdate(Timefall::Timestep ts)
 		TF_PROFILE_SCOPE("Renderer Prep");
 		Timefall::RenderCommand::Clear({0.1f, 0.1f, 0.1f, 1.0f});
 	}
-
 
 	{
 		TF_PROFILE_SCOPE("Renderer Draw");
@@ -143,5 +142,5 @@ void Sandbox2D::OnImGuiRender()
 
 	ImGui::ColorEdit4("Square Color", glm::value_ptr(m_QuadColor));
 
-    ImGui::End();
+	ImGui::End();
 }

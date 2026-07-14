@@ -9,9 +9,9 @@
 
 namespace Timefall
 {
-	template<typename T, typename S, int N, msdf_atlas::GeneratorFunction<S, N> GenFunc>
-	static Ref<Texture2D> CreateAndCacheAtlas(const std::string& fontName, float fontSize, const std::vector<msdf_atlas::GlyphGeometry>& glyphs,
-		const msdf_atlas::FontGeometry& fontGeometry, uint32_t width, uint32_t height)
+	template <typename T, typename S, int N, msdf_atlas::GeneratorFunction<S, N> GenFunc>
+	static Ref<Texture2D> CreateAndCacheAtlas(const std::string& fontName, float fontSize,
+		const std::vector<msdf_atlas::GlyphGeometry>& glyphs, const msdf_atlas::FontGeometry& fontGeometry, uint32_t width, uint32_t height)
 	{
 		msdf_atlas::GeneratorAttributes attributes;
 		attributes.config.overlapSupport = true;
@@ -42,7 +42,7 @@ namespace Timefall
 		TF_CORE_ASSERT(ft, "Failed to initialize FreeType library!");
 
 		std::string fileString = filepath.string();
-		// TODO: msdfgen::loadFontData loads from memory buffer which we'll need 
+		// TODO: msdfgen::loadFontData loads from memory buffer which we'll need
 		msdfgen::FontHandle* font = msdfgen::loadFont(ft, fileString.c_str());
 		if (!font)
 		{
@@ -55,16 +55,12 @@ namespace Timefall
 			uint32_t Begin, End;
 		};
 
-		static const CharsetRange charsetRanges[] = {
-			{ 0x0020, 0x00FF }
-		};
+		static const CharsetRange charsetRanges[] = {{0x0020, 0x00FF}};
 
 		msdf_atlas::Charset charset;
 		for (CharsetRange range : charsetRanges)
-		{
 			for (uint32_t c = range.Begin; c <= range.End; c++)
 				charset.add(c);
-		}
 
 		double fontScale = 1.0;
 		m_MSDFData->FontGeometry = msdf_atlas::FontGeometry(&m_MSDFData->Glyphs);
@@ -96,12 +92,14 @@ namespace Timefall
 		bool expensiveColoring = false;
 		if (expensiveColoring)
 		{
-			msdf_atlas::Workload([&glyphs = m_MSDFData->Glyphs, &coloringSeed](int i, int threadNo) -> bool
-				{
+			msdf_atlas::Workload(
+				[&glyphs = m_MSDFData->Glyphs, &coloringSeed](int i, int threadNo) -> bool {
 					unsigned long long glyphSeed = (LCG_MULTIPLIER * (coloringSeed ^ i) + LCG_INCREMENT) * !!coloringSeed;
 					glyphs[i].edgeColoring(msdfgen::edgeColoringInkTrap, DEFAULT_ANGLE_THRESHOLD, glyphSeed);
 					return true;
-				}, m_MSDFData->Glyphs.size()).finish(THREAD_COUNT);
+				},
+				m_MSDFData->Glyphs.size())
+				.finish(THREAD_COUNT);
 		}
 		else
 		{
@@ -113,7 +111,8 @@ namespace Timefall
 			}
 		}
 
-		m_AtlasTexture = CreateAndCacheAtlas<uint8_t, float, 3, msdf_atlas::msdfGenerator>("Test", (float)emSize, m_MSDFData->Glyphs, m_MSDFData->FontGeometry, width, height);
+		m_AtlasTexture = CreateAndCacheAtlas<uint8_t, float, 3, msdf_atlas::msdfGenerator>(
+			"Test", (float)emSize, m_MSDFData->Glyphs, m_MSDFData->FontGeometry, width, height);
 
 #if 0
 		msdfgen::Shape shape;

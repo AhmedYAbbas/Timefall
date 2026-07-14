@@ -3,7 +3,7 @@
 #include "Timefall/Renderer/Buffer.h"
 #include "Timefall/Core/Core.h"
 
-namespace Timefall 
+namespace Timefall
 {
 	class TF_API VertexArray
 	{

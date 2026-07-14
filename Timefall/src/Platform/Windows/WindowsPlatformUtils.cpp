@@ -12,7 +12,7 @@ namespace Timefall
 	std::filesystem::path FileDialogs::OpenFile(const char* filter)
 	{
 		OPENFILENAMEA ofn;
-		char szFile[260] = { 0 };
+		char szFile[260] = {0};
 		ZeroMemory(&ofn, sizeof(ofn));
 		ofn.lStructSize = sizeof(ofn);
 		ofn.hwndOwner = glfwGetWin32Window((GLFWwindow*)Application::Get().GetWindow().GetNativeWindow());
@@ -22,9 +22,7 @@ namespace Timefall
 		ofn.nFilterIndex = 1;
 		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 		if (GetOpenFileNameA(&ofn) == TRUE)
-		{
 			return std::filesystem::path(ofn.lpstrFile);
-		}
 
 		return {};
 	}
@@ -32,7 +30,7 @@ namespace Timefall
 	std::filesystem::path FileDialogs::SaveFile(const char* filter)
 	{
 		OPENFILENAMEA ofn;
-		char szFile[260] = { 0 };
+		char szFile[260] = {0};
 		ZeroMemory(&ofn, sizeof(ofn));
 		ofn.lStructSize = sizeof(ofn);
 		ofn.hwndOwner = glfwGetWin32Window((GLFWwindow*)Application::Get().GetWindow().GetNativeWindow());
@@ -43,9 +41,7 @@ namespace Timefall
 		ofn.lpstrDefExt = "timefall";
 		ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
 		if (GetSaveFileNameA(&ofn) == TRUE)
-		{
 			return std::filesystem::path(ofn.lpstrFile);
-		}
 
 		return {};
 	}

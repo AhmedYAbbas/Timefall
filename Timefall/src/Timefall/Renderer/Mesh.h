@@ -22,15 +22,15 @@ namespace Timefall
 	// A range within the MeshSource's combined buffers, drawn as one DrawIndexed.
 	struct Submesh
 	{
-		uint32_t BaseVertex   = 0;
-		uint32_t BaseIndex    = 0;
-		uint32_t IndexCount   = 0;
-		uint32_t MaterialIndex = 0;   // index into the import's material list (transient; used at import)
+		uint32_t BaseVertex = 0;
+		uint32_t BaseIndex = 0;
+		uint32_t IndexCount = 0;
+		uint32_t MaterialIndex = 0; // index into the import's material list (transient; used at import)
 		std::string Name;
 
 		// Local-space axis-aligned bounds of this submesh's vertices (for selection/culling).
-		glm::vec3 MinBounds{ 0.0f };
-		glm::vec3 MaxBounds{ 0.0f };
+		glm::vec3 MinBounds{0.0f};
+		glm::vec3 MaxBounds{0.0f};
 	};
 
 	// Retained only for the legacy MeshComponent deserializer shim (maps to reserved built-in handles).
@@ -39,8 +39,7 @@ namespace Timefall
 	class TF_API MeshSource : public Asset
 	{
 	public:
-		MeshSource(const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices,
-			const std::vector<Submesh>& submeshes);
+		MeshSource(const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices, const std::vector<Submesh>& submeshes);
 
 		const Ref<VertexArray>& GetVertexArray() const { return m_VertexArray; }
 		const std::vector<Submesh>& GetSubmeshes() const { return m_Submeshes; }
@@ -48,8 +47,8 @@ namespace Timefall
 		static AssetType GetStaticType() { return AssetType::Mesh; }
 		virtual AssetType GetType() const override { return GetStaticType(); }
 
-		static Ref<MeshSource> Create(const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices,
-			const std::vector<Submesh>& submeshes);
+		static Ref<MeshSource> Create(
+			const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices, const std::vector<Submesh>& submeshes);
 
 		// Built-in primitives (centered at origin, ~unit size, Y-up). Each is a single-submesh source.
 		static Ref<MeshSource> CreateCube();
@@ -68,17 +67,19 @@ namespace Timefall
 		{
 			switch (type)
 			{
-				case PrimitiveType::Cube:   return "Cube";
+				case PrimitiveType::Cube: return "Cube";
 				case PrimitiveType::Sphere: return "Sphere";
-				case PrimitiveType::Plane:  return "Plane";
+				case PrimitiveType::Plane: return "Plane";
 			}
 			return "Cube";
 		}
 
 		static PrimitiveType PrimitiveTypeFromString(const std::string& type)
 		{
-			if (type == "Sphere") return PrimitiveType::Sphere;
-			if (type == "Plane")  return PrimitiveType::Plane;
+			if (type == "Sphere")
+				return PrimitiveType::Sphere;
+			if (type == "Plane")
+				return PrimitiveType::Plane;
 			return PrimitiveType::Cube;
 		}
 	}

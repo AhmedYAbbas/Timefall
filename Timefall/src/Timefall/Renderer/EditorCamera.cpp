@@ -13,7 +13,11 @@
 namespace Timefall
 {
 	EditorCamera::EditorCamera(float fov, float aspectRatio, float nearClip, float farClip)
-		: m_FOV(fov), m_AspectRatio(aspectRatio), m_NearClip(nearClip), m_FarClip(farClip), Camera(glm::perspective(glm::radians(fov), aspectRatio, nearClip, farClip))
+		: m_FOV(fov),
+		  m_AspectRatio(aspectRatio),
+		  m_NearClip(nearClip),
+		  m_FarClip(farClip),
+		  Camera(glm::perspective(glm::radians(fov), aspectRatio, nearClip, farClip))
 	{
 		UpdateView();
 	}
@@ -22,7 +26,7 @@ namespace Timefall
 	{
 		if (Input::IsKeyPressed(Key::LeftAlt))
 		{
-			const glm::vec2& mouse{ Input::GetMouseX(), Input::GetMouseY() };
+			const glm::vec2& mouse{Input::GetMouseX(), Input::GetMouseY()};
 			glm::vec2 delta = (mouse - m_InitialMousePosition) * 0.003f;
 			m_InitialMousePosition = mouse;
 
@@ -46,9 +50,11 @@ namespace Timefall
 	void EditorCamera::SetViewportSize(float width, float height)
 	{
 		if (width == 0.0f || height == 0.0f)
-			return; 
-		
-		m_ViewportWidth = width; m_ViewportHeight = height; UpdateProjection();
+			return;
+
+		m_ViewportWidth = width;
+		m_ViewportHeight = height;
+		UpdateProjection();
 	}
 
 	glm::vec3 EditorCamera::GetUpDirection() const
@@ -132,7 +138,7 @@ namespace Timefall
 		float y = std::min(m_ViewportHeight / 1000.0f, 2.4f); // max = 2.4f
 		float yFactor = 0.0366f * (y * y) - 0.1778f * y + 0.3021f;
 
-		return { xFactor, yFactor };
+		return {xFactor, yFactor};
 	}
 
 	float EditorCamera::RotationSpeed() const

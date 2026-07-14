@@ -1,5 +1,5 @@
 #pragma once
-	
+
 #include "Timefall/Core/Window.h"
 #include "Timefall/Core/LayerStack.h"
 #include "Timefall/Events/ApplicationEvent.h"
@@ -34,7 +34,6 @@ namespace Timefall
 	public:
 		Application(const ApplicationSpecification& specification);
 		virtual ~Application();
-
 
 		void OnEvent(Event& e);
 
