@@ -3,6 +3,11 @@ bin/
 int/
 !vendor/bin/premake/
 
+# Build intermediates and outputs copied at build time
+obj/
+imgui.ini
+Timefall-Editor/[Rr]esources/Scripts/*.dll
+
 # Hazel files
 *.log
 
