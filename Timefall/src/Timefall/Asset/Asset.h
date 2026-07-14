@@ -7,14 +7,7 @@ namespace Timefall
 {
 	using AssetHandle = UUID;
 
-	enum class TF_API AssetType : uint16_t
-	{
-		None = 0,
-		Scene,
-		Texture2D,
-		Material,
-		Mesh
-	};
+	enum class TF_API AssetType : uint16_t { None = 0, Scene, Texture2D, Material, Mesh };
 
 	const char* AssetTypeToString(AssetType type);
 	AssetType AssetTypeFromString(const std::string_view& typeString);

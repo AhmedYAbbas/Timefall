@@ -26,14 +26,15 @@ namespace Timefall
 
 		OrthographicCamera& GetCamera() { return m_Camera; }
 		const OrthographicCamera& GetCamera() const { return m_Camera; }
+
 	private:
 		float m_AspectRatio;
 		float m_ZoomLevel = 1;
-		OrthographicCamera m_Camera;						
+		OrthographicCamera m_Camera;
 
 		bool m_Rotation;
 
-		float m_CameraRotation = 0.0f; //In degrees, in the anti-clockwise direction
+		float m_CameraRotation = 0.0f; // In degrees, in the anti-clockwise direction
 		glm::vec3 m_CameraPosition = {0.0f, 0.0f, 0.0f};
 		float m_CameraTranslationSpeed = 5.0f, m_CameraRotationSpeed = 90.0f;
 	};

@@ -29,4 +29,3 @@ namespace Timefall
 		std::string m_DebugName;
 	};
 }
-

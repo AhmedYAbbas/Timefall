@@ -4,7 +4,7 @@
 
 #include <glm/glm.hpp>
 
-//TODO: REMOVE!!
+// TODO: REMOVE!!
 typedef unsigned int GLenum;
 
 namespace Timefall

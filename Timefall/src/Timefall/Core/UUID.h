@@ -27,12 +27,8 @@ namespace Timefall
 
 namespace std
 {
-	template<>
-	struct hash<Timefall::UUID>
+	template <> struct hash<Timefall::UUID>
 	{
-		size_t operator()(const Timefall::UUID& uuid) const
-		{
-			return (uint64_t)uuid;
-		}
+		size_t operator()(const Timefall::UUID& uuid) const { return (uint64_t)uuid; }
 	};
 }

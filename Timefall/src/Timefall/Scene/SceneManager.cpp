@@ -13,11 +13,24 @@ namespace Timefall
 	static uint32_t s_ViewportWidth = 0;
 	static uint32_t s_ViewportHeight = 0;
 
-	void SceneManager::SetActiveScene(const Ref<Scene>& scene) { s_ActiveScene = scene; }
-	Ref<Scene> SceneManager::GetActiveScene() { return s_ActiveScene; }
-	void SceneManager::SetViewportSize(uint32_t width, uint32_t height) { s_ViewportWidth = width; s_ViewportHeight = height; }
+	void SceneManager::SetActiveScene(const Ref<Scene>& scene)
+	{
+		s_ActiveScene = scene;
+	}
+	Ref<Scene> SceneManager::GetActiveScene()
+	{
+		return s_ActiveScene;
+	}
+	void SceneManager::SetViewportSize(uint32_t width, uint32_t height)
+	{
+		s_ViewportWidth = width;
+		s_ViewportHeight = height;
+	}
 
-	void SceneManager::LoadSceneByHandle(AssetHandle handle) { s_PendingLoadHandle = handle; }
+	void SceneManager::LoadSceneByHandle(AssetHandle handle)
+	{
+		s_PendingLoadHandle = handle;
+	}
 
 	void SceneManager::LoadScene(const std::string& name)
 	{

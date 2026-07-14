@@ -4,8 +4,7 @@
 
 namespace Timefall
 {
-	enum class FramebufferTextureFormat
-	{
+	enum class FramebufferTextureFormat {
 		None = 0,
 
 		// Color
@@ -25,8 +24,7 @@ namespace Timefall
 		FramebufferTextureSpecification() = default;
 		FramebufferTextureSpecification(FramebufferTextureFormat format)
 			: TextureFormat(format)
-		{
-		}
+		{}
 
 		FramebufferTextureFormat TextureFormat = FramebufferTextureFormat::None;
 		// Non-zero aliases an existing GL texture/renderbuffer instead of creating one.
@@ -40,8 +38,7 @@ namespace Timefall
 		FramebufferAttachmentSpecification() = default;
 		FramebufferAttachmentSpecification(const std::initializer_list<FramebufferTextureSpecification>& attachments)
 			: Attachments(attachments)
-		{
-		}
+		{}
 
 		std::vector<FramebufferTextureSpecification> Attachments;
 	};

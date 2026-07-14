@@ -29,10 +29,7 @@ namespace Timefall
 		virtual void Bind(int slot = 0) const override;
 		virtual void BindAsSRGB(int slot = 0) const override;
 
-		virtual bool operator==(const Texture& other) const override
-		{
-			return m_RendererID == ((OpenGLTexture2D&)other).m_RendererID;
-		}
+		virtual bool operator==(const Texture& other) const override { return m_RendererID == ((OpenGLTexture2D&)other).m_RendererID; }
 
 	private:
 		TextureSpecification m_Specification;
@@ -40,7 +37,7 @@ namespace Timefall
 		uint32_t m_Width, m_Height;
 		uint32_t m_RendererID;
 		uint32_t m_InternalFormat, m_DataFormat;
-		mutable uint32_t m_SRGBView = 0;   // lazily-created sRGB view of m_RendererID
+		mutable uint32_t m_SRGBView = 0; // lazily-created sRGB view of m_RendererID
 		uint32_t m_MipLevels = 1;
 	};
 }

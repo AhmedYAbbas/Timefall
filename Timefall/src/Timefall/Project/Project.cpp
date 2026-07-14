@@ -10,7 +10,7 @@ namespace Timefall
 		return s_ActiveProject;
 	}
 
-	Ref<Project> Project::Load(const std::filesystem::path & path)
+	Ref<Project> Project::Load(const std::filesystem::path& path)
 	{
 		Ref<Project> project = CreateRef<Project>();
 
@@ -30,7 +30,7 @@ namespace Timefall
 		return nullptr;
 	}
 
-	bool Project::SaveActive(const std::filesystem::path & path)
+	bool Project::SaveActive(const std::filesystem::path& path)
 	{
 		ProjectSerializer serializer(s_ActiveProject);
 		if (serializer.Serialize(path))

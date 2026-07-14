@@ -20,12 +20,12 @@ namespace Timefall
 		virtual uint32_t GetCubeCount() const override { return m_CubeCount; }
 
 	private:
-		uint32_t m_RendererID = 0;     // FBO
-		uint32_t m_DepthTexture = 0;   // GL_TEXTURE_CUBE_MAP_ARRAY
+		uint32_t m_RendererID = 0; // FBO
+		uint32_t m_DepthTexture = 0; // GL_TEXTURE_CUBE_MAP_ARRAY
 		uint32_t m_Resolution = 0;
 		uint32_t m_CubeCount = 0;
 
 		int m_PrevFramebuffer = 0;
-		int m_PrevViewport[4] = { 0, 0, 0, 0 };
+		int m_PrevViewport[4] = {0, 0, 0, 0};
 	};
 }

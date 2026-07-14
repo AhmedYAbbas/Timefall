@@ -8,8 +8,7 @@ namespace Timefall
 {
 	ProjectSerializer::ProjectSerializer(const Ref<Project>& project)
 		: m_Project(project)
-	{
-	}
+	{}
 
 	bool ProjectSerializer::Serialize(const std::filesystem::path& filepath)
 	{
@@ -20,7 +19,7 @@ namespace Timefall
 			out << YAML::BeginMap; // Root
 			out << YAML::Key << "Project" << YAML::Value;
 			{
-				out << YAML::BeginMap;// Project
+				out << YAML::BeginMap; // Project
 				out << YAML::Key << "Name" << YAML::Value << config.Name;
 				out << YAML::Key << "StartScene" << YAML::Value << (uint64_t)config.StartScene;
 				out << YAML::Key << "AssetDirectory" << YAML::Value << config.AssetDirectory.string();

@@ -13,12 +13,12 @@ namespace Timefall
 {
 	static const glm::mat4 s_CaptureProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
 	static const glm::mat4 s_CaptureViews[6] = {
-		glm::lookAt(glm::vec3(0.0f), glm::vec3( 1, 0, 0), glm::vec3(0, -1,  0)),
-		glm::lookAt(glm::vec3(0.0f), glm::vec3(-1, 0, 0), glm::vec3(0, -1,  0)),
-		glm::lookAt(glm::vec3(0.0f), glm::vec3( 0, 1, 0), glm::vec3(0,  0,  1)),
-		glm::lookAt(glm::vec3(0.0f), glm::vec3( 0,-1, 0), glm::vec3(0,  0, -1)),
-		glm::lookAt(glm::vec3(0.0f), glm::vec3( 0, 0, 1), glm::vec3(0, -1,  0)),
-		glm::lookAt(glm::vec3(0.0f), glm::vec3( 0, 0,-1), glm::vec3(0, -1,  0)),
+		glm::lookAt(glm::vec3(0.0f), glm::vec3(1, 0, 0), glm::vec3(0, -1, 0)),
+		glm::lookAt(glm::vec3(0.0f), glm::vec3(-1, 0, 0), glm::vec3(0, -1, 0)),
+		glm::lookAt(glm::vec3(0.0f), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1)),
+		glm::lookAt(glm::vec3(0.0f), glm::vec3(0, -1, 0), glm::vec3(0, 0, -1)),
+		glm::lookAt(glm::vec3(0.0f), glm::vec3(0, 0, 1), glm::vec3(0, -1, 0)),
+		glm::lookAt(glm::vec3(0.0f), glm::vec3(0, 0, -1), glm::vec3(0, -1, 0)),
 	};
 
 	Ref<Environment> Environment::Create(const Ref<Texture2D>& equirect)
@@ -40,8 +40,10 @@ namespace Timefall
 		equirectShader->SetInt("u_Equirect", 0);
 		equirect->Bind(0);
 
-		GLint prevFBO; glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFBO);
-		GLint prevVP[4]; glGetIntegerv(GL_VIEWPORT, prevVP);
+		GLint prevFBO;
+		glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFBO);
+		GLint prevVP[4];
+		glGetIntegerv(GL_VIEWPORT, prevVP);
 		RenderCommand::SetDepthTest(false);
 		RenderCommand::SetFaceCulling(RendererAPI::FaceCull::None);
 
@@ -95,7 +97,8 @@ namespace Timefall
 				for (uint32_t face = 0; face < 6; ++face)
 				{
 					preShader->SetMat4("u_ViewProjection", s_CaptureProj * s_CaptureViews[face]);
-					glNamedFramebufferTextureLayer(m_CaptureFBO, GL_COLOR_ATTACHMENT0, m_Prefilter->GetRendererID(), (GLint)mip, (GLint)face);
+					glNamedFramebufferTextureLayer(
+						m_CaptureFBO, GL_COLOR_ATTACHMENT0, m_Prefilter->GetRendererID(), (GLint)mip, (GLint)face);
 					glClear(GL_COLOR_BUFFER_BIT);
 					RenderCommand::DrawIndexed(m_CubeMesh->GetVertexArray(), sm.IndexCount, sm.BaseIndex, sm.BaseVertex);
 				}

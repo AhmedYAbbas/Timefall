@@ -6,7 +6,8 @@
 namespace Timefall
 {
 	OpenGLShadowMap::OpenGLShadowMap(uint32_t resolution, uint32_t layers)
-		: m_Resolution(resolution), m_Layers(layers)
+		: m_Resolution(resolution),
+		  m_Layers(layers)
 	{
 		// Depth array texture: one layer per cascade. 32-bit float depth for precision.
 		glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_DepthTexture);
@@ -18,7 +19,7 @@ namespace Timefall
 		glTextureParameteri(m_DepthTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 		glTextureParameteri(m_DepthTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 		// Border depth = 1.0 (far) so samples outside the map read as "lit".
-		float border[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		float border[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 		glTextureParameterfv(m_DepthTexture, GL_TEXTURE_BORDER_COLOR, border);
 
 		glCreateFramebuffers(1, &m_RendererID);

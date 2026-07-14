@@ -10,8 +10,8 @@ namespace Timefall
 	{
 		switch (Renderer::GetAPI())
 		{
-		case RendererAPI::API::None:   TF_CORE_ASSERT(false, "RendererAPI::None is not currently supported!"); return nullptr;
-		case RendererAPI::API::OpenGL: return CreateRef<OpenGLFramebuffer>(spec);
+			case RendererAPI::API::None: TF_CORE_ASSERT(false, "RendererAPI::None is not currently supported!"); return nullptr;
+			case RendererAPI::API::OpenGL: return CreateRef<OpenGLFramebuffer>(spec);
 		}
 
 		TF_CORE_ASSERT(false, "Unknown RendererAPI!");

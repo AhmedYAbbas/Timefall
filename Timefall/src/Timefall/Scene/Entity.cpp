@@ -7,9 +7,9 @@
 namespace Timefall
 {
 	Entity::Entity(entt::entity entity, Scene* scene)
-		: m_EntityHandle(entity), m_Scene(scene)
-	{
-	}
+		: m_EntityHandle(entity),
+		  m_Scene(scene)
+	{}
 
 	glm::mat4 Entity::GetParentWorldTransform()
 	{
@@ -79,7 +79,7 @@ namespace Timefall
 		glm::vec3 parentTranslation, parentRotation, parentScale;
 		Math::DecomposeTransform(GetParentWorldTransform(), parentTranslation, parentRotation, parentScale);
 
-		glm::quat parentWorldRot = glm::quat(parentRotation);      // Euler radians -> quat
+		glm::quat parentWorldRot = glm::quat(parentRotation); // Euler radians -> quat
 		glm::quat targetWorldRot = glm::quat(rotation);
 		glm::quat localRot = glm::inverse(parentWorldRot) * targetWorldRot;
 

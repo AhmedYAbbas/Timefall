@@ -23,7 +23,7 @@ namespace Timefall
 		Ref<TextureCube> m_Prefilter;
 		uint32_t m_PrefilterMips = 5;
 
-		Ref<MeshSource> m_CubeMesh;   // unit cube; positions double as sample directions
+		Ref<MeshSource> m_CubeMesh; // unit cube; positions double as sample directions
 		uint32_t m_CaptureFBO = 0;
 	};
 }

@@ -18,21 +18,15 @@
 
 namespace Timefall
 {
-	static constexpr uint32_t s_PostProcessFlags =
-		aiProcess_Triangulate | aiProcess_GenSmoothNormals | /* aiProcess_FlipUVs | */
-		aiProcess_JoinIdenticalVertices | aiProcess_OptimizeMeshes |
-		aiProcess_CalcTangentSpace;
+	static constexpr uint32_t s_PostProcessFlags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | /* aiProcess_FlipUVs | */
+		aiProcess_JoinIdenticalVertices | aiProcess_OptimizeMeshes | aiProcess_CalcTangentSpace;
 
 	namespace
 	{
 		// Assimp matrices are row-major; GLM is column-major -> transpose on convert.
 		glm::mat4 ToGlm(const aiMatrix4x4& m)
 		{
-			return glm::mat4(
-				m.a1, m.b1, m.c1, m.d1,
-				m.a2, m.b2, m.c2, m.d2,
-				m.a3, m.b3, m.c3, m.d3,
-				m.a4, m.b4, m.c4, m.d4);
+			return glm::mat4(m.a1, m.b1, m.c1, m.d1, m.a2, m.b2, m.c2, m.d2, m.a3, m.b3, m.c3, m.d3, m.a4, m.b4, m.c4, m.d4);
 		}
 
 		// Flatten every aiMesh in the scene into one combined vertex/index buffer. Submesh i maps to
@@ -41,8 +35,8 @@ namespace Timefall
 		Ref<MeshSource> BuildMeshSource(const aiScene* scene)
 		{
 			std::vector<MeshVertex> vertices;
-			std::vector<uint32_t>   indices;
-			std::vector<Submesh>    submeshes;
+			std::vector<uint32_t> indices;
+			std::vector<Submesh> submeshes;
 
 			for (uint32_t m = 0; m < scene->mNumMeshes; m++)
 			{
@@ -50,7 +44,7 @@ namespace Timefall
 
 				Submesh sm;
 				sm.BaseVertex = (uint32_t)vertices.size();
-				sm.BaseIndex  = (uint32_t)indices.size();
+				sm.BaseIndex = (uint32_t)indices.size();
 				sm.MaterialIndex = mesh->mMaterialIndex;
 				sm.Name = mesh->mName.C_Str();
 
@@ -60,21 +54,19 @@ namespace Timefall
 				for (uint32_t v = 0; v < mesh->mNumVertices; v++)
 				{
 					MeshVertex vert;
-					vert.Position = { mesh->mVertices[v].x, mesh->mVertices[v].y, mesh->mVertices[v].z };
-					vert.Normal   = mesh->HasNormals()
-						? glm::vec3(mesh->mNormals[v].x, mesh->mNormals[v].y, mesh->mNormals[v].z)
-						: glm::vec3(0.0f, 1.0f, 0.0f);
-					vert.TexCoord = mesh->HasTextureCoords(0)
-						? glm::vec2(mesh->mTextureCoords[0][v].x, mesh->mTextureCoords[0][v].y)
-						: glm::vec2(0.0f);
+					vert.Position = {mesh->mVertices[v].x, mesh->mVertices[v].y, mesh->mVertices[v].z};
+					vert.Normal = mesh->HasNormals() ? glm::vec3(mesh->mNormals[v].x, mesh->mNormals[v].y, mesh->mNormals[v].z)
+													 : glm::vec3(0.0f, 1.0f, 0.0f);
+					vert.TexCoord =
+						mesh->HasTextureCoords(0) ? glm::vec2(mesh->mTextureCoords[0][v].x, mesh->mTextureCoords[0][v].y) : glm::vec2(0.0f);
 					if (mesh->HasTangentsAndBitangents())
 					{
-						vert.Tangent   = { mesh->mTangents[v].x,   mesh->mTangents[v].y,   mesh->mTangents[v].z };
-						vert.Bitangent = { mesh->mBitangents[v].x, mesh->mBitangents[v].y, mesh->mBitangents[v].z };
+						vert.Tangent = {mesh->mTangents[v].x, mesh->mTangents[v].y, mesh->mTangents[v].z};
+						vert.Bitangent = {mesh->mBitangents[v].x, mesh->mBitangents[v].y, mesh->mBitangents[v].z};
 					}
 					else
 					{
-						vert.Tangent   = glm::vec3(0.0f);
+						vert.Tangent = glm::vec3(0.0f);
 						vert.Bitangent = glm::vec3(0.0f);
 					}
 					vertices.push_back(vert);
@@ -92,7 +84,7 @@ namespace Timefall
 					const aiFace& face = mesh->mFaces[f];
 					for (uint32_t i = 0; i < face.mNumIndices; i++)
 					{
-						indices.push_back(face.mIndices[i]);   // base-vertex offset applied at draw
+						indices.push_back(face.mIndices[i]); // base-vertex offset applied at draw
 						indexCount++;
 					}
 				}
@@ -112,9 +104,8 @@ namespace Timefall
 		// interprets as "no map — use the flat color". The cache dedups repeated paths within a
 		// single import so two materials (or the diffuse+specular slots) sharing a file don't
 		// register the same texture twice.
-		AssetHandle ImportTextureSlot(const aiMaterial* aimat, aiTextureType type,
-			const std::filesystem::path& modelDir, EditorAssetManager* assetManager,
-			std::unordered_map<std::string, AssetHandle>& cache)
+		AssetHandle ImportTextureSlot(const aiMaterial* aimat, aiTextureType type, const std::filesystem::path& modelDir,
+			EditorAssetManager* assetManager, std::unordered_map<std::string, AssetHandle>& cache)
 		{
 			// glTF/PBR exporters store base color under BASE_COLOR rather than DIFFUSE.
 			if (type == aiTextureType_DIFFUSE && aimat->GetTextureCount(type) == 0)
@@ -159,8 +150,8 @@ namespace Timefall
 
 		// Normal maps land under different Assimp slots by format: glTF/FBX use NORMALS,
 		// OBJ's `map_bump`/`bump` lands under HEIGHT. Try both.
-		AssetHandle ImportNormalSlot(const aiMaterial* aimat, const std::filesystem::path& modelDir,
-			EditorAssetManager* assetManager, std::unordered_map<std::string, AssetHandle>& cache)
+		AssetHandle ImportNormalSlot(const aiMaterial* aimat, const std::filesystem::path& modelDir, EditorAssetManager* assetManager,
+			std::unordered_map<std::string, AssetHandle>& cache)
 		{
 			AssetHandle h = ImportTextureSlot(aimat, aiTextureType_NORMALS, modelDir, assetManager, cache);
 			if (h != 0)
@@ -186,8 +177,8 @@ namespace Timefall
 
 		Ref<MeshSource> source = BuildMeshSource(scene);
 		if (!source)
-			TF_CORE_ERROR("MeshImporter::LoadMesh - no geometry built from {0} ({1} meshes reported by Assimp)",
-				path.string(), scene->mNumMeshes);
+			TF_CORE_ERROR(
+				"MeshImporter::LoadMesh - no geometry built from {0} ({1} meshes reported by Assimp)", path.string(), scene->mNumMeshes);
 		return source;
 	}
 
@@ -208,17 +199,16 @@ namespace Timefall
 			return {};
 		}
 
-		TF_CORE_INFO("ImportModel '{0}': {1} meshes, {2} materials, root '{3}' with {4} children",
-			modelPath.filename().string(), ascene->mNumMeshes, ascene->mNumMaterials,
-			ascene->mRootNode->mName.C_Str(), ascene->mRootNode->mNumChildren);
+		TF_CORE_INFO("ImportModel '{0}': {1} meshes, {2} materials, root '{3}' with {4} children", modelPath.filename().string(),
+			ascene->mNumMeshes, ascene->mNumMaterials, ascene->mRootNode->mName.C_Str(), ascene->mRootNode->mNumChildren);
 
 		// Build geometry from this scene and register it as the disk-backed mesh asset. The rendered
 		// MeshSource is now the exact one the walk below indexes into.
 		Ref<MeshSource> meshSource = BuildMeshSource(ascene);
 		if (!meshSource)
 		{
-			TF_CORE_ERROR("ImportModel - no geometry in {0} (Assimp reported {1} meshes). Aborting import.",
-				modelPath.string(), ascene->mNumMeshes);
+			TF_CORE_ERROR(
+				"ImportModel - no geometry in {0} (Assimp reported {1} meshes). Aborting import.", modelPath.string(), ascene->mNumMeshes);
 			return {};
 		}
 
@@ -247,9 +237,8 @@ namespace Timefall
 
 			// Base color: glTF/PBR exporters use BASE_COLOR; fall back to legacy DIFFUSE.
 			aiColor4D baseColor(1.0f, 1.0f, 1.0f, 1.0f);
-			if (aimat->Get(AI_MATKEY_BASE_COLOR, baseColor) == AI_SUCCESS ||
-				aimat->Get(AI_MATKEY_COLOR_DIFFUSE, baseColor) == AI_SUCCESS)
-				material->BaseColor = { baseColor.r, baseColor.g, baseColor.b };
+			if (aimat->Get(AI_MATKEY_BASE_COLOR, baseColor) == AI_SUCCESS || aimat->Get(AI_MATKEY_COLOR_DIFFUSE, baseColor) == AI_SUCCESS)
+				material->BaseColor = {baseColor.r, baseColor.g, baseColor.b};
 
 			ai_real metallic = 0.0f, roughness = 1.0f;
 			if (aimat->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == AI_SUCCESS)
@@ -258,27 +247,29 @@ namespace Timefall
 				material->Roughness = roughness;
 
 			// Transparency (glTF alphaMode). Formats without it stay Opaque.
-			material->Opacity = baseColor.a;   // baseColorFactor.a
+			material->Opacity = baseColor.a; // baseColorFactor.a
 			aiString alphaMode;
 			if (aimat->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaMode) == AI_SUCCESS)
 			{
 				std::string mode = alphaMode.C_Str();
-				if (mode == "MASK")       material->Alpha = AlphaMode::Mask;
-				else if (mode == "BLEND") material->Alpha = AlphaMode::Blend;
+				if (mode == "MASK")
+					material->Alpha = AlphaMode::Mask;
+				else if (mode == "BLEND")
+					material->Alpha = AlphaMode::Blend;
 			}
 			ai_real alphaCutoff = 0.5f;
 			if (aimat->Get(AI_MATKEY_GLTF_ALPHACUTOFF, alphaCutoff) == AI_SUCCESS)
 				material->AlphaCutoff = alphaCutoff;
 
 			material->BaseColorMap = ImportTextureSlot(aimat, aiTextureType_BASE_COLOR, modelDir, assetManager.get(), texCache);
-			material->NormalMap    = ImportNormalSlot(aimat, modelDir, assetManager.get(), texCache);
-			material->MetallicMap  = ImportTextureSlot(aimat, aiTextureType_METALNESS, modelDir, assetManager.get(), texCache);
+			material->NormalMap = ImportNormalSlot(aimat, modelDir, assetManager.get(), texCache);
+			material->MetallicMap = ImportTextureSlot(aimat, aiTextureType_METALNESS, modelDir, assetManager.get(), texCache);
 			material->RoughnessMap = ImportTextureSlot(aimat, aiTextureType_DIFFUSE_ROUGHNESS, modelDir, assetManager.get(), texCache);
-			material->AOMap        = ImportTextureSlot(aimat, aiTextureType_AMBIENT_OCCLUSION, modelDir, assetManager.get(), texCache);
+			material->AOMap = ImportTextureSlot(aimat, aiTextureType_AMBIENT_OCCLUSION, modelDir, assetManager.get(), texCache);
 
 			aiColor3D emissive(0.0f, 0.0f, 0.0f);
 			if (aimat->Get(AI_MATKEY_COLOR_EMISSIVE, emissive) == AI_SUCCESS)
-				material->Emissive = { emissive.r, emissive.g, emissive.b };
+				material->Emissive = {emissive.r, emissive.g, emissive.b};
 			ai_real emissiveIntensity = 1.0f;
 			if (aimat->Get(AI_MATKEY_EMISSIVE_INTENSITY, emissiveIntensity) == AI_SUCCESS)
 				material->EmissiveIntensity = emissiveIntensity;
@@ -296,11 +287,9 @@ namespace Timefall
 		// Walk the node tree, spawning a parented entity hierarchy.
 		int entitiesSpawned = 0;
 		int meshComponentsAdded = 0;
-		int decomposeMismatches = 0;   // node-local transforms that don't survive the Euler round-trip
+		int decomposeMismatches = 0; // node-local transforms that don't survive the Euler round-trip
 
-		std::function<Entity(const aiNode*, Entity)> spawn =
-			[&](const aiNode* node, Entity parent) -> Entity
-		{
+		std::function<Entity(const aiNode*, Entity)> spawn = [&](const aiNode* node, Entity parent) -> Entity {
 			// Parent at creation (no world-preservation); we set this entity's local transform from
 			// the node below, and it inherits the parent's world via the hierarchy.
 			const char* name = node->mName.length ? node->mName.C_Str() : "Node";
@@ -311,7 +300,9 @@ namespace Timefall
 			glm::vec3 t, r, s;
 			Math::DecomposeTransform(nodeMat, t, r, s);
 			auto& tc = entity.GetComponent<TransformComponent>();
-			tc.Translation = t; tc.Rotation = r; tc.Scale = s;
+			tc.Translation = t;
+			tc.Rotation = r;
+			tc.Scale = s;
 
 			// Diagnostic: TransformComponent stores Euler angles, so a node matrix only survives if
 			// decompose->recompose round-trips. Non-zero counts here would point back at transforms.
@@ -329,8 +320,8 @@ namespace Timefall
 				uint32_t submeshIndex = node->mMeshes[m];
 				if (submeshIndex >= meshSource->GetSubmeshes().size())
 				{
-					TF_CORE_WARN("ImportModel - node '{0}' references submesh {1} but only {2} exist; skipping.",
-						node->mName.C_Str(), submeshIndex, meshSource->GetSubmeshes().size());
+					TF_CORE_WARN("ImportModel - node '{0}' references submesh {1} but only {2} exist; skipping.", node->mName.C_Str(),
+						submeshIndex, meshSource->GetSubmeshes().size());
 					continue;
 				}
 

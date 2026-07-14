@@ -7,9 +7,10 @@
 namespace Timefall
 {
 	OrthographicCameraController::OrthographicCameraController(float aspectRatio, bool rotation)
-		: m_AspectRatio(aspectRatio), m_Camera(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel), m_Rotation(rotation)
-	{
-	}
+		: m_AspectRatio(aspectRatio),
+		  m_Camera(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel),
+		  m_Rotation(rotation)
+	{}
 
 	void OrthographicCameraController::OnUpdate(Timestep ts)
 	{
@@ -80,7 +81,7 @@ namespace Timefall
 		TF_PROFILE_FUNCTION();
 
 		// I added a scene viewport to the editor layer, so I don't need to resize the camera here?
-		//OnResize((float)e.GetWidth(), (float)e.GetHeight());
+		// OnResize((float)e.GetWidth(), (float)e.GetHeight());
 		return false;
 	}
 
@@ -99,4 +100,3 @@ namespace Timefall
 		m_Camera.SetProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
 	}
 }
-

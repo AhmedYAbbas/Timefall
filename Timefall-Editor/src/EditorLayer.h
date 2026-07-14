@@ -72,7 +72,7 @@ namespace Timefall
 
 		bool m_IsPrimaryCamera = true;
 
-		glm::vec2 m_ViewportSize = { 0.0f, 0.0f };
+		glm::vec2 m_ViewportSize = {0.0f, 0.0f};
 		glm::vec2 m_ViewportBounds[2];
 
 		bool m_ViewportFocused = false, m_ViewportHovered = false;
@@ -83,10 +83,7 @@ namespace Timefall
 
 		Ref<Texture2D> m_PlayIcon, m_PauseIcon, m_StepIcon, m_SimulateIcon, m_StopIcon;
 
-		enum class SceneState
-		{
-			Edit = 0, Play = 1, Simulate = 2
-		};
+		enum class SceneState { Edit = 0, Play = 1, Simulate = 2 };
 		SceneState m_SceneState = SceneState::Edit;
 
 		SceneHierarchyPanel m_SceneHierarchyPanel;

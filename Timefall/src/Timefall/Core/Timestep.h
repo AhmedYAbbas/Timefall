@@ -7,8 +7,7 @@ namespace Timefall
 	public:
 		Timestep(float time = 0.0f)
 			: m_Timestep(time)
-		{
-		}
+		{}
 
 		operator float() const { return m_Timestep; }
 

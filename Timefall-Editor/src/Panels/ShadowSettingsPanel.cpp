@@ -24,8 +24,8 @@ namespace Timefall
 		ImGui::TextDisabled("Directional Sun (CSM)");
 		ImGui::Separator();
 
-		static const uint32_t kResolutions[] = { 512, 1024, 2048, 4096 };
-		static const char* kResolutionLabels[] = { "512", "1024", "2048", "4096" };
+		static const uint32_t kResolutions[] = {512, 1024, 2048, 4096};
+		static const char* kResolutionLabels[] = {"512", "1024", "2048", "4096"};
 		int resIndex = 2;
 		for (int i = 0; i < IM_ARRAYSIZE(kResolutions); ++i)
 			if (kResolutions[i] == s.ShadowMapResolution)
@@ -40,8 +40,8 @@ namespace Timefall
 		if (ImGui::Combo("Spot Resolution", &spotResIndex, kResolutionLabels, IM_ARRAYSIZE(kResolutionLabels)))
 			s.SpotShadowResolution = kResolutions[spotResIndex];
 
-		static const uint32_t kPointResolutions[] = { 256, 512, 1024 };
-		static const char* kPointResLabels[] = { "256", "512", "1024" };
+		static const uint32_t kPointResolutions[] = {256, 512, 1024};
+		static const char* kPointResLabels[] = {"256", "512", "1024"};
 		int pointResIndex = 1;
 		for (int i = 0; i < IM_ARRAYSIZE(kPointResolutions); ++i)
 			if (kPointResolutions[i] == s.PointShadowResolution)
@@ -57,7 +57,7 @@ namespace Timefall
 		ImGui::SliderFloat("Split Lambda", &s.SplitLambda, 0.0f, 1.0f);
 		ImGui::SliderFloat("Cascade Blend", &s.CascadeBlend, 0.0f, 0.5f);
 
-		static const char* kCullLabels[] = { "Back", "Front (2nd-depth)", "None" };
+		static const char* kCullLabels[] = {"Back", "Front (2nd-depth)", "None"};
 		int cullIndex = (int)s.CullMode;
 		if (ImGui::Combo("Caster Culling", &cullIndex, kCullLabels, IM_ARRAYSIZE(kCullLabels)))
 			s.CullMode = (ShadowCullMode)cullIndex;

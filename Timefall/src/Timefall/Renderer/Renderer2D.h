@@ -15,7 +15,7 @@ namespace Timefall
 	public:
 		static void Init();
 		static void Shutdown();
-		
+
 		static void BeginScene(const Camera& camera, const glm::mat4& transform);
 		static void BeginScene(const OrthographicCamera& camera);
 		static void BeginScene(const EditorCamera& camera);
@@ -24,29 +24,39 @@ namespace Timefall
 
 		// Primitives
 		static void DrawQuad(const glm::mat4& transform = glm::mat4(1.0f), const glm::vec4& color = glm::vec4(1.0f));
-		static void DrawQuad(const glm::vec2& position = glm::vec2(1.0f), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& color = glm::vec4(1.0f));
-		static void DrawQuad(const glm::vec3& position = glm::vec3(1.0f), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& color = glm::vec4(1.0f));
-		static void DrawQuad(const Ref<Texture2D>& texture, const glm::vec2& position = glm::vec2(0), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
-		static void DrawQuad(const Ref<Texture2D>& texture, const glm::mat4& transform = glm::mat4(1.0f), const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
-		static void DrawQuad(const Ref<Texture2D>& texture, const glm::vec3& position = glm::vec3(0), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
-		static void DrawQuad(const Ref<SubTexture2D>& subTexture, const glm::vec2& position = glm::vec2(0), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
-		static void DrawQuad(const Ref<SubTexture2D>& subTexture, const glm::vec3& position = glm::vec3(0), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
+		static void DrawQuad(const glm::vec2& position = glm::vec2(1.0f), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1.0f),
+			const glm::vec4& color = glm::vec4(1.0f));
+		static void DrawQuad(const glm::vec3& position = glm::vec3(1.0f), float rotation = 0.0f, const glm::vec2& size = glm::vec2(1.0f),
+			const glm::vec4& color = glm::vec4(1.0f));
+		static void DrawQuad(const Ref<Texture2D>& texture, const glm::vec2& position = glm::vec2(0), float rotation = 0.0f,
+			const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
+		static void DrawQuad(const Ref<Texture2D>& texture, const glm::mat4& transform = glm::mat4(1.0f),
+			const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
+		static void DrawQuad(const Ref<Texture2D>& texture, const glm::vec3& position = glm::vec3(0), float rotation = 0.0f,
+			const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
+		static void DrawQuad(const Ref<SubTexture2D>& subTexture, const glm::vec2& position = glm::vec2(0), float rotation = 0.0f,
+			const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
+		static void DrawQuad(const Ref<SubTexture2D>& subTexture, const glm::vec3& position = glm::vec3(0), float rotation = 0.0f,
+			const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& tintColor = glm::vec4(1.0f), float tiling = 1.0f);
 
-		static void DrawCircle(const glm::mat4& transform = glm::mat4(1.0f), const glm::vec4& color = glm::vec4(1.0f), float thickness = 1.0f, float fade = 0.005f, int entityID = -1);
+		static void DrawCircle(const glm::mat4& transform = glm::mat4(1.0f), const glm::vec4& color = glm::vec4(1.0f),
+			float thickness = 1.0f, float fade = 0.005f, int entityID = -1);
 		static void DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color = glm::vec4(1.0f), int entityID = -1);
 
-		static void DrawRect(const glm::vec3& position = glm::vec3(1.0f), const glm::vec2& size = glm::vec2(1.0f), const glm::vec4& color = glm::vec4(1.0f), int entityID = -1);
+		static void DrawRect(const glm::vec3& position = glm::vec3(1.0f), const glm::vec2& size = glm::vec2(1.0f),
+			const glm::vec4& color = glm::vec4(1.0f), int entityID = -1);
 		static void DrawRect(const glm::mat4& transform = glm::mat4(1.0f), const glm::vec4& color = glm::vec4(1.0f), int entityID = -1);
 
 		static void DrawSprite(const glm::mat4& transform, SpriteRendererComponent src, int entityID = -1);
-		
+
 		struct TF_API TextParams
 		{
-			glm::vec4 Color{ 1.0f };
+			glm::vec4 Color{1.0f};
 			float Kerning = 0.0f;
 			float LineSpacing = 0.0f;
 		};
-		static void DrawString(const std::string& text, const Ref<Font>& font, const glm::mat4& transform, const TextParams& params, int entityID = -1);
+		static void DrawString(
+			const std::string& text, const Ref<Font>& font, const glm::mat4& transform, const TextParams& params, int entityID = -1);
 		static void DrawString(const std::string& text, const glm::mat4& transform, const TextComponent& component, int entityID = -1);
 
 		static float GetLineWidth();

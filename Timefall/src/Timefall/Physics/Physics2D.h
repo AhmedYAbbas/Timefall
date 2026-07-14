@@ -13,9 +13,9 @@ namespace Timefall
 		{
 			switch (bodyType)
 			{
-			case Rigidbody2DComponent::BodyType::Static:    return "Static";
-			case Rigidbody2DComponent::BodyType::Dynamic:   return "Dynamic";
-			case Rigidbody2DComponent::BodyType::Kinematic: return "Kinematic";
+				case Rigidbody2DComponent::BodyType::Static: return "Static";
+				case Rigidbody2DComponent::BodyType::Dynamic: return "Dynamic";
+				case Rigidbody2DComponent::BodyType::Kinematic: return "Kinematic";
 			}
 
 			TF_CORE_ASSERT(false, "Unknown body type");
@@ -24,9 +24,12 @@ namespace Timefall
 
 		static Rigidbody2DComponent::BodyType RigidBody2DBodyTypeFromString(const std::string& bodyTypeString)
 		{
-			if (bodyTypeString == "Static")    return Rigidbody2DComponent::BodyType::Static;
-			if (bodyTypeString == "Dynamic")   return Rigidbody2DComponent::BodyType::Dynamic;
-			if (bodyTypeString == "Kinematic") return Rigidbody2DComponent::BodyType::Kinematic;
+			if (bodyTypeString == "Static")
+				return Rigidbody2DComponent::BodyType::Static;
+			if (bodyTypeString == "Dynamic")
+				return Rigidbody2DComponent::BodyType::Dynamic;
+			if (bodyTypeString == "Kinematic")
+				return Rigidbody2DComponent::BodyType::Kinematic;
 
 			TF_CORE_ASSERT(false, "Unknown body type");
 			return Rigidbody2DComponent::BodyType::Static;

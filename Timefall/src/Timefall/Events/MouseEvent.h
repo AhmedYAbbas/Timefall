@@ -9,9 +9,9 @@ namespace Timefall
 	{
 	public:
 		MouseMovedEvent(float x, float y)
-			: m_MouseX(x), m_MouseY(y) 
-		{
-		}
+			: m_MouseX(x),
+			  m_MouseY(y)
+		{}
 
 		float GetX() const { return m_MouseX; }
 		float GetY() const { return m_MouseY; }
@@ -34,9 +34,9 @@ namespace Timefall
 	{
 	public:
 		MouseScrolledEvent(float xOffset, float yOffset)
-			: m_XOffset(xOffset), m_YOffset(yOffset) 
-		{
-		}
+			: m_XOffset(xOffset),
+			  m_YOffset(yOffset)
+		{}
 
 		float GetXOffset() const { return m_XOffset; }
 		float GetYOffset() const { return m_YOffset; }
@@ -64,9 +64,8 @@ namespace Timefall
 
 	protected:
 		MouseButtonEvent(MouseCode button)
-			: m_Button(button) 
-		{
-		}
+			: m_Button(button)
+		{}
 
 	protected:
 		MouseCode m_Button;
@@ -76,9 +75,8 @@ namespace Timefall
 	{
 	public:
 		MouseButtonPressedEvent(MouseCode button)
-			: MouseButtonEvent(button) 
-		{
-		}
+			: MouseButtonEvent(button)
+		{}
 
 		std::string ToString() const override
 		{
@@ -90,13 +88,12 @@ namespace Timefall
 		EVENT_CLASS_TYPE(MouseButtonPressed)
 	};
 
-	class TF_API MouseButtonReleasedEvent : public  MouseButtonEvent
+	class TF_API MouseButtonReleasedEvent : public MouseButtonEvent
 	{
 	public:
 		MouseButtonReleasedEvent(MouseCode button)
-			: MouseButtonEvent(button) 
-		{
-		}
+			: MouseButtonEvent(button)
+		{}
 
 		std::string ToString() const override
 		{

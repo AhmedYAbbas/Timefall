@@ -13,7 +13,8 @@
 namespace Timefall
 {
 	ContentBrowserPanel::ContentBrowserPanel()
-		: m_BaseDirectory(Project::GetAssetDirectory()), m_CurrentDirectory(m_BaseDirectory)
+		: m_BaseDirectory(Project::GetAssetDirectory()),
+		  m_CurrentDirectory(m_BaseDirectory)
 	{
 		m_TreeNodes.emplace_back(TreeNode(".", 0));
 
@@ -30,9 +31,7 @@ namespace Timefall
 
 		const char* label = m_Mode == Mode::Asset ? "Asset" : "File";
 		if (ImGui::Button(label))
-		{
 			m_Mode = m_Mode == Mode::Asset ? Mode::Filesystem : Mode::Asset;
-		}
 
 		ImGui::SameLine();
 		if (ImGui::Button("Create Material"))
@@ -61,7 +60,7 @@ namespace Timefall
 			columnCount = 1;
 
 		ImGui::Columns(columnCount, nullptr, false);
-			
+
 		if (m_Mode == Mode::Asset)
 		{
 			TreeNode* node = &m_TreeNodes[0];
@@ -92,14 +91,13 @@ namespace Timefall
 
 				Ref<Texture2D> icon = isDirectory ? m_DirectoryIcon : m_FileIcon;
 				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-				ImGui::ImageButton(itemStr.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), { thumbnailSize, thumbnailSize }, { 0, 1 }, { 1, 0 });
+				ImGui::ImageButton(
+					itemStr.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), {thumbnailSize, thumbnailSize}, {0, 1}, {1, 0});
 
 				if (ImGui::BeginPopupContextItem())
 				{
 					if (ImGui::MenuItem("Delete"))
-					{
 						TF_CORE_ASSERT(false, "Not implemented yet");
-					}
 					ImGui::EndPopup();
 				}
 
@@ -130,7 +128,8 @@ namespace Timefall
 
 				Ref<Texture2D> icon = directoryEntry.is_directory() ? m_DirectoryIcon : m_FileIcon;
 				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-				ImGui::ImageButton(filenameString.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), { thumbnailSize, thumbnailSize }, { 0, 1 }, { 1, 0 });
+				ImGui::ImageButton(
+					filenameString.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), {thumbnailSize, thumbnailSize}, {0, 1}, {1, 0});
 
 				if (ImGui::BeginPopupContextItem())
 				{
@@ -195,7 +194,6 @@ namespace Timefall
 					m_TreeNodes[currentNodeIndex].Children[p] = m_TreeNodes.size() - 1;
 					currentNodeIndex = m_TreeNodes.size() - 1;
 				}
-
 			}
 		}
 	}

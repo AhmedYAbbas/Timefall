@@ -18,27 +18,18 @@
 
 namespace Timefall
 {
-	static std::unordered_map<std::wstring, ScriptFieldType> s_ScriptFieldTypeMap =
-	{
-		{ L"System.Single",    Timefall::ScriptFieldType::Float },
-		{ L"System.Double",    Timefall::ScriptFieldType::Double },
-		{ L"System.Boolean",   Timefall::ScriptFieldType::Bool },
-		{ L"System.Char",      Timefall::ScriptFieldType::Char },
-		{ L"System.SByte",     Timefall::ScriptFieldType::SByte },
-		{ L"System.Int16",     Timefall::ScriptFieldType::Int16 },
-		{ L"System.Int32",     Timefall::ScriptFieldType::Int32 },
-		{ L"System.Int64",     Timefall::ScriptFieldType::Int64 },
-		{ L"System.Byte",      Timefall::ScriptFieldType::Byte },
-		{ L"System.UInt16",    Timefall::ScriptFieldType::UInt16 },
-		{ L"System.UInt32",    Timefall::ScriptFieldType::UInt32 },
-		{ L"System.UInt64",    Timefall::ScriptFieldType::UInt64 },
+	static std::unordered_map<std::wstring, ScriptFieldType> s_ScriptFieldTypeMap = {{L"System.Single", Timefall::ScriptFieldType::Float},
+		{L"System.Double", Timefall::ScriptFieldType::Double}, {L"System.Boolean", Timefall::ScriptFieldType::Bool},
+		{L"System.Char", Timefall::ScriptFieldType::Char}, {L"System.SByte", Timefall::ScriptFieldType::SByte},
+		{L"System.Int16", Timefall::ScriptFieldType::Int16}, {L"System.Int32", Timefall::ScriptFieldType::Int32},
+		{L"System.Int64", Timefall::ScriptFieldType::Int64}, {L"System.Byte", Timefall::ScriptFieldType::Byte},
+		{L"System.UInt16", Timefall::ScriptFieldType::UInt16}, {L"System.UInt32", Timefall::ScriptFieldType::UInt32},
+		{L"System.UInt64", Timefall::ScriptFieldType::UInt64},
 
-		{ L"Timefall.Vector2", Timefall::ScriptFieldType::Vector2 },
-		{ L"Timefall.Vector3", Timefall::ScriptFieldType::Vector3 },
-		{ L"Timefall.Vector4", Timefall::ScriptFieldType::Vector4 },
+		{L"Timefall.Vector2", Timefall::ScriptFieldType::Vector2}, {L"Timefall.Vector3", Timefall::ScriptFieldType::Vector3},
+		{L"Timefall.Vector4", Timefall::ScriptFieldType::Vector4},
 
-		{ L"Timefall.Entity",  Timefall::ScriptFieldType::Entity }
-	};
+		{L"Timefall.Entity", Timefall::ScriptFieldType::Entity}};
 
 	namespace Utils
 	{
@@ -103,7 +94,8 @@ namespace Timefall
 
 	static ScriptEngineData* s_ScriptEngineData = nullptr;
 
-	static ScriptEngineData* GetData (){
+	static ScriptEngineData* GetData()
+	{
 		return s_ScriptEngineData;
 	}
 
@@ -113,11 +105,10 @@ namespace Timefall
 		{
 			s_ScriptEngineData->AssemblyReloadPending = true;
 
-			Application::Get().SubmitToMainThread([]()
-				{
-					s_ScriptEngineData->AppAssemblyFileWatcher.reset();
-					ScriptEngine::ReloadAssembly();
-				});
+			Application::Get().SubmitToMainThread([]() {
+				s_ScriptEngineData->AppAssemblyFileWatcher.reset();
+				ScriptEngine::ReloadAssembly();
+			});
 		}
 	}
 
@@ -184,13 +175,20 @@ namespace Timefall
 		BuildTypeRegistry();
 
 		// Cache invoker methods from base Entity class
-		s_ScriptEngineData->CreateTypedInstanceFn = s_ScriptEngineData->EntityClass.GetMethod<void*(*)(const wchar_t*)>(L"CreateTypedInstance", L"Timefall.CreateTypedInstanceDelegate, Timefall-ScriptCore");
-		s_ScriptEngineData->CreateTypedInstanceWithIDFn = s_ScriptEngineData->EntityClass.GetMethod<void*(*)(const wchar_t*, UUID)>(L"CreateTypedInstanceWithID", L"Timefall.CreateTypedInstanceWithIDDelegate, Timefall-ScriptCore");
-		s_ScriptEngineData->InvokeOnCreateFn = s_ScriptEngineData->EntityClass.GetMethod<void(*)(void*)>(L"InvokeOnCreate", L"Timefall.InvokeOnCreateDelegate, Timefall-ScriptCore");
-		s_ScriptEngineData->InvokeOnUpdateFn = s_ScriptEngineData->EntityClass.GetMethod<void(*)(void*, float)>(L"InvokeOnUpdate", L"Timefall.InvokeOnUpdateDelegate, Timefall-ScriptCore");
-		s_ScriptEngineData->DestroyInstanceFn = s_ScriptEngineData->EntityClass.GetMethod<void(*)(void*)>(L"DestroyInstance", L"Timefall.DestroyInstanceDelegate, Timefall-ScriptCore");
-		s_ScriptEngineData->GetFieldValueFn = s_ScriptEngineData->TypeRegistryClass.GetMethod<void(*)(void*, const wchar_t*, void*)>(L"GetFieldValue", L"Timefall.GetFieldValueDelegate, Timefall-ScriptCore");
-		s_ScriptEngineData->SetFieldValueFn = s_ScriptEngineData->TypeRegistryClass.GetMethod<void(*)(void*, const wchar_t*, void*)>(L"SetFieldValue", L"Timefall.SetFieldValueDelegate, Timefall-ScriptCore");
+		s_ScriptEngineData->CreateTypedInstanceFn = s_ScriptEngineData->EntityClass.GetMethod<void* (*)(const wchar_t*)>(
+			L"CreateTypedInstance", L"Timefall.CreateTypedInstanceDelegate, Timefall-ScriptCore");
+		s_ScriptEngineData->CreateTypedInstanceWithIDFn = s_ScriptEngineData->EntityClass.GetMethod<void* (*)(const wchar_t*, UUID)>(
+			L"CreateTypedInstanceWithID", L"Timefall.CreateTypedInstanceWithIDDelegate, Timefall-ScriptCore");
+		s_ScriptEngineData->InvokeOnCreateFn = s_ScriptEngineData->EntityClass.GetMethod<void (*)(void*)>(
+			L"InvokeOnCreate", L"Timefall.InvokeOnCreateDelegate, Timefall-ScriptCore");
+		s_ScriptEngineData->InvokeOnUpdateFn = s_ScriptEngineData->EntityClass.GetMethod<void (*)(void*, float)>(
+			L"InvokeOnUpdate", L"Timefall.InvokeOnUpdateDelegate, Timefall-ScriptCore");
+		s_ScriptEngineData->DestroyInstanceFn = s_ScriptEngineData->EntityClass.GetMethod<void (*)(void*)>(
+			L"DestroyInstance", L"Timefall.DestroyInstanceDelegate, Timefall-ScriptCore");
+		s_ScriptEngineData->GetFieldValueFn = s_ScriptEngineData->TypeRegistryClass.GetMethod<void (*)(void*, const wchar_t*, void*)>(
+			L"GetFieldValue", L"Timefall.GetFieldValueDelegate, Timefall-ScriptCore");
+		s_ScriptEngineData->SetFieldValueFn = s_ScriptEngineData->TypeRegistryClass.GetMethod<void (*)(void*, const wchar_t*, void*)>(
+			L"SetFieldValue", L"Timefall.SetFieldValueDelegate, Timefall-ScriptCore");
 
 		TF_CORE_ASSERT(s_ScriptEngineData->CreateTypedInstanceFn, "Failed to get CreateTypedInstanceParameterless from Entity class");
 		TF_CORE_ASSERT(s_ScriptEngineData->CreateTypedInstanceWithIDFn, "Failed to get CreateTypedInstanceWithID from Entity class");
@@ -245,10 +243,8 @@ namespace Timefall
 		if (s_ScriptEngineData->DestroyInstanceFn)
 		{
 			for (auto& [uuid, instance] : s_ScriptEngineData->EntityInstances)
-			{
 				if (instance && instance->m_Instance)
 					s_ScriptEngineData->DestroyInstanceFn(instance->m_Instance);
-			}
 		}
 
 		s_ScriptEngineData->EntityInstances.clear();
@@ -284,7 +280,8 @@ namespace Timefall
 		if (ScriptEngine::EntityClassExists(sc.ModuleName))
 		{
 			UUID entityID = entity.GetUUID();
-			Ref<ScriptInstance> instance = CreateRef<ScriptInstance>(s_ScriptEngineData->EntityClasses[sc.ModuleName], sc.ModuleName, entityID);
+			Ref<ScriptInstance> instance =
+				CreateRef<ScriptInstance>(s_ScriptEngineData->EntityClasses[sc.ModuleName], sc.ModuleName, entityID);
 			s_ScriptEngineData->EntityInstances[entityID] = instance;
 
 			// Copy field values from the entity's components to the script instance
@@ -303,13 +300,9 @@ namespace Timefall
 	{
 		UUID uuid = entity.GetUUID();
 		if (s_ScriptEngineData->EntityInstances.find(uuid) != s_ScriptEngineData->EntityInstances.end())
-		{
 			s_ScriptEngineData->EntityInstances[uuid]->InvokeOnUpdate(ts);
-		}
 		else
-		{
 			TF_CORE_ERROR("Could not find ScriptInstance for entity");
-		}
 	}
 
 	bool ScriptEngine::LoadAssembly(const std::filesystem::path& runtimeConfigPath)
@@ -322,7 +315,8 @@ namespace Timefall
 		return false;
 	}
 
-	void ScriptEngine::RegisterEntityTypes(const wchar_t* typeName, const wchar_t* assemblyName, const wchar_t** fieldNames, const wchar_t** fieldTypeNames, int fieldCount)
+	void ScriptEngine::RegisterEntityTypes(
+		const wchar_t* typeName, const wchar_t* assemblyName, const wchar_t** fieldNames, const wchar_t** fieldTypeNames, int fieldCount)
 	{
 		// Build assembly path: Resources\Scripts\{assemblyName}.dll
 		std::wstring assemblyPath = std::format(L"{}{}.dll", SCRIPTS_PATH, assemblyName);
@@ -333,19 +327,20 @@ namespace Timefall
 		Ref<ScriptClass> scriptClass = CreateRef<ScriptClass>(assemblyPath, qualifiedTypeName);
 
 		for (int i = 0; i < fieldCount; i++)
-			scriptClass->m_Fields.emplace(fieldNames[i], ScriptField{ fieldNames[i], Utils::DotNetTypeToScriptFieldType(fieldTypeNames[i]) });
+			scriptClass->m_Fields.emplace(fieldNames[i], ScriptField{fieldNames[i], Utils::DotNetTypeToScriptFieldType(fieldTypeNames[i])});
 
 		s_ScriptEngineData->EntityClasses.emplace(typeName, scriptClass);
 	}
 
-	void ScriptEngine::RegisterComponentTypes(const wchar_t* typeName, const wchar_t* assemblyName, const wchar_t** fieldNames, const wchar_t** fieldTypeNames, int fieldCount)
+	void ScriptEngine::RegisterComponentTypes(
+		const wchar_t* typeName, const wchar_t* assemblyName, const wchar_t** fieldNames, const wchar_t** fieldTypeNames, int fieldCount)
 	{
 		std::wstring assemblyPath = std::format(L"{}{}.dll", SCRIPTS_PATH, assemblyName);
 		std::wstring qualifiedTypeName = std::format(L"{}, {}", typeName, assemblyName);
 
 		Ref<ScriptClass> scriptClass = CreateRef<ScriptClass>(assemblyPath, qualifiedTypeName);
 		for (int i = 0; i < fieldCount; i++)
-			scriptClass->m_Fields.emplace(fieldNames[i], ScriptField{ fieldNames[i], Utils::DotNetTypeToScriptFieldType(fieldTypeNames[i]) });
+			scriptClass->m_Fields.emplace(fieldNames[i], ScriptField{fieldNames[i], Utils::DotNetTypeToScriptFieldType(fieldTypeNames[i])});
 
 		s_ScriptEngineData->ComponentClasses[typeName] = scriptClass;
 	}
@@ -446,8 +441,10 @@ namespace Timefall
 		if (!s_ScriptEngineData->HostFxrLib)
 			return false;
 
-		s_ScriptEngineData->InitializeForRuntimeConfigFn = (hostfxr_initialize_for_runtime_config_fn)GetProcAddress(s_ScriptEngineData->HostFxrLib, "hostfxr_initialize_for_runtime_config");
-		s_ScriptEngineData->GetRuntimeDelegateFn = (hostfxr_get_runtime_delegate_fn)GetProcAddress(s_ScriptEngineData->HostFxrLib, "hostfxr_get_runtime_delegate");
+		s_ScriptEngineData->InitializeForRuntimeConfigFn = (hostfxr_initialize_for_runtime_config_fn)GetProcAddress(
+			s_ScriptEngineData->HostFxrLib, "hostfxr_initialize_for_runtime_config");
+		s_ScriptEngineData->GetRuntimeDelegateFn =
+			(hostfxr_get_runtime_delegate_fn)GetProcAddress(s_ScriptEngineData->HostFxrLib, "hostfxr_get_runtime_delegate");
 		s_ScriptEngineData->CloseFn = (hostfxr_close_fn)GetProcAddress(s_ScriptEngineData->HostFxrLib, "hostfxr_close");
 
 		return s_ScriptEngineData->InitializeForRuntimeConfigFn && s_ScriptEngineData->GetRuntimeDelegateFn && s_ScriptEngineData->CloseFn;
@@ -476,10 +473,12 @@ namespace Timefall
 
 		s_ScriptEngineData->EntityClasses.clear();
 		s_ScriptEngineData->ComponentClasses.clear();
-		s_ScriptEngineData->TypeRegistryClass.InvokeMethod<void(*)(const wchar_t*)>(L"BuildEntityRegistry", L"Timefall.BuildEntityRegistryDelegate, Timefall-ScriptCore", scriptModulePath.wstring().c_str());
+		s_ScriptEngineData->TypeRegistryClass.InvokeMethod<void (*)(const wchar_t*)>(
+			L"BuildEntityRegistry", L"Timefall.BuildEntityRegistryDelegate, Timefall-ScriptCore", scriptModulePath.wstring().c_str());
 		ScriptGlue::RegisterComponents();
 
-		s_ScriptEngineData->AppAssemblyFileWatcher = CreateScope<filewatch::FileWatch<std::wstring>>(scriptModulePath.wstring().c_str(), OnAppAssemblyFileSystemEvent);
+		s_ScriptEngineData->AppAssemblyFileWatcher =
+			CreateScope<filewatch::FileWatch<std::wstring>>(scriptModulePath.wstring().c_str(), OnAppAssemblyFileSystemEvent);
 		s_ScriptEngineData->AssemblyReloadPending = false;
 	}
 
@@ -489,21 +488,13 @@ namespace Timefall
 		TF_ASSERT(s_ScriptEngineData->LoadAssemblyAndGetFunctionPointerFn, "LoadAssemblyAndGetFunctionPointerFn is null");
 
 		int rc = s_ScriptEngineData->LoadAssemblyAndGetFunctionPointerFn(
-			m_AssemblyPath.c_str(),
-			m_TypeName.c_str(),
-			methodName,
-			delegateTypeName,
-			nullptr,
-			out
-		);
+			m_AssemblyPath.c_str(), m_TypeName.c_str(), methodName, delegateTypeName, nullptr, out);
 
 		if (rc != 0)
 		{
 			TF_CORE_ERROR("TryGetFunctionPointer failed: assembly='{}', type='{}', method='{}', delegate='{}', rc=0x{:X}",
-				std::filesystem::path(m_AssemblyPath).string(),
-				std::filesystem::path(m_TypeName).string(),
-				std::filesystem::path(methodName).string(),
-				delegateTypeName ? std::filesystem::path(delegateTypeName).string() : "nullptr",
+				std::filesystem::path(m_AssemblyPath).string(), std::filesystem::path(m_TypeName).string(),
+				std::filesystem::path(methodName).string(), delegateTypeName ? std::filesystem::path(delegateTypeName).string() : "nullptr",
 				static_cast<unsigned int>(rc));
 		}
 
@@ -545,7 +536,7 @@ namespace Timefall
 		if (m_Instance && s_ScriptEngineData->GetFieldValueFn)
 			s_ScriptEngineData->GetFieldValueFn(m_Instance, fieldName.c_str(), outValue);
 	}
-	
+
 	void ScriptInstance::SetFieldValueRaw(const std::wstring& fieldName, const void* value)
 	{
 		if (m_Instance && s_ScriptEngineData->SetFieldValueFn)

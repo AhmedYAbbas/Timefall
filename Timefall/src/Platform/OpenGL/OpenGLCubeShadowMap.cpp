@@ -6,7 +6,8 @@
 namespace Timefall
 {
 	OpenGLCubeShadowMap::OpenGLCubeShadowMap(uint32_t resolution, uint32_t cubeCount)
-		: m_Resolution(resolution), m_CubeCount(cubeCount)
+		: m_Resolution(resolution),
+		  m_CubeCount(cubeCount)
 	{
 		glCreateTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &m_DepthTexture);
 		glTextureStorage3D(m_DepthTexture, 1, GL_DEPTH_COMPONENT32F, resolution, resolution, cubeCount * 6);

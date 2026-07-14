@@ -9,19 +9,10 @@
 
 namespace Timefall
 {
-	static std::unordered_map<std::filesystem::path, AssetType> s_AssetExtensionsMap =
-	{
-		{ ".timefall", AssetType::Scene },
-		{ ".png", AssetType::Texture2D },
-		{ ".jpg", AssetType::Texture2D },
-		{ ".jpeg", AssetType::Texture2D },
-		{ ".hdr", AssetType::Texture2D },
-		{ ".tfmat", AssetType::Material },
-		{ ".obj", AssetType::Mesh },
-		{ ".fbx", AssetType::Mesh },
-		{ ".gltf", AssetType::Mesh },
-		{ ".glb", AssetType::Mesh }
-	};
+	static std::unordered_map<std::filesystem::path, AssetType> s_AssetExtensionsMap = {{".timefall", AssetType::Scene},
+		{".png", AssetType::Texture2D}, {".jpg", AssetType::Texture2D}, {".jpeg", AssetType::Texture2D}, {".hdr", AssetType::Texture2D},
+		{".tfmat", AssetType::Material}, {".obj", AssetType::Mesh}, {".fbx", AssetType::Mesh}, {".gltf", AssetType::Mesh},
+		{".glb", AssetType::Mesh}};
 
 	static AssetType GetAssetTypeFromFileExtension(const std::filesystem::path& extension)
 	{
@@ -52,12 +43,10 @@ namespace Timefall
 			const AssetMetadata& metadata = GetMetadata(handle);
 			asset = AssetImporter::ImportAsset(handle, metadata);
 			if (!asset)
-			{
 				TF_CORE_ERROR("EditorAssetManager::GetAsset - Failed to import asset: {0}", metadata.FilePath.string());
-			}
 			m_LoadedAssets[handle] = asset;
 		}
-			
+
 		return asset;
 	}
 
@@ -93,7 +82,7 @@ namespace Timefall
 		TF_CORE_ASSERT(metadata.Type != AssetType::None, "Unsupported asset type for file: {0}", filePath.string());
 		Ref<Asset> asset = AssetImporter::ImportAsset(handle, metadata);
 		if (!asset)
-			return 0;   // import failed — don't hand back an unregistered handle
+			return 0; // import failed — don't hand back an unregistered handle
 
 		asset->Handle = handle;
 		m_LoadedAssets[handle] = asset;
@@ -123,8 +112,8 @@ namespace Timefall
 		return handle;
 	}
 
-	void EditorAssetManager::AddMemoryOnlyAsset(AssetHandle handle, const Ref<Asset>& asset,
-		const std::filesystem::path& virtualPath, AssetType type)
+	void EditorAssetManager::AddMemoryOnlyAsset(
+		AssetHandle handle, const Ref<Asset>& asset, const std::filesystem::path& virtualPath, AssetType type)
 	{
 		asset->Handle = handle;
 		m_LoadedAssets[handle] = asset;
@@ -197,7 +186,7 @@ namespace Timefall
 
 		for (const auto& node : assetRegistryNode)
 		{
-			AssetHandle	handle = node["Handle"].as<uint64_t>();
+			AssetHandle handle = node["Handle"].as<uint64_t>();
 			AssetMetadata& metadata = m_AssetRegistry[handle];
 
 			metadata.FilePath = node["FilePath"].as<std::string>();

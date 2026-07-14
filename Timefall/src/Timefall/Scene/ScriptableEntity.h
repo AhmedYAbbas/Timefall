@@ -9,11 +9,7 @@ namespace Timefall
 	public:
 		virtual ~ScriptableEntity() = default;
 
-		template<typename T>
-		T& GetComponent()
-		{
-			return m_Entity.GetComponent<T>();
-		}
+		template <typename T> T& GetComponent() { return m_Entity.GetComponent<T>(); }
 
 		virtual void OnCreate() {}
 		virtual void OnDestroy() {}

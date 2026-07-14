@@ -11,9 +11,9 @@ namespace Timefall
 	{
 	public:
 		WindowResizeEvent(unsigned int width, unsigned int height)
-			: m_Width(width), m_Height(height) 
-		{
-		}
+			: m_Width(width),
+			  m_Height(height)
+		{}
 
 		unsigned int GetWidth() const { return m_Width; }
 		unsigned int GetHeight() const { return m_Height; }
@@ -46,13 +46,11 @@ namespace Timefall
 	public:
 		WindowDropEvent(const std::vector<std::filesystem::path>& paths)
 			: m_Paths(paths)
-		{
-		}
+		{}
 
 		WindowDropEvent(std::vector<std::filesystem::path>&& paths)
 			: m_Paths(std::move(paths))
-		{
-		}
+		{}
 
 		const std::vector<std::filesystem::path>& GetPaths() const { return m_Paths; }
 
@@ -88,5 +86,5 @@ namespace Timefall
 
 		EVENT_CLASS_TYPE(AppRender)
 		EVENT_CLASS_CATEGORY(EventCategoryApplication)
-	}; 
+	};
 }

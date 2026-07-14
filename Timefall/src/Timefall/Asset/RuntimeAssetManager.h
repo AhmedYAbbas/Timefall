@@ -5,7 +5,5 @@
 namespace Timefall
 {
 	class TF_API RuntimeAssetManager : public AssetManagerBase
-	{
-		
-	};
+	{};
 }

@@ -14,10 +14,10 @@ namespace Timefall
 		{
 			switch (format)
 			{
-				case ImageFormat::R8:		return GL_RED;
-				case ImageFormat::RGB8:		return GL_RGB;
-				case ImageFormat::RGBA8:	return GL_RGBA;
-				case ImageFormat::RGB32F:	return GL_RGB;   // base format for float upload
+				case ImageFormat::R8: return GL_RED;
+				case ImageFormat::RGB8: return GL_RGB;
+				case ImageFormat::RGBA8: return GL_RGBA;
+				case ImageFormat::RGB32F: return GL_RGB; // base format for float upload
 			}
 
 			TF_CORE_ASSERT(false, "Unknown ImageFormat!");
@@ -28,10 +28,10 @@ namespace Timefall
 		{
 			switch (format)
 			{
-				case ImageFormat::R8:		return GL_R8;
-				case ImageFormat::RGB8:		return GL_RGB8;
-				case ImageFormat::RGBA8:	return GL_RGBA8;
-				case ImageFormat::RGB32F:	return GL_RGB32F;
+				case ImageFormat::R8: return GL_R8;
+				case ImageFormat::RGB8: return GL_RGB8;
+				case ImageFormat::RGBA8: return GL_RGBA8;
+				case ImageFormat::RGB32F: return GL_RGB32F;
 			}
 
 			TF_CORE_ASSERT(false, "Unknown ImageFormat!");
@@ -41,8 +41,7 @@ namespace Timefall
 		// Hardware max anisotropy, queried once and capped (16x is the visual point of diminishing returns).
 		static float MaxAnisotropy()
 		{
-			static float value = []
-			{
+			static float value = [] {
 				GLfloat maxAniso = 1.0f;
 				glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAniso);
 				return std::min(maxAniso, 16.0f);
@@ -52,16 +51,16 @@ namespace Timefall
 	}
 
 	OpenGLTexture2D::OpenGLTexture2D(const TextureSpecification& spec, Buffer data)
-		: m_Specification(spec), m_Width(spec.Width), m_Height(spec.Height)
+		: m_Specification(spec),
+		  m_Width(spec.Width),
+		  m_Height(spec.Height)
 	{
 		TF_PROFILE_FUNCTION();
 
 		m_InternalFormat = Utils::TimefallImageFormatToGLInternalFormat(m_Specification.Format);
 		m_DataFormat = Utils::TimefallImageFormatToGLDataFormat(m_Specification.Format);
 
-		uint32_t mipLevels = m_Specification.GenerateMips
-			? 1 + (uint32_t)std::floor(std::log2((float)std::max(m_Width, m_Height)))
-			: 1;
+		uint32_t mipLevels = m_Specification.GenerateMips ? 1 + (uint32_t)std::floor(std::log2((float)std::max(m_Width, m_Height))) : 1;
 
 		m_MipLevels = mipLevels;
 		glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
@@ -107,7 +106,7 @@ namespace Timefall
 		TF_PROFILE_FUNCTION();
 
 		bool isFloat = m_Specification.Format == ImageFormat::RGB32F;
-		GLenum type  = isFloat ? GL_FLOAT : GL_UNSIGNED_BYTE;
+		GLenum type = isFloat ? GL_FLOAT : GL_UNSIGNED_BYTE;
 		uint32_t bpc = isFloat ? 4u : 1u;
 		uint32_t channels = m_DataFormat == GL_RGBA ? 4u : 3u;
 		TF_CORE_ASSERT(data.Size == m_Width * m_Height * channels * bpc, "Data must be entire texture");

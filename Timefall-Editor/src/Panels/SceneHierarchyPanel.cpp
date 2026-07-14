@@ -41,9 +41,8 @@ namespace Timefall
 
 			// Draw only roots at the top level; DrawEntityNode recurses into Children. An entity
 			// whose Parent is missing (0 or a dangling UUID) is treated as a root so it stays visible.
-			m_Context->m_Registry.view<entt::entity>().each([&](auto entityHandle)
-			{
-				Entity e = { entityHandle, m_Context.get() };
+			m_Context->m_Registry.view<entt::entity>().each([&](auto entityHandle) {
+				Entity e = {entityHandle, m_Context.get()};
 
 				bool isRoot = true;
 				if (e.HasComponent<RelationshipComponent>())
@@ -76,9 +75,7 @@ namespace Timefall
 			if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
 			{
 				if (ImGui::MenuItem("Create Empty Entity"))
-				{
 					m_Context->CreateEntity("Empty Entity");
-				}
 
 				ImGui::EndPopup();
 			}
@@ -101,8 +98,7 @@ namespace Timefall
 	{
 		auto& tag = entity.GetComponent<TagComponent>().Tag;
 
-		bool hasChildren = entity.HasComponent<RelationshipComponent>()
-			&& !entity.GetComponent<RelationshipComponent>().Children.empty();
+		bool hasChildren = entity.HasComponent<RelationshipComponent>() && !entity.GetComponent<RelationshipComponent>().Children.empty();
 
 		ImGuiTreeNodeFlags treeNodeFlags = ((m_SelectionContext == entity) ? ImGuiTreeNodeFlags_Selected : 0)
 			| ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
@@ -213,14 +209,14 @@ namespace Timefall
 		ImGui::NextColumn();
 
 		ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
 
 		float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
-		ImVec2 buttonSize = ImVec2{ lineHeight + 3.0f, lineHeight };
+		ImVec2 buttonSize = ImVec2{lineHeight + 3.0f, lineHeight};
 
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f });
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.2f, 0.2f, 1.0f});
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
 		ImGui::PushFont(boldFont);
 		if (ImGui::Button("X", buttonSize))
 			values.x = resetValue;
@@ -233,9 +229,9 @@ namespace Timefall
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f });
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.3f, 0.8f, 0.3f, 1.0f});
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
 		ImGui::PushFont(boldFont);
 		if (ImGui::Button("Y", buttonSize))
 			values.y = resetValue;
@@ -248,9 +244,9 @@ namespace Timefall
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f });
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.2f, 0.35f, 0.9f, 1.0f});
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
 		ImGui::PushFont(boldFont);
 		if (ImGui::Button("Z", buttonSize))
 			values.z = resetValue;
@@ -277,63 +273,85 @@ namespace Timefall
 			case ScriptFieldType::Float:
 			{
 				float v = field.GetValue<float>();
-				if (ImGui::DragFloat(label.c_str(), &v, 0.1f)) { field.SetValue(v); return true; }
+				if (ImGui::DragFloat(label.c_str(), &v, 0.1f))
+				{
+					field.SetValue(v);
+					return true;
+				}
 				break;
 			}
 			case ScriptFieldType::Int32:
 			{
 				int v = field.GetValue<int32_t>();
-				if (ImGui::DragInt(label.c_str(), &v)) { field.SetValue<int32_t>(v); return true; }
+				if (ImGui::DragInt(label.c_str(), &v))
+				{
+					field.SetValue<int32_t>(v);
+					return true;
+				}
 				break;
 			}
 			case ScriptFieldType::Bool:
 			{
 				bool v = field.GetValue<bool>();
-				if (ImGui::Checkbox(label.c_str(), &v)) { field.SetValue(v); return true; }
+				if (ImGui::Checkbox(label.c_str(), &v))
+				{
+					field.SetValue(v);
+					return true;
+				}
 				break;
 			}
 			case ScriptFieldType::Vector2:
 			{
 				glm::vec2 v = field.GetValue<glm::vec2>();
-				if (ImGui::DragFloat2(label.c_str(), glm::value_ptr(v), 0.1f)) { field.SetValue(v); return true; }
+				if (ImGui::DragFloat2(label.c_str(), glm::value_ptr(v), 0.1f))
+				{
+					field.SetValue(v);
+					return true;
+				}
 				break;
 			}
 			case ScriptFieldType::Vector3:
 			{
 				glm::vec3 v = field.GetValue<glm::vec3>();
-				if (ImGui::DragFloat3(label.c_str(), glm::value_ptr(v), 0.1f)) { field.SetValue(v); return true; }
+				if (ImGui::DragFloat3(label.c_str(), glm::value_ptr(v), 0.1f))
+				{
+					field.SetValue(v);
+					return true;
+				}
 				break;
 			}
 			case ScriptFieldType::Vector4:
 			{
 				glm::vec4 v = field.GetValue<glm::vec4>();
-				if (ImGui::ColorEdit4(label.c_str(), glm::value_ptr(v))) { field.SetValue(v); return true; }
+				if (ImGui::ColorEdit4(label.c_str(), glm::value_ptr(v)))
+				{
+					field.SetValue(v);
+					return true;
+				}
 				break;
 			}
-			default:
-				ImGui::TextDisabled("%s (unsupported type)", label.c_str());
-				break;
+			default: ImGui::TextDisabled("%s (unsupported type)", label.c_str()); break;
 		}
 		return false;
 	}
 
-	template<typename T, typename UIFunction>
-	static void DrawComponent(const std::string& label, Entity entity, UIFunction uiFunction)
+	template <typename T, typename UIFunction> static void DrawComponent(const std::string& label, Entity entity, UIFunction uiFunction)
 	{
-		const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanAvailWidth;
+		const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap
+			| ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanAvailWidth;
 
 		if (entity.HasComponent<T>())
 		{
 			auto& component = entity.GetComponent<T>();
 			ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
 
-			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 4, 4 });
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
 			float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
 			ImGui::Separator();
 			bool open = ImGui::TreeNodeEx((void*)typeid(T).hash_code(), treeNodeFlags, label.c_str());
 			ImGui::PopStyleVar();
 			ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);
-			if (ImGui::Button("+", ImVec2{ lineHeight, lineHeight }))
+			if (ImGui::Button("+", ImVec2{lineHeight, lineHeight}))
 				ImGui::OpenPopup("ComponentSettings");
 
 			bool componentMarkedForRemoval = false;
@@ -411,8 +429,7 @@ namespace Timefall
 
 		ImGui::PopItemWidth();
 
-		DrawComponent<TransformComponent>("Transform", entity, [](auto& component)
-		{
+		DrawComponent<TransformComponent>("Transform", entity, [](auto& component) {
 			DrawVec3Control("Position", component.Translation);
 
 			glm::vec3 rotation = glm::degrees(component.Rotation);
@@ -422,11 +439,10 @@ namespace Timefall
 			DrawVec3Control("Scale", component.Scale, 1.0f);
 		});
 
-		DrawComponent<CameraComponent>("Camera", entity, [](auto& component)
-		{
+		DrawComponent<CameraComponent>("Camera", entity, [](auto& component) {
 			auto& camera = component.Camera;
 
-			const char* projectionTypeStrings[] = { "Perspective", "Orthographic" };
+			const char* projectionTypeStrings[] = {"Perspective", "Orthographic"};
 			const char* currentProjectionTypeString = projectionTypeStrings[(int)camera.GetProjectionType()];
 
 			ImGui::Checkbox("Primary", &component.Primary);
@@ -482,14 +498,13 @@ namespace Timefall
 			}
 		});
 
-		DrawComponent<ScriptComponent>("Script", entity, [entity, scene = m_Context](auto& component) mutable
-		{
+		DrawComponent<ScriptComponent>("Script", entity, [entity, scene = m_Context](auto& component) mutable {
 			bool scriptClassExists = ScriptEngine::EntityClassExists(component.ModuleName);
 
 			static char moduleBuffer[256];
 			wcstombs_s(nullptr, moduleBuffer, sizeof(moduleBuffer), component.ModuleName.c_str(), _TRUNCATE);
 
-			Timefall::UI::ScopedStyleColor textColor(ImGuiCol_Text, ImVec4{ 0.9f, 0.2f, 0.3f, 1.0f }, !scriptClassExists);
+			Timefall::UI::ScopedStyleColor textColor(ImGuiCol_Text, ImVec4{0.9f, 0.2f, 0.3f, 1.0f}, !scriptClassExists);
 
 			if (ImGui::InputText("Class", moduleBuffer, sizeof(moduleBuffer)))
 			{
@@ -520,45 +535,42 @@ namespace Timefall
 					}
 				}
 			}
-			else
+			else if (scriptClassExists)
 			{
-				if (scriptClassExists)
+				Ref<ScriptClass> entityClass = ScriptEngine::GetEntityScriptClass(component.ModuleName);
+				const auto& fields = entityClass->GetFields();
+
+				auto& entityFields = ScriptEngine::GetEntityScriptFields(entity);
+				for (const auto& [name, field] : fields)
 				{
-					Ref<ScriptClass> entityClass = ScriptEngine::GetEntityScriptClass(component.ModuleName);
-					const auto& fields = entityClass->GetFields();
-
-					auto& entityFields = ScriptEngine::GetEntityScriptFields(entity);
-					for (const auto& [name, field] : fields)
+					// Field has been set in editor
+					if (entityFields.find(name) != entityFields.end())
 					{
-						// Field has been set in editor
-						if (entityFields.find(name) != entityFields.end())
-						{
-							ScriptFieldInstance& scriptField = entityFields.at(name);
+						ScriptFieldInstance& scriptField = entityFields.at(name);
 
-							// Display control to set it maybe
-							if (field.Type == ScriptFieldType::Float)
-							{
-								float data = scriptField.GetValue<float>();
-								char nameBuffer[256];
-								wcstombs_s(nullptr, nameBuffer, sizeof(nameBuffer), name.c_str(), _TRUNCATE);
-								if (ImGui::DragFloat(nameBuffer, &data))
-									scriptField.SetValue(data);
-							}
-						}
-						else
+						// Display control to set it maybe
+						if (field.Type == ScriptFieldType::Float)
 						{
-							// Display control to set it maybe
-							if (field.Type == ScriptFieldType::Float)
+							float data = scriptField.GetValue<float>();
+							char nameBuffer[256];
+							wcstombs_s(nullptr, nameBuffer, sizeof(nameBuffer), name.c_str(), _TRUNCATE);
+							if (ImGui::DragFloat(nameBuffer, &data))
+								scriptField.SetValue(data);
+						}
+					}
+					else
+					{
+						// Display control to set it maybe
+						if (field.Type == ScriptFieldType::Float)
+						{
+							float data = 0.0f;
+							char nameBuffer[256];
+							wcstombs_s(nullptr, nameBuffer, sizeof(nameBuffer), name.c_str(), _TRUNCATE);
+							if (ImGui::DragFloat(nameBuffer, &data))
 							{
-								float data = 0.0f;
-								char nameBuffer[256];
-								wcstombs_s(nullptr, nameBuffer, sizeof(nameBuffer), name.c_str(), _TRUNCATE);
-								if (ImGui::DragFloat(nameBuffer, &data))
-								{
-									ScriptFieldInstance& fieldInstance = entityFields[name];
-									fieldInstance.Field = field;
-									fieldInstance.SetValue(data);
-								}
+								ScriptFieldInstance& fieldInstance = entityFields[name];
+								fieldInstance.Field = field;
+								fieldInstance.SetValue(data);
 							}
 						}
 					}
@@ -566,15 +578,15 @@ namespace Timefall
 			}
 		});
 
-		DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](auto& component)
-		{
+		DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](auto& component) {
 			ImGui::ColorEdit4("Color", glm::value_ptr(component.Color));
 
 			std::string label = "None";
 			bool isTextureValid = false;
 			if (component.Texture != (AssetHandle)0)
 			{
-				if (AssetManager::IsAssetHandleValid(component.Texture) && AssetManager::GetAssetType(component.Texture) == AssetType::Texture2D)
+				if (AssetManager::IsAssetHandleValid(component.Texture)
+					&& AssetManager::GetAssetType(component.Texture) == AssetType::Texture2D)
 				{
 					const AssetMetadata& metadata = Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.Texture);
 					label = metadata.FilePath.filename().string();
@@ -597,13 +609,9 @@ namespace Timefall
 				{
 					AssetHandle handle = *(AssetHandle*)payload->Data;
 					if (AssetManager::GetAssetType(handle) == AssetType::Texture2D)
-					{
 						component.Texture = handle;
-					}
 					else
-					{
 						TF_CORE_WARN("Dropped asset is not a texture!");
-					}
 				}
 
 				ImGui::EndDragDropTarget();
@@ -614,7 +622,7 @@ namespace Timefall
 				ImGui::SameLine();
 				ImVec2 xLabelSize = ImGui::CalcTextSize("X");
 				float buttonSize = xLabelSize.y + ImGui::GetStyle().FramePadding.y * 2.0f;
-				if (ImGui::Button("X", ImVec2{ buttonSize, buttonSize }))
+				if (ImGui::Button("X", ImVec2{buttonSize, buttonSize}))
 					component.Texture = 0;
 			}
 			ImGui::SameLine();
@@ -622,20 +630,17 @@ namespace Timefall
 
 			ImGui::DragFloat("Tiling Factor", &component.TilingFactor, 0.1f, 0.0f, 100.0f);
 		});
-		
-		DrawComponent<CircleRendererComponent>("Circle Renderer", entity, [](auto& component)
-		{
+
+		DrawComponent<CircleRendererComponent>("Circle Renderer", entity, [](auto& component) {
 			ImGui::ColorEdit4("Color", glm::value_ptr(component.Color));
 			ImGui::DragFloat("Thickness", &component.Thickness, 0.025f, 0.0f, 1.0f);
 			ImGui::DragFloat("Fade", &component.Fade, 0.00025f, 0.0f, 1.0f);
 		});
 
-		DrawComponent<MeshComponent>("Mesh", entity, [](auto& component)
-		{
+		DrawComponent<MeshComponent>("Mesh", entity, [](auto& component) {
 			// --- Mesh slot (drag a mesh asset / built-in primitive from the Content Browser) ---
 			std::string meshLabel = "None";
-			if (component.Mesh != 0
-				&& AssetManager::IsAssetHandleValid(component.Mesh)
+			if (component.Mesh != 0 && AssetManager::IsAssetHandleValid(component.Mesh)
 				&& AssetManager::GetAssetType(component.Mesh) == AssetType::Mesh)
 			{
 				meshLabel = Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.Mesh).FilePath.filename().string();
@@ -673,8 +678,7 @@ namespace Timefall
 			// --- Material slot (drag a .tfmat from the Content Browser) ---
 			std::string matLabel = "None (default)";
 			bool matValid = false;
-			if (component.Material != 0
-				&& AssetManager::IsAssetHandleValid(component.Material)
+			if (component.Material != 0 && AssetManager::IsAssetHandleValid(component.Material)
 				&& AssetManager::GetAssetType(component.Material) == AssetType::Material)
 			{
 				matLabel = Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.Material).FilePath.filename().string();
@@ -712,8 +716,8 @@ namespace Timefall
 					changed |= ImGui::SliderFloat("Metallic", &mat->Metallic, 0.0f, 1.0f);
 					changed |= ImGui::SliderFloat("Roughness", &mat->Roughness, 0.0f, 1.0f);
 					changed |= ImGui::SliderFloat("Normal Strength", &mat->NormalStrength, 0.0f, 2.0f);
-						changed |= ImGui::ColorEdit3("Emissive", glm::value_ptr(mat->Emissive));
-						changed |= ImGui::DragFloat("Emissive Intensity", &mat->EmissiveIntensity, 0.05f, 0.0f, 100.0f);
+					changed |= ImGui::ColorEdit3("Emissive", glm::value_ptr(mat->Emissive));
+					changed |= ImGui::DragFloat("Emissive Intensity", &mat->EmissiveIntensity, 0.05f, 0.0f, 100.0f);
 
 					// Base Color map slot
 					{
@@ -738,7 +742,11 @@ namespace Timefall
 						ImGui::SameLine();
 						if (mat->BaseColorMap != 0)
 						{
-							if (ImGui::SmallButton("X")) { mat->BaseColorMap = 0; changed = true; }
+							if (ImGui::SmallButton("X"))
+							{
+								mat->BaseColorMap = 0;
+								changed = true;
+							}
 							ImGui::SameLine();
 						}
 						ImGui::Text("Base Color Map");
@@ -768,7 +776,11 @@ namespace Timefall
 						ImGui::SameLine();
 						if (mat->MetallicMap != 0)
 						{
-							if (ImGui::SmallButton("X")) { mat->MetallicMap = 0; changed = true; }
+							if (ImGui::SmallButton("X"))
+							{
+								mat->MetallicMap = 0;
+								changed = true;
+							}
 							ImGui::SameLine();
 						}
 						ImGui::Text("Metallic Map");
@@ -798,7 +810,11 @@ namespace Timefall
 						ImGui::SameLine();
 						if (mat->NormalMap != 0)
 						{
-							if (ImGui::SmallButton("X")) { mat->NormalMap = 0; changed = true; }
+							if (ImGui::SmallButton("X"))
+							{
+								mat->NormalMap = 0;
+								changed = true;
+							}
 							ImGui::SameLine();
 						}
 						ImGui::Text("Normal Map");
@@ -828,7 +844,11 @@ namespace Timefall
 						ImGui::SameLine();
 						if (mat->RoughnessMap != 0)
 						{
-							if (ImGui::SmallButton("X")) { mat->RoughnessMap = 0; changed = true; }
+							if (ImGui::SmallButton("X"))
+							{
+								mat->RoughnessMap = 0;
+								changed = true;
+							}
 							ImGui::SameLine();
 						}
 						ImGui::Text("Roughness Map");
@@ -858,7 +878,11 @@ namespace Timefall
 						ImGui::SameLine();
 						if (mat->AOMap != 0)
 						{
-							if (ImGui::SmallButton("X")) { mat->AOMap = 0; changed = true; }
+							if (ImGui::SmallButton("X"))
+							{
+								mat->AOMap = 0;
+								changed = true;
+							}
 							ImGui::SameLine();
 						}
 						ImGui::Text("AO Map");
@@ -888,7 +912,11 @@ namespace Timefall
 						ImGui::SameLine();
 						if (mat->EmissiveMap != 0)
 						{
-							if (ImGui::SmallButton("X")) { mat->EmissiveMap = 0; changed = true; }
+							if (ImGui::SmallButton("X"))
+							{
+								mat->EmissiveMap = 0;
+								changed = true;
+							}
 							ImGui::SameLine();
 						}
 						ImGui::Text("Emissive Map");
@@ -905,9 +933,8 @@ namespace Timefall
 			}
 		});
 
-		DrawComponent<LightComponent>("Light", entity, [](auto& component)
-		{
-			const char* typeStrings[] = { "Directional", "Point", "Spot" };
+		DrawComponent<LightComponent>("Light", entity, [](auto& component) {
+			const char* typeStrings[] = {"Directional", "Point", "Spot"};
 			const char* currentTypeString = typeStrings[(int)component.Type];
 
 			if (ImGui::BeginCombo("Type", currentTypeString))
@@ -940,8 +967,7 @@ namespace Timefall
 				ImGui::DragFloat("Outer Cutoff", &component.OuterCutoff, 0.1f, 0.0f, 90.0f);
 			}
 
-			if (component.Type == LightComponent::LightType::Directional
-				|| component.Type == LightComponent::LightType::Spot
+			if (component.Type == LightComponent::LightType::Directional || component.Type == LightComponent::LightType::Spot
 				|| component.Type == LightComponent::LightType::Point)
 			{
 				ImGui::Checkbox("Casts Shadows", &component.CastsShadows);
@@ -953,8 +979,7 @@ namespace Timefall
 			}
 		});
 
-		DrawComponent<SkyLightComponent>("Sky Light", entity, [](auto& component)
-		{
+		DrawComponent<SkyLightComponent>("Sky Light", entity, [](auto& component) {
 			ImGui::PushID("EnvironmentMap");
 			std::string label = (component.EnvironmentMap != 0 && AssetManager::IsAssetHandleValid(component.EnvironmentMap))
 				? Project::GetActive()->GetEditorAssetManager()->GetMetadata(component.EnvironmentMap).FilePath.filename().string()
@@ -971,7 +996,12 @@ namespace Timefall
 				ImGui::EndDragDropTarget();
 			}
 			ImGui::SameLine();
-			if (component.EnvironmentMap != 0) { if (ImGui::SmallButton("X")) component.EnvironmentMap = 0; ImGui::SameLine(); }
+			if (component.EnvironmentMap != 0)
+			{
+				if (ImGui::SmallButton("X"))
+					component.EnvironmentMap = 0;
+				ImGui::SameLine();
+			}
 			ImGui::Text("Environment (HDR)");
 			ImGui::PopID();
 
@@ -979,9 +1009,8 @@ namespace Timefall
 			ImGui::DragFloat("Rotation", &component.Rotation, 0.5f, 0.0f, 360.0f);
 		});
 
-		DrawComponent<Rigidbody2DComponent>("Rigidbody 2D", entity, [](auto& component)
-		{
-			const char* bodyTypeStrings[] = { "Static", "Kinematic", "Dynamic" };
+		DrawComponent<Rigidbody2DComponent>("Rigidbody 2D", entity, [](auto& component) {
+			const char* bodyTypeStrings[] = {"Static", "Kinematic", "Dynamic"};
 			const char* currentBodyTypeString = bodyTypeStrings[(int)component.Type];
 			if (ImGui::BeginCombo("Body Type", currentBodyTypeString))
 			{
@@ -1004,8 +1033,7 @@ namespace Timefall
 			ImGui::Checkbox("Fixed Rotation", &component.FixedRotation);
 		});
 
-		DrawComponent<BoxCollider2DComponent>("Box Collider 2D", entity, [this](auto& component)
-		{
+		DrawComponent<BoxCollider2DComponent>("Box Collider 2D", entity, [this](auto& component) {
 			ImGui::DragFloat2("Offset", glm::value_ptr(component.Offset));
 			ImGui::DragFloat2("Size", glm::value_ptr(component.Size));
 			ImGui::DragFloat("Density", &component.Density, 0.01f, 0.0f, 1.0f);
@@ -1013,9 +1041,8 @@ namespace Timefall
 			ImGui::DragFloat("Restitution", &component.Restitution, 0.01f, 0.0f, 1.0f);
 			ImGui::DragFloat("Restitution Threshold (Global)", &m_Context->m_RestitutionThreshold, 0.01f, 0.0f);
 		});
-		
-		DrawComponent<CircleCollider2DComponent>("Circle Collider 2D", entity, [this](auto& component)
-		{
+
+		DrawComponent<CircleCollider2DComponent>("Circle Collider 2D", entity, [this](auto& component) {
 			ImGui::DragFloat2("Offset", glm::value_ptr(component.Offset));
 			ImGui::DragFloat("Radius", &component.Radius, 0.01f, 0.0f);
 			ImGui::DragFloat("Density", &component.Density, 0.01f, 0.0f, 1.0f);
@@ -1023,9 +1050,8 @@ namespace Timefall
 			ImGui::DragFloat("Restitution", &component.Restitution, 0.01f, 0.0f, 1.0f);
 			ImGui::DragFloat("Restitution Threshold (Global)", &m_Context->m_RestitutionThreshold, 0.01f, 0.0f);
 		});
-		
-		DrawComponent<TextComponent>("Text Renderer", entity, [this](auto& component)
-		{
+
+		DrawComponent<TextComponent>("Text Renderer", entity, [this](auto& component) {
 			ImGui::InputTextMultiline("Text", &component.Text);
 			ImGui::ColorEdit4("Color", glm::value_ptr(component.Color));
 			ImGui::DragFloat("Kerning", &component.Kerning, 0.025f);
@@ -1047,13 +1073,15 @@ namespace Timefall
 				// Mirror DrawComponent: measure region BEFORE the node and set AllowItemOverlap so the
 				// full-width header doesn't swallow the "+" button's click.
 				ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
-				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 4, 4 });
+				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
 				float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
 				ImGui::Separator();
-				bool open = ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanAvailWidth);
+				bool open = ImGui::TreeNodeEx(label.c_str(),
+					ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_Framed
+						| ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanAvailWidth);
 				ImGui::PopStyleVar();
 				ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);
-				if (ImGui::Button("+", ImVec2{ lineHeight, lineHeight }))
+				if (ImGui::Button("+", ImVec2{lineHeight, lineHeight}))
 					ImGui::OpenPopup("ManagedComponentSettings");
 
 				if (ImGui::BeginPopup("ManagedComponentSettings"))
@@ -1070,7 +1098,8 @@ namespace Timefall
 						for (const auto& [fieldName, field] : schema->GetFields())
 						{
 							ScriptFieldInstance& inst = data.Fields[fieldName];
-							inst.Field = field; // schema is authoritative for name+type (handles new/changed fields; value buffer preserved)
+							inst.Field =
+								field; // schema is authoritative for name+type (handles new/changed fields; value buffer preserved)
 							std::string fieldLabel(fieldName.begin(), fieldName.end());
 							DrawScriptField(fieldLabel, inst);
 						}
@@ -1094,8 +1123,7 @@ namespace Timefall
 		}
 	}
 
-	template<typename T>
-	void SceneHierarchyPanel::DisplayAddComponentEntry(const std::string& entryName)
+	template <typename T> void SceneHierarchyPanel::DisplayAddComponentEntry(const std::string& entryName)
 	{
 		if (!m_SelectionContext.HasComponent<T>())
 		{
