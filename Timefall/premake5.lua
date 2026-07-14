@@ -1,7 +1,7 @@
 project "Timefall"
 	kind "SharedLib"
 	language "C++"
-	cppdialect "C++20"
+	cppdialect "C++23"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("int/" .. outputdir .. "/%{prj.name}")
