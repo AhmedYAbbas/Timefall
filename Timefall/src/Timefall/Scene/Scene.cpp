@@ -12,6 +12,7 @@
 #include "Timefall/Asset/AssetManager.h"
 #include "Timefall/Scripting/ScriptEngine.h"
 #include "Timefall/Math/Math.h"
+#include "Timefall/Debug/PerformanceStats.h"
 
 #include <box2d/box2d.h>
 
@@ -132,10 +133,15 @@ namespace Timefall
 
 	void Scene::OnUpdateRuntime(Timestep ts)
 	{
+		TF_PROFILE_FUNCTION();
+
 		if (!m_IsPaused || m_StepFrames-- > 0)
 		{
 			// Update scripts
 			{
+				TF_PROFILE_SCOPE("Scene Scripts");
+				PerformanceStats::ScopedPassTimer passTimer("Scene Scripts");
+
 				// C# Entity OnUpdate
 				{
 					auto view = m_Registry.view<ScriptComponent>();
@@ -160,6 +166,9 @@ namespace Timefall
 
 			// Physics
 			{
+				TF_PROFILE_SCOPE("Scene Physics");
+				PerformanceStats::ScopedPassTimer passTimer("Scene Physics");
+
 				b2World_Step(m_PhysicsWorld, m_PhysicsTimeStep, m_PhysicsSubStepCount);
 
 				// Retrieve transform from Box2D
@@ -190,6 +199,9 @@ namespace Timefall
 
 		if (mainCamera)
 		{
+			TF_PROFILE_SCOPE("Scene Render");
+			PerformanceStats::ScopedPassTimer passTimer("Scene Render");
+
 			// --- 3D pass (depth-tested) ---
 			RenderCommand::SetDepthTest(true);
 			Renderer3D::BeginScene(*mainCamera, cameraTransform);
@@ -291,6 +303,8 @@ namespace Timefall
 
 	void Scene::OnUpdateSimulation(Timestep ts, EditorCamera& camera)
 	{
+		TF_PROFILE_FUNCTION();
+
 		if (!m_IsPaused || m_StepFrames-- > 0)
 		{
 			// Physics
@@ -314,6 +328,8 @@ namespace Timefall
 
 	void Scene::OnUpdateEditor(Timestep ts, EditorCamera& camera)
 	{
+		TF_PROFILE_FUNCTION();
+
 		RenderScene(camera);
 	}
 
@@ -687,6 +703,8 @@ namespace Timefall
 
 	void Scene::RenderScene(EditorCamera& camera)
 	{
+		TF_PROFILE_FUNCTION();
+
 		// --- 3D pass (depth-tested) ---
 		RenderCommand::SetDepthTest(true);
 		Renderer3D::BeginScene(camera);

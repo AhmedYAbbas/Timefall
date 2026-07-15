@@ -1,5 +1,6 @@
 #include "tfpch.h"
 #include "Platform/OpenGL/OpenGLShadowMap.h"
+#include "Platform/OpenGL/GPUMemoryTracker.h"
 
 #include <glad/glad.h>
 
@@ -12,6 +13,7 @@ namespace Timefall
 		// Depth array texture: one layer per cascade. 32-bit float depth for precision.
 		glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_DepthTexture);
 		glTextureStorage3D(m_DepthTexture, 1, GL_DEPTH_COMPONENT32F, resolution, resolution, layers);
+		GPUMemoryTracker::Track(GPUMemCategory::Framebuffers, m_DepthTexture, (uint64_t)resolution * resolution * layers * 4); // D32F
 
 		// PCSS reads raw depth and does its own comparisons, so no GL_TEXTURE_COMPARE_MODE.
 		glTextureParameteri(m_DepthTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -30,6 +32,7 @@ namespace Timefall
 
 	OpenGLShadowMap::~OpenGLShadowMap()
 	{
+		GPUMemoryTracker::Untrack(GPUMemCategory::Framebuffers, m_DepthTexture);
 		glDeleteTextures(1, &m_DepthTexture);
 		glDeleteFramebuffers(1, &m_RendererID);
 	}

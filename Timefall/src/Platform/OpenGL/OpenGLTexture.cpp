@@ -1,6 +1,7 @@
 #include "tfpch.h"
 
 #include "Platform/OpenGL/OpenGLTexture.h"
+#include "Platform/OpenGL/GPUMemoryTracker.h"
 
 #include <glad/glad.h>
 
@@ -66,6 +67,13 @@ namespace Timefall
 		glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
 		glTextureStorage2D(m_RendererID, mipLevels, m_InternalFormat, m_Width, m_Height);
 
+		// Mips add ~1/3; format bpp: R8=1, RGB8=3, RGBA8=4, RGB32F=12.
+		uint64_t bpp = m_InternalFormat == GL_R8 ? 1 : m_InternalFormat == GL_RGB8 ? 3 : m_InternalFormat == GL_RGBA8 ? 4 : 12;
+		uint64_t bytes = (uint64_t)m_Width * m_Height * bpp;
+		if (mipLevels > 1)
+			bytes += bytes / 3;
+		GPUMemoryTracker::Track(GPUMemCategory::Textures, m_RendererID, bytes);
+
 		glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, m_Specification.GenerateMips ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
 		glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -86,6 +94,7 @@ namespace Timefall
 
 		if (m_SRGBView)
 			glDeleteTextures(1, &m_SRGBView);
+		GPUMemoryTracker::Untrack(GPUMemCategory::Textures, m_RendererID);
 		glDeleteTextures(1, &m_RendererID);
 	}
 

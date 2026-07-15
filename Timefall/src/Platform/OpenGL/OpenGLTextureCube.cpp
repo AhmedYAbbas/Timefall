@@ -1,5 +1,6 @@
 #include "tfpch.h"
 #include "Platform/OpenGL/OpenGLTextureCube.h"
+#include "Platform/OpenGL/GPUMemoryTracker.h"
 
 #include <glad/glad.h>
 
@@ -18,6 +19,11 @@ namespace Timefall
 		// RGBA32F: HDRI suns exceed half-float max (65504) and turn Inf/NaN in 16F.
 		glTextureStorage2D(m_RendererID, (GLsizei)m_MipLevels, GL_RGBA32F, (GLsizei)size, (GLsizei)size);
 
+		uint64_t bytes = 6ull * size * size * 16; // RGBA32F = 16 B/px
+		if (m_MipLevels > 1)
+			bytes += bytes / 3;
+		GPUMemoryTracker::Track(GPUMemCategory::Textures, m_RendererID, bytes);
+
 		glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, m_MipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
 		glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -27,6 +33,7 @@ namespace Timefall
 
 	OpenGLTextureCube::~OpenGLTextureCube()
 	{
+		GPUMemoryTracker::Untrack(GPUMemCategory::Textures, m_RendererID);
 		glDeleteTextures(1, &m_RendererID);
 	}
 

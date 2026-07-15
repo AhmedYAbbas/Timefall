@@ -1,6 +1,7 @@
 #include "tfpch.h"
 
 #include "Platform/OpenGL/OpenGLBuffer.h"
+#include "Platform/OpenGL/GPUMemoryTracker.h"
 
 #include <glad/glad.h>
 
@@ -17,6 +18,7 @@ namespace Timefall
 		glCreateBuffers(1, &m_RendererID);
 		glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
 		glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
+		GPUMemoryTracker::Track(GPUMemCategory::Buffers, m_RendererID, size);
 	}
 
 	OpenGLVertexBuffer::OpenGLVertexBuffer(float* vertices, uint32_t size)
@@ -26,12 +28,14 @@ namespace Timefall
 		glCreateBuffers(1, &m_RendererID);
 		glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
 		glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_DYNAMIC_DRAW);
+		GPUMemoryTracker::Track(GPUMemCategory::Buffers, m_RendererID, size);
 	}
 
 	OpenGLVertexBuffer::~OpenGLVertexBuffer()
 	{
 		TF_PROFILE_FUNCTION();
 
+		GPUMemoryTracker::Untrack(GPUMemCategory::Buffers, m_RendererID);
 		glDeleteBuffers(1, &m_RendererID);
 	}
 
@@ -71,6 +75,7 @@ namespace Timefall
 		glCreateBuffers(1, &m_RendererID);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(uint32_t), indices, GL_STATIC_DRAW);
+		GPUMemoryTracker::Track(GPUMemCategory::Buffers, m_RendererID, (uint64_t)count * sizeof(uint32_t));
 
 		m_Count = count;
 	}
@@ -79,6 +84,7 @@ namespace Timefall
 	{
 		TF_PROFILE_FUNCTION();
 
+		GPUMemoryTracker::Untrack(GPUMemCategory::Buffers, m_RendererID);
 		glDeleteBuffers(1, &m_RendererID);
 	}
 

@@ -5,6 +5,8 @@
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 
+#include <tracy/TracyOpenGL.hpp>
+
 namespace Timefall
 {
 	OpenGLContext::OpenGLContext(GLFWwindow* windowHandle)
@@ -34,6 +36,8 @@ namespace Timefall
 
 		TF_CORE_ASSERT(versionMajor > 4 || (versionMajor == 4 && versionMinor >= 5), "Hazel requires at least OpenGL version 4.5!");
 #endif
+
+		TracyGpuContext;
 	}
 
 	void OpenGLContext::SwapBuffers()
@@ -41,5 +45,26 @@ namespace Timefall
 		TF_PROFILE_FUNCTION();
 
 		glfwSwapBuffers(m_WindowHandle);
+		TracyGpuCollect;
+
+#ifdef TRACY_ENABLE
+		// NVX_gpu_memory_info: driver-reported board usage (NVIDIA only, best-effort).
+		static const bool hasMemoryInfo = glfwExtensionSupported("GL_NVX_gpu_memory_info") == GLFW_TRUE;
+		if (hasMemoryInfo)
+		{
+			static double lastSample = 0.0;
+			double now = glfwGetTime();
+			if (now - lastSample > 1.0)
+			{
+				lastSample = now;
+				constexpr GLenum GPU_MEMORY_INFO_TOTAL_AVAILABLE_NVX = 0x9048;
+				constexpr GLenum GPU_MEMORY_INFO_CURRENT_AVAILABLE_NVX = 0x9049;
+				GLint totalKB = 0, availableKB = 0;
+				glGetIntegerv(GPU_MEMORY_INFO_TOTAL_AVAILABLE_NVX, &totalKB);
+				glGetIntegerv(GPU_MEMORY_INFO_CURRENT_AVAILABLE_NVX, &availableKB);
+				TF_PROFILE_PLOT("VRAM Board Used", (int64_t)(totalKB - availableKB) * 1024);
+			}
+		}
+#endif
 	}
 }

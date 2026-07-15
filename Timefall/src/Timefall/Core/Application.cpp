@@ -5,6 +5,7 @@
 #include "Timefall/Core/Timestep.h"
 #include "Timefall/Renderer/Renderer.h"
 #include "Timefall/Scripting/ScriptEngine.h"
+#include "Timefall/Debug/PerformanceStats.h"
 
 #include <GLFW/glfw3.h>
 
@@ -65,6 +66,8 @@ namespace Timefall
 
 	void Application::SubmitToMainThread(const std::function<void()>& function)
 	{
+		TF_PROFILE_FUNCTION();
+
 		std::scoped_lock<std::mutex> lock(m_MainThreadQueueMutex);
 		m_MainThreadQueue.emplace_back(function);
 	}
@@ -88,10 +91,10 @@ namespace Timefall
 
 	void Application::Run()
 	{
-		TF_PROFILE_FUNCTION();
-
 		while (m_Running)
 		{
+			TF_PROFILE_SCOPE("Application Run");
+
 			float time = (float)glfwGetTime();
 			Timestep timestep = time - m_LastFrameTime;
 			m_LastFrameTime = time;
@@ -120,6 +123,10 @@ namespace Timefall
 			m_ImGuiLayer->End();
 
 			m_Window->OnUpdate();
+
+			PerformanceStats::OnFrameEnd(timestep.GetMilliseconds());
+
+			TF_PROFILE_FRAME();
 		}
 	}
 
@@ -147,6 +154,8 @@ namespace Timefall
 
 	void Application::ExecuteMainThreadQueue()
 	{
+		TF_PROFILE_FUNCTION();
+
 		std::scoped_lock<std::mutex> lock(m_MainThreadQueueMutex);
 
 		for (auto& func : m_MainThreadQueue)

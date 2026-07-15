@@ -1,5 +1,6 @@
 #include "tfpch.h"
 #include "OpenGLFramebuffer.h"
+#include "Platform/OpenGL/GPUMemoryTracker.h"
 
 #include <glad/glad.h>
 
@@ -194,6 +195,27 @@ namespace Timefall
 
 		TF_CORE_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer is incomplete!");
 
+		// Ledger owned attachments only (external ids are tracked by their owner).
+		uint64_t bytes = 0;
+		auto formatBpp = [](FramebufferTextureFormat f) -> uint64_t {
+			switch (f)
+			{
+				case FramebufferTextureFormat::RGBA8: return 4;
+				case FramebufferTextureFormat::RGBA16F: return 8;
+				case FramebufferTextureFormat::RED_INTEGER: return 4;
+				case FramebufferTextureFormat::DEPTH24STENCIL8: return 4;
+				default: return 0;
+			}
+		};
+		for (const auto& spec : m_ColorAttachmentSpecifications)
+			if (spec.ExternalRendererID == 0)
+				bytes += (uint64_t)m_Specification.Width * m_Specification.Height * m_Specification.Samples * formatBpp(spec.TextureFormat);
+		if (m_DepthAttachmentSpecification.TextureFormat != FramebufferTextureFormat::None
+			&& m_DepthAttachmentSpecification.ExternalRendererID == 0)
+			bytes += (uint64_t)m_Specification.Width * m_Specification.Height * m_Specification.Samples
+				* formatBpp(m_DepthAttachmentSpecification.TextureFormat);
+		GPUMemoryTracker::Track(GPUMemCategory::Framebuffers, m_RendererID, bytes);
+
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
@@ -272,6 +294,8 @@ namespace Timefall
 	// Delete only attachments this framebuffer owns (ExternalRendererID == 0).
 	void OpenGLFramebuffer::DeleteOwnedAttachments()
 	{
+		GPUMemoryTracker::Untrack(GPUMemCategory::Framebuffers, m_RendererID);
+
 		for (size_t i = 0; i < m_ColorAttachments.size(); ++i)
 		{
 			if (i < m_ColorAttachmentSpecifications.size() && m_ColorAttachmentSpecifications[i].ExternalRendererID != 0)

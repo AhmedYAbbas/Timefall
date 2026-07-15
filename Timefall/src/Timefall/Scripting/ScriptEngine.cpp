@@ -276,6 +276,8 @@ namespace Timefall
 
 	void ScriptEngine::OnCreateEntity(Entity entity)
 	{
+		TF_PROFILE_FUNCTION();
+
 		const auto& sc = entity.GetComponent<ScriptComponent>();
 		if (ScriptEngine::EntityClassExists(sc.ModuleName))
 		{
@@ -298,6 +300,8 @@ namespace Timefall
 
 	void ScriptEngine::OnUpdateEntity(Entity entity, Timestep ts)
 	{
+		TF_PROFILE_FUNCTION();
+
 		UUID uuid = entity.GetUUID();
 		if (s_ScriptEngineData->EntityInstances.find(uuid) != s_ScriptEngineData->EntityInstances.end())
 			s_ScriptEngineData->EntityInstances[uuid]->InvokeOnUpdate(ts);
