@@ -26,3 +26,6 @@
 [submodule "Timefall/vendor/assimp"]
 	path = Timefall/vendor/assimp
 	url = https://github.com/AhmedYAbbas/assimp
+[submodule "Timefall/vendor/tracy"]
+	path = Timefall/vendor/tracy
+	url = https://github.com/AhmedYAbbas/tracy

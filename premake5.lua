@@ -52,6 +52,7 @@ IncludeDir["hostfxr"] = "vendor/hostfxr/include"
 IncludeDir["msdfgen"] = "vendor/msdf-atlas-gen/msdfgen"
 IncludeDir["msdf_atlas_gen"] = "vendor/msdf-atlas-gen/msdf-atlas-gen"
 IncludeDir["assimp"] = "vendor/assimp/include"
+IncludeDir["tracy"] = "vendor/tracy/public"
 
 -- Library directories relative to Timefall folder (Timefall project directory)
 LibraryDir = {}

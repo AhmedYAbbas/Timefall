@@ -18,7 +18,7 @@
 
 #include "Timefall/Core/Log.h"
 #include "Timefall/Core/Buffer.h"
-#include "Timefall/Debug/Instrumentor.h"
+#include "Timefall/Debug/Profiler.h"
 
 #ifdef TF_PLATFORM_WINDOWS
 #include <Windows.h>

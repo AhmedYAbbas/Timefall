@@ -10,7 +10,8 @@ project "Sandbox"
 	files
 	{
 		"src/**.h",
-		"src/**.cpp"
+		"src/**.cpp",
+		"../Timefall/src/Timefall/Debug/MemoryHooks.cpp"
 	}
 	
 	includedirs
@@ -21,7 +22,8 @@ project "Sandbox"
 		"../Timefall/%{IncludeDir.glm}",
 		"../Timefall/%{IncludeDir.ImGui}",
 		"../Timefall/%{IncludeDir.entt}",
-		"../Timefall/%{IncludeDir.box2d}"
+		"../Timefall/%{IncludeDir.box2d}",
+		"../Timefall/vendor/tracy/public",
 	}
 
 	defines
@@ -39,13 +41,13 @@ project "Sandbox"
 		systemversion "latest"
 
 	filter "configurations:Debug"
-		defines "TF_DEBUG"
+		defines { "TF_DEBUG", "TRACY_ENABLE", "TRACY_ON_DEMAND", "TRACY_IMPORTS" }
 		runtime "Debug"
 		symbols "on"
 		editandcontinue "Off" -- EnC (/ZI) corrupts incremental builds under /std:c++23preview
 
 	filter "configurations:Release"
-		defines "TF_RELEASE"
+		defines { "TF_RELEASE", "TRACY_ENABLE", "TRACY_ON_DEMAND", "TRACY_IMPORTS" }
 		runtime "Release"
 		optimize "on"
 

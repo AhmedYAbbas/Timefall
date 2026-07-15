@@ -27,7 +27,9 @@ project "Timefall"
 		"vendor/ImGuizmo/ImGuizmo.h",
 		"vendor/ImGuizmo/ImGuizmo.cpp",
 
-		"vendor/base64/base64.hpp"
+		"vendor/base64/base64.hpp",
+
+		"vendor/tracy/public/TracyClient.cpp"
 	}
 	
 	includedirs
@@ -49,7 +51,8 @@ project "Timefall"
 		"%{IncludeDir.ImGuizmo}",
 		"%{IncludeDir.box2d}",
 		"%{IncludeDir.hostfxr}",
-		"%{IncludeDir.assimp}"
+		"%{IncludeDir.assimp}",
+		"%{IncludeDir.tracy}"
 	}
 
 	defines
@@ -88,6 +91,7 @@ project "Timefall"
 		"Winmm.lib",
 		"Bcrypt.lib",
 		"Ws2_32.lib",
+		"Dbghelp.lib",
 	}
 
 	filter "files:vendor/ImGuizmo/**.cpp"
@@ -96,17 +100,20 @@ project "Timefall"
 	filter "files:vendor/imgui/**.cpp"
 		enablepch "Off"
 
+	filter "files:vendor/tracy/**.cpp"
+		enablepch "Off"
+
 	filter "system:windows"
 		systemversion "latest"
 
 	filter "configurations:Debug"
-		defines "TF_DEBUG"
+		defines { "TF_DEBUG", "TRACY_ENABLE", "TRACY_ON_DEMAND", "TRACY_EXPORTS" }
 		runtime "Debug"
 		symbols "on"
 		editandcontinue "Off" -- EnC (/ZI) corrupts incremental builds under /std:c++23preview
 
 	filter "configurations:Release"
-		defines "TF_RELEASE"
+		defines { "TF_RELEASE", "TRACY_ENABLE", "TRACY_ON_DEMAND", "TRACY_EXPORTS" }
 		runtime "Release"
 		optimize "on"
 
