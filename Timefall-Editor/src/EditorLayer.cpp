@@ -312,20 +312,13 @@ namespace Timefall
 		m_ContentBrowserPanel->OnImGuiRender(GetActiveScene());
 		m_ShadowSettingsPanel.OnImGuiRender(GetActiveScene());
 		m_PostProcessSettingsPanel.OnImGuiRender(GetActiveScene());
+		m_ProfilerPanel.OnImGuiRender();
 
 		ImGui::Begin("Stats");
 
 		// ImGui keeps a smoothed running framerate over the last ~120 frames.
 		float fps = ImGui::GetIO().Framerate;
 		ImGui::Text("FPS: %.1f  (%.3f ms/frame)", fps, fps > 0.0f ? 1000.0f / fps : 0.0f);
-		ImGui::Separator();
-
-		auto stats = Renderer2D::GetStats();
-		ImGui::Text("Renderer2D Stats:");
-		ImGui::Text("Draw Calls: %d", stats.DrawCalls);
-		ImGui::Text("Quads: %d", stats.QuadCount);
-		ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
-		ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
 
 		ImGui::End();
 

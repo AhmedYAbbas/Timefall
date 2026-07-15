@@ -5,6 +5,7 @@
 #include "Panels/ContentBrowserPanel.h"
 #include "Panels/ShadowSettingsPanel.h"
 #include "Panels/PostProcessSettingsPanel.h"
+#include "Panels/ProfilerPanel.h"
 
 #include <filesystem>
 
@@ -90,5 +91,6 @@ namespace Timefall
 		Scope<ContentBrowserPanel> m_ContentBrowserPanel;
 		ShadowSettingsPanel m_ShadowSettingsPanel;
 		PostProcessSettingsPanel m_PostProcessSettingsPanel;
+		ProfilerPanel m_ProfilerPanel;
 	};
 }

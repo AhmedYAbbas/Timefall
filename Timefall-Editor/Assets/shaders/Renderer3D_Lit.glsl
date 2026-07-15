@@ -97,7 +97,7 @@ layout(std140, binding = 2) uniform Shadows
 layout(std140, binding = 3) uniform SpotShadows
 {
 	mat4 u_SpotLightViewProj[MAX_SPOT];
-	vec4 u_SpotShadowParams[MAX_SPOT];   // x = casts, y = lightSize, z = depthBias
+	vec4 u_SpotShadowParams[MAX_SPOT];   // x = casts, y = lightSize, z = depthBias, w = atlas layer
 };
 
 layout(std140, binding = 4) uniform PointShadows
@@ -374,6 +374,7 @@ float LinearizeDepth(float d, float near, float far)
 
 float SampleSpotShadow(vec3 worldPos, int i, vec3 N, vec3 L)
 {
+	int layer = int(u_SpotShadowParams[i].w); // compacted atlas layer (see Renderer3D spot pass)
 	vec4 ls = u_SpotLightViewProj[i] * vec4(worldPos, 1.0);
 	vec3 proj = ls.xyz / ls.w;
 	proj = proj * 0.5 + 0.5;
@@ -396,7 +397,7 @@ float SampleSpotShadow(vec3 worldPos, int i, vec3 N, vec3 L)
 		for (int s = 0; s < u_BlockerSamples; ++s)
 		{
 			vec2 off = VogelDisk(s, u_BlockerSamples, 0.0) * searchUV;
-			float d = texture(u_SpotShadowMap, vec3(proj.xy + off, float(i))).r;
+			float d = texture(u_SpotShadowMap, vec3(proj.xy + off, float(layer))).r;
 			if (d < receiver - bias)
 			{
 				blockerSum += d;
@@ -429,7 +430,7 @@ float SampleSpotShadow(vec3 worldPos, int i, vec3 N, vec3 L)
 	for (int s = 0; s < u_PCFSamples; ++s)
 	{
 		vec2 off = VogelDisk(s, u_PCFSamples, rotation) * filterUV;
-		float closest = texture(u_SpotShadowMap, vec3(proj.xy + off, float(i))).r;
+		float closest = texture(u_SpotShadowMap, vec3(proj.xy + off, float(layer))).r;
 		shadow += (receiver - bias) > closest ? 1.0 : 0.0;
 	}
 	return shadow / float(u_PCFSamples);

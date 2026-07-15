@@ -54,5 +54,31 @@ namespace Timefall
 			float depthBias = 1.0f);
 
 		static void SubmitEnvironment(AssetHandle environmentMap, float intensity, float rotationDegrees);
+
+		// Per-frame counters, reset at the top of EndScene. Read by the editor ProfilerPanel.
+		struct Statistics
+		{
+			uint32_t DrawCalls = 0; // every draw call, all passes
+			uint32_t ShadowDrawCalls = 0; // sun cascades + spot + point faces (subset of DrawCalls)
+
+			uint32_t OpaqueMeshes = 0; // forward opaque/mask submissions
+			uint32_t BlendedMeshes = 0; // forward blended submissions
+			uint32_t TriangleCount = 0; // forward pass
+			uint32_t IndexCount = 0; // forward pass
+
+			uint32_t MaterialBinds = 0; // material state switches (lower = better batching)
+
+			uint32_t DirectionalLights = 0;
+			uint32_t PointLights = 0;
+			uint32_t SpotLights = 0;
+			uint32_t ShadowCasters = 0; // shadow-casting lights: sun + spot + point
+
+			uint32_t CascadeCount = 0; // active sun cascades this frame
+			uint32_t PointShadowCubes = 0; // point-shadow cube maps rendered
+
+			uint32_t ForwardDrawCalls() const { return OpaqueMeshes + BlendedMeshes; }
+		};
+		static Statistics& GetStats();
+		static void ResetStats();
 	};
 }

@@ -11,6 +11,8 @@
 #include "Timefall/Renderer/ShadowMap.h"
 #include "Timefall/Renderer/CubeShadowMap.h"
 #include "Timefall/Renderer/Environment.h"
+#include "Timefall/Renderer/GPUProfiler.h"
+#include "Timefall/Debug/PerformanceStats.h"
 #include "Timefall/Asset/AssetManager.h"
 #include "Timefall/Asset/EditorAssetManager.h"
 
@@ -120,7 +122,7 @@ namespace Timefall
 	struct SpotShadowData
 	{
 		glm::mat4 LightViewProj[MAX_SPOT_LIGHTS];
-		glm::vec4 Params[MAX_SPOT_LIGHTS]; // x = casts(0/1), y = lightSize, z = depthBias, w = 0
+		glm::vec4 Params[MAX_SPOT_LIGHTS]; // x = casts(0/1), y = lightSize, z = depthBias, w = atlas layer
 	};
 
 	// std140 mirror of the PointShadows UBO block. Indexed by point light index.
@@ -214,6 +216,8 @@ namespace Timefall
 		float EnvRotationRadians = 0.0f;
 		std::unordered_map<AssetHandle, Ref<Environment>> EnvironmentCache;
 		Ref<Environment> ActiveEnvironment;
+
+		Renderer3D::Statistics Stats;
 	};
 
 	static Renderer3DData s_Data;
@@ -383,7 +387,7 @@ namespace Timefall
 		s_Data.ShadowDepthShader = Shader::Create("assets/shaders/Renderer3D_ShadowDepth.glsl");
 		s_Data.PointShadowDepthShader = Shader::Create("assets/shaders/Renderer3D_PointShadowDepth.glsl");
 		s_Data.SunShadowMap = ShadowMap::Create(s_Data.Shadows.ShadowMapResolution, s_Data.Shadows.CascadeCount);
-		s_Data.SpotShadowMap = ShadowMap::Create(s_Data.Shadows.SpotShadowResolution, MAX_SPOT_LIGHTS);
+		s_Data.SpotShadowMap = ShadowMap::Create(s_Data.Shadows.SpotShadowResolution, 1); // grows on demand to the active spot-caster count
 		s_Data.PointShadowMap = CubeShadowMap::Create(s_Data.Shadows.PointShadowResolution, 1);
 
 		s_Data.CameraUniformBuffer = UniformBuffer::Create(sizeof(CameraData), 0);
@@ -492,7 +496,7 @@ namespace Timefall
 		}
 
 		if (s_Data.SpotShadowMap->GetResolution() != s_Data.Shadows.SpotShadowResolution)
-			s_Data.SpotShadowMap = ShadowMap::Create(s_Data.Shadows.SpotShadowResolution, MAX_SPOT_LIGHTS);
+			s_Data.SpotShadowMap = ShadowMap::Create(s_Data.Shadows.SpotShadowResolution, s_Data.SpotShadowMap->GetLayerCount());
 
 		if (s_Data.PointShadowMap->GetResolution() != s_Data.Shadows.PointShadowResolution)
 			s_Data.PointShadowMap = CubeShadowMap::Create(s_Data.Shadows.PointShadowResolution, s_Data.PointShadowMap->GetCubeCount());
@@ -505,6 +509,13 @@ namespace Timefall
 
 	void Renderer3D::EndScene()
 	{
+		TF_PROFILE_FUNCTION();
+
+		ResetStats();
+		s_Data.Stats.DirectionalLights = s_Data.LightsBuffer.DirCount;
+		s_Data.Stats.PointLights = s_Data.LightsBuffer.PointCount;
+		s_Data.Stats.SpotLights = s_Data.LightsBuffer.SpotCount;
+
 		// Upload any pending light data once for the frame.
 		if (s_Data.LightsDirty)
 		{
@@ -522,11 +533,20 @@ namespace Timefall
 		// Shadow depth pass: one draw set per cascade layer.
 		if (s_Data.SunCastsShadow)
 		{
+			TF_PROFILE_SCOPE("Shadow Sun");
+			TF_PROFILE_GPU_SCOPE("Shadow Sun");
+			PerformanceStats::ScopedPassTimer passTimer("Shadow Sun");
+
 			ComputeCascades(
 				s_Data.CameraBuffer.ViewProjection, s_Data.CameraBuffer.View, s_Data.SunDirection, s_Data.Shadows, s_Data.ShadowBuffer);
 			s_Data.ShadowBuffer.LightSize = s_Data.SunShadowSoftness * 0.16f;
 			s_Data.ShadowBuffer.DepthBias = s_Data.SunDepthBias;
 			s_Data.ShadowUniformBuffer->SetData(&s_Data.ShadowBuffer, sizeof(ShadowData));
+
+			s_Data.Stats.ShadowCasters++;
+			s_Data.Stats.CascadeCount = s_Data.Shadows.CascadeCount;
+			s_Data.Stats.ShadowDrawCalls += (uint32_t)s_Data.Submissions.size() * s_Data.Shadows.CascadeCount;
+			s_Data.Stats.DrawCalls += (uint32_t)s_Data.Submissions.size() * s_Data.Shadows.CascadeCount;
 
 			s_Data.ShadowDepthShader->Bind();
 			RenderCommand::SetFaceCulling(ToFaceCull(s_Data.Shadows.CullMode));
@@ -553,10 +573,22 @@ namespace Timefall
 			s_Data.ShadowUniformBuffer->SetData(&s_Data.ShadowBuffer, sizeof(ShadowData));
 		}
 
-		// Always upload so a spot that stopped casting this frame clears its stale caster flag.
+		// Compact casting spots into sequential atlas layers (mirrors the point path's cubeLayer):
+		// store each caster's layer in Params.w and size the atlas to the active caster count, so
+		// idle spot slots cost no VRAM. Always upload so a spot that stopped casting clears its flag.
+		uint32_t spotCasterCount = 0;
+		for (uint32_t i = 0; i < s_Data.LightsBuffer.SpotCount; ++i)
+			if (s_Data.SpotShadowBuffer.Params[i].x >= 0.5f)
+				s_Data.SpotShadowBuffer.Params[i].w = (float)spotCasterCount++;
+		if (spotCasterCount > s_Data.SpotShadowMap->GetLayerCount())
+			s_Data.SpotShadowMap = ShadowMap::Create(s_Data.Shadows.SpotShadowResolution, spotCasterCount);
 		s_Data.SpotShadowUniformBuffer->SetData(&s_Data.SpotShadowBuffer, sizeof(SpotShadowData));
 		if (s_Data.AnySpotCasts)
 		{
+			TF_PROFILE_SCOPE("Shadow Spot");
+			TF_PROFILE_GPU_SCOPE("Shadow Spot");
+			PerformanceStats::ScopedPassTimer passTimer("Shadow Spot");
+
 			s_Data.ShadowDepthShader->Bind();
 			RenderCommand::SetFaceCulling(ToFaceCull(s_Data.Shadows.CullMode));
 			s_Data.SpotShadowMap->BeginRenderPass();
@@ -564,8 +596,11 @@ namespace Timefall
 			{
 				if (s_Data.SpotShadowBuffer.Params[i].x < 0.5f)
 					continue;
+				s_Data.Stats.ShadowCasters++;
+				s_Data.Stats.ShadowDrawCalls += (uint32_t)s_Data.Submissions.size();
+				s_Data.Stats.DrawCalls += (uint32_t)s_Data.Submissions.size();
 				s_Data.ShadowDepthShader->SetMat4("u_LightSpaceMatrix", s_Data.SpotShadowBuffer.LightViewProj[i]);
-				s_Data.SpotShadowMap->BindLayer(i);
+				s_Data.SpotShadowMap->BindLayer((uint32_t)s_Data.SpotShadowBuffer.Params[i].w);
 				for (const MeshSubmission& sub : s_Data.Submissions)
 				{
 					s_Data.ShadowDepthShader->SetMat4("u_Model", sub.Transform);
@@ -579,9 +614,18 @@ namespace Timefall
 
 		if (s_Data.AnyPointCasts)
 		{
+			TF_PROFILE_SCOPE("Shadow Point");
+			TF_PROFILE_GPU_SCOPE("Shadow Point");
+			PerformanceStats::ScopedPassTimer passTimer("Shadow Point");
+
 			uint32_t casterCount = (uint32_t)s_Data.PointCasters.size();
 			if (s_Data.PointShadowMap->GetCubeCount() < casterCount)
 				s_Data.PointShadowMap = CubeShadowMap::Create(s_Data.Shadows.PointShadowResolution, casterCount);
+
+			s_Data.Stats.ShadowCasters += casterCount;
+			s_Data.Stats.PointShadowCubes = casterCount;
+			s_Data.Stats.ShadowDrawCalls += (uint32_t)s_Data.Submissions.size() * casterCount * 6;
+			s_Data.Stats.DrawCalls += (uint32_t)s_Data.Submissions.size() * casterCount * 6;
 
 			s_Data.PointShadowDepthShader->Bind();
 			RenderCommand::SetFaceCulling(ToFaceCull(s_Data.Shadows.CullMode));
@@ -682,23 +726,41 @@ namespace Timefall
 				emissive->BindAsSRGB(Renderer3DData::EMISSIVE_SAMPLER_SLOT);
 				normalMap->Bind(Renderer3DData::NORMAL_SAMPLER_SLOT);
 				s_Data.CurrentMaterial = mat;
+				s_Data.Stats.MaterialBinds++;
 			}
 
 			const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
 			RenderCommand::DrawIndexed(sub.Mesh->GetVertexArray(), sm.IndexCount, sm.BaseIndex, sm.BaseVertex);
+
+			s_Data.Stats.DrawCalls++;
+			s_Data.Stats.IndexCount += sm.IndexCount;
+			s_Data.Stats.TriangleCount += sm.IndexCount / 3;
+			if (mat->Alpha == AlphaMode::Blend)
+				s_Data.Stats.BlendedMeshes++;
+			else
+				s_Data.Stats.OpaqueMeshes++;
 		};
 
 		// Pass 1 — opaque + mask. Depth writes on; order-independent.
-		s_Data.CurrentMaterial = nullptr;
-		for (const MeshSubmission& sub : s_Data.Submissions)
-			if (sub.Material->Alpha != AlphaMode::Blend)
-				drawSubmission(sub);
+		{
+			TF_PROFILE_SCOPE("Forward Opaque");
+			TF_PROFILE_GPU_SCOPE("Forward Opaque");
+			PerformanceStats::ScopedPassTimer passTimer("Forward Opaque");
+			s_Data.CurrentMaterial = nullptr;
+			for (const MeshSubmission& sub : s_Data.Submissions)
+				if (sub.Material->Alpha != AlphaMode::Blend)
+					drawSubmission(sub);
+		}
 
 		// Skybox — fill un-covered background before the transparent pass so blended
 		// surfaces composite over it. LEQUAL lets the far-plane sky pass where depth is
 		// still 1.0 (nothing drawn); front-face cull renders the inside of the cube.
 		if (s_Data.ActiveEnvironment)
 		{
+			TF_PROFILE_SCOPE("Skybox");
+			TF_PROFILE_GPU_SCOPE("Skybox");
+			PerformanceStats::ScopedPassTimer passTimer("Skybox");
+
 			RenderCommand::SetDepthFunc(RendererAPI::DepthFunc::LessEqual);
 			RenderCommand::SetFaceCulling(RendererAPI::FaceCull::Front);
 			s_Data.SkyboxShader->Bind();
@@ -707,6 +769,7 @@ namespace Timefall
 
 			const Submesh& sky = s_Data.CubeMesh->GetSubmeshes()[0];
 			RenderCommand::DrawIndexed(s_Data.CubeMesh->GetVertexArray(), sky.IndexCount, sky.BaseIndex, sky.BaseVertex);
+			s_Data.Stats.DrawCalls++;
 
 			RenderCommand::SetFaceCulling(RendererAPI::FaceCull::Back);
 			RenderCommand::SetDepthFunc(RendererAPI::DepthFunc::Less);
@@ -726,6 +789,10 @@ namespace Timefall
 
 		if (!blended.empty())
 		{
+			TF_PROFILE_SCOPE("Forward Blended");
+			TF_PROFILE_GPU_SCOPE("Forward Blended");
+			PerformanceStats::ScopedPassTimer passTimer("Forward Blended");
+
 			const glm::vec3 camPos = s_Data.CameraBuffer.CameraPosition;
 			std::sort(blended.begin(), blended.end(), [&](const MeshSubmission* a, const MeshSubmission* b) {
 				glm::vec3 da = glm::vec3(a->Transform[3]) - camPos;
@@ -743,6 +810,10 @@ namespace Timefall
 		// --- Resolve HDR -> LDR target. Writes color only; id+depth (shared) untouched. ---
 		if (s_Data.HdrFB && s_Data.TargetFB)
 		{
+			TF_PROFILE_SCOPE("HDR Resolve");
+			TF_PROFILE_GPU_SCOPE("HDR Resolve");
+			PerformanceStats::ScopedPassTimer passTimer("HDR Resolve");
+
 			RenderCommand::SetDepthTest(false);
 			s_Data.TargetFB->BindForSingleColorDraw(0);
 
@@ -753,6 +824,7 @@ namespace Timefall
 			s_Data.HdrFB->BindColorAttachment(0, 0); // HDR color -> unit 0
 
 			RenderCommand::DrawArrays(s_Data.FullscreenVAO, 3);
+			s_Data.Stats.DrawCalls++;
 
 			// Restore full draw buffers ({color, id}) so the following 2D pass writes ids again.
 			s_Data.TargetFB->Bind();
@@ -768,6 +840,16 @@ namespace Timefall
 
 		const Ref<Material>& mat = material ? material : s_Data.DefaultMaterial;
 		s_Data.Submissions.push_back({transform, mesh, submeshIndex, mat, entityID});
+	}
+
+	Renderer3D::Statistics& Renderer3D::GetStats()
+	{
+		return s_Data.Stats;
+	}
+
+	void Renderer3D::ResetStats()
+	{
+		s_Data.Stats = Statistics();
 	}
 
 	Ref<Material> Renderer3D::GetDefaultMaterial()
