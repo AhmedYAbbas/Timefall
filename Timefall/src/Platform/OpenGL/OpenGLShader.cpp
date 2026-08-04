@@ -21,6 +21,7 @@ namespace Timefall
 	OpenGLShader::OpenGLShader(const std::string& filepath)
 	{
 		TF_PROFILE_FUNCTION();
+		TF_PROFILE_TAG(filepath.c_str(), filepath.size());
 
 		std::string source = ReadFile(filepath);
 		auto shaderSources = Preprocess(source);
@@ -37,6 +38,7 @@ namespace Timefall
 		: m_Name(name)
 	{
 		TF_PROFILE_FUNCTION();
+		TF_PROFILE_TAG(name.c_str(), name.size());
 
 		std::unordered_map<GLenum, std::string> sources;
 		sources[GL_VERTEX_SHADER] = vertexSrc;
@@ -126,10 +128,15 @@ namespace Timefall
 			const GLchar* sourceCStr = source.c_str();
 			glShaderSource(shader, 1, &sourceCStr, 0);
 
-			glCompileShader(shader);
-
 			GLint isCompiled = 0;
-			glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);
+			{
+				// GL_COMPILE_STATUS query stays in-scope: it forces the driver to finish compiling.
+				TF_PROFILE_SCOPE("glCompileShader");
+				TF_PROFILE_TAG(type == GL_VERTEX_SHADER ? "vertex" : "fragment", type == GL_VERTEX_SHADER ? 6 : 8);
+
+				glCompileShader(shader);
+				glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);
+			}
 			if (isCompiled == GL_FALSE)
 			{
 				GLint maxLength = 0;
@@ -149,10 +156,14 @@ namespace Timefall
 			glShaderIDs[glShaderIDIndex++] = shader;
 		}
 
-		glLinkProgram(program);
-
 		GLint isLinked = 0;
-		glGetProgramiv(program, GL_LINK_STATUS, (int*)&isLinked);
+		{
+			// GL_LINK_STATUS query stays in-scope: it forces the driver to finish linking.
+			TF_PROFILE_SCOPE("glLinkProgram");
+
+			glLinkProgram(program);
+			glGetProgramiv(program, GL_LINK_STATUS, (int*)&isLinked);
+		}
 		if (isLinked == GL_FALSE)
 		{
 			GLint maxLength = 0;

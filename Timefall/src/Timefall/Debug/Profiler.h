@@ -10,6 +10,7 @@
 #define TF_PROFILE_FRAME() FrameMark
 #define TF_PROFILE_FUNCTION() ZoneScoped
 #define TF_PROFILE_SCOPE(name) ZoneScopedN(name)
+#define TF_PROFILE_TAG(text, size) ZoneText(text, size)
 #define TF_PROFILE_THREAD(name) tracy::SetThreadName(name)
 #define TF_PROFILE_PLOT(name, value) TracyPlot(name, value)
 #define TF_PROFILE_LOG(text, size) TracyMessage(text, size)
@@ -19,6 +20,7 @@
 #define TF_PROFILE_FRAME()
 #define TF_PROFILE_FUNCTION()
 #define TF_PROFILE_SCOPE(name)
+#define TF_PROFILE_TAG(text, size)
 #define TF_PROFILE_THREAD(name)
 #define TF_PROFILE_PLOT(name, value)
 #define TF_PROFILE_LOG(text, size)
