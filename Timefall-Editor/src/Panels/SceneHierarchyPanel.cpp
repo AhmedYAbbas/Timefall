@@ -210,8 +210,7 @@ namespace Timefall
 
 		ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0, 0});
-
-		float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+		float lineHeight = GImGui->FontSize + GImGui->Style.FramePadding.y * 2.0f;
 		ImVec2 buttonSize = ImVec2{lineHeight + 3.0f, lineHeight};
 
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
@@ -337,7 +336,7 @@ namespace Timefall
 
 	template <typename T, typename UIFunction> static void DrawComponent(const std::string& label, Entity entity, UIFunction uiFunction)
 	{
-		const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap
+		const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap
 			| ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanAvailWidth;
 
 		if (entity.HasComponent<T>())
@@ -346,7 +345,7 @@ namespace Timefall
 			ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
 
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
-			float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+			float lineHeight = GImGui->FontSize + GImGui->Style.FramePadding.y * 2.0f;
 			ImGui::Separator();
 			bool open = ImGui::TreeNodeEx((void*)typeid(T).hash_code(), treeNodeFlags, label.c_str());
 			ImGui::PopStyleVar();
@@ -1074,10 +1073,10 @@ namespace Timefall
 				// full-width header doesn't swallow the "+" button's click.
 				ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
 				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
-				float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+				float lineHeight = GImGui->FontSize + GImGui->Style.FramePadding.y * 2.0f;
 				ImGui::Separator();
 				bool open = ImGui::TreeNodeEx(label.c_str(),
-					ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_Framed
+					ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap | ImGuiTreeNodeFlags_Framed
 						| ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanAvailWidth);
 				ImGui::PopStyleVar();
 				ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);

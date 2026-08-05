@@ -314,14 +314,6 @@ namespace Timefall
 		m_PostProcessSettingsPanel.OnImGuiRender(GetActiveScene());
 		m_ProfilerPanel.OnImGuiRender();
 
-		ImGui::Begin("Stats");
-
-		// ImGui keeps a smoothed running framerate over the last ~120 frames.
-		float fps = ImGui::GetIO().Framerate;
-		ImGui::Text("FPS: %.1f  (%.3f ms/frame)", fps, fps > 0.0f ? 1000.0f / fps : 0.0f);
-
-		ImGui::End();
-
 		ImGui::Begin("Settings");
 		ImGui::Checkbox("Show Physics Colliders", &m_ShowPhysicsColliders);
 		ImGui::Image((ImTextureID)(uint64_t)s_Font->GetAtlasTexture()->GetRendererID(), {512, 512}, {0, 1}, {1, 0});
