@@ -52,7 +52,11 @@ project "Timefall"
 		"%{IncludeDir.box2d}",
 		"%{IncludeDir.hostfxr}",
 		"%{IncludeDir.assimp}",
-		"%{IncludeDir.tracy}"
+		"%{IncludeDir.tracy}",
+
+		"%{IncludeDir.VulkanSDK}",
+		"%{IncludeDir.VMA}",
+		"%{IncludeDir.Slang}"
 	}
 
 	defines
@@ -64,7 +68,15 @@ project "Timefall"
 		"GLFW_INCLUDE_NONE",
 		"YAML_CPP_STATIC_DEFINE",
 
-		"IMGUI_API=__declspec(dllexport)"
+		"IMGUI_API=__declspec(dllexport)",
+
+		"VK_NO_PROTOTYPES",
+		"VULKAN_HPP_NO_DISPATCH_LOADER_DYNAMIC=1",
+		"VULKAN_HPP_NO_EXCEPTIONS",
+		"VULKAN_HPP_USE_STD_EXPECTED",
+		"VULKAN_HPP_ASSERT_ON_RESULT(x)=",
+		"VULKAN_HPP_NO_CONSTRUCTORS",
+		"VULKAN_HPP_NO_SMART_HANDLE"
 	}
 
 	links
@@ -92,6 +104,15 @@ project "Timefall"
 		"Bcrypt.lib",
 		"Ws2_32.lib",
 		"Dbghelp.lib",
+
+		--Vulkan--
+		"%{LibraryDir.VulkanSDK}/slang.lib",
+		"delayimp.lib"
+	}
+
+	linkoptions
+	{
+		"/DELAYLOAD:slang.dll" -- slang.dll loads on first compile, not at startup
 	}
 
 	filter "files:vendor/ImGuizmo/**.cpp"

@@ -26,3 +26,6 @@ CLAUDE.md
 *.vcxproj.user
 
 # *.pdb
+
+# Shader Cache
+Cache/

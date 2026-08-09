@@ -53,10 +53,16 @@ IncludeDir["msdfgen"] = "vendor/msdf-atlas-gen/msdfgen"
 IncludeDir["msdf_atlas_gen"] = "vendor/msdf-atlas-gen/msdf-atlas-gen"
 IncludeDir["assimp"] = "vendor/assimp/include"
 IncludeDir["tracy"] = "vendor/tracy/public"
+IncludeDir["VulkanSDK"] = "$(VULKAN_SDK)/Include"
+IncludeDir["Slang"] = "$(VULKAN_SDK)/Include/slang"
+IncludeDir["VMA"] = "vendor/vma"
 
 -- Library directories relative to Timefall folder (Timefall project directory)
 LibraryDir = {}
 LibraryDir["hostfxr"] = "vendor/hostfxr/lib/%{cfg.buildcfg}"
+LibraryDir["VulkanSDK"] = "$(VULKAN_SDK)/Lib"
+
+SlangDir = "$(VULKAN_SDK)/Bin"
 
 group "Dependencies"
 	include "Timefall/vendor/GLFW"

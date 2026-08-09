@@ -33,21 +33,27 @@ project "Timefall-Editor"
 	defines
 	{
 		"_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING",
-		"IMGUI_API=__declspec(dllimport)"
+		"IMGUI_API=__declspec(dllimport)",
+
+		"IMGUI_DISABLE_OBSOLETE_FUNCTIONS"
 	}
 
 	links
 	{
 		"Timefall"
 	}
-	
+
 	filter "system:windows"
 		systemversion "latest"
 
 		-- Copy Timefall.dll to Timefall-Editor bin folder after build
 		postbuildcommands
 		{
-			"{COPYFILE} \"%{wks.location}Timefall/bin/" .. outputdir .. "/Timefall/Timefall.dll\" \"%{cfg.targetdir}\""
+			"{COPYFILE} \"%{wks.location}Timefall/bin/" .. outputdir .. "/Timefall/Timefall.dll\" \"%{cfg.targetdir}\"",
+    		"{COPYFILE} \"$(VULKAN_SDK)/Bin/slang.dll\" \"%{cfg.targetdir}\"",
+    		"{COPYFILE} \"$(VULKAN_SDK)/Bin/slang-compiler.dll\" \"%{cfg.targetdir}\"",
+    		"{COPYFILE} \"$(VULKAN_SDK)/Bin/slang-glslang.dll\" \"%{cfg.targetdir}\"",
+    		"{COPYFILE} \"$(VULKAN_SDK)/Bin/slang-rt.dll\" \"%{cfg.targetdir}\""
 		}
 
 	filter "configurations:Debug"
