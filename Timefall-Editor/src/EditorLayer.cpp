@@ -145,7 +145,6 @@ namespace Timefall
 		Renderer2D::ResetStats();
 		m_Framebuffer->Bind();
 		Renderer3D::SetTargetFramebuffer(m_Framebuffer);
-		RenderCommand::Clear({0.1f, 0.1f, 0.1f, 1.0f});
 		m_Framebuffer->ClearColorAttachment(1, -1);
 
 		// Feed the viewport-relative mouse (top-left origin) to the engine so scripts get world input.

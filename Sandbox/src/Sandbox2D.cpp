@@ -64,10 +64,6 @@ void Sandbox2D::OnUpdate(Timefall::Timestep ts)
 
 	// Render
 	Timefall::Renderer2D::ResetStats();
-	{
-		TF_PROFILE_SCOPE("Renderer Prep");
-		Timefall::RenderCommand::Clear({0.1f, 0.1f, 0.1f, 1.0f});
-	}
 
 	{
 		TF_PROFILE_SCOPE("Renderer Draw");

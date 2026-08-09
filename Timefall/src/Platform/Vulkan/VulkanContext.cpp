@@ -238,7 +238,7 @@ namespace Timefall
 
 		const char* deviceExtensions[]{vk::KHRSwapchainExtensionName};
 
-		auto device = m_PhysicalDevice.createDevice({.pNext = &f11,
+		auto device = m_PhysicalDevice.createDevice({.pNext = &features2,
 			.queueCreateInfoCount = 1,
 			.pQueueCreateInfos = &queue,
 			.enabledExtensionCount = (uint32_t)std::size(deviceExtensions),
@@ -265,7 +265,7 @@ namespace Timefall
 		VmaVulkanFunctions fns{};
 		fns.vkGetInstanceProcAddr = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr;
 		fns.vkGetDeviceProcAddr = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceProcAddr;
-		fns.vkGetPhysicalDeviceMemoryProperties2KHR = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetPhysicalDeviceMemoryProperties2KHR;
+		fns.vkGetPhysicalDeviceMemoryProperties2KHR = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetPhysicalDeviceMemoryProperties2;
 
 		const VmaAllocatorCreateInfo info{.physicalDevice = m_PhysicalDevice,
 			.device = m_Device,

@@ -1,21 +1,20 @@
 #include "tfpch.h"
 
 #include "Timefall/Renderer/UniformBuffer.h"
-#include "Timefall/Renderer/Renderer.h"
-
-#include "Platform/OpenGL/OpenGLUniformBuffer.h"
 
 namespace Timefall
 {
-	Ref<UniformBuffer> UniformBuffer::Create(uint32_t size, uint32_t binding)
+	namespace
 	{
-		switch (Renderer::GetAPI())
+		class StubUniformBuffer : public UniformBuffer
 		{
-			case RendererAPI::API::None: TF_CORE_ASSERT(false, "RendererAPI::None is not currently supported!"); return nullptr;
-			case RendererAPI::API::OpenGL: return CreateRef<OpenGLUniformBuffer>(size, binding);
-		}
+		public:
+			void SetData(const void*, uint32_t, uint32_t) override {}
+		};
+	}
 
-		TF_CORE_ASSERT(false, "Unknown RendererAPI!");
-		return nullptr;
+	Ref<UniformBuffer> UniformBuffer::Create(uint32_t, uint32_t)
+	{
+		return CreateRef<StubUniformBuffer>();
 	}
 }

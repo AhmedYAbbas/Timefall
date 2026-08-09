@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Timefall/Core/Window.h"
-#include "Timefall/Renderer/GraphicsContext.h"
 
 #include <GLFW/glfw3.h>
 
@@ -31,7 +30,6 @@ namespace Timefall
 
 	private:
 		GLFWwindow* m_Window;
-		Scope<GraphicsContext> m_Context;
 
 		struct WindowData
 		{

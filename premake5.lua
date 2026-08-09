@@ -39,7 +39,7 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 -- Include directories relative to Timefall folder (Timefall project directory)
 IncludeDir = {}
 IncludeDir["GLFW"] = "vendor/GLFW/include"
-IncludeDir["Glad"] = "vendor/Glad/include"
+--IncludeDir["Glad"] = "vendor/Glad/include"
 IncludeDir["filewatch"] = "vendor/filewatch"
 IncludeDir["ImGui"] = "vendor/imgui"
 IncludeDir["glm"] = "vendor/glm"
@@ -66,7 +66,7 @@ SlangDir = "$(VULKAN_SDK)/Bin"
 
 group "Dependencies"
 	include "Timefall/vendor/GLFW"
-	include "Timefall/vendor/Glad"
+	--include "Timefall/vendor/Glad"
 	include "Timefall/vendor/msdf-atlas-gen"
 	include "Timefall/vendor/imgui"
 	include "Timefall/vendor/yaml-cpp"

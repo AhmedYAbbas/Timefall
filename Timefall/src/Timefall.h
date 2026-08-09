@@ -30,9 +30,7 @@
 // ------------Renderer--------------
 #include "Timefall/Renderer/Renderer.h"
 #include "Timefall/Renderer/Renderer2D.h"
-#include "Timefall/Renderer/RenderCommand.h"
 
-#include "Timefall/Renderer/VertexArray.h"
 #include "Timefall/Renderer/Shader.h"
 #include "Timefall/Renderer/Framebuffer.h"
 #include "Timefall/Renderer/Texture.h"

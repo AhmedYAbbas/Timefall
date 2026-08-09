@@ -1,7 +1,9 @@
 #include "tfpch.h"
 
-#include "Platform/OpenGL/GPUMemoryTracker.h"
+#include "Platform/Vulkan/GPUMemoryTracker.h"
+#include "Platform/Vulkan/VulkanContext.h"
 
+#include <vk_mem_alloc.h>
 #include <mutex>
 
 namespace Timefall
@@ -52,6 +54,20 @@ namespace Timefall
 			EmitPlots();
 		}
 	}
+
+	void GPUMemoryTracker::GetUsage(uint64_t& usedBytes, uint64_t& budgetBytes)
+	{
+		VmaBudget budgets[VK_MAX_MEMORY_HEAPS]{};
+		vmaGetHeapBudgets(VulkanContext::Get().GetAllocator(), budgets);
+
+		usedBytes = budgetBytes = 0;
+		const auto& props = VulkanContext::Get().GetPhysicalDevice().getMemoryProperties2().memoryProperties;
+		for (uint32_t i = 0; i < props.memoryHeapCount; i++)
+		{
+			usedBytes += budgets[i].usage;
+			budgetBytes += budgets[i].budget;
+		}
+	};
 
 	uint64_t GPUMemoryTracker::GetBytes(GPUMemCategory category)
 	{

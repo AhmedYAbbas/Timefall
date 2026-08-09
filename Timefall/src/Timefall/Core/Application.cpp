@@ -31,11 +31,11 @@ namespace Timefall
 		m_Window->SetEventCallBack(TF_BIND_EVENT_FN(Application::OnEvent));
 		m_Window->SetVsync(false);
 
-		#ifdef TF_DIST
+#ifdef TF_DIST
 		constexpr bool enableGpuDebug = false;
-		#else
+#else
 		constexpr bool enableGpuDebug = true;
-		#endif
+#endif
 
 		if (auto result = VulkanContext::Get().Init(enableGpuDebug); !result)
 			TF_CORE_ERROR("Vulkan init failed: {0}", result.error());

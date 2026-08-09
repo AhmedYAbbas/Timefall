@@ -1,11 +1,9 @@
 #include "tfpch.h"
 #include "WindowsWindow.h"
 
-#include "Timefall/Core/Input.h"
 #include "Timefall/Events/ApplicationEvent.h"
 #include "Timefall/Events/MouseEvent.h"
 #include "Timefall/Events/KeyEvent.h"
-#include "Timefall/Renderer/Renderer.h"
 
 #include <filesystem>
 
@@ -53,16 +51,10 @@ namespace Timefall
 
 		{
 			TF_PROFILE_SCOPE("glfwCreateWindow()");
-#if defined(TF_DEBUG)
-			if (Renderer::GetAPI() == RendererAPI::API::OpenGL)
-				glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
-#endif
+			glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 			m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, props.Title.c_str(), nullptr, nullptr);
 			++s_GLFWWindowCount;
 		}
-
-		m_Context = GraphicsContext::Create(m_Window);
-		m_Context->Init();
 
 		glfwSetWindowUserPointer(m_Window, &m_Data);
 		glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -179,18 +171,13 @@ namespace Timefall
 		TF_PROFILE_FUNCTION();
 
 		glfwPollEvents();
-		m_Context->SwapBuffers();
 	}
 
 	void WindowsWindow::SetVsync(bool enabled)
 	{
 		TF_PROFILE_FUNCTION();
 
-		if (enabled)
-			glfwSwapInterval(1);
-		else
-			glfwSwapInterval(0);
-
 		m_Data.Vsync = enabled;
+		// RHI::RenderDevice::Get().SetVSync(enabled);
 	}
 }

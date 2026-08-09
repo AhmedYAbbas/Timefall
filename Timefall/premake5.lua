@@ -38,7 +38,7 @@ project "Timefall"
 		"vendor/spdlog/include",
 		"vendor/base64",
 		"%{IncludeDir.GLFW}",
-		"%{IncludeDir.Glad}",
+		--"%{IncludeDir.Glad}",
 		"%{IncludeDir.filewatch}",
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.ImGui}/backends",
@@ -65,7 +65,7 @@ project "Timefall"
 
 		"_CRT_SECURE_NO_WARNINGS",
 		"_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING",
-		"GLFW_INCLUDE_NONE",
+		--"GLFW_INCLUDE_NONE",
 		"YAML_CPP_STATIC_DEFINE",
 
 		"IMGUI_API=__declspec(dllexport)",
@@ -81,11 +81,11 @@ project "Timefall"
 	links
 	{
 		"GLFW",
-		"Glad",
+		--"Glad",
 		--"ImGui",
 		"yaml-cpp",
 		"box2d",
-		"opengl32.lib",
+		--"opengl32.lib",
 
 		"msdf-atlas-gen",
 

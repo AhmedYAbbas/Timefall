@@ -16,6 +16,7 @@ namespace Timefall
 		static void Track(GPUMemCategory category, uint32_t id, uint64_t bytes);
 		static void Untrack(GPUMemCategory category, uint32_t id);
 
+		static void GetUsage(uint64_t& usedBytes, uint64_t& budgetBytes);
 		static uint64_t GetBytes(GPUMemCategory category);
 		static uint64_t GetTotalBytes();
 	};

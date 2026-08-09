@@ -1,44 +1,53 @@
 #include "tfpch.h"
 #include "Timefall/Renderer/Buffer.h"
 
-#include "Timefall/Renderer/Renderer.h"
-#include "Platform/OpenGL/OpenGLBuffer.h"
-
 namespace Timefall
 {
-	Ref<VertexBuffer> VertexBuffer::Create(uint32_t size)
+	namespace
 	{
-		switch (Renderer::GetAPI())
+		class StubVertexBuffer : public VertexBuffer
 		{
-			case RendererAPI::API::None: TF_CORE_ASSERT(false, "RendererAPI::None is not currently supported!"); return nullptr;
-			case RendererAPI::API::OpenGL: return CreateRef<OpenGLVertexBuffer>(size);
-		}
+		public:
+			void Bind() const override {}
+			void Unbind() const override {}
+			void SetData(const void*, uint32_t) override {}
 
-		TF_CORE_ASSERT(false, "Unknown RendererAPI!");
-		return nullptr;
+			void SetLayout(const BufferLayout& layout) override { m_Layout = layout; }
+			const BufferLayout& GetLayout() const override { return m_Layout; }
+
+		private:
+			BufferLayout m_Layout;
+		};
+
+		class StubIndexBuffer : public IndexBuffer
+		{
+		public:
+			explicit StubIndexBuffer(uint32_t count)
+				: m_Count(count)
+			{}
+
+			void Bind() const override {}
+			void Unbind() const override {}
+
+			uint32_t GetCount() const override { return m_Count; }
+
+		private:
+			uint32_t m_Count;
+		};
 	}
 
-	Ref<VertexBuffer> VertexBuffer::Create(float* vertices, uint32_t size)
+	Ref<VertexBuffer> VertexBuffer::Create(uint32_t)
 	{
-		switch (Renderer::GetAPI())
-		{
-			case RendererAPI::API::None: TF_CORE_ASSERT(false, "RendererAPI::None is not currently supported!"); return nullptr;
-			case RendererAPI::API::OpenGL: return CreateRef<OpenGLVertexBuffer>(vertices, size);
-		}
-
-		TF_CORE_ASSERT(false, "Unknown RendererAPI!");
-		return nullptr;
+		return CreateRef<StubVertexBuffer>();
 	}
 
-	Ref<IndexBuffer> IndexBuffer::Create(uint32_t* indices, uint32_t count)
+	Ref<VertexBuffer> VertexBuffer::Create(float*, uint32_t)
 	{
-		switch (Renderer::GetAPI())
-		{
-			case RendererAPI::API::None: TF_CORE_ASSERT(false, "RendererAPI::None is not currently supported!"); return nullptr;
-			case RendererAPI::API::OpenGL: return CreateRef<OpenGLIndexBuffer>(indices, count);
-		}
+		return CreateRef<StubVertexBuffer>();
+	}
 
-		TF_CORE_ASSERT(false, "Unknown RendererAPI!");
-		return nullptr;
+	Ref<IndexBuffer> IndexBuffer::Create(uint32_t*, uint32_t count)
+	{
+		return CreateRef<StubIndexBuffer>(count);
 	}
 }

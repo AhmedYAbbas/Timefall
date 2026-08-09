@@ -2,7 +2,6 @@
 
 #include "Timefall/Core/Core.h"
 #include "Timefall/Asset/Asset.h"
-#include "Timefall/Renderer/VertexArray.h"
 
 #include <glm/glm.hpp>
 #include <vector>
@@ -41,7 +40,6 @@ namespace Timefall
 	public:
 		MeshSource(const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices, const std::vector<Submesh>& submeshes);
 
-		const Ref<VertexArray>& GetVertexArray() const { return m_VertexArray; }
 		const std::vector<Submesh>& GetSubmeshes() const { return m_Submeshes; }
 
 		static AssetType GetStaticType() { return AssetType::Mesh; }
@@ -56,7 +54,6 @@ namespace Timefall
 		static Ref<MeshSource> CreatePlane();
 
 	private:
-		Ref<VertexArray> m_VertexArray;
 		std::vector<Submesh> m_Submeshes;
 	};
 

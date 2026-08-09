@@ -6,7 +6,6 @@
 #include "Timefall/Scene/Components.h"
 #include "Timefall/Renderer/Renderer2D.h"
 #include "Timefall/Renderer/Renderer3D.h"
-#include "Timefall/Renderer/RenderCommand.h"
 #include "Timefall/Renderer/Material.h"
 #include "Timefall/Renderer/Mesh.h"
 #include "Timefall/Asset/AssetManager.h"
@@ -203,7 +202,6 @@ namespace Timefall
 			PerformanceStats::ScopedPassTimer passTimer("Scene Render");
 
 			// --- 3D pass (depth-tested) ---
-			RenderCommand::SetDepthTest(true);
 			Renderer3D::BeginScene(*mainCamera, cameraTransform);
 			Renderer3D::SetShadowSettings(m_ShadowSettings);
 			Renderer3D::SetPostProcessSettings(m_PostProcessSettings);
@@ -260,7 +258,6 @@ namespace Timefall
 			Renderer3D::EndScene();
 
 			// --- 2D overlay pass (no depth test; draws on top) ---
-			RenderCommand::SetDepthTest(false);
 			Renderer2D::BeginScene(*mainCamera, cameraTransform);
 
 			// Draw sprites
@@ -706,7 +703,6 @@ namespace Timefall
 		TF_PROFILE_FUNCTION();
 
 		// --- 3D pass (depth-tested) ---
-		RenderCommand::SetDepthTest(true);
 		Renderer3D::BeginScene(camera);
 		Renderer3D::SetShadowSettings(m_ShadowSettings);
 		Renderer3D::SetPostProcessSettings(m_PostProcessSettings);
@@ -763,7 +759,6 @@ namespace Timefall
 		Renderer3D::EndScene();
 
 		// --- 2D overlay pass (no depth test; draws on top) ---
-		RenderCommand::SetDepthTest(false);
 		Renderer2D::BeginScene(camera);
 
 		// Draw sprites

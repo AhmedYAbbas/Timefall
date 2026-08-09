@@ -3,10 +3,8 @@
 #include "Timefall/Renderer/Renderer3D.h"
 
 #include "Timefall/Renderer/Framebuffer.h"
-#include "Timefall/Renderer/VertexArray.h"
 #include "Timefall/Renderer/Shader.h"
 #include "Timefall/Renderer/UniformBuffer.h"
-#include "Timefall/Renderer/RenderCommand.h"
 #include "Timefall/Renderer/Texture.h"
 #include "Timefall/Renderer/ShadowMap.h"
 #include "Timefall/Renderer/CubeShadowMap.h"
@@ -190,7 +188,6 @@ namespace Timefall
 		Ref<Framebuffer> HdrFB; // internal RGBA16F scene buffer
 		Ref<Shader> ResolveShader;
 		Ref<Shader> SkyboxShader;
-		Ref<VertexArray> FullscreenVAO; // empty VAO for the fullscreen triangle
 		PostProcessSettings PostProcess;
 
 		static constexpr uint32_t BASE_COLOR_SAMPLER_SLOT = 0;
@@ -325,17 +322,6 @@ namespace Timefall
 		out.VisualizeCascades = settings.VisualizeCascades ? 1u : 0u;
 	}
 
-	static RendererAPI::FaceCull ToFaceCull(ShadowCullMode mode)
-	{
-		switch (mode)
-		{
-			case ShadowCullMode::Front: return RendererAPI::FaceCull::Front;
-			case ShadowCullMode::None: return RendererAPI::FaceCull::None;
-			case ShadowCullMode::Back:
-			default: return RendererAPI::FaceCull::Back;
-		}
-	}
-
 	static glm::mat4 ComputeSpotMatrix(const glm::vec3& position, const glm::vec3& direction, float range, float outerCutoffDegrees)
 	{
 		glm::vec3 dir = glm::normalize(direction);
@@ -377,593 +363,53 @@ namespace Timefall
 		s_Data.HdrFB = Framebuffer::Create(spec);
 	}
 
-	void Renderer3D::Init()
-	{
-		s_Data.CubeMesh = MeshSource::CreateCube();
-		s_Data.SphereMesh = MeshSource::CreateSphere();
-		s_Data.PlaneMesh = MeshSource::CreatePlane();
-
-		s_Data.LitShader = Shader::Create("assets/shaders/Renderer3D_Lit.glsl");
-		s_Data.ShadowDepthShader = Shader::Create("assets/shaders/Renderer3D_ShadowDepth.glsl");
-		s_Data.PointShadowDepthShader = Shader::Create("assets/shaders/Renderer3D_PointShadowDepth.glsl");
-		s_Data.SunShadowMap = ShadowMap::Create(s_Data.Shadows.ShadowMapResolution, s_Data.Shadows.CascadeCount);
-		s_Data.SpotShadowMap = ShadowMap::Create(s_Data.Shadows.SpotShadowResolution, 1); // grows on demand to the active spot-caster count
-		s_Data.PointShadowMap = CubeShadowMap::Create(s_Data.Shadows.PointShadowResolution, 1);
-
-		s_Data.CameraUniformBuffer = UniformBuffer::Create(sizeof(CameraData), 0);
-		s_Data.LightsUniformBuffer = UniformBuffer::Create(sizeof(LightsData), 1);
-		s_Data.ShadowUniformBuffer = UniformBuffer::Create(sizeof(ShadowData), 2);
-		s_Data.SpotShadowUniformBuffer = UniformBuffer::Create(sizeof(SpotShadowData), 3);
-		s_Data.PointShadowUniformBuffer = UniformBuffer::Create(sizeof(PointShadowData), 4);
-		s_Data.MaterialUniformBuffer = UniformBuffer::Create(sizeof(MaterialData), 5);
-		s_Data.EnvironmentUniformBuffer = UniformBuffer::Create(sizeof(EnvironmentData), 6);
-
-		s_Data.WhiteTexture = Texture2D::Create(TextureSpecification());
-		uint32_t whiteTextureData = 0xffffffff;
-		s_Data.WhiteTexture->SetData(Buffer(&whiteTextureData, sizeof(uint32_t)));
-
-		s_Data.FlatNormalTexture = Texture2D::Create(TextureSpecification());
-		uint32_t flatNormalData = 0xffff8080; // RGBA8 LE -> (R=128, G=128, B=255, A=255) = tangent-space (0,0,1)
-		s_Data.FlatNormalTexture->SetData(Buffer(&flatNormalData, sizeof(uint32_t)));
-
-		s_Data.DefaultMaterial = CreateRef<Material>();
-
-		// Map sampler uniforms to texture units 0 (diffuse) and 1 (specular) once.
-		s_Data.LitShader->Bind();
-		s_Data.LitShader->SetInt("u_BaseColorMap", (int)Renderer3DData::BASE_COLOR_SAMPLER_SLOT);
-		s_Data.LitShader->SetInt("u_MetallicMap", (int)Renderer3DData::METALLIC_SAMPLER_SLOT);
-		s_Data.LitShader->SetInt("u_RoughnessMap", (int)Renderer3DData::ROUGHNESS_SAMPLER_SLOT);
-		s_Data.LitShader->SetInt("u_AOMap", (int)Renderer3DData::AO_SAMPLER_SLOT);
-		s_Data.LitShader->SetInt("u_EmissiveMap", (int)Renderer3DData::EMISSIVE_SAMPLER_SLOT);
-		s_Data.LitShader->SetInt("u_ShadowMap", (int)Renderer3DData::SHADOW_SAMPLER_SLOT);
-		s_Data.LitShader->SetInt("u_SpotShadowMap", (int)Renderer3DData::SPOT_SHADOW_SAMPLER_SLOT);
-		s_Data.LitShader->SetInt("u_PointShadowMap", (int)Renderer3DData::POINT_SHADOW_SAMPLER_SLOT);
-		s_Data.LitShader->SetInt("u_NormalMap", (int)Renderer3DData::NORMAL_SAMPLER_SLOT);
-		s_Data.LitShader->SetInt("u_IrradianceMap", (int)Renderer3DData::IRRADIANCE_SAMPLER_SLOT);
-		s_Data.LitShader->SetInt("u_PrefilterMap", (int)Renderer3DData::PREFILTER_SAMPLER_SLOT);
-
-		s_Data.ResolveShader = Shader::Create("assets/shaders/Renderer3D_Resolve.glsl");
-		s_Data.ResolveShader->Bind();
-		s_Data.ResolveShader->SetInt("u_HdrColor", 0);
-		s_Data.FullscreenVAO = VertexArray::Create();
-
-		s_Data.SkyboxShader = Shader::Create("assets/shaders/Renderer3D_Skybox.glsl");
-		s_Data.SkyboxShader->Bind();
-		s_Data.SkyboxShader->SetInt("u_Skybox", (int)Renderer3DData::SKYBOX_SAMPLER_SLOT);
-	}
+	void Renderer3D::Init() {}
 
 	void Renderer3D::Shutdown() {}
 
-	void Renderer3D::SetTargetFramebuffer(const Ref<Framebuffer>& target)
-	{
-		s_Data.TargetFB = target;
-	}
+	void Renderer3D::SetTargetFramebuffer(const Ref<Framebuffer>& target) {}
 
-	void Renderer3D::BeginScene(const EditorCamera& camera)
-	{
-		s_Data.CameraBuffer.ViewProjection = camera.GetViewProjection();
-		s_Data.CameraBuffer.View = camera.GetViewMatrix();
-		s_Data.CameraBuffer.CameraPosition = camera.GetPosition();
-		s_Data.CameraUniformBuffer->SetData(&s_Data.CameraBuffer, sizeof(CameraData));
+	void Renderer3D::BeginScene(const EditorCamera& camera) {}
 
-		s_Data.LightsBuffer.DirCount = 0;
-		s_Data.LightsBuffer.PointCount = 0;
-		s_Data.LightsBuffer.SpotCount = 0;
-		s_Data.LightsDirty = true;
+	void Renderer3D::BeginScene(const Camera& camera, const glm::mat4& transform) {}
 
-		s_Data.Submissions.clear();
-		s_Data.SunCastsShadow = false;
-		s_Data.AnySpotCasts = false;
-		s_Data.AnyPointCasts = false;
-		s_Data.PointCasters.clear();
-		s_Data.CurrentMaterial = nullptr;
-		s_Data.ActiveEnvironmentHandle = 0;
-		s_Data.ActiveEnvironment = nullptr;
-	}
+	void Renderer3D::SetShadowSettings(const ShadowSettings& settings) {}
 
-	void Renderer3D::BeginScene(const Camera& camera, const glm::mat4& transform)
-	{
-		s_Data.CameraBuffer.ViewProjection = camera.GetProjection() * glm::inverse(transform);
-		s_Data.CameraBuffer.View = glm::inverse(transform);
-		s_Data.CameraBuffer.CameraPosition = glm::vec3(transform[3]);
-		s_Data.CameraUniformBuffer->SetData(&s_Data.CameraBuffer, sizeof(CameraData));
+	void Renderer3D::SetPostProcessSettings(const PostProcessSettings& settings) {}
 
-		s_Data.LightsBuffer.DirCount = 0;
-		s_Data.LightsBuffer.PointCount = 0;
-		s_Data.LightsBuffer.SpotCount = 0;
-		s_Data.LightsDirty = true;
-
-		s_Data.Submissions.clear();
-		s_Data.SunCastsShadow = false;
-		s_Data.AnySpotCasts = false;
-		s_Data.AnyPointCasts = false;
-		s_Data.PointCasters.clear();
-		s_Data.CurrentMaterial = nullptr;
-		s_Data.ActiveEnvironmentHandle = 0;
-		s_Data.ActiveEnvironment = nullptr;
-	}
-
-	void Renderer3D::SetShadowSettings(const ShadowSettings& settings)
-	{
-		s_Data.Shadows = settings;
-		s_Data.Shadows.CascadeCount = glm::clamp(s_Data.Shadows.CascadeCount, 1u, ShadowSettings::MaxCascades);
-		s_Data.Shadows.ShadowMapResolution = glm::max(s_Data.Shadows.ShadowMapResolution, 1u);
-
-		if (s_Data.SunShadowMap->GetResolution() != s_Data.Shadows.ShadowMapResolution
-			|| s_Data.SunShadowMap->GetLayerCount() != s_Data.Shadows.CascadeCount)
-		{
-			s_Data.SunShadowMap = ShadowMap::Create(s_Data.Shadows.ShadowMapResolution, s_Data.Shadows.CascadeCount);
-		}
-
-		if (s_Data.SpotShadowMap->GetResolution() != s_Data.Shadows.SpotShadowResolution)
-			s_Data.SpotShadowMap = ShadowMap::Create(s_Data.Shadows.SpotShadowResolution, s_Data.SpotShadowMap->GetLayerCount());
-
-		if (s_Data.PointShadowMap->GetResolution() != s_Data.Shadows.PointShadowResolution)
-			s_Data.PointShadowMap = CubeShadowMap::Create(s_Data.Shadows.PointShadowResolution, s_Data.PointShadowMap->GetCubeCount());
-	}
-
-	void Renderer3D::SetPostProcessSettings(const PostProcessSettings& settings)
-	{
-		s_Data.PostProcess = settings;
-	}
-
-	void Renderer3D::EndScene()
-	{
-		TF_PROFILE_FUNCTION();
-
-		ResetStats();
-		s_Data.Stats.DirectionalLights = s_Data.LightsBuffer.DirCount;
-		s_Data.Stats.PointLights = s_Data.LightsBuffer.PointCount;
-		s_Data.Stats.SpotLights = s_Data.LightsBuffer.SpotCount;
-
-		// Upload any pending light data once for the frame.
-		if (s_Data.LightsDirty)
-		{
-			s_Data.LightsUniformBuffer->SetData(&s_Data.LightsBuffer, sizeof(LightsData));
-			s_Data.LightsDirty = false;
-		}
-
-		// Shared PCSS quality, read by both the sun cascades and spot shadows — must reach the
-		// GPU even when no sun casts (spots still sample the Shadows UBO for these).
-		s_Data.ShadowBuffer.CascadeBlend = s_Data.Shadows.CascadeBlend;
-		s_Data.ShadowBuffer.BlockerSamples = (int32_t)s_Data.Shadows.BlockerSearchSamples;
-		s_Data.ShadowBuffer.PCFSamples = (int32_t)s_Data.Shadows.PCFSamples;
-		s_Data.ShadowBuffer.SoftShadows = s_Data.Shadows.SoftShadows ? 1 : 0;
-
-		// Shadow depth pass: one draw set per cascade layer.
-		if (s_Data.SunCastsShadow)
-		{
-			TF_PROFILE_SCOPE("Shadow Sun");
-			TF_PROFILE_GPU_SCOPE("Shadow Sun");
-			PerformanceStats::ScopedPassTimer passTimer("Shadow Sun");
-
-			ComputeCascades(
-				s_Data.CameraBuffer.ViewProjection, s_Data.CameraBuffer.View, s_Data.SunDirection, s_Data.Shadows, s_Data.ShadowBuffer);
-			s_Data.ShadowBuffer.LightSize = s_Data.SunShadowSoftness * 0.16f;
-			s_Data.ShadowBuffer.DepthBias = s_Data.SunDepthBias;
-			s_Data.ShadowUniformBuffer->SetData(&s_Data.ShadowBuffer, sizeof(ShadowData));
-
-			s_Data.Stats.ShadowCasters++;
-			s_Data.Stats.CascadeCount = s_Data.Shadows.CascadeCount;
-			s_Data.Stats.ShadowDrawCalls += (uint32_t)s_Data.Submissions.size() * s_Data.Shadows.CascadeCount;
-			s_Data.Stats.DrawCalls += (uint32_t)s_Data.Submissions.size() * s_Data.Shadows.CascadeCount;
-
-			s_Data.ShadowDepthShader->Bind();
-			RenderCommand::SetFaceCulling(ToFaceCull(s_Data.Shadows.CullMode));
-			s_Data.SunShadowMap->BeginRenderPass();
-			for (uint32_t c = 0; c < s_Data.Shadows.CascadeCount; ++c)
-			{
-				s_Data.ShadowDepthShader->SetMat4("u_LightSpaceMatrix", s_Data.ShadowBuffer.LightViewProj[c]);
-				s_Data.SunShadowMap->BindLayer(c);
-				for (const MeshSubmission& sub : s_Data.Submissions)
-				{
-					s_Data.ShadowDepthShader->SetMat4("u_Model", sub.Transform);
-					const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
-					RenderCommand::DrawIndexed(sub.Mesh->GetVertexArray(), sm.IndexCount, sm.BaseIndex, sm.BaseVertex);
-				}
-			}
-			s_Data.SunShadowMap->EndRenderPass();
-			RenderCommand::SetFaceCulling(RendererAPI::FaceCull::Back);
-		}
-		else
-		{
-			// No caster: zero the cascade count so the lit shader skips shadows (avoids
-			// sampling stale matrices / depth from a previous frame).
-			s_Data.ShadowBuffer.CascadeCount = 0;
-			s_Data.ShadowUniformBuffer->SetData(&s_Data.ShadowBuffer, sizeof(ShadowData));
-		}
-
-		// Compact casting spots into sequential atlas layers (mirrors the point path's cubeLayer):
-		// store each caster's layer in Params.w and size the atlas to the active caster count, so
-		// idle spot slots cost no VRAM. Always upload so a spot that stopped casting clears its flag.
-		uint32_t spotCasterCount = 0;
-		for (uint32_t i = 0; i < s_Data.LightsBuffer.SpotCount; ++i)
-			if (s_Data.SpotShadowBuffer.Params[i].x >= 0.5f)
-				s_Data.SpotShadowBuffer.Params[i].w = (float)spotCasterCount++;
-		if (spotCasterCount > s_Data.SpotShadowMap->GetLayerCount())
-			s_Data.SpotShadowMap = ShadowMap::Create(s_Data.Shadows.SpotShadowResolution, spotCasterCount);
-		s_Data.SpotShadowUniformBuffer->SetData(&s_Data.SpotShadowBuffer, sizeof(SpotShadowData));
-		if (s_Data.AnySpotCasts)
-		{
-			TF_PROFILE_SCOPE("Shadow Spot");
-			TF_PROFILE_GPU_SCOPE("Shadow Spot");
-			PerformanceStats::ScopedPassTimer passTimer("Shadow Spot");
-
-			s_Data.ShadowDepthShader->Bind();
-			RenderCommand::SetFaceCulling(ToFaceCull(s_Data.Shadows.CullMode));
-			s_Data.SpotShadowMap->BeginRenderPass();
-			for (uint32_t i = 0; i < s_Data.LightsBuffer.SpotCount; ++i)
-			{
-				if (s_Data.SpotShadowBuffer.Params[i].x < 0.5f)
-					continue;
-				s_Data.Stats.ShadowCasters++;
-				s_Data.Stats.ShadowDrawCalls += (uint32_t)s_Data.Submissions.size();
-				s_Data.Stats.DrawCalls += (uint32_t)s_Data.Submissions.size();
-				s_Data.ShadowDepthShader->SetMat4("u_LightSpaceMatrix", s_Data.SpotShadowBuffer.LightViewProj[i]);
-				s_Data.SpotShadowMap->BindLayer((uint32_t)s_Data.SpotShadowBuffer.Params[i].w);
-				for (const MeshSubmission& sub : s_Data.Submissions)
-				{
-					s_Data.ShadowDepthShader->SetMat4("u_Model", sub.Transform);
-					const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
-					RenderCommand::DrawIndexed(sub.Mesh->GetVertexArray(), sm.IndexCount, sm.BaseIndex, sm.BaseVertex);
-				}
-			}
-			s_Data.SpotShadowMap->EndRenderPass();
-			RenderCommand::SetFaceCulling(RendererAPI::FaceCull::Back);
-		}
-
-		if (s_Data.AnyPointCasts)
-		{
-			TF_PROFILE_SCOPE("Shadow Point");
-			TF_PROFILE_GPU_SCOPE("Shadow Point");
-			PerformanceStats::ScopedPassTimer passTimer("Shadow Point");
-
-			uint32_t casterCount = (uint32_t)s_Data.PointCasters.size();
-			if (s_Data.PointShadowMap->GetCubeCount() < casterCount)
-				s_Data.PointShadowMap = CubeShadowMap::Create(s_Data.Shadows.PointShadowResolution, casterCount);
-
-			s_Data.Stats.ShadowCasters += casterCount;
-			s_Data.Stats.PointShadowCubes = casterCount;
-			s_Data.Stats.ShadowDrawCalls += (uint32_t)s_Data.Submissions.size() * casterCount * 6;
-			s_Data.Stats.DrawCalls += (uint32_t)s_Data.Submissions.size() * casterCount * 6;
-
-			s_Data.PointShadowDepthShader->Bind();
-			RenderCommand::SetFaceCulling(ToFaceCull(s_Data.Shadows.CullMode));
-			s_Data.PointShadowMap->BeginRenderPass();
-			for (const PointCaster& caster : s_Data.PointCasters)
-			{
-				s_Data.PointShadowDepthShader->SetFloat3("u_LightPos", caster.Position);
-				s_Data.PointShadowDepthShader->SetFloat("u_Far", caster.Far);
-				glm::mat4 proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.05f, caster.Far);
-				for (uint32_t face = 0; face < 6; ++face)
-				{
-					glm::mat4 view = glm::lookAt(caster.Position, caster.Position + s_CubeFaceDir[face], s_CubeFaceUp[face]);
-					s_Data.PointShadowDepthShader->SetMat4("u_LightSpaceMatrix", proj * view);
-					s_Data.PointShadowMap->BindFace(caster.Layer, face);
-					for (const MeshSubmission& sub : s_Data.Submissions)
-					{
-						s_Data.PointShadowDepthShader->SetMat4("u_Model", sub.Transform);
-						const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
-						RenderCommand::DrawIndexed(sub.Mesh->GetVertexArray(), sm.IndexCount, sm.BaseIndex, sm.BaseVertex);
-					}
-				}
-			}
-			s_Data.PointShadowMap->EndRenderPass();
-			RenderCommand::SetFaceCulling(RendererAPI::FaceCull::Back);
-		}
-
-		// Always upload so a point that stopped casting this frame clears its stale caster flag.
-		s_Data.PointShadowUniformBuffer->SetData(&s_Data.PointShadowBuffer, sizeof(PointShadowData));
-
-		// --- Bind HDR scene buffer for the lit pass (aliases target id+depth) ---
-		EnsureHdrFramebuffer();
-		if (s_Data.HdrFB)
-		{
-			s_Data.HdrFB->Bind();
-			s_Data.HdrFB->ClearColorAttachmentF(0, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-		}
-
-		s_Data.LitShader->Bind();
-		s_Data.SunShadowMap->BindForSampling(Renderer3DData::SHADOW_SAMPLER_SLOT);
-		s_Data.SpotShadowMap->BindForSampling(Renderer3DData::SPOT_SHADOW_SAMPLER_SLOT);
-		s_Data.PointShadowMap->BindForSampling(Renderer3DData::POINT_SHADOW_SAMPLER_SLOT);
-
-		if (s_Data.ActiveEnvironment)
-		{
-			s_Data.ActiveEnvironment->GetIrradianceMap()->BindForSampling(Renderer3DData::IRRADIANCE_SAMPLER_SLOT);
-			s_Data.ActiveEnvironment->GetPrefilterMap()->BindForSampling(Renderer3DData::PREFILTER_SAMPLER_SLOT);
-			s_Data.EnvironmentBuffer.HasEnvironment = 1;
-			s_Data.EnvironmentBuffer.EnvIntensity = s_Data.EnvIntensity;
-			s_Data.EnvironmentBuffer.EnvRotation = s_Data.EnvRotationRadians;
-			s_Data.EnvironmentBuffer.MaxReflectionLod = (float)(s_Data.ActiveEnvironment->GetPrefilterMipLevels() - 1);
-		}
-		else
-		{
-			s_Data.EnvironmentBuffer.HasEnvironment = 0;
-		}
-		s_Data.EnvironmentUniformBuffer->SetData(&s_Data.EnvironmentBuffer, sizeof(EnvironmentData));
-
-		// Binds the submission's material (cached, since submissions are grouped by material)
-		// and issues its draw. Shared by the opaque and blended passes below.
-		auto drawSubmission = [&](const MeshSubmission& sub) {
-			s_Data.LitShader->SetMat4("u_Model", sub.Transform);
-			glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(sub.Transform)));
-			s_Data.LitShader->SetMat3("u_NormalMatrix", normalMatrix);
-			s_Data.LitShader->SetInt("u_EntityID", sub.EntityID);
-
-			const Material* mat = sub.Material.get();
-			if (mat != s_Data.CurrentMaterial)
-			{
-				s_Data.MaterialBuffer.BaseColor = SRGBToLinear(mat->BaseColor);
-				s_Data.MaterialBuffer.Metallic = mat->Metallic;
-				s_Data.MaterialBuffer.Roughness = mat->Roughness;
-				s_Data.MaterialBuffer.NormalStrength = mat->NormalStrength;
-				s_Data.MaterialBuffer.Emissive = SRGBToLinear(mat->Emissive);
-				s_Data.MaterialBuffer.EmissiveIntensity = mat->EmissiveIntensity;
-				s_Data.MaterialBuffer.AlphaMode = (int)mat->Alpha;
-				s_Data.MaterialBuffer.Opacity = mat->Opacity;
-				s_Data.MaterialBuffer.AlphaCutoff = mat->AlphaCutoff;
-				s_Data.MaterialUniformBuffer->SetData(&s_Data.MaterialBuffer, sizeof(MaterialData));
-
-				auto mapOrWhite = [&](AssetHandle h) {
-					return (h != 0 && AssetManager::IsAssetHandleValid(h)) ? AssetManager::GetAsset<Texture2D>(h) : s_Data.WhiteTexture;
-				};
-
-				Ref<Texture2D> baseColor = mapOrWhite(mat->BaseColorMap);
-				Ref<Texture2D> metallic = mapOrWhite(mat->MetallicMap);
-				Ref<Texture2D> roughness = mapOrWhite(mat->RoughnessMap);
-				Ref<Texture2D> ao = mapOrWhite(mat->AOMap);
-				Ref<Texture2D> emissive = mapOrWhite(mat->EmissiveMap);
-
-				Ref<Texture2D> normalMap = s_Data.FlatNormalTexture;
-				if (mat->NormalMap != 0 && AssetManager::IsAssetHandleValid(mat->NormalMap))
-					normalMap = AssetManager::GetAsset<Texture2D>(mat->NormalMap);
-
-				baseColor->BindAsSRGB(Renderer3DData::BASE_COLOR_SAMPLER_SLOT);
-				metallic->Bind(Renderer3DData::METALLIC_SAMPLER_SLOT);
-				roughness->Bind(Renderer3DData::ROUGHNESS_SAMPLER_SLOT);
-				ao->Bind(Renderer3DData::AO_SAMPLER_SLOT);
-				emissive->BindAsSRGB(Renderer3DData::EMISSIVE_SAMPLER_SLOT);
-				normalMap->Bind(Renderer3DData::NORMAL_SAMPLER_SLOT);
-				s_Data.CurrentMaterial = mat;
-				s_Data.Stats.MaterialBinds++;
-			}
-
-			const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
-			RenderCommand::DrawIndexed(sub.Mesh->GetVertexArray(), sm.IndexCount, sm.BaseIndex, sm.BaseVertex);
-
-			s_Data.Stats.DrawCalls++;
-			s_Data.Stats.IndexCount += sm.IndexCount;
-			s_Data.Stats.TriangleCount += sm.IndexCount / 3;
-			if (mat->Alpha == AlphaMode::Blend)
-				s_Data.Stats.BlendedMeshes++;
-			else
-				s_Data.Stats.OpaqueMeshes++;
-		};
-
-		// Pass 1 — opaque + mask. Depth writes on; order-independent.
-		{
-			TF_PROFILE_SCOPE("Forward Opaque");
-			TF_PROFILE_GPU_SCOPE("Forward Opaque");
-			PerformanceStats::ScopedPassTimer passTimer("Forward Opaque");
-			s_Data.CurrentMaterial = nullptr;
-			for (const MeshSubmission& sub : s_Data.Submissions)
-				if (sub.Material->Alpha != AlphaMode::Blend)
-					drawSubmission(sub);
-		}
-
-		// Skybox — fill un-covered background before the transparent pass so blended
-		// surfaces composite over it. LEQUAL lets the far-plane sky pass where depth is
-		// still 1.0 (nothing drawn); front-face cull renders the inside of the cube.
-		if (s_Data.ActiveEnvironment)
-		{
-			TF_PROFILE_SCOPE("Skybox");
-			TF_PROFILE_GPU_SCOPE("Skybox");
-			PerformanceStats::ScopedPassTimer passTimer("Skybox");
-
-			RenderCommand::SetDepthFunc(RendererAPI::DepthFunc::LessEqual);
-			RenderCommand::SetFaceCulling(RendererAPI::FaceCull::Front);
-			s_Data.SkyboxShader->Bind();
-			s_Data.SkyboxShader->SetFloat("u_EnvRotation", s_Data.EnvRotationRadians);
-			s_Data.ActiveEnvironment->GetSkyboxMap()->BindForSampling(Renderer3DData::SKYBOX_SAMPLER_SLOT);
-
-			const Submesh& sky = s_Data.CubeMesh->GetSubmeshes()[0];
-			RenderCommand::DrawIndexed(s_Data.CubeMesh->GetVertexArray(), sky.IndexCount, sky.BaseIndex, sky.BaseVertex);
-			s_Data.Stats.DrawCalls++;
-
-			RenderCommand::SetFaceCulling(RendererAPI::FaceCull::Back);
-			RenderCommand::SetDepthFunc(RendererAPI::DepthFunc::Less);
-
-			// Restore the lit program for the transparent pass: SetX uploads to the
-			// currently-bound program, so the skybox's shader must not stay bound.
-			s_Data.LitShader->Bind();
-			s_Data.CurrentMaterial = nullptr;
-		}
-
-		// Pass 2 — blended. Must draw farthest-first and NOT write depth, so each
-		// transparent surface blends over everything already behind it.
-		std::vector<const MeshSubmission*> blended;
-		for (const MeshSubmission& sub : s_Data.Submissions)
-			if (sub.Material->Alpha == AlphaMode::Blend)
-				blended.push_back(&sub);
-
-		if (!blended.empty())
-		{
-			TF_PROFILE_SCOPE("Forward Blended");
-			TF_PROFILE_GPU_SCOPE("Forward Blended");
-			PerformanceStats::ScopedPassTimer passTimer("Forward Blended");
-
-			const glm::vec3 camPos = s_Data.CameraBuffer.CameraPosition;
-			std::sort(blended.begin(), blended.end(), [&](const MeshSubmission* a, const MeshSubmission* b) {
-				glm::vec3 da = glm::vec3(a->Transform[3]) - camPos;
-				glm::vec3 db = glm::vec3(b->Transform[3]) - camPos;
-				return glm::dot(da, da) > glm::dot(db, db); // farthest first
-			});
-
-			RenderCommand::SetDepthWrite(false);
-			s_Data.CurrentMaterial = nullptr;
-			for (const MeshSubmission* sub : blended)
-				drawSubmission(*sub);
-			RenderCommand::SetDepthWrite(true);
-		}
-
-		// --- Resolve HDR -> LDR target. Writes color only; id+depth (shared) untouched. ---
-		if (s_Data.HdrFB && s_Data.TargetFB)
-		{
-			TF_PROFILE_SCOPE("HDR Resolve");
-			TF_PROFILE_GPU_SCOPE("HDR Resolve");
-			PerformanceStats::ScopedPassTimer passTimer("HDR Resolve");
-
-			RenderCommand::SetDepthTest(false);
-			s_Data.TargetFB->BindForSingleColorDraw(0);
-
-			s_Data.ResolveShader->Bind();
-			s_Data.ResolveShader->SetFloat("u_ExposureEV", s_Data.PostProcess.ExposureEV);
-			s_Data.ResolveShader->SetInt("u_Operator", (int)s_Data.PostProcess.Operator);
-			s_Data.ResolveShader->SetFloat("u_WhitePoint", s_Data.PostProcess.ReinhardWhitePoint);
-			s_Data.HdrFB->BindColorAttachment(0, 0); // HDR color -> unit 0
-
-			RenderCommand::DrawArrays(s_Data.FullscreenVAO, 3);
-			s_Data.Stats.DrawCalls++;
-
-			// Restore full draw buffers ({color, id}) so the following 2D pass writes ids again.
-			s_Data.TargetFB->Bind();
-			RenderCommand::SetDepthTest(true);
-		}
-	}
+	void Renderer3D::EndScene() {}
 
 	void Renderer3D::SubmitMesh(
 		const glm::mat4& transform, const Ref<MeshSource>& mesh, uint32_t submeshIndex, const Ref<Material>& material, int entityID)
-	{
-		if (!mesh || submeshIndex >= mesh->GetSubmeshes().size())
-			return;
-
-		const Ref<Material>& mat = material ? material : s_Data.DefaultMaterial;
-		s_Data.Submissions.push_back({transform, mesh, submeshIndex, mat, entityID});
-	}
+	{}
 
 	Renderer3D::Statistics& Renderer3D::GetStats()
 	{
-		return s_Data.Stats;
+		static Statistics s_Empty{};
+		return s_Empty;
 	}
 
-	void Renderer3D::ResetStats()
-	{
-		s_Data.Stats = Statistics();
-	}
+	void Renderer3D::ResetStats() {}
 
 	Ref<Material> Renderer3D::GetDefaultMaterial()
 	{
-		return s_Data.DefaultMaterial;
+		static Ref<Material> s_Default = CreateRef<Material>();
+		return s_Default;
 	}
 
-	void Renderer3D::RegisterBuiltInMeshes(EditorAssetManager& assetManager)
-	{
-		assetManager.AddMemoryOnlyAsset(BuiltInMesh::Cube, s_Data.CubeMesh, "Cube", AssetType::Mesh);
-		assetManager.AddMemoryOnlyAsset(BuiltInMesh::Sphere, s_Data.SphereMesh, "Sphere", AssetType::Mesh);
-		assetManager.AddMemoryOnlyAsset(BuiltInMesh::Plane, s_Data.PlaneMesh, "Plane", AssetType::Mesh);
-	}
+	void Renderer3D::RegisterBuiltInMeshes(EditorAssetManager& assetManager) {}
 
 	void Renderer3D::SubmitDirectionalLight(
 		const glm::vec3& direction, const glm::vec3& color, float intensity, bool castsShadows, float shadowSoftness, float depthBias)
-	{
-		if (s_Data.LightsBuffer.DirCount >= (int)MAX_DIR_LIGHTS)
-			return;
-
-		glm::vec3 linColor = SRGBToLinear(color);
-		GpuDirLight& light = s_Data.LightsBuffer.DirLights[s_Data.LightsBuffer.DirCount++];
-		light.Direction = glm::vec4(glm::normalize(direction), 0.0f);
-		light.Color = glm::vec4(linColor, intensity);
-		s_Data.LightsDirty = true;
-
-		// First directional light flagged as a caster becomes the shadow sun.
-		if (castsShadows && !s_Data.SunCastsShadow)
-		{
-			s_Data.SunCastsShadow = true;
-			s_Data.SunDirection = glm::normalize(direction);
-			s_Data.SunShadowSoftness = shadowSoftness;
-			s_Data.SunDepthBias = depthBias;
-		}
-	}
+	{}
 
 	void Renderer3D::SubmitPointLight(const glm::vec3& position, const glm::vec3& color, float intensity, float range, bool castsShadows,
 		float shadowSoftness, float depthBias)
-	{
-		if (s_Data.LightsBuffer.PointCount >= (int)MAX_POINT_LIGHTS)
-			return;
-
-		glm::vec3 linColor = SRGBToLinear(color);
-		uint32_t index = s_Data.LightsBuffer.PointCount;
-		GpuPointLight& light = s_Data.LightsBuffer.PointLights[s_Data.LightsBuffer.PointCount++];
-		light.Position = glm::vec4(position, range);
-		light.Color = glm::vec4(linColor, intensity);
-		s_Data.LightsDirty = true;
-
-		if (castsShadows && s_Data.PointCasters.size() < MAX_POINT_LIGHTS)
-		{
-			uint32_t layer = (uint32_t)s_Data.PointCasters.size();
-			s_Data.PointCasters.push_back({position, glm::max(range, 0.1f), layer});
-			s_Data.PointShadowBuffer.Params[index] = glm::vec4(1.0f, shadowSoftness * 0.10f, depthBias, (float)layer);
-			s_Data.AnyPointCasts = true;
-		}
-		else
-		{
-			s_Data.PointShadowBuffer.Params[index] = glm::vec4(0.0f);
-		}
-	}
+	{}
 
 	void Renderer3D::SubmitSpotLight(const glm::vec3& position, const glm::vec3& direction, const glm::vec3& color, float intensity,
 		float range, float innerCutoffDegrees, float outerCutoffDegrees, bool castsShadows, float shadowSoftness, float depthBias)
-	{
-		if (s_Data.LightsBuffer.SpotCount >= (int)MAX_SPOT_LIGHTS)
-			return;
+	{}
 
-		glm::vec3 linColor = SRGBToLinear(color);
-		float innerCos = glm::cos(glm::radians(innerCutoffDegrees));
-		float outerCos = glm::cos(glm::radians(outerCutoffDegrees));
-
-		uint32_t index = s_Data.LightsBuffer.SpotCount;
-		GpuSpotLight& light = s_Data.LightsBuffer.SpotLights[s_Data.LightsBuffer.SpotCount++];
-		light.Position = glm::vec4(position, 0.0f);
-		light.Direction = glm::vec4(glm::normalize(direction), 0.0f);
-		light.Color = glm::vec4(linColor, 0.0f);
-		light.Params = glm::vec4(range, innerCos, outerCos, intensity);
-		s_Data.LightsDirty = true;
-
-		if (castsShadows)
-		{
-			s_Data.SpotShadowBuffer.LightViewProj[index] = ComputeSpotMatrix(position, direction, range, outerCutoffDegrees);
-			s_Data.SpotShadowBuffer.Params[index] = glm::vec4(1.0f, shadowSoftness * 0.16f, depthBias, 0.0f);
-			s_Data.AnySpotCasts = true;
-		}
-		else
-		{
-			s_Data.SpotShadowBuffer.Params[index] = glm::vec4(0.0f);
-		}
-	}
-
-	void Renderer3D::SubmitEnvironment(AssetHandle environmentMap, float intensity, float rotationDegrees)
-	{
-		s_Data.ActiveEnvironmentHandle = environmentMap;
-		s_Data.EnvIntensity = intensity;
-		s_Data.EnvRotationRadians = glm::radians(rotationDegrees);
-		s_Data.ActiveEnvironment = nullptr;
-
-		if (environmentMap == 0 || !AssetManager::IsAssetHandleValid(environmentMap))
-			return;
-
-		if (s_Data.EnvironmentCache.contains(environmentMap))
-		{
-			s_Data.ActiveEnvironment = s_Data.EnvironmentCache.at(environmentMap);
-			return;
-		}
-
-		Ref<Texture2D> equirect = AssetManager::GetAsset<Texture2D>(environmentMap);
-		if (!equirect)
-			return;
-
-		Ref<Environment> env = Environment::Create(equirect);
-		s_Data.EnvironmentCache[environmentMap] = env;
-		s_Data.ActiveEnvironment = env;
-	}
+	void Renderer3D::SubmitEnvironment(AssetHandle environmentMap, float intensity, float rotationDegrees) {}
 }

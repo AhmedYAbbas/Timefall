@@ -1,70 +1,41 @@
 #include "tfpch.h"
 
 #include "Timefall/Renderer/Shader.h"
-#include "Timefall/Renderer/Renderer.h"
 
-#include "Platform/OpenGL/OpenGLShader.h"
+#include <filesystem>
 
 namespace Timefall
 {
-	Ref<Shader> Shader::Create(const std::string& filepath)
+	namespace
 	{
-		switch (Renderer::GetAPI())
+		class StubShader : public Shader
 		{
-			case RendererAPI::API::None: TF_CORE_ASSERT(false, "RendererAPI::None is not currently supported!"); return nullptr;
-			case RendererAPI::API::OpenGL: return CreateRef<OpenGLShader>(filepath);
-		}
+		public:
+			explicit StubShader(std::string name)
+				: m_Name(std::move(name))
+			{}
 
-		TF_CORE_ASSERT(false, "Unknown RendererAPI!");
-		return nullptr;
+			void Bind() const override {}
+			void Unbind() const override {}
+
+			void SetInt(const std::string&, int) override {}
+			void SetIntArray(const std::string&, int*, uint32_t) override {}
+
+			void SetFloat3(const std::string&, const glm::vec3) override {}
+			void SetFloat(const std::string&, float) override {}
+			void SetFloat4(const std::string&, const glm::vec4) override {}
+			void SetMat3(const std::string&, const glm::mat3) override {}
+			void SetMat4(const std::string&, const glm::mat4) override {}
+
+			const std::string& GetName() const override { return m_Name; }
+
+		private:
+			std::string m_Name;
+		};
 	}
 
-	Ref<Shader> Shader::Create(const std::string& name, const std::string& vertexSrc, const std::string& fragmentSrc)
+	Ref<Shader> Shader::Create(const std::filesystem::path& filepath)
 	{
-		switch (Renderer::GetAPI())
-		{
-			case RendererAPI::API::None: TF_CORE_ASSERT(false, "RendererAPI::None is not currently supported!"); return nullptr;
-			case RendererAPI::API::OpenGL: return CreateRef<OpenGLShader>(name, vertexSrc, fragmentSrc);
-		}
-
-		TF_CORE_ASSERT(false, "Unknown RendererAPI!");
-		return nullptr;
-	}
-
-	void ShaderLibrary::Add(const std::string& name, const Ref<Shader>& shader)
-	{
-		TF_CORE_ASSERT(!Exists(name), "Shader already exists!");
-		m_Shaders[name] = shader;
-	}
-
-	void ShaderLibrary::Add(const Ref<Shader>& shader)
-	{
-		const std::string& name = shader->GetName();
-		Add(name, shader);
-	}
-
-	Ref<Shader> ShaderLibrary::Load(const std::string& filepath)
-	{
-		auto shader = Shader::Create(filepath);
-		Add(shader);
-		return shader;
-	}
-
-	Ref<Shader> ShaderLibrary::Load(const std::string& name, const std::string& filepath)
-	{
-		auto shader = Shader::Create(filepath);
-		Add(name, shader);
-		return shader;
-	}
-
-	Ref<Shader> ShaderLibrary::Get(const std::string& name)
-	{
-		TF_CORE_ASSERT(Exists(name), "Shader doesn't exist!");
-		return m_Shaders[name];
-	}
-
-	bool ShaderLibrary::Exists(const std::string& name) const
-	{
-		return m_Shaders.find(name) != m_Shaders.end();
+		return CreateRef<StubShader>(filepath.stem().string());
 	}
 }

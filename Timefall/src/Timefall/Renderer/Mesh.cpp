@@ -11,9 +11,6 @@ namespace Timefall
 		const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices, const std::vector<Submesh>& submeshes)
 		: m_Submeshes(submeshes)
 	{
-		m_VertexArray = VertexArray::Create();
-		m_VertexArray->Bind();
-
 		Ref<VertexBuffer> vbo = VertexBuffer::Create((float*)vertices.data(), (uint32_t)(vertices.size() * sizeof(MeshVertex)));
 		vbo->SetLayout({
 			{ShaderDataType::Float3, "a_Position"},
@@ -22,10 +19,8 @@ namespace Timefall
 			{ShaderDataType::Float3, "a_Tangent"},
 			{ShaderDataType::Float3, "a_Bitangent"},
 		});
-		m_VertexArray->AddVertexBuffer(vbo);
 
 		Ref<IndexBuffer> ibo = IndexBuffer::Create((uint32_t*)indices.data(), (uint32_t)indices.size());
-		m_VertexArray->SetIndexBuffer(ibo);
 	}
 
 	Ref<MeshSource> MeshSource::Create(

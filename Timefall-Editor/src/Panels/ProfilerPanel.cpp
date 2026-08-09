@@ -3,7 +3,7 @@
 #include "Timefall/Debug/PerformanceStats.h"
 #include "Timefall/Renderer/Renderer2D.h"
 #include "Timefall/Renderer/Renderer3D.h"
-#include "Platform/OpenGL/GPUMemoryTracker.h"
+#include "Platform/Vulkan/GPUMemoryTracker.h"
 
 #include <imgui/imgui.h>
 

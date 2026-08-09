@@ -5,13 +5,13 @@
 
 namespace Timefall
 {
-	// API-agnostic GPU zone interface; implemented by the active backend (OpenGLGPUProfiler).
+	// API-agnostic GPU zone interface
 	// Zones appear on Tracy's GPU timeline row, time-aligned with CPU zones.
 	class TF_API GPUProfiler
 	{
 	public:
-		static void BeginZone(const char* name);
-		static void EndZone();
+		static void BeginZone(const char* name) {}
+		static void EndZone() {}
 
 		struct Scope
 		{

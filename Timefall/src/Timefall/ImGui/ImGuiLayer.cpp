@@ -5,7 +5,7 @@
 #include <imgui_internal.h>
 
 #include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
+#include <imgui_impl_vulkan.h>
 
 #include "Timefall/Core/Application.h"
 
@@ -34,12 +34,13 @@ namespace Timefall
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
 		// io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable Docking
-		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // Enable Multi-Viewport / Platform Windows
-		// io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoTaskBarIcons;
-		// io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoMerge;
+		// io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // Enable Multi-Viewport / Platform Windows
+		//  io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoTaskBarIcons;
+		//  io.ConfigFlags |= ImGuiConfigFlags_ViewportsNoMerge;
 
 		io.Fonts->AddFontFromFileTTF("Assets/Fonts/OpenSans/static/OpenSans-Bold.ttf", 18.0f);
 		io.FontDefault = io.Fonts->AddFontFromFileTTF("Assets/Fonts/OpenSans/static/OpenSans-Regular.ttf", 18.0f);
+		io.Fonts->Build();
 
 		// Setup Dear ImGui style
 		ImGui::StyleColorsDark();
@@ -59,15 +60,15 @@ namespace Timefall
 		GLFWwindow* window = static_cast<GLFWwindow*>(app.GetWindow().GetNativeWindow());
 
 		// Setup Platform/Renderer bindings
-		ImGui_ImplGlfw_InitForOpenGL(window, true);
-		ImGui_ImplOpenGL3_Init("#version 410");
+		ImGui_ImplGlfw_InitForVulkan(window, true);
+		// ImGui_ImplOpenGL3_Init("#version 410");
 	}
 
 	void ImGuiLayer::OnDetach()
 	{
 		TF_PROFILE_FUNCTION();
 
-		ImGui_ImplOpenGL3_Shutdown();
+		// ImGui_ImplVulkan_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
 	}
@@ -76,7 +77,7 @@ namespace Timefall
 	{
 		TF_PROFILE_FUNCTION();
 
-		ImGui_ImplOpenGL3_NewFrame();
+		// ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		ImGuizmo::BeginFrame();
@@ -92,14 +93,9 @@ namespace Timefall
 
 		// Rendering
 		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
-			GLFWwindow* backup_current_context = glfwGetCurrentContext();
-			ImGui::UpdatePlatformWindows();
-			ImGui::RenderPlatformWindowsDefault();
-			glfwMakeContextCurrent(backup_current_context);
 		}
 	}
 
