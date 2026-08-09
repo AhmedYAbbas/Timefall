@@ -322,22 +322,20 @@ namespace Timefall
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
 		ImGui::Begin("Viewport");
 
-		auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
-		auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
-		auto viewportOffset = ImGui::GetWindowPos();
-		m_ViewportBounds[0] = {viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y};
-		m_ViewportBounds[1] = {viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y};
+		ImVec2 viewportOffset = ImGui::GetCursorScreenPos(); // absolute top-left of the content region
+		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+		m_ViewportBounds[0] = {viewportOffset.x, viewportOffset.y};
+		m_ViewportBounds[1] = {viewportOffset.x + viewportPanelSize.x, viewportOffset.y + viewportPanelSize.y};
 
 		m_ViewportFocused = ImGui::IsWindowFocused();
 		m_ViewportHovered = ImGui::IsWindowHovered();
 
 		Application::Get().GetImGuiLayer()->BlockEvents(!m_ViewportHovered);
 
-		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 		m_ViewportSize = {viewportPanelSize.x, viewportPanelSize.y};
 
 		uint32_t textureID = m_Framebuffer->GetColorAttachmentRendererID();
-		ImGui::Image((void*)(uint64_t)textureID, viewportPanelSize, ImVec2{0, 1}, ImVec2{1, 0});
+		ImGui::Image((ImTextureID)(uint64_t)textureID, viewportPanelSize, ImVec2{0, 1}, ImVec2{1, 0});
 
 		if (ImGui::BeginDragDropTarget())
 		{
@@ -426,7 +424,7 @@ namespace Timefall
 			tintColor.w = 0.5f;
 
 		float size = ImGui::GetWindowHeight() - 4.0f;
-		ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
+		ImGui::SetCursorPosX(((ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x) * 0.5f) - (size * 0.5f));
 
 		bool hasPlayButton = m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play;
 		bool hasSimulateButton = m_SceneState == SceneState::Edit || m_SceneState == SceneState::Simulate;

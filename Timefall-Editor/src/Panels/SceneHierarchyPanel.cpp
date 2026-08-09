@@ -216,7 +216,7 @@ namespace Timefall
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.9f, 0.2f, 0.2f, 1.0f});
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
-		ImGui::PushFont(boldFont);
+		ImGui::PushFont(boldFont, 0.0f); // 0.0f = keep current size
 		if (ImGui::Button("X", buttonSize))
 			values.x = resetValue;
 		ImGui::PopFont();
@@ -231,7 +231,7 @@ namespace Timefall
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.3f, 0.8f, 0.3f, 1.0f});
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
-		ImGui::PushFont(boldFont);
+		ImGui::PushFont(boldFont, 0.0f); // 0.0f = keep current size
 		if (ImGui::Button("Y", buttonSize))
 			values.y = resetValue;
 		ImGui::PopFont();
@@ -246,7 +246,7 @@ namespace Timefall
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{0.2f, 0.35f, 0.9f, 1.0f});
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
-		ImGui::PushFont(boldFont);
+		ImGui::PushFont(boldFont, 0.0f); // 0.0f = keep current size
 		if (ImGui::Button("Z", buttonSize))
 			values.z = resetValue;
 		ImGui::PopFont();
@@ -715,8 +715,8 @@ namespace Timefall
 					changed |= ImGui::DragFloat("Metallic", &mat->Metallic, 0.005f, 0.0f, 1.0f);
 					changed |= ImGui::DragFloat("Roughness", &mat->Roughness, 0.005f, 0.0f, 1.0f);
 					changed |= ImGui::DragFloat("Normal Strength", &mat->NormalStrength, 0.05f, 0.0f, 2.0f);
-						changed |= ImGui::ColorEdit3("Emissive", glm::value_ptr(mat->Emissive));
-						changed |= ImGui::DragFloat("Emissive Intensity", &mat->EmissiveIntensity, 0.05f, 0.0f, 100.0f);
+					changed |= ImGui::ColorEdit3("Emissive", glm::value_ptr(mat->Emissive));
+					changed |= ImGui::DragFloat("Emissive Intensity", &mat->EmissiveIntensity, 0.05f, 0.0f, 100.0f);
 
 					// Base Color map slot
 					{
