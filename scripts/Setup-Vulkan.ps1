@@ -13,7 +13,7 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$PinnedVersion = '1.4.350.0',
+    [string]$PinnedVersion = '1.4.357.0',
     [switch]$AllowNewer,   # accept an installed SDK newer than the pin instead of reinstalling
     [switch]$Force         # reinstall even when the pinned version is already present
 )

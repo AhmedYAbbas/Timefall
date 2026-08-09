@@ -7,6 +7,8 @@
 #include "Timefall/Scripting/ScriptEngine.h"
 #include "Timefall/Debug/PerformanceStats.h"
 
+#include "Platform/Vulkan/VulkanContext.h"
+
 #include <GLFW/glfw3.h>
 
 namespace Timefall
@@ -29,6 +31,15 @@ namespace Timefall
 		m_Window->SetEventCallBack(TF_BIND_EVENT_FN(Application::OnEvent));
 		m_Window->SetVsync(false);
 
+		#ifdef TF_DIST
+		constexpr bool enableGpuDebug = false;
+		#else
+		constexpr bool enableGpuDebug = true;
+		#endif
+
+		if (auto result = VulkanContext::Get().Init(enableGpuDebug); !result)
+			TF_CORE_ERROR("Vulkan init failed: {0}", result.error());
+
 		Renderer::Init();
 
 		m_ImGuiLayer = new ImGuiLayer();
@@ -39,6 +50,7 @@ namespace Timefall
 	{
 		TF_PROFILE_FUNCTION();
 
+		VulkanContext::Get().Shutdown();
 		Renderer::Shutdown();
 		ScriptEngine::Shutdown();
 	}

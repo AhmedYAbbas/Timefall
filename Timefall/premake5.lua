@@ -71,7 +71,6 @@ project "Timefall"
 		"IMGUI_API=__declspec(dllexport)",
 
 		"VK_NO_PROTOTYPES",
-		"VULKAN_HPP_NO_DISPATCH_LOADER_DYNAMIC=1",
 		"VULKAN_HPP_NO_EXCEPTIONS",
 		"VULKAN_HPP_USE_STD_EXPECTED",
 		"VULKAN_HPP_ASSERT_ON_RESULT(x)=",
@@ -122,6 +121,9 @@ project "Timefall"
 		enablepch "Off"
 
 	filter "files:vendor/tracy/**.cpp"
+		enablepch "Off"
+
+	filter "files:src/Platform/Vulkan/VulkanVMA.cpp"
 		enablepch "Off"
 
 	filter "system:windows"
