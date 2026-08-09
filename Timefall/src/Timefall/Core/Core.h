@@ -57,7 +57,6 @@
 #else
 #error "Platform doesn't support debugbreak yet!"
 #endif
-#define TF_ENABLE_ASSERTS
 
 #ifdef TF_DEBUG
 #define TF_ENABLE_ASSERTS
