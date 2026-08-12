@@ -31,6 +31,12 @@ namespace Timefall
 
 		void SetObjectName(uint64_t handle, vk::ObjectType type, const char* name) const;
 
+		// vulkan.hpp handles carry their own NativeType/objectType, so the tag and cast are deducible.
+		template <typename T> void SetObjectName(T handle, const char* name) const
+		{
+			SetObjectName((uint64_t)(typename T::NativeType)handle, T::objectType, name);
+		}
+
 	private:
 		std::expected<void, std::string> CreateInstance();
 		std::expected<void, std::string> CreateDebugMessenger();

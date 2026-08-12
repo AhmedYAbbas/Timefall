@@ -67,7 +67,7 @@ namespace Timefall
 			usedBytes += budgets[i].usage;
 			budgetBytes += budgets[i].budget;
 		}
-	};
+	}
 
 	uint64_t GPUMemoryTracker::GetBytes(GPUMemCategory category)
 	{

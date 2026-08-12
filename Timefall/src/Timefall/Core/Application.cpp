@@ -8,6 +8,8 @@
 #include "Timefall/Debug/PerformanceStats.h"
 
 #include "Platform/Vulkan/VulkanContext.h"
+#include "Timefall/RHI/RenderDevice.h"
+#include "Timefall/RHI/CommandList.h"
 
 #include <GLFW/glfw3.h>
 
@@ -29,7 +31,6 @@ namespace Timefall
 
 		m_Window = Window::Create(WindowProps(specification.Name));
 		m_Window->SetEventCallBack(TF_BIND_EVENT_FN(Application::OnEvent));
-		m_Window->SetVsync(false);
 
 #ifdef TF_DIST
 		constexpr bool enableGpuDebug = false;
@@ -37,8 +38,14 @@ namespace Timefall
 		constexpr bool enableGpuDebug = true;
 #endif
 
+		// Order is load-bearing: the swapchain needs the instance, physical device and
+		// the initialised dispatcher that VulkanContext::Init sets up.
 		if (auto result = VulkanContext::Get().Init(enableGpuDebug); !result)
 			TF_CORE_ERROR("Vulkan init failed: {0}", result.error());
+		else
+			RHI::RenderDevice::Get().Init(m_Window->GetNativeWindow());
+
+		m_Window->SetVsync(false); // now that there is a swapchain to apply it to
 
 		Renderer::Init();
 
@@ -50,8 +57,11 @@ namespace Timefall
 	{
 		TF_PROFILE_FUNCTION();
 
-		VulkanContext::Get().Shutdown();
+		RHI::RenderDevice::Get().WaitIdle();
 		Renderer::Shutdown();
+		RHI::RenderDevice::Get().Shutdown();
+		VulkanContext::Get().Shutdown();
+
 		ScriptEngine::Shutdown();
 	}
 
@@ -115,6 +125,23 @@ namespace Timefall
 
 			Input::OnUpdate();
 
+			RHI::CommandList* cmd = RHI::RenderDevice::Get().BeginFrame();
+			if (!cmd)
+			{
+				// Minimised or mid-rebuild. Block rather than spin, but still close the
+				// frame out - skipping the markers shows up as one huge stalled frame.
+				glfwWaitEventsTimeout(0.1);
+
+				PerformanceStats::OnFrameEnd(timestep.GetMilliseconds());
+				TF_PROFILE_FRAME();
+				continue;
+			}
+
+			const RHI::PassDesc pass{.DebugName = "MainPass",
+				.Color = {{.Load = RHI::LoadOp::Clear, .ClearValue = {0.15f, 0.15f, 0.20f, 1.0f}}},
+				.ColorCount = 1};
+			cmd->BeginPass(pass);
+
 			if (!m_Minimized)
 			{
 				{
@@ -133,6 +160,9 @@ namespace Timefall
 					layer->OnImGuiRender();
 			}
 			m_ImGuiLayer->End();
+
+			cmd->EndPass();
+			RHI::RenderDevice::Get().EndFrame();
 
 			m_Window->OnUpdate();
 
@@ -159,6 +189,7 @@ namespace Timefall
 		}
 
 		m_Minimized = false;
+		RHI::RenderDevice::Get().OnResize(e.GetWidth(), e.GetHeight());
 		Renderer::OnWindowResize(e.GetWidth(), e.GetHeight());
 
 		return false;

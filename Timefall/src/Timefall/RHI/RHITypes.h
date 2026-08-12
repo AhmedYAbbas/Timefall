@@ -4,7 +4,7 @@
 
 namespace Timefall::RHI
 {
-	struct TF_API Limits
+	struct Limits
 	{
 		uint32_t MaxBindlessTextures = 0;
 		uint32_t MaxPushConstantSize = 0;
@@ -18,7 +18,7 @@ namespace Timefall::RHI
 	inline constexpr uint32_t FRAMES_IN_FLIGHT = 2;
 
 	enum class Format { Undefined = 0, RGBA8Unorm,BGRA8Unorm, RGBA16F, R32I, D32F };
-	enum class LoadOp { Load = 0, Clear, DontClear };
+	enum class LoadOp { Load = 0, Clear, DontCare };
 	enum class StoreOp { Store = 0, DontCare };
 
 	struct ColorTarget

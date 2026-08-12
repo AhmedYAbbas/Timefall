@@ -5,6 +5,8 @@
 #include "Timefall/Events/MouseEvent.h"
 #include "Timefall/Events/KeyEvent.h"
 
+#include "Timefall/RHI/RenderDevice.h"
+
 #include <filesystem>
 
 namespace Timefall
@@ -58,7 +60,7 @@ namespace Timefall
 
 		glfwSetWindowUserPointer(m_Window, &m_Data);
 		glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-		SetVsync(true);
+		m_Data.Vsync = true; // matches the swapchain default; no render device to apply it to yet
 
 		// Setup GLFW callbacks
 		glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height) {
@@ -178,6 +180,6 @@ namespace Timefall
 		TF_PROFILE_FUNCTION();
 
 		m_Data.Vsync = enabled;
-		// RHI::RenderDevice::Get().SetVSync(enabled);
+		RHI::RenderDevice::Get().SetVSync(enabled);
 	}
 }

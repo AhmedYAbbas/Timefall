@@ -97,6 +97,9 @@ namespace Timefall
 
 		extensions.assign(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
+		// Required by getSurfaceCapabilities2KHR / getSurfaceFormats2KHR; GLFW never adds it.
+		extensions.push_back(vk::KHRGetSurfaceCapabilities2ExtensionName);
+
 		if (m_DebugEnabled)
 		{
 			layers.push_back("VK_LAYER_KHRONOS_validation");
@@ -200,10 +203,12 @@ namespace Timefall
 		const auto& sBase = supported.get<vk::PhysicalDeviceFeatures2>().features;
 		const auto& s12 = supported.get<vk::PhysicalDeviceVulkan12Features>();
 		const auto& s13 = supported.get<vk::PhysicalDeviceVulkan13Features>();
+		const auto& s14 = supported.get<vk::PhysicalDeviceVulkan14Features>();
 
-		const std::pair<vk::Bool32, const char*> required[]{{s13.dynamicRendering, "dynamicRendering"},
-			{s13.synchronization2, "synchronization2"}, {s12.descriptorIndexing, "descriptorIndexing"},
-			{s12.runtimeDescriptorArray, "runtimeDescriptorArray"},
+		const std::pair<vk::Bool32, const char*> required[]{{s12.timelineSemaphore, "timelineSemaphore"},
+			{s14.hostImageCopy, "hostImageCopy"}, {s14.maintenance5, "maintenance5"}, {s14.maintenance6, "maintenance6"},
+			{s13.dynamicRendering, "dynamicRendering"}, {s13.synchronization2, "synchronization2"},
+			{s12.descriptorIndexing, "descriptorIndexing"}, {s12.runtimeDescriptorArray, "runtimeDescriptorArray"},
 			{s12.descriptorBindingPartiallyBound, "descriptorBindingPartiallyBound"},
 			{s12.descriptorBindingVariableDescriptorCount, "descriptorBindingVariableDescriptorCount"},
 			{s12.descriptorBindingSampledImageUpdateAfterBind, "descriptorBindingSampledImageUpdateAfterBind"},
@@ -215,12 +220,16 @@ namespace Timefall
 				return std::unexpected(std::format("Device lacks required feature {0}", name));
 
 		vk::PhysicalDeviceVulkan14Features f14{};
+		f14.hostImageCopy = vk::True; // vkCopyMemoryToImage - no staging buffer for textures
+		f14.maintenance5 = vk::True; // bindIndexBuffer2, BufferUsageFlags2
+		f14.maintenance6 = vk::True; // bindDescriptorSets2, pushConstants2, pushDescriptorSet2
 
 		vk::PhysicalDeviceVulkan13Features f13{.pNext = &f14};
 		f13.dynamicRendering = vk::True;
 		f13.synchronization2 = vk::True;
 
 		vk::PhysicalDeviceVulkan12Features f12{.pNext = &f13};
+		f12.timelineSemaphore = vk::True; // the frame clock; there are no fences
 		f12.descriptorIndexing = vk::True;
 		f12.runtimeDescriptorArray = vk::True;
 		f12.descriptorBindingPartiallyBound = vk::True;
@@ -256,7 +265,10 @@ namespace Timefall
 		if (!m_GraphicsQueue)
 			return std::unexpected("vkGetDeviceQueue2 returned a null queue - DeviceQueueInfo2::flags mismatch");
 
-		SetObjectName((uint64_t)(VkQueue)m_GraphicsQueue, vk::ObjectType::eQueue, "GraphicsQueue");
+		SetObjectName(m_Instance, "Instance");
+		SetObjectName(m_PhysicalDevice, "PhysicalDevice");
+		SetObjectName(m_Device, "Device");
+		SetObjectName(m_GraphicsQueue, "GraphicsQueue");
 		return {};
 	}
 
