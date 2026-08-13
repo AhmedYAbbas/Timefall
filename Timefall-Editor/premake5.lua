@@ -28,6 +28,7 @@ project "Timefall-Editor"
 		"%{wks.location}/Timefall/%{IncludeDir.ImGuizmo}",
 		"%{wks.location}/Timefall/%{IncludeDir.box2d}",
 		"%{wks.location}/Timefall/vendor/tracy/public",
+		"%{IncludeDir.VulkanSDK}"
 	}
 
 	defines

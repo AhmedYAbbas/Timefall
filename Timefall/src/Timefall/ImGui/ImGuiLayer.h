@@ -2,6 +2,8 @@
 
 #include "Timefall/Core/Layer.h"
 
+#include <vulkan/vulkan.hpp>
+
 namespace Timefall
 {
 	class TF_API ImGuiLayer : public Layer
@@ -22,8 +24,14 @@ namespace Timefall
 
 		uint32_t GetActiveWidgetID() const;
 
+
+	private:
+		bool OnWindowResize(WindowResizeEvent& e);
+
 	private:
 		bool m_BlockEvents = true;
 		float m_Time = 0.0f;
+
+		vk::DescriptorPool m_ImGuiPool;
 	};
 }

@@ -38,14 +38,12 @@ namespace Timefall
 		constexpr bool enableGpuDebug = true;
 #endif
 
-		// Order is load-bearing: the swapchain needs the instance, physical device and
-		// the initialised dispatcher that VulkanContext::Init sets up.
 		if (auto result = VulkanContext::Get().Init(enableGpuDebug); !result)
 			TF_CORE_ERROR("Vulkan init failed: {0}", result.error());
 		else
 			RHI::RenderDevice::Get().Init(m_Window->GetNativeWindow());
 
-		m_Window->SetVsync(false); // now that there is a swapchain to apply it to
+		m_Window->SetVsync(false);
 
 		Renderer::Init();
 
@@ -58,6 +56,10 @@ namespace Timefall
 		TF_PROFILE_FUNCTION();
 
 		RHI::RenderDevice::Get().WaitIdle();
+
+		m_LayerStack.Clear();
+		m_ImGuiLayer = nullptr;
+
 		Renderer::Shutdown();
 		RHI::RenderDevice::Get().Shutdown();
 		VulkanContext::Get().Shutdown();
@@ -128,8 +130,7 @@ namespace Timefall
 			RHI::CommandList* cmd = RHI::RenderDevice::Get().BeginFrame();
 			if (!cmd)
 			{
-				// Minimised or mid-rebuild. Block rather than spin, but still close the
-				// frame out - skipping the markers shows up as one huge stalled frame.
+				// Minimised or mid-rebuild. Block rather than spin, but still close the frame out
 				glfwWaitEventsTimeout(0.1);
 
 				PerformanceStats::OnFrameEnd(timestep.GetMilliseconds());

@@ -1,5 +1,10 @@
 #include "tfpch.h"
 #include "Timefall/ImGui/ImGuiLayer.h"
+#include "Timefall/Core/Application.h"
+
+#include "Platform/Vulkan/VulkanContext.h"
+#include "Timefall/RHI/RenderDevice.h"
+#include "Timefall/RHI/CommandList.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -7,12 +12,7 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
 
-#include "Timefall/Core/Application.h"
-
 #include "ImGuizmo.h"
-
-// TEMPORARY
-#include <GLFW/glfw3.h>
 
 namespace Timefall
 {
@@ -40,7 +40,6 @@ namespace Timefall
 
 		io.Fonts->AddFontFromFileTTF("Assets/Fonts/OpenSans/static/OpenSans-Bold.ttf", 18.0f);
 		io.FontDefault = io.Fonts->AddFontFromFileTTF("Assets/Fonts/OpenSans/static/OpenSans-Regular.ttf", 18.0f);
-		io.Fonts->Build();
 
 		// Setup Dear ImGui style
 		ImGui::StyleColorsDark();
@@ -59,17 +58,69 @@ namespace Timefall
 		Application& app = Application::Get();
 		GLFWwindow* window = static_cast<GLFWwindow*>(app.GetWindow().GetNativeWindow());
 
-		// Setup Platform/Renderer bindings
+		auto& ctx = VulkanContext::Get();
+		auto& renderDeivce = RHI::RenderDevice::Get();
+
+		constexpr uint32_t maxTextures = 1000;
+
+		const vk::DescriptorPoolSize poolSizes[]{
+			{vk::DescriptorType::eSampledImage, maxTextures},
+			{vk::DescriptorType::eSampler, IMGUI_IMPL_VULKAN_MINIMUM_SAMPLER_POOL_SIZE},
+		};
+
+		auto pool = ctx.GetDevice().createDescriptorPool({.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+			.maxSets = maxTextures + IMGUI_IMPL_VULKAN_MINIMUM_SAMPLER_POOL_SIZE,
+			.poolSizeCount = (uint32_t)std::size(poolSizes),
+			.pPoolSizes = poolSizes});
+
+		if (!pool)
+		{
+			TF_CORE_ERROR("createDescriptorPool failed: {0}", vk::to_string(pool.error()));
+			return;
+		}
+		m_ImGuiPool = *pool;
+
+		static vk::Instance s_Instance = ctx.GetInstance();
+
+		ImGui_ImplVulkan_LoadFunctions(
+			VK_API_VERSION_1_4,
+			[](const char* name, void* user) {
+				auto instance = *static_cast<vk::Instance*>(user);
+				return VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr(instance, name);
+			},
+			&s_Instance);
+
+		static VkFormat colorFormat = (VkFormat)renderDeivce.GetSwapchainFormat();
+
+		VkPipelineRenderingCreateInfo rendering{};
+		rendering.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+		rendering.colorAttachmentCount = 1;
+		rendering.pColorAttachmentFormats = &colorFormat;
+
+		ImGui_ImplVulkan_InitInfo init{};
+		init.Instance = s_Instance;
+		init.PhysicalDevice = ctx.GetPhysicalDevice();
+		init.Device = ctx.GetDevice();
+		init.QueueFamily = ctx.GetGraphicsQueueFamily();
+		init.Queue = ctx.GetGraphicsQueue();
+		init.DescriptorPool = m_ImGuiPool;
+		init.MinImageCount = renderDeivce.GetSwapchainMinImageCount();
+		init.ImageCount = renderDeivce.GetSwapchainImageCount();
+		init.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+		init.PipelineInfoMain.PipelineRenderingCreateInfo = rendering;
+		init.UseDynamicRendering = true;
+
 		ImGui_ImplGlfw_InitForVulkan(window, true);
-		// ImGui_ImplOpenGL3_Init("#version 410");
+		ImGui_ImplVulkan_Init(&init);
 	}
 
 	void ImGuiLayer::OnDetach()
 	{
 		TF_PROFILE_FUNCTION();
 
-		// ImGui_ImplVulkan_Shutdown();
+		ImGui_ImplVulkan_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
+		VulkanContext::Get().GetDevice().destroyDescriptorPool(m_ImGuiPool);
 		ImGui::DestroyContext();
 	}
 
@@ -77,7 +128,7 @@ namespace Timefall
 	{
 		TF_PROFILE_FUNCTION();
 
-		// ImGui_ImplVulkan_NewFrame();
+		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		ImGuizmo::BeginFrame();
@@ -87,16 +138,10 @@ namespace Timefall
 	{
 		TF_PROFILE_FUNCTION();
 
-		ImGuiIO& io = ImGui::GetIO();
-		Application& app = Application::Get();
-		io.DisplaySize = ImVec2((float)app.GetWindow().GetWidth(), (float)app.GetWindow().GetHeight());
-
-		// Rendering
 		ImGui::Render();
 
-		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-		{
-		}
+		if (auto* cmd = RHI::RenderDevice::Get().GetCurrentCommandList())
+			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), (VkCommandBuffer)cmd->GetNativeHandle());
 	}
 
 	void ImGuiLayer::OnEvent(Event& e)
@@ -107,6 +152,9 @@ namespace Timefall
 			e.Handled |= e.IsInCategory(EventCategoryMouse) & io.WantCaptureMouse;
 			e.Handled |= e.IsInCategory(EventCategoryKeyboard) & io.WantCaptureKeyboard;
 		}
+
+		EventDispatcher dispatcher(e);
+		dispatcher.Dispatch<WindowResizeEvent>(TF_BIND_EVENT_FN(ImGuiLayer::OnWindowResize));
 	}
 
 	void ImGuiLayer::SetDarkThemeColors()
@@ -132,9 +180,9 @@ namespace Timefall
 		// Tabs
 		colors[ImGuiCol_Tab] = ImVec4(0.15f, 0.1505f, 0.151f, 1.0f);
 		colors[ImGuiCol_TabHovered] = ImVec4(0.38f, 0.3805f, 0.381f, 1.0f);
-		colors[ImGuiCol_TabActive] = ImVec4(0.28f, 0.2805f, 0.281f, 1.0f);
-		colors[ImGuiCol_TabUnfocused] = ImVec4(0.15f, 0.1505f, 0.151f, 1.0f);
-		colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.2f, 0.205f, 0.21f, 1.0f);
+		colors[ImGuiCol_TabSelected] = ImVec4(0.28f, 0.2805f, 0.281f, 1.0f);
+		colors[ImGuiCol_TabDimmed] = ImVec4(0.15f, 0.1505f, 0.151f, 1.0f);
+		colors[ImGuiCol_TabDimmedSelected] = ImVec4(0.2f, 0.205f, 0.21f, 1.0f);
 
 		// Title
 		colors[ImGuiCol_TitleBg] = ImVec4(0.15f, 0.1505f, 0.151f, 1.0f);
@@ -145,5 +193,14 @@ namespace Timefall
 	uint32_t ImGuiLayer::GetActiveWidgetID() const
 	{
 		return GImGui->ActiveId;
+	}
+
+	bool ImGuiLayer::OnWindowResize(WindowResizeEvent& e)
+	{
+		const uint32_t minImageCount = RHI::RenderDevice::Get().GetSwapchainMinImageCount();
+		if (minImageCount >= 2)
+			ImGui_ImplVulkan_SetMinImageCount(minImageCount);
+
+		return false;
 	}
 }

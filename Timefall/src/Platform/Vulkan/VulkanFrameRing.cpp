@@ -97,8 +97,9 @@ namespace Timefall
 		if (m_RenderFinished.size() == swapchainImageCount)
 			return;
 
-		// Safe to destroy: every caller rebuilds the swapchain behind a waitIdle, so no
-		// present is still pending on these.
+		// Every caller rebuilds the swapchain behind a waitIdle, which covers queue execution but
+		// NOT a presentation-engine wait still outstanding on one of these binary semaphores.
+		// Closing that hole needs VK_EXT_swapchain_maintenance1 present fences, which are not core.
 		auto device = VulkanContext::Get().GetDevice();
 		for (auto s : m_RenderFinished)
 			device.destroySemaphore(s);

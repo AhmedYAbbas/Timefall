@@ -29,13 +29,14 @@ namespace Timefall
 		using Severity = vk::DebugUtilsMessageSeverityFlagBitsEXT;
 		using Type = vk::DebugUtilsMessageTypeFlagBitsEXT;
 
-		if (severity & Severity::eError)
-			TF_CORE_ERROR("[Vulkan] {0}", data->pMessage);
-		else if (severity & Severity::eWarning)
-			TF_CORE_WARN("[Vulkan] {0}", data->pMessage);
+		const char* tag = (type & Type::ePerformance) ? "[Vulkan][Perf]" : "[Vulkan]";
 
-		if (type & Type::ePerformance)
-			TF_CORE_INFO("[Vulkan] {0}", data->pMessage);
+		if (severity & Severity::eError)
+			TF_CORE_ERROR("{0} {1}", tag, data->pMessage);
+		else if (severity & Severity::eWarning)
+			TF_CORE_WARN("{0} {1}", tag, data->pMessage);
+		else
+			TF_CORE_INFO("{0} {1}", tag, data->pMessage);
 
 		return vk::False;
 	}

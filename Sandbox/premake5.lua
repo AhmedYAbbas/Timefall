@@ -24,6 +24,7 @@ project "Sandbox"
 		"../Timefall/%{IncludeDir.entt}",
 		"../Timefall/%{IncludeDir.box2d}",
 		"../Timefall/vendor/tracy/public",
+		"%{IncludeDir.VulkanSDK}"
 	}
 
 	defines
