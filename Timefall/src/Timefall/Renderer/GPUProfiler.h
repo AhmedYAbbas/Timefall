@@ -10,8 +10,13 @@ namespace Timefall
 	class TF_API GPUProfiler
 	{
 	public:
-		static void BeginZone(const char* name) {}
-		static void EndZone() {}
+		static void Init();
+		static void Shutdown();
+
+		static void Collect();
+
+		static void BeginZone(const char* name);
+		static void EndZone();
 
 		struct Scope
 		{

@@ -10,6 +10,8 @@
 #include "Platform/Vulkan/VulkanDeletionQueue.h"
 #include "Platform/Vulkan/VulkanRHIImpl.h"
 
+#include "Timefall/Renderer/GPUProfiler.h"
+
 namespace Timefall::RHI
 {
 	struct RenderDevice::Impl
@@ -168,6 +170,7 @@ namespace Timefall::RHI
 		impl->List.m_Impl = &impl->ListImpl;
 
 		m_Impl = impl.release();
+		GPUProfiler::Init();
 	}
 
 	const Limits& RenderDevice::GetLimits() const
@@ -230,6 +233,7 @@ namespace Timefall::RHI
 
 		*m_Impl->ListImpl.TargetLayout = vk::ImageLayout::ePresentSrcKHR;
 
+		GPUProfiler::Collect();
 		(void)frame.Cmd.end();
 
 		const vk::Semaphore renderFinished = m_Impl->Frames.RenderFinished(m_Impl->ImageIndex);
@@ -314,6 +318,7 @@ namespace Timefall::RHI
 			return;
 
 		WaitIdle();
+		GPUProfiler::Shutdown();
 		m_Impl->DeletionQueue.FlushAll();
 		m_Impl->Frames.Shutdown();
 		m_Impl->Swapchain.Shutdown();

@@ -56,6 +56,7 @@ IncludeDir["tracy"] = "vendor/tracy/public"
 IncludeDir["VulkanSDK"] = "$(VULKAN_SDK)/Include"
 IncludeDir["Slang"] = "$(VULKAN_SDK)/Include/slang"
 IncludeDir["VMA"] = "vendor/vma"
+IncludeDir["renderdoc"] = "vendor/renderdoc"
 
 -- Library directories relative to Timefall folder (Timefall project directory)
 LibraryDir = {}

@@ -56,7 +56,9 @@ project "Timefall"
 
 		"%{IncludeDir.VulkanSDK}",
 		"%{IncludeDir.VMA}",
-		"%{IncludeDir.Slang}"
+		"%{IncludeDir.Slang}",
+
+		"%{IncludeDir.renderdoc}"
 	}
 
 	defines
@@ -135,13 +137,13 @@ project "Timefall"
 		systemversion "latest"
 
 	filter "configurations:Debug"
-		defines { "TF_DEBUG", "TRACY_ENABLE", "TRACY_ON_DEMAND", "TRACY_EXPORTS" }
+		defines { "TF_DEBUG", "TRACY_ENABLE", "TRACY_ON_DEMAND", "TRACY_EXPORTS", "TRACY_VK_USE_SYMBOL_TABLE" }
 		runtime "Debug"
 		symbols "on"
 		editandcontinue "Off" -- EnC (/ZI) corrupts incremental builds under /std:c++23preview
 
 	filter "configurations:Release"
-		defines { "NDEBUG", "TF_RELEASE", "TRACY_ENABLE", "TRACY_ON_DEMAND", "TRACY_EXPORTS" }
+		defines { "NDEBUG", "TF_RELEASE", "TRACY_ENABLE", "TRACY_ON_DEMAND", "TRACY_EXPORTS", "TRACY_VK_USE_SYMBOL_TABLE" }
 		runtime "Release"
 		optimize "on"
 

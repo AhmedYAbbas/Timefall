@@ -5,6 +5,8 @@
 #include "Timefall/Renderer/Renderer3D.h"
 #include "Platform/Vulkan/GPUMemoryTracker.h"
 
+#include "Timefall/Debug/RenderDocCapture.h"
+
 #include <imgui/imgui.h>
 
 #include <algorithm>
@@ -31,6 +33,19 @@ namespace Timefall
 		float scaleMax = std::max(worstMs * 1.2f, 20.0f);
 		ImGui::PlotLines("##FrameTimes", history.data(), (int)history.size(), (int)PerformanceStats::GetFrameCursor(), nullptr, 0.0f,
 			scaleMax, ImVec2(-1.0f, 80.0f));
+
+		if (RenderDocCapture::IsAttached())
+		{
+			if (ImGui::Button("Capture Frame"))
+				RenderDocCapture::TriggerCapture();
+		}
+		else
+		{
+			ImGui::BeginDisabled();
+			ImGui::Button("Capture Frame");
+			ImGui::EndDisabled();
+			ImGui::SetItemTooltip("Launch the editor through RenderDoc to enable in-app capture");
+		}
 
 		if (ImGui::CollapsingHeader("CPU Passes", ImGuiTreeNodeFlags_DefaultOpen))
 		{
