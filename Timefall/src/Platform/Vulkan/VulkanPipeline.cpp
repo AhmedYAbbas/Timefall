@@ -339,6 +339,8 @@ namespace Timefall::RHI
 		return true;
 	}
 
+	static std::vector<std::weak_ptr<GraphicsPipeline>> s_LivePipelines;
+
 	Ref<GraphicsPipeline> GraphicsPipeline::Create(const GraphicsPipelineDesc& desc)
 	{
 		TF_PROFILE_FUNCTION();
@@ -350,7 +352,31 @@ namespace Timefall::RHI
 		if (!pipeline->Build())
 			TF_CORE_ERROR("Pipeline '{0}' failed to build", desc.DebugName ? desc.DebugName : "<unnamed>");
 
+		s_LivePipelines.push_back(pipeline);
 		return pipeline;
+	}
+
+	uint32_t GraphicsPipeline::RecreateAll()
+	{
+		TF_PROFILE_FUNCTION();
+
+		RenderDevice::Get().WaitIdle();
+
+		uint32_t rebuilt = 0;
+		for (auto it = s_LivePipelines.begin(); it != s_LivePipelines.end();)
+		{
+			if (auto pipeline = it->lock())
+			{
+				rebuilt += pipeline->Recreate() ? 1 : 0;
+				++it;
+			}
+			else
+			{
+				it = s_LivePipelines.erase(it);
+			}
+		}
+
+		return rebuilt;
 	}
 
 	GraphicsPipeline::~GraphicsPipeline()

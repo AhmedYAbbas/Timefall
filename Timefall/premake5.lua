@@ -141,11 +141,11 @@ project "Timefall"
 		editandcontinue "Off" -- EnC (/ZI) corrupts incremental builds under /std:c++23preview
 
 	filter "configurations:Release"
-		defines { "TF_RELEASE", "TRACY_ENABLE", "TRACY_ON_DEMAND", "TRACY_EXPORTS" }
+		defines { "NDEBUG", "TF_RELEASE", "TRACY_ENABLE", "TRACY_ON_DEMAND", "TRACY_EXPORTS" }
 		runtime "Release"
 		optimize "on"
 
 	filter "configurations:Dist"
-		defines "TF_DIST"
+		defines { "NDEBUG", "TF_DIST" }
 		runtime "Release"
 		optimize "on"

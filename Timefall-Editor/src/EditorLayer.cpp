@@ -60,6 +60,8 @@ namespace Timefall
 		triangleDesc.DebugName = "TrianglePipeline";
 		m_TrianglePipeline = RHI::GraphicsPipeline::Create(triangleDesc);
 
+		ShaderLibrary::EnableHotReload("assets/shaders");
+
 		m_EditorScene = CreateRef<Scene>();
 
 		auto commandLineArgs = Application::Get().GetSpecification().CommandLineArgs;
@@ -87,6 +89,7 @@ namespace Timefall
 	{
 		TF_PROFILE_FUNCTION();
 
+		ShaderLibrary::Shutdown();
 		m_TriangleShader.reset();
 		m_TrianglePipeline.reset();
 	}

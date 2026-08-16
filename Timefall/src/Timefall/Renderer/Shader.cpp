@@ -9,7 +9,7 @@ namespace Timefall
 
 	Shader::Shader(const std::filesystem::path& path)
 		: m_Path(path),
-		m_Name(path.stem().string())
+		  m_Name(path.stem().string())
 	{}
 
 	Ref<Shader> Shader::Create(const std::filesystem::path& path)
@@ -58,7 +58,7 @@ namespace Timefall
 
 	bool Shader::HasStage(ShaderStage stage) const
 	{
-		return std::ranges::any_of(m_EntryPoints, [stage](const Entry& e){return e.Stage == stage;});
+		return std::ranges::any_of(m_EntryPoints, [stage](const Entry& e) { return e.Stage == stage; });
 	}
 
 	std::span<const uint32_t> Shader::GetSpirv(ShaderStage stage) const
@@ -70,7 +70,7 @@ namespace Timefall
 		return {};
 	}
 
-	const std::string_view& Shader::GetEntryPointName(ShaderStage stage) const
+	std::string_view Shader::GetEntryPointName(ShaderStage stage) const
 	{
 		for (const auto& entry : m_EntryPoints)
 			if (entry.Stage == stage)

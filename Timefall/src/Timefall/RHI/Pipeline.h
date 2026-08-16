@@ -46,6 +46,7 @@ namespace Timefall::RHI
 	{
 	public:
 		static Ref<GraphicsPipeline> Create(const GraphicsPipelineDesc& desc);
+		static uint32_t RecreateAll();
 
 		~GraphicsPipeline();
 
