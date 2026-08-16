@@ -202,13 +202,14 @@ namespace Timefall
 			vk::PhysicalDeviceVulkan12Features, vk::PhysicalDeviceVulkan13Features, vk::PhysicalDeviceVulkan14Features>();
 
 		const auto& sBase = supported.get<vk::PhysicalDeviceFeatures2>().features;
+		const auto& s11 = supported.get<vk::PhysicalDeviceVulkan11Features>();
 		const auto& s12 = supported.get<vk::PhysicalDeviceVulkan12Features>();
 		const auto& s13 = supported.get<vk::PhysicalDeviceVulkan13Features>();
 		const auto& s14 = supported.get<vk::PhysicalDeviceVulkan14Features>();
 
-		const std::pair<vk::Bool32, const char*> required[]{{s12.timelineSemaphore, "timelineSemaphore"},
-			{s14.hostImageCopy, "hostImageCopy"}, {s14.maintenance5, "maintenance5"}, {s14.maintenance6, "maintenance6"},
-			{s13.dynamicRendering, "dynamicRendering"}, {s13.synchronization2, "synchronization2"},
+		const std::pair<vk::Bool32, const char*> required[]{{s11.shaderDrawParameters, "shaderDrawParameters"},
+			{s12.timelineSemaphore, "timelineSemaphore"}, {s14.hostImageCopy, "hostImageCopy"}, {s14.maintenance5, "maintenance5"},
+			{s14.maintenance6, "maintenance6"}, {s13.dynamicRendering, "dynamicRendering"}, {s13.synchronization2, "synchronization2"},
 			{s12.descriptorIndexing, "descriptorIndexing"}, {s12.runtimeDescriptorArray, "runtimeDescriptorArray"},
 			{s12.descriptorBindingPartiallyBound, "descriptorBindingPartiallyBound"},
 			{s12.descriptorBindingVariableDescriptorCount, "descriptorBindingVariableDescriptorCount"},
@@ -239,6 +240,7 @@ namespace Timefall
 		f12.shaderSampledImageArrayNonUniformIndexing = vk::True;
 
 		vk::PhysicalDeviceVulkan11Features f11{.pNext = &f12};
+		f11.shaderDrawParameters = vk::True; // gl_BaseVertex: Slang zero-bases SV_VertexID with it
 
 		vk::PhysicalDeviceFeatures2 features2{.pNext = &f11};
 		features2.features.samplerAnisotropy = vk::True;

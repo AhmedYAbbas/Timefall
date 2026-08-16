@@ -5,7 +5,7 @@ namespace Timefall
 {
 	static constexpr uint64_t FNV_OFFSET = 14695981039346656037ull;
 	static constexpr uint64_t FNV_PRIME = 1099511628211ull;
-	static constexpr uint32_t META_VERSION = 1;
+	static constexpr uint32_t META_VERSION = 2; // bumped: entry points now keep their declared SPIR-V names
 
 	static constexpr const char* OPTIMIZATION_TAG = "O-default";
 
@@ -121,7 +121,7 @@ namespace Timefall
 			uint32_t type = 0;
 			if (!(in >> binding.Name >> binding.Set >> binding.Binding >> binding.Count >> type))
 				return false;
-			
+
 			binding.Type = (ShaderBindingType)type;
 		}
 
@@ -147,8 +147,7 @@ namespace Timefall
 		std::ofstream out(path, std::ios::trunc);
 		out << module.EntryPoints.size() << ' ' << module.Reflection.Bindings.size() << ' ' << module.Reflection.VertexInputs.size() << ' '
 			<< module.Reflection.PushConstantSize << ' ' << (uint32_t)module.Reflection.StageMask << ' ' << module.Reflection.Digest << ' '
-			<< module.Dependencies.size()
-			<< '\n';
+			<< module.Dependencies.size() << '\n';
 
 		for (const auto& entry : module.EntryPoints)
 			out << entry.Name << ' ' << (uint32_t)entry.Stage << '\n';

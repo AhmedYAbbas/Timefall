@@ -12,6 +12,9 @@
 #include "Timefall/Asset/AssetManager.h"
 #include "Timefall/Asset/EditorAssetManager.h"
 
+#include "Timefall/RHI/RenderDevice.h"
+#include "Timefall/RHI/CommandList.h"
+
 #include <imgui/imgui.h>
 #include "ImGuizmo.h"
 
@@ -47,6 +50,16 @@ namespace Timefall
 		fbSpec.Height = 720;
 		m_Framebuffer = Framebuffer::Create(fbSpec);
 
+		m_TriangleShader = ShaderLibrary::Load("assets/shaders/Triangle.slang");
+
+		RHI::GraphicsPipelineDesc triangleDesc;
+		triangleDesc.ShaderModule = m_TriangleShader;
+		triangleDesc.ColorFormats[0] = RHI::RenderDevice::Get().GetSwapchainColorFormat();
+		triangleDesc.ColorCount = 1;
+		triangleDesc.Raster.Cull = RHI::CullMode::None;
+		triangleDesc.DebugName = "TrianglePipeline";
+		m_TrianglePipeline = RHI::GraphicsPipeline::Create(triangleDesc);
+
 		m_EditorScene = CreateRef<Scene>();
 
 		auto commandLineArgs = Application::Get().GetSpecification().CommandLineArgs;
@@ -67,58 +80,15 @@ namespace Timefall
 
 		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
 
-#if 0
-		m_SquareEntity = GetActiveScene()->CreateEntity("Green Square");
-		m_SquareEntity.AddComponent<SpriteRendererComponent>(glm::vec4{0.0f, 1.0f, 0.0f, 1.0f});
-		
-		auto redSquare = GetActiveScene()->CreateEntity("Red Square");
-		redSquare.AddComponent<SpriteRendererComponent>(glm::vec4{1.0f, 0.0f, 0.0f, 1.0f});
-
-		m_PrimaryCamera = GetActiveScene()->CreateEntity("Main Camera");
-		m_PrimaryCamera.AddComponent<CameraComponent>();
-
-		m_SecondaryCamera = GetActiveScene()->CreateEntity("Secondary Camera");
-		auto& cc = m_SecondaryCamera.AddComponent<CameraComponent>();
-		cc.Primary = false;
-
-		class CameraController : public ScriptableEntity
-		{
-		public:
-			virtual void OnCreate() override
-			{
-				auto position = GetComponent<TransformComponent>().Position;
-				position.x = rand() % 10 - 5.0f;
-			}
-
-			virtual void OnDestroy() override
-			{
-			}
-
-			virtual void OnUpdate(Timestep ts) override
-			{
-				auto& position = GetComponent<TransformComponent>().Position;
-				float speed = 5.0f;
-
-				if (Input::IsKeyPressed(KeyCode::A))
-					position.x -= speed * ts;
-				if (Input::IsKeyPressed(KeyCode::D))
-					position.x += speed * ts;
-				if (Input::IsKeyPressed(KeyCode::W))
-					position.y += speed * ts;
-				if (Input::IsKeyPressed(KeyCode::S))
-					position.y -= speed * ts;
-			}
-		};
-
-		m_PrimaryCamera.AddComponent<NativeScriptComponent>().Bind<CameraController>();
-		m_SecondaryCamera.AddComponent<NativeScriptComponent>().Bind<CameraController>();
-#endif
 		m_SceneHierarchyPanel.SetContext(GetActiveScene());
 	}
 
 	void EditorLayer::OnDetach()
 	{
 		TF_PROFILE_FUNCTION();
+
+		m_TriangleShader.reset();
+		m_TrianglePipeline.reset();
 	}
 
 	Ref<Scene> EditorLayer::GetActiveScene() const
@@ -129,6 +99,22 @@ namespace Timefall
 	void EditorLayer::OnUpdate(Timestep ts)
 	{
 		TF_PROFILE_FUNCTION();
+
+		if (m_TrianglePipeline && m_TrianglePipeline->IsValid())
+		{
+			if (RHI::CommandList* cmd = RHI::RenderDevice::Get().GetCurrentCommandList())
+			{
+				struct
+				{
+					glm::vec3 Tint;
+					float Time;
+				} push{{1.0f, 1.0f, 1.0f}, (float)ImGui::GetTime()};
+
+				cmd->BindPipeline(*m_TrianglePipeline);
+				cmd->PushConstants(&push, sizeof(push));
+				cmd->Draw(3);
+			}
+		}
 
 		GetActiveScene()->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		SceneManager::SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
@@ -215,7 +201,7 @@ namespace Timefall
 		static bool opt_fullscreen = true;
 		static bool opt_padding = false;
 		static bool dockspaceOpen = true;
-		static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+		static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
 
 		// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
 		// because it would be confusing to have two docking targets within each others.
@@ -319,7 +305,7 @@ namespace Timefall
 		ImGui::End();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
-		ImGui::Begin("Viewport");
+		ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoBackground);
 
 		ImVec2 viewportOffset = ImGui::GetCursorScreenPos(); // absolute top-left of the content region
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();

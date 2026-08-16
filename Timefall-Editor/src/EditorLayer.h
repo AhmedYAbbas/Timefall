@@ -7,6 +7,9 @@
 #include "Panels/PostProcessSettingsPanel.h"
 #include "Panels/ProfilerPanel.h"
 
+#include "Timefall/RHI/Pipeline.h"
+#include "Timefall/Renderer/ShaderLibrary.h"
+
 #include <filesystem>
 
 namespace Timefall
@@ -57,6 +60,9 @@ namespace Timefall
 
 	private:
 		OrthographicCameraController m_CameraController;
+
+		Ref<Shader> m_TriangleShader;
+		Ref<RHI::GraphicsPipeline> m_TrianglePipeline;
 
 		// Temp
 		Ref<Framebuffer> m_Framebuffer;

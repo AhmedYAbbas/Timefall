@@ -2,8 +2,8 @@
 #include "ShaderCompiler.h"
 
 #ifdef TF_SHADER_RUNTIME_COMPILER
-	#include <slang-com-ptr.h>
-	#include <slang.h>
+#include <slang-com-ptr.h>
+#include <slang.h>
 #endif
 
 #include <charconv>
@@ -121,34 +121,30 @@ namespace Timefall
 
 		switch (typeLayout->getKind())
 		{
-			case slang::TypeReflection::Kind::ConstantBuffer:
-				outType = ShaderBindingType::UniformBuffer;
-				return true;
+			case slang::TypeReflection::Kind::ConstantBuffer: outType = ShaderBindingType::UniformBuffer; return true;
 
-			case slang::TypeReflection::Kind::SamplerState:
-				outType = ShaderBindingType::Sampler;
-				return true;
+			case slang::TypeReflection::Kind::SamplerState: outType = ShaderBindingType::Sampler; return true;
 
-				case slang::TypeReflection::Kind::Resource:
+			case slang::TypeReflection::Kind::Resource:
+			{
+				const SlangResourceShape shape =
+					(SlangResourceShape)(typeLayout->getType()->getResourceShape() & SLANG_RESOURCE_BASE_SHAPE_MASK);
+
+				if (shape == SLANG_STRUCTURED_BUFFER || shape == SLANG_BYTE_ADDRESS_BUFFER)
 				{
-					const SlangResourceShape shape =
-						(SlangResourceShape)(typeLayout->getType()->getResourceShape() & SLANG_RESOURCE_BASE_SHAPE_MASK);
-
-					if (shape == SLANG_STRUCTURED_BUFFER || shape == SLANG_BYTE_ADDRESS_BUFFER)
-					{
-						outType = ShaderBindingType::StorageBuffer;
-						return true;
-					}
-
-					if (typeLayout->getType()->getResourceAccess() != SLANG_RESOURCE_ACCESS_READ)
-					{
-						outReason = "Writable resources are not supported until compute lands";
-						return false;
-					}
-
-					outType = ShaderBindingType::SampledImage;
+					outType = ShaderBindingType::StorageBuffer;
 					return true;
 				}
+
+				if (typeLayout->getType()->getResourceAccess() != SLANG_RESOURCE_ACCESS_READ)
+				{
+					outReason = "Writable resources are not supported until compute lands";
+					return false;
+				}
+
+				outType = ShaderBindingType::SampledImage;
+				return true;
+			}
 
 			default:
 				outReason = "Unsupported resource kind - declare a ConstantBuffer, Texture, SamplerState or StructuredBuffer";
@@ -191,8 +187,7 @@ namespace Timefall
 					break;
 				}
 
-				default:
-					break;
+				default: break;
 			}
 		}
 
@@ -247,8 +242,10 @@ namespace Timefall
 
 		const std::array options{
 			slang::CompilerOptionEntry{slang::CompilerOptionName::MatrixLayoutColumn, {slang::CompilerOptionValueKind::Int, 1, 0}},
-			slang::CompilerOptionEntry{slang::CompilerOptionName::EmitSpirvDirectly, {slang::CompilerOptionValueKind::Int, 1, 0}}
-		};
+			slang::CompilerOptionEntry{slang::CompilerOptionName::EmitSpirvDirectly, {slang::CompilerOptionValueKind::Int, 1, 0}},
+			// Without this, Slang names every per-stage SPIR-V entry point "main" instead of the
+			// declared name, and vkCreateGraphicsPipelines' pName lookup (reflection-driven) fails.
+			slang::CompilerOptionEntry{slang::CompilerOptionName::VulkanUseEntryPointName, {slang::CompilerOptionValueKind::Int, 1, 0}}};
 
 		const std::string searchPath = path.parent_path().string();
 		const char* searchPaths[] = {searchPath.c_str()};

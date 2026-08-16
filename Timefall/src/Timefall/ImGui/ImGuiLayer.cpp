@@ -109,6 +109,11 @@ namespace Timefall
 		init.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 		init.PipelineInfoMain.PipelineRenderingCreateInfo = rendering;
 		init.UseDynamicRendering = true;
+		init.MinAllocationSize = 1024 * 1024; // matches the VMA sub-allocation threshold; silences "Perf" warnings
+		init.CheckVkResultFn = [](VkResult err) {
+			if (err != VK_SUCCESS)
+				TF_CORE_ERROR("[ImGui-Vulkan] {0}", vk::to_string((vk::Result)err));
+		};
 
 		ImGui_ImplGlfw_InitForVulkan(window, true);
 		ImGui_ImplVulkan_Init(&init);
