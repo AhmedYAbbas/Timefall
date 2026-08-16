@@ -36,8 +36,11 @@ namespace Timefall
 		auto& ctx = VulkanContext::Get();
 		auto device = ctx.GetDevice();
 
+		// Tracy's calibration sequence begins/ends this buffer several times in a row without
+		// resetting the pool between calls, so it needs individual-buffer reset, not just Transient.
 		auto pool = device.createCommandPool(
-			{.flags = vk::CommandPoolCreateFlagBits::eTransient, .queueFamilyIndex = ctx.GetGraphicsQueueFamily()});
+			{.flags = vk::CommandPoolCreateFlagBits::eTransient | vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+				.queueFamilyIndex = ctx.GetGraphicsQueueFamily()});
 		if (!pool)
 		{
 			TF_CORE_ERROR("GPUProfiler: createCommandPool failed: {0}", vk::to_string(pool.error()));
