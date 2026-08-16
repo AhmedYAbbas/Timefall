@@ -5,6 +5,8 @@
 
 namespace Timefall::RHI
 {
+	class GraphicsPipeline;
+
 	class TF_API CommandList
 	{
 	public:
@@ -13,6 +15,12 @@ namespace Timefall::RHI
 
 		void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 		void SetScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
+
+		void BindPipeline(const GraphicsPipeline& pipeline);
+
+		void PushConstants(const void* data, uint32_t size, uint32_t offset = 0);
+
+		void Draw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0);
 
 		void* GetNativeHandle();
 

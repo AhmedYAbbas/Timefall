@@ -17,7 +17,7 @@ namespace Timefall::RHI
 	inline constexpr uint32_t TF_BINDLESS_TEXTURE_BUDGET = 16384;
 	inline constexpr uint32_t FRAMES_IN_FLIGHT = 2;
 
-	enum class Format { Undefined = 0, RGBA8Unorm,BGRA8Unorm, RGBA16F, R32I, D32F };
+	enum class Format { Undefined = 0, RGBA8Unorm, BGRA8Unorm, RGBA16F, R32I, D32F };
 	enum class LoadOp { Load = 0, Clear, DontCare };
 	enum class StoreOp { Store = 0, DontCare };
 

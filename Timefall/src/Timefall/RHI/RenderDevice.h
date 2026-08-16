@@ -3,6 +3,8 @@
 #include "Timefall/Core/Core.h"
 #include "Timefall/RHI/RHITypes.h"
 
+#include <functional>
+
 namespace Timefall::RHI
 {
 	class CommandList;
@@ -27,6 +29,10 @@ namespace Timefall::RHI
 		void OnResize(uint32_t width, uint32_t height);
 		void SetVSync(bool enabled);
 		void WaitIdle();
+
+		void DeferDestroy(std::function<void()>&& fn);
+
+		Format GetSwapchainColorFormat() const;
 
 		uint32_t GetSwapchainFormat() const;
 		uint32_t GetSwapchainImageCount() const;

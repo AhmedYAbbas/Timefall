@@ -2,26 +2,16 @@
 
 #include "Timefall/RHI/RenderDevice.h"
 #include "Timefall/RHI/CommandList.h"
+#include "Timefall/RHI/Pipeline.h"
 
 #include "Platform/Vulkan/VulkanContext.h"
 #include "Platform/Vulkan/VulkanSwapchain.h"
 #include "Platform/Vulkan/VulkanFrameRing.h"
 #include "Platform/Vulkan/VulkanDeletionQueue.h"
-
-#include <GLFW/glfw3.h>
+#include "Platform/Vulkan/VulkanRHIImpl.h"
 
 namespace Timefall::RHI
 {
-	struct CommandList::Impl
-	{
-		vk::CommandBuffer Cmd;
-		vk::Image TargetImage;
-		vk::ImageView TargetView;
-		vk::Extent2D TargetExtent;
-		vk::ImageLayout* TargetLayout = nullptr; // points at the owner's layout slot, updated in place
-		bool InPass = false;
-	};
-
 	struct RenderDevice::Impl
 	{
 		VulkanSwapchain Swapchain;
@@ -121,6 +111,30 @@ namespace Timefall::RHI
 	{
 		const vk::Rect2D rect{{(int32_t)x, (int32_t)y}, {width, height}};
 		m_Impl->Cmd.setScissor(0, 1, &rect);
+	}
+
+	void CommandList::BindPipeline(const GraphicsPipeline& pipeline)
+	{
+		if (!pipeline.IsValid())
+			return;
+
+		m_Impl->Cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.m_Impl->Pipeline);
+		m_Impl->BoundLayout = pipeline.m_Impl->Layout;
+		m_Impl->BoundPushStages = pipeline.m_Impl->PushStages;
+		m_Impl->BoundPushSize = pipeline.m_Impl->PushSize;
+	}
+
+	void CommandList::PushConstants(const void* data, uint32_t size, uint32_t offset)
+	{
+		TF_CORE_ASSERT(m_Impl->BoundLayout, "PushConstans before BindPipeline");
+		TF_CORE_ASSERT(offset + size <= m_Impl->BoundPushSize, "Push constant write exceeds the shader's block");
+
+		m_Impl->Cmd.pushConstants2({.layout = m_Impl->BoundLayout, .stageFlags = m_Impl->BoundPushStages, .offset = offset, .size = size, .pValues = data});
+	}
+
+	void CommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
+	{
+		m_Impl->Cmd.draw(vertexCount, instanceCount, firstVertex, firstInstance);
 	}
 
 	void* CommandList::GetNativeHandle()
@@ -268,6 +282,30 @@ namespace Timefall::RHI
 	void RenderDevice::WaitIdle()
 	{
 		(void)VulkanContext::Get().GetDevice().waitIdle();
+	}
+
+	void RenderDevice::DeferDestroy(std::function<void()>&& fn)
+	{
+		if (!m_Impl)
+		{
+			fn(); // no device: nothing is in flight, so run it now
+			return;
+		}
+
+		m_Impl->DeletionQueue.Push(m_Impl->Frames.FrameValue(), std::move(fn));
+	}
+
+	Format RenderDevice::GetSwapchainColorFormat() const
+	{
+		if (!m_Impl)
+			return Format::Undefined;
+
+		switch (m_Impl->Swapchain.GetFormat())
+		{
+			case vk::Format::eB8G8R8A8Unorm: return Format::BGRA8Unorm;
+			case vk::Format::eR8G8B8A8Unorm: return Format::RGBA8Unorm;
+			default:						 return Format::Undefined;
+		}
 	}
 
 	void RenderDevice::Shutdown()
