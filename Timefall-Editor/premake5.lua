@@ -11,7 +11,10 @@ project "Timefall-Editor"
 		"src/**.h",
 		"src/**.cpp",
 		"%{wks.location}/Timefall/src/Timefall/Debug/MemoryHooks.cpp",
-		"%{wks.location}/Timefall/%{IncludeDir.filewatch}/FileWatch.h"
+		"%{wks.location}/Timefall/%{IncludeDir.filewatch}/FileWatch.h",
+
+		"assets/shaders/**.slang"
+
 		--"%{wks.location}/Timefall/%{IncludeDir.ImGuizmo}/ImGuizmo.h",
 		--"%{wks.location}/Timefall/%{IncludeDir.ImGuizmo}/ImGuizmo.cpp"
 	}
@@ -43,6 +46,22 @@ project "Timefall-Editor"
 	{
 		"Timefall"
 	}
+
+	filter "files:assets/shaders/**.slang"
+		buildmessage "Validating %{file.relpath}"
+		buildcommands{
+			'"$(VULKAN_SDK)/Bin/slangc.exe" "%{file.relpath}" -I "assets/shaders" -target spirv -profile spirv_1_6 -matrix-layout-column-major -o "%{cfg.objdir}/shaders/%{file.basename}.spv"'
+		}
+		buildoutputs { "%{cfg.objdir}/shaders/%{file.basename}.spv" }
+	filter {}
+
+	filter "files:Assets/shaders/Common/**.slang"
+		buildaction "None"
+	filter {}
+
+	filter "files:Assets/shaders/Renderer3D_HDRResolve.slang"
+		buildaction "None"
+	filter {}
 
 	filter "system:windows"
 		systemversion "latest"
