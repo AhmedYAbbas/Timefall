@@ -1,31 +1,53 @@
 #pragma once
 
+#include "Timefall/Renderer/ShaderReflection.h"
+
 #include <string>
 #include <filesystem>
-
-#include <glm/glm.hpp>
+#include <span>
 
 namespace Timefall
 {
 	class TF_API Shader
 	{
 	public:
-		virtual ~Shader() = default;
+		static Ref<Shader> Create(const std::filesystem::path& path);
 
-		virtual void Bind() const = 0;
-		virtual void Unbind() const = 0;
 
-		virtual void SetInt(const std::string& name, int value) = 0;
-		virtual void SetIntArray(const std::string& name, int* values, uint32_t count) = 0;
+		const std::filesystem::path& GetPath() const { return m_Path; }
+		const std::string_view& GetName() const { return m_Name; }
+		const ShaderReflection& GetReflection() const { return m_Reflection; }
 
-		virtual void SetFloat3(const std::string& name, const glm::vec3 value) = 0;
-		virtual void SetFloat(const std::string& name, float value) = 0;
-		virtual void SetFloat4(const std::string& name, const glm::vec4 value) = 0;
-		virtual void SetMat3(const std::string& name, const glm::mat3 value) = 0;
-		virtual void SetMat4(const std::string& name, const glm::mat4 value) = 0;
+		bool HasStage(ShaderStage stage) const;
+		std::span<const uint32_t> GetSpirv(ShaderStage stage) const;
+		const std::string_view& GetEntryPointName(ShaderStage stage) const;
 
-		virtual const std::string& GetName() const = 0;
+		uint32_t GetRevision() const { return m_Revision; }
 
-		static Ref<Shader> Create(const std::filesystem::path& filepath);
+		std::span<const std::filesystem::path> GetDependencies() const { return m_Dependencies; }
+
+		bool IsValid() const { return !m_EntryPoints.empty(); }
+
+		bool Reload();
+
+	private:
+		explicit Shader(const std::filesystem::path& path);
+
+		bool Compile();
+
+	private:
+		struct Entry
+		{
+			std::string Name;
+			ShaderStage Stage = ShaderStage::Vertex;
+			std::vector<uint32_t> Spirv;
+		};
+
+		std::filesystem::path m_Path;
+		std::string m_Name;
+		std::vector<Entry> m_EntryPoints;
+		ShaderReflection m_Reflection;
+		std::vector<std::filesystem::path> m_Dependencies;
+		uint32_t m_Revision = 0;
 	};
 }

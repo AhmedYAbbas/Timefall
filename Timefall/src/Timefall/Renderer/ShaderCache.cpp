@@ -121,7 +121,7 @@ namespace Timefall
 			uint32_t type = 0;
 			if (!(in >> binding.Name >> binding.Set >> binding.Binding >> binding.Count >> type))
 				return false;
-
+			
 			binding.Type = (ShaderBindingType)type;
 		}
 
