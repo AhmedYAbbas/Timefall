@@ -213,6 +213,84 @@ namespace Timefall
 		return true;
 	}
 
+	bool VulkanUploadContext::UploadImage(
+		vk::Image dst, uint32_t width, uint32_t height, uint32_t bytesPerPixel, const void* data, uint64_t size)
+	{
+		TF_PROFILE_FUNCTION();
+
+		if (!s_Cmd || !s_StagingMapped)
+		{
+			TF_CORE_ERROR("VulkanUploadContext::UploadImage before Init");
+			return false;
+		}
+
+		const uint64_t rowBytes = (uint64_t)width * bytesPerPixel;
+		if (rowBytes || rowBytes > s_StagingCapacity)
+		{
+			TF_CORE_ERROR("UploadImage row of {0} bytes does not fit the {1} byte staging ring", rowBytes, s_StagingCapacity);
+			return false;
+		}
+
+		if (size < rowBytes * height)
+		{
+			TF_CORE_ERROR("UploadImage got {0} bytes for a {1}x{2} image needing {3}", size, width, height, rowBytes * height);
+			return false;
+		}
+
+		EnsureRecording();
+
+		const vk::ImageMemoryBarrier2 toDst{.srcStageMask = vk::PipelineStageFlagBits2::eNone,
+		.srcAccessMask = vk::AccessFlagBits2::eNone,
+		.dstStageMask = vk::PipelineStageFlagBits2::eCopy,
+		.dstAccessMask = vk::AccessFlagBits2::eTransferWrite,
+		.oldLayout = vk::ImageLayout::eUndefined,
+		.newLayout = vk::ImageLayout::eTransferDstOptimal,
+		.srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+		.dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+		.image = dst,
+		.subresourceRange = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
+
+		s_Cmd.pipelineBarrier2({.imageMemoryBarrierCount = 1, .pImageMemoryBarriers = &toDst});
+
+		const uint8_t* source = (const uint8_t*)data;
+		uint32_t row = 0;
+
+		while (row < height)
+		{
+			uint64_t offset = Align(s_StagingOffset, s_CopyAlignment);
+			if (offset + rowBytes > s_StagingCapacity && offset != 0)
+			{
+				Flush();
+				EnsureRecording();
+
+				offset = 0;
+			}
+
+			const uint32_t rowsThisChunk = (uint32_t)std::min<uint64_t>(height - row, (s_StagingCapacity - offset) / rowBytes);
+			const uint64_t chunkBytes = rowBytes * rowsThisChunk;
+
+			std::memcpy(s_StagingMapped + offset, source + (uint64_t)row * rowBytes, chunkBytes);
+
+			const vk::BufferImageCopy2 region{.bufferOffset = offset,
+			.bufferRowLength = width,
+			.bufferImageHeight = rowsThisChunk, .imageSubresource = {vk::ImageAspectFlagBits::eColor, 0, 0, 1},
+			.imageOffset = {0, (int32_t)row, 0},
+			.imageExtent = {width, rowsThisChunk, 1}};
+
+			s_Cmd.copyBufferToImage2({.srcBuffer = s_Staging,
+				.dstImage = dst,
+				.dstImageLayout = vk::ImageLayout::eTransferDstOptimal,
+				.regionCount = 1,
+				.pRegions = &region});
+
+			s_StagingOffset = offset + chunkBytes;
+			row += rowsThisChunk;
+		}
+
+		FlushIfUnscoped();
+		return true;
+	}
+
 	void VulkanUploadContext::Record(const std::function<void(vk::CommandBuffer)>& fn)
 	{
 		TF_PROFILE_FUNCTION();
