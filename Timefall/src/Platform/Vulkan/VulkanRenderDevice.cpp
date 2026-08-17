@@ -141,6 +141,32 @@ namespace Timefall::RHI
 		m_Impl->Cmd.draw(vertexCount, instanceCount, firstVertex, firstInstance);
 	}
 
+	void CommandList::BindVertexBuffer(const GpuBuffer& buffer, uint64_t offset)
+	{
+		if (!buffer.IsValid())
+			return;
+
+		const vk::Buffer handle = buffer.m_Impl->Buffer;
+		const vk::DeviceSize vkOffset = offset;
+
+		m_Impl->Cmd.bindVertexBuffers2(0, 1, &handle, &vkOffset, nullptr, nullptr);
+	}
+
+	void CommandList::BindIndexBuffer(const GpuBuffer& buffer, IndexType type, uint64_t offset)
+	{
+		if (!buffer.IsValid())
+			return;
+
+		m_Impl->Cmd.bindIndexBuffer2(
+			buffer.m_Impl->Buffer, offset, vk::WholeSize, type == IndexType::U16 ? vk::IndexType::eUint16 : vk::IndexType::eUint32);
+	}
+
+	void CommandList::DrawIndexed(
+		uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
+	{
+		m_Impl->Cmd.drawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+	}
+
 	void* CommandList::GetNativeHandle()
 	{
 		return (void*)(VkCommandBuffer)m_Impl->Cmd;

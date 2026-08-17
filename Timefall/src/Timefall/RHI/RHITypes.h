@@ -20,6 +20,7 @@ namespace Timefall::RHI
 	enum class Format { Undefined = 0, RGBA8Unorm, BGRA8Unorm, RGBA16F, R32I, D32F };
 	enum class LoadOp { Load = 0, Clear, DontCare };
 	enum class StoreOp { Store = 0, DontCare };
+	enum class IndexType : uint8_t { U16 = 0, U32 };
 
 	struct ColorTarget
 	{
