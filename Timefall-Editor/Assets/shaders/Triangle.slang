@@ -1,6 +1,6 @@
 //--------------------------
 // - Timefall -
-// Bring-up triangle. No vertex buffer, no descriptors - push constants only.
+// Bring-up geometry. Vertex buffer, no descriptors - push constants only.
 // --------------------------
 
 struct Push
@@ -18,15 +18,12 @@ struct VSOutput
 	float3 color : COLOR0;
 }
 
-static const float2 k_Positions[3] = { float2(0.0, -0.6), float2(0.6, 0.6), float2(-0.6, 0.6) };
-static const float3 k_Colors[3] = { float3(1.0, 0.0, 0.0), float3(0.0, 1.0, 0.0), float3(0.0, 0.0, 1.0) };
-
 [shader("vertex")]
-VSOutput vsMain(uint vertexID : SV_VertexID)
+VSOutput vsMain(float3 position, float3 color)
 {
 	VSOutput output;
-	output.position = float4(k_Positions[vertexID], 0.0, 1.0);
-	output.color = k_Colors[vertexID];
+	output.position = float4(position, 1.0);
+	output.color = color;
 	return output;
 }
 

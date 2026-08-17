@@ -7,6 +7,7 @@
 #include "Timefall/Scripting/ScriptEngine.h"
 #include "Timefall/Renderer/Font.h"
 #include "Timefall/Renderer/Renderer3D.h"
+#include "Timefall/Renderer/ShaderLibrary.h"
 #include "Timefall/Asset/TextureImporter.h"
 #include "Timefall/Asset/SceneImporter.h"
 #include "Timefall/Asset/AssetManager.h"
@@ -14,6 +15,7 @@
 
 #include "Timefall/RHI/RenderDevice.h"
 #include "Timefall/RHI/CommandList.h"
+#include "Timefall/RHI/FrameAllocator.h"
 
 #include <imgui/imgui.h>
 #include "ImGuizmo.h"
@@ -58,7 +60,31 @@ namespace Timefall
 		triangleDesc.ColorCount = 1;
 		triangleDesc.Raster.Cull = RHI::CullMode::None;
 		triangleDesc.DebugName = "TrianglePipeline";
+		triangleDesc.VertexLayout = {{ShaderDataType::Float3, "a_Position"}, {ShaderDataType::Float3, "a_Color"}};
 		m_TrianglePipeline = RHI::GraphicsPipeline::Create(triangleDesc);
+
+		struct BringUpVertex
+		{
+			glm::vec3 Position;
+			glm::vec3 Color;
+		};
+
+		constexpr BringUpVertex triangleVertices[]{
+			{{-0.9f, 0.6f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+			{{-0.1f, 0.6f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+			{{-0.5f, -0.6f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+		};
+		constexpr uint32_t triangleIndices[]{0, 1, 2};
+
+		{
+			RHI::UploadScope upload;
+
+			m_TriangleVertexBuffer =
+				RHI::GpuBuffer::CreateWithData({.Size = sizeof(triangleVertices), .Usage = RHI::BufferUsage::Vertex, .DebugName = "TriangleVertices"}, triangleVertices);
+
+			m_TriangleIndexBuffer =
+				RHI::GpuBuffer::CreateWithData({.Size = sizeof(triangleIndices), .Usage = RHI::BufferUsage::Index, .DebugName = "TriangleIndices"}, triangleIndices);
+		}
 
 		ShaderLibrary::EnableHotReload("assets/shaders");
 
@@ -92,6 +118,8 @@ namespace Timefall
 		ShaderLibrary::Shutdown();
 		m_TriangleShader.reset();
 		m_TrianglePipeline.reset();
+		m_TriangleVertexBuffer.reset();
+		m_TriangleIndexBuffer.reset();
 	}
 
 	Ref<Scene> EditorLayer::GetActiveScene() const
@@ -115,7 +143,40 @@ namespace Timefall
 
 				cmd->BindPipeline(*m_TrianglePipeline);
 				cmd->PushConstants(&push, sizeof(push));
-				cmd->Draw(3);
+
+				if (m_TriangleVertexBuffer && m_TriangleVertexBuffer->IsValid())
+				{
+					cmd->BindVertexBuffer(*m_TriangleVertexBuffer);
+					cmd->BindIndexBuffer(*m_TriangleIndexBuffer, RHI::IndexType::U32);
+					cmd->DrawIndexed(3);
+				}
+
+				struct BringUpVertex
+				{
+					glm::vec3 Position;
+					glm::vec3 Color;
+				};
+
+				const float pulse = 0.5f + 0.5f * std::sin(push.Time * 2.0f);
+				const BringUpVertex quadVertices[]{
+					{{0.1f, -0.6f, 0.0f}, {pulse, 0.2f, 1.0f - pulse}},
+					{{0.9f, -0.6f, 0.0f}, {1.0f - pulse, pulse, 0.2f}},
+					{{0.9f, 0.6f, 0.0f}, {0.2f, 1.0f - pulse, pulse}},
+					{{0.1f, 0.6f, 0.0f}, {pulse, pulse, pulse}}
+				};
+				const uint32_t quadIndices[]{0, 1, 2, 2, 3, 0};
+
+				const RHI::FrameAllocation vertices = RHI::FrameAllocator::Allocate(sizeof(quadVertices));
+				const RHI::FrameAllocation indices = RHI::FrameAllocator::Allocate(sizeof(quadIndices), sizeof(uint32_t));
+
+				if (vertices.IsValid() && indices.IsValid())
+				{
+					std::memcpy(vertices.Mapped, quadVertices, sizeof(quadVertices));
+					std::memcpy(indices.Mapped, quadIndices, sizeof(quadIndices));
+					cmd->BindVertexBuffer(*vertices.Buffer, vertices.Offset);
+					cmd->BindIndexBuffer(*indices.Buffer, RHI::IndexType::U32, indices.Offset);
+					cmd->DrawIndexed(6);
+				}
 			}
 		}
 

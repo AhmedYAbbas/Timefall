@@ -8,7 +8,7 @@
 #include "Panels/ProfilerPanel.h"
 
 #include "Timefall/RHI/Pipeline.h"
-#include "Timefall/Renderer/ShaderLibrary.h"
+#include "Timefall/RHI/GpuBuffer.h"
 
 #include <filesystem>
 
@@ -63,6 +63,8 @@ namespace Timefall
 
 		Ref<Shader> m_TriangleShader;
 		Ref<RHI::GraphicsPipeline> m_TrianglePipeline;
+		Ref<RHI::GpuBuffer> m_TriangleVertexBuffer;
+		Ref<RHI::GpuBuffer> m_TriangleIndexBuffer;
 
 		// Temp
 		Ref<Framebuffer> m_Framebuffer;
