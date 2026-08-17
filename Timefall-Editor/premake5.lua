@@ -55,11 +55,11 @@ project "Timefall-Editor"
 		buildoutputs { "%{cfg.objdir}/shaders/%{file.basename}.spv" }
 	filter {}
 
-	filter "files:Assets/shaders/Common/**.slang"
+	filter "files:assets/shaders/Common/**.slang"
 		buildaction "None"
 	filter {}
 
-	filter "files:Assets/shaders/Renderer3D_HDRResolve.slang"
+	filter "files:assets/shaders/Renderer3D_HDRResolve.slang"
 		buildaction "None"
 	filter {}
 

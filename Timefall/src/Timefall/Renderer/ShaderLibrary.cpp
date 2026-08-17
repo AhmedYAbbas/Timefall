@@ -34,15 +34,11 @@ namespace Timefall
 		if (s_ReloadPending.exchange(true))
 			return;
 
-		Application::Get().SubmitToMainThread([]()
-		{
+		Application::Get().SubmitToMainThread([]() {
 			s_ReloadPending = false;
 
 			uint32_t reloaded = 0;
-			ShaderLibrary::ForEach([&reloaded](const Ref<Shader>& shader)
-			{
-				reloaded += shader->Reload() ? 1 : 0;
-			});
+			ShaderLibrary::ForEach([&reloaded](const Ref<Shader>& shader) { reloaded += shader->Reload() ? 1 : 0; });
 
 			if (reloaded == 0)
 				return;
@@ -55,8 +51,8 @@ namespace Timefall
 	Ref<Shader> ShaderLibrary::Load(const std::filesystem::path& path)
 	{
 		const std::string key = KeyFor(path);
-		if (s_Shaders.contains(key))
-			return s_Shaders[key];
+		if (const auto it = s_Shaders.find(key); it != s_Shaders.end())
+			return it->second;
 
 		Ref<Shader> shader = Shader::Create(path);
 		s_Shaders.emplace(key, shader);

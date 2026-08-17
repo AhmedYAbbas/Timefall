@@ -9,7 +9,7 @@ namespace Timefall
 	static RENDERDOC_API_1_6_0* s_API = nullptr;
 	static bool s_Probed = false;
 
-	RENDERDOC_API_1_6_0* Api()
+	static RENDERDOC_API_1_6_0* Api()
 	{
 		if (s_Probed)
 			return s_API;

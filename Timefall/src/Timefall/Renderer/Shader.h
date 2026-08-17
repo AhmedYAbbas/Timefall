@@ -14,12 +14,12 @@ namespace Timefall
 		static Ref<Shader> Create(const std::filesystem::path& path);
 
 		const std::filesystem::path& GetPath() const { return m_Path; }
-		std::string_view GetName() const { return m_Name; }
+		const std::string& GetName() const { return m_Name; }
 		const ShaderReflection& GetReflection() const { return m_Reflection; }
 
 		bool HasStage(ShaderStage stage) const;
 		std::span<const uint32_t> GetSpirv(ShaderStage stage) const;
-		std::string_view GetEntryPointName(ShaderStage stage) const;
+		const std::string& GetEntryPointName(ShaderStage stage) const;
 
 		uint32_t GetRevision() const { return m_Revision; }
 

@@ -70,7 +70,7 @@ namespace Timefall
 		return {};
 	}
 
-	std::string_view Shader::GetEntryPointName(ShaderStage stage) const
+	const std::string& Shader::GetEntryPointName(ShaderStage stage) const
 	{
 		for (const auto& entry : m_EntryPoints)
 			if (entry.Stage == stage)

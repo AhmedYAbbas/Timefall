@@ -198,7 +198,7 @@ namespace Timefall
 			}
 		}
 
-		TF_CORE_INFO("Shade cache miss: {0}", path.filename().string());
+		TF_CORE_INFO("Shader cache miss: {0}", path.filename().string());
 
 		auto compiled = ShaderCompiler::Compile(path);
 		if (!compiled)

@@ -82,7 +82,10 @@ namespace Timefall::RHI
 	{
 		auto module = device.createShaderModule({.codeSize = spirv.size() * sizeof(uint32_t), .pCode = spirv.data()});
 		if (!module)
+		{
 			TF_CORE_ERROR("createShaderModule failed: {0}", vk::to_string(module.error()));
+			return nullptr;
+		}
 
 		return *module;
 	}
@@ -222,14 +225,20 @@ namespace Timefall::RHI
 		const vk::ShaderModule vertexModule = CreateModule(device, shader->GetSpirv(ShaderStage::Vertex));
 		const vk::ShaderModule fragmentModule = CreateModule(device, shader->GetSpirv(ShaderStage::Fragment));
 		if (!vertexModule || !fragmentModule)
+		{
+			if (vertexModule)
+				device.destroyShaderModule(vertexModule);
+			if (fragmentModule)
+				device.destroyShaderModule(fragmentModule);
 			return false;
+		}
 
-		const std::string_view vertexEntry = shader->GetEntryPointName(ShaderStage::Vertex);
-		const std::string_view fragmentEntry = shader->GetEntryPointName(ShaderStage::Fragment);
+		const std::string& vertexEntry = shader->GetEntryPointName(ShaderStage::Vertex);
+		const std::string& fragmentEntry = shader->GetEntryPointName(ShaderStage::Fragment);
 
 		const vk::PipelineShaderStageCreateInfo stages[]{
-			{.stage = vk::ShaderStageFlagBits::eVertex, .module = vertexModule, .pName = vertexEntry.data()},
-			{.stage = vk::ShaderStageFlagBits::eFragment, .module = fragmentModule, .pName = fragmentEntry.data()}};
+			{.stage = vk::ShaderStageFlagBits::eVertex, .module = vertexModule, .pName = vertexEntry.c_str()},
+			{.stage = vk::ShaderStageFlagBits::eFragment, .module = fragmentModule, .pName = fragmentEntry.c_str()}};
 
 		std::vector<vk::VertexInputAttributeDescription> attributes;
 		uint32_t location = 0;
