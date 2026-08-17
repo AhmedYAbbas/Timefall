@@ -2,7 +2,6 @@
 
 #include "Timefall/Renderer/Renderer2D.h"
 
-#include "Timefall/Renderer/Buffer.h"
 #include "Timefall/Renderer/Shader.h"
 
 #include "Timefall/Asset/AssetManager.h"
@@ -90,7 +89,6 @@ namespace Timefall
 		float LineWidth = 2.0f;
 
 		// Texts
-		//Ref<VertexBuffer> TextVertexBuffer;
 		Ref<Shader> TextShader;
 
 		uint32_t TextIndexCount = 0;

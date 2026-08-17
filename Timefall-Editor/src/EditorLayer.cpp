@@ -77,13 +77,15 @@ namespace Timefall
 		constexpr uint32_t triangleIndices[]{0, 1, 2};
 
 		{
+			// Both buffers in one command buffer and one round-trip. The braces are load-bearing:
+			// neither buffer holds its data until the scope closes.
 			RHI::UploadScope upload;
 
-			m_TriangleVertexBuffer =
-				RHI::GpuBuffer::CreateWithData({.Size = sizeof(triangleVertices), .Usage = RHI::BufferUsage::Vertex, .DebugName = "TriangleVertices"}, triangleVertices);
+			m_TriangleVertexBuffer = RHI::GpuBuffer::CreateWithData(
+				{.Size = sizeof(triangleVertices), .Usage = RHI::BufferUsage::Vertex, .DebugName = "TriangleVertices"}, triangleVertices);
 
-			m_TriangleIndexBuffer =
-				RHI::GpuBuffer::CreateWithData({.Size = sizeof(triangleIndices), .Usage = RHI::BufferUsage::Index, .DebugName = "TriangleIndices"}, triangleIndices);
+			m_TriangleIndexBuffer = RHI::GpuBuffer::CreateWithData(
+				{.Size = sizeof(triangleIndices), .Usage = RHI::BufferUsage::Index, .DebugName = "TriangleIndices"}, triangleIndices);
 		}
 
 		ShaderLibrary::EnableHotReload("assets/shaders");
@@ -157,13 +159,12 @@ namespace Timefall
 					glm::vec3 Color;
 				};
 
+				// Streamed quad: fresh vertices into this frame's slot, proving the ring resets and
+				// stays coherent across both slots. Flicker here means the slot arithmetic is wrong.
 				const float pulse = 0.5f + 0.5f * std::sin(push.Time * 2.0f);
-				const BringUpVertex quadVertices[]{
-					{{0.1f, -0.6f, 0.0f}, {pulse, 0.2f, 1.0f - pulse}},
-					{{0.9f, -0.6f, 0.0f}, {1.0f - pulse, pulse, 0.2f}},
-					{{0.9f, 0.6f, 0.0f}, {0.2f, 1.0f - pulse, pulse}},
-					{{0.1f, 0.6f, 0.0f}, {pulse, pulse, pulse}}
-				};
+				const BringUpVertex quadVertices[]{{{0.1f, -0.6f, 0.0f}, {pulse, 0.2f, 1.0f - pulse}},
+					{{0.9f, -0.6f, 0.0f}, {1.0f - pulse, pulse, 0.2f}}, {{0.9f, 0.6f, 0.0f}, {0.2f, 1.0f - pulse, pulse}},
+					{{0.1f, 0.6f, 0.0f}, {pulse, pulse, pulse}}};
 				const uint32_t quadIndices[]{0, 1, 2, 2, 3, 0};
 
 				const RHI::FrameAllocation vertices = RHI::FrameAllocator::Allocate(sizeof(quadVertices));

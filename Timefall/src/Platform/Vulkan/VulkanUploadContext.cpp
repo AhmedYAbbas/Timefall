@@ -23,6 +23,8 @@ namespace Timefall
 		uint32_t s_ScopeDepth = 0;
 		bool s_Recording = false;
 
+		// VulkanBuffer.cpp mints tracker ids from 1 upward, so the top of the range is permanently
+		// free for this one backend-private allocation.
 		constexpr uint32_t STAGING_TRACKER_ID = UINT32_MAX;
 
 		constexpr uint64_t Align(uint64_t value, uint64_t alignment)
@@ -63,7 +65,8 @@ namespace Timefall
 
 		s_Pool = *pool;
 
-		auto buffers = device.allocateCommandBuffers({.commandPool = s_Pool, .level = vk::CommandBufferLevel::ePrimary, .commandBufferCount = 1});
+		auto buffers =
+			device.allocateCommandBuffers({.commandPool = s_Pool, .level = vk::CommandBufferLevel::ePrimary, .commandBufferCount = 1});
 		if (!buffers)
 		{
 			TF_CORE_ERROR("Upload context allocateCommandBuffers failed: {0}", vk::to_string(buffers.error()));
@@ -72,7 +75,11 @@ namespace Timefall
 
 		s_Cmd = (*buffers)[0];
 
-		const vk::StructureChain timelineInfo{vk::SemaphoreCreateInfo{}, vk::SemaphoreTypeCreateInfo{.semaphoreType = vk::SemaphoreType::eTimeline, .initialValue = 0}};
+		// Its own timeline, never the frame ring's: that counter is the frame clock, and
+		// `waitValue = signalValue - FRAMES_IN_FLIGHT` would read a foreign signal as a retired frame.
+		// StructureChain, matching VulkanFrameRing::Init - a raw pNext to a local would dangle.
+		const vk::StructureChain timelineInfo{
+			vk::SemaphoreCreateInfo{}, vk::SemaphoreTypeCreateInfo{.semaphoreType = vk::SemaphoreType::eTimeline, .initialValue = 0}};
 
 		auto semaphore = device.createSemaphore(timelineInfo.get<vk::SemaphoreCreateInfo>());
 		if (!semaphore)
@@ -86,8 +93,12 @@ namespace Timefall
 
 		VulkanContext::Get().SetObjectName(s_Timeline, "UploadTimeline");
 
-		const vk::BufferCreateInfo stagingInfo{.size = stagingBytes, .usage = vk::BufferUsageFlagBits::eTransferSrc, .sharingMode = vk::SharingMode::eExclusive};
+		const vk::BufferCreateInfo stagingInfo{
+			.size = stagingBytes, .usage = vk::BufferUsageFlagBits::eTransferSrc, .sharingMode = vk::SharingMode::eExclusive};
 
+		// AUTO_PREFER_HOST, not the AUTO that GpuBuffer::Create uses: the GPU only ever reads this
+		// over DMA, so parking it in the BAR window would spend scarce device-visible memory for
+		// nothing. That knob is why the ring is allocated by hand rather than through GpuBuffer.
 		VmaAllocationCreateInfo allocInfo{};
 		allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
 		allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
@@ -95,7 +106,8 @@ namespace Timefall
 
 		VkBuffer raw = VK_NULL_HANDLE;
 		VmaAllocationInfo allocated{};
-		const VkResult result = vmaCreateBuffer(VulkanContext::Get().GetAllocator(), reinterpret_cast<const VkBufferCreateInfo*>(&stagingInfo), &allocInfo, &raw, &s_StagingAlloc, &allocated);
+		const VkResult result = vmaCreateBuffer(VulkanContext::Get().GetAllocator(),
+			reinterpret_cast<const VkBufferCreateInfo*>(&stagingInfo), &allocInfo, &raw, &s_StagingAlloc, &allocated);
 		if (result != VK_SUCCESS)
 		{
 			TF_CORE_ERROR("Upload context staging ring ({0} KB) failed: {1}", stagingBytes / 1024, vk::to_string((vk::Result)result));
@@ -133,7 +145,7 @@ namespace Timefall
 		if (s_Timeline)
 			device.destroySemaphore(s_Timeline);
 		if (s_Pool)
-			device.destroyCommandPool(s_Pool);
+			device.destroyCommandPool(s_Pool); // frees s_Cmd with it
 
 		s_Staging = nullptr;
 		s_StagingAlloc = nullptr;
@@ -177,9 +189,11 @@ namespace Timefall
 			uint64_t offset = Align(s_StagingOffset, s_CopyAlignment);
 			const uint64_t remaining = size - written;
 
+			// Flush when the tail cannot take the rest in one piece - unless the ring is already
+			// empty, in which case the payload is simply bigger than the ring and gets chunked.
 			if (offset + remaining > s_StagingCapacity && offset != 0)
 			{
-				Flush();
+				Flush(); // the wait is what proves the ring is free to overwrite
 				offset = 0;
 			}
 
@@ -221,7 +235,13 @@ namespace Timefall
 		if (!s_Recording)
 			return;
 
-		const vk::MemoryBarrier2 barrier{.srcStageMask = vk::PipelineStageFlagBits2::eCopy, .srcAccessMask = vk::AccessFlagBits2::eTransferWrite, .dstStageMask = vk::PipelineStageFlagBits2::eAllCommands, .dstAccessMask = vk::AccessFlagBits2::eMemoryRead};
+		// One global barrier covers every copy in this command buffer, whatever it touched - cheaper
+		// to reason about than a BufferMemoryBarrier2 per destination, and this path blocks anyway.
+		// Without it, submission order alone does not make the writes visible.
+		const vk::MemoryBarrier2 barrier{.srcStageMask = vk::PipelineStageFlagBits2::eCopy,
+			.srcAccessMask = vk::AccessFlagBits2::eTransferWrite,
+			.dstStageMask = vk::PipelineStageFlagBits2::eAllCommands,
+			.dstAccessMask = vk::AccessFlagBits2::eMemoryRead};
 
 		s_Cmd.pipelineBarrier2({.memoryBarrierCount = 1, .pMemoryBarriers = &barrier});
 
@@ -231,10 +251,18 @@ namespace Timefall
 		const uint64_t signalValue = ++s_Value;
 
 		const vk::CommandBufferSubmitInfo cmdInfo{.commandBuffer = s_Cmd};
-		const vk::SemaphoreSubmitInfo signal{.semaphore = s_Timeline, .value = signalValue, .stageMask = vk::PipelineStageFlagBits2::eAllCommands};
+		const vk::SemaphoreSubmitInfo signal{
+			.semaphore = s_Timeline, .value = signalValue, .stageMask = vk::PipelineStageFlagBits2::eAllCommands};
 
-		(void)VulkanContext::Get().GetGraphicsQueue().submit2({vk::SubmitInfo2{.commandBufferInfoCount = 1, .pCommandBufferInfos = &cmdInfo, .signalSemaphoreInfoCount = 1, .pSignalSemaphoreInfos = &signal}});
-		(void)VulkanContext::Get().GetDevice().waitSemaphores({ .semaphoreCount = 1, .pSemaphores = &s_Timeline, .pValues = &signalValue}, UINT64_MAX);
+		// submit2 and waitSemaphores carry multiple success codes, so vulkan.hpp hands back a bare
+		// vk::Result rather than std::expected - discarded here exactly as VulkanFrameRing and
+		// RenderDevice::EndFrame already do. Failures surface through the validation layers.
+		(void)VulkanContext::Get().GetGraphicsQueue().submit2({vk::SubmitInfo2{.commandBufferInfoCount = 1,
+			.pCommandBufferInfos = &cmdInfo,
+			.signalSemaphoreInfoCount = 1,
+			.pSignalSemaphoreInfos = &signal}});
+		(void)VulkanContext::Get().GetDevice().waitSemaphores(
+			{.semaphoreCount = 1, .pSemaphores = &s_Timeline, .pValues = &signalValue}, UINT64_MAX);
 
 		s_StagingOffset = 0;
 	}

@@ -7,7 +7,7 @@ namespace Timefall::RHI
 	{
 		std::array<Ref<GpuBuffer>, FRAMES_IN_FLIGHT> s_Slots;
 		uint64_t s_Capacity = 0;
-		uint64_t s_PendingCapacity = 0;
+		uint64_t s_PendingCapacity = 0; // applied at the next BeginFrame; never mid-frame
 		uint64_t s_Offset = 0;
 		uint64_t s_Slot = 0;
 		bool s_Overflowed = false;
@@ -51,10 +51,12 @@ namespace Timefall::RHI
 
 	void FrameAllocator::BeginFrame(uint32_t slot)
 	{
+		// Growth happens here and only here: replacing a slot buffer mid-frame would destroy one
+		// already bound into the recording command buffer.
 		if (s_PendingCapacity > s_Capacity)
 		{
 			TF_CORE_WARN("FrameAllocator growing {0} KB -> {1} KB per slot", s_Capacity / 1024, s_PendingCapacity / 1024);
-			AllocateSlots(s_PendingCapacity);
+			AllocateSlots(s_PendingCapacity); // old Refs drop into the deletion queue
 			s_Overflowed = false;
 		}
 
@@ -71,6 +73,7 @@ namespace Timefall::RHI
 		const uint64_t aligned = (s_Offset + alignment - 1) & ~(alignment - 1);
 		if (aligned + size > s_Capacity)
 		{
+			// Once per growth cycle: a full ring would otherwise log every draw of every frame.
 			if (!s_Overflowed)
 			{
 				TF_CORE_ERROR("FrameAllocator slot exhausted ({0} KB); growing next frame", s_Capacity / 1024);

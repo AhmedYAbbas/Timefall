@@ -133,7 +133,8 @@ namespace Timefall::RHI
 		TF_CORE_ASSERT(m_Impl->BoundLayout, "PushConstans before BindPipeline");
 		TF_CORE_ASSERT(offset + size <= m_Impl->BoundPushSize, "Push constant write exceeds the shader's block");
 
-		m_Impl->Cmd.pushConstants2({.layout = m_Impl->BoundLayout, .stageFlags = m_Impl->BoundPushStages, .offset = offset, .size = size, .pValues = data});
+		m_Impl->Cmd.pushConstants2(
+			{.layout = m_Impl->BoundLayout, .stageFlags = m_Impl->BoundPushStages, .offset = offset, .size = size, .pValues = data});
 	}
 
 	void CommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
@@ -149,6 +150,8 @@ namespace Timefall::RHI
 		const vk::Buffer handle = buffer.m_Impl->Buffer;
 		const vk::DeviceSize vkOffset = offset;
 
+		// bindVertexBuffers2: extended dynamic state, core in 1.3. Null sizes/strides keep the
+		// pipeline's baked stride, which GraphicsPipelineDesc::VertexLayout already fixed.
 		m_Impl->Cmd.bindVertexBuffers2(0, 1, &handle, &vkOffset, nullptr, nullptr);
 	}
 
@@ -157,6 +160,7 @@ namespace Timefall::RHI
 		if (!buffer.IsValid())
 			return;
 
+		// bindIndexBuffer2 (maintenance5) takes an explicit size; WholeSize means "to the end".
 		m_Impl->Cmd.bindIndexBuffer2(
 			buffer.m_Impl->Buffer, offset, vk::WholeSize, type == IndexType::U16 ? vk::IndexType::eUint16 : vk::IndexType::eUint32);
 	}
@@ -231,7 +235,10 @@ namespace Timefall::RHI
 		device.resetCommandPool(frame.Pool);
 
 		m_Impl->DeletionQueue.Flush(m_Impl->Frames.CompletedValue());
-		FrameAllocator::BeginFrame((uint32_t)(m_Impl->Frames.FrameValue() & FRAMES_IN_FLIGHT));
+
+		// Same slot arithmetic as VulkanFrameRing::Current(); WaitForSlot has already proven this
+		// slot's previous frame retired, which is what makes the bump reset free.
+		FrameAllocator::BeginFrame((uint32_t)(m_Impl->Frames.FrameValue() % FRAMES_IN_FLIGHT));
 
 		(void)frame.Cmd.begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
 
@@ -339,7 +346,7 @@ namespace Timefall::RHI
 		{
 			case vk::Format::eB8G8R8A8Unorm: return Format::BGRA8Unorm;
 			case vk::Format::eR8G8B8A8Unorm: return Format::RGBA8Unorm;
-			default:						 return Format::Undefined;
+			default: return Format::Undefined;
 		}
 	}
 
@@ -350,6 +357,10 @@ namespace Timefall::RHI
 
 		WaitIdle();
 		GPUProfiler::Shutdown();
+
+		// Order is load-bearing: FrameAllocator's slot buffers push their destroys into the queue,
+		// so FlushAll must follow it or they leak; the upload context goes last because a queued
+		// lambda may still be destroying a buffer it wrote into.
 		FrameAllocator::Shutdown();
 		m_Impl->DeletionQueue.FlushAll();
 		VulkanUploadContext::Shutdown();

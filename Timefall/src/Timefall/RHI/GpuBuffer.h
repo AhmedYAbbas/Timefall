@@ -27,6 +27,8 @@ namespace Timefall::RHI
 		return ((uint8_t)value & (uint8_t)flag) != 0;
 	}
 
+	// DeviceLocal: no CPU access; fill it through GpuBuffer::CreateWithData.
+	// HostWrite: persistently mapped and write-combined. Write sequentially, never read back.
 	enum class MemoryType : uint8_t { DeviceLocal = 0, HostWrite };
 
 	struct GpuBufferDesc
@@ -41,6 +43,11 @@ namespace Timefall::RHI
 	{
 	public:
 		static Ref<GpuBuffer> Create(const GpuBufferDesc& desc);
+
+		// DeviceLocal only. Allocates and uploads `desc.Size` bytes through a staging copy;
+		// TransferDst is added to the usage automatically. Outside an UploadScope this blocks until
+		// the copy completes; inside one, the bytes are not on the GPU - and the buffer must not be
+		// bound - until the scope closes.
 		static Ref<GpuBuffer> CreateWithData(const GpuBufferDesc& desc, const void* data);
 
 		~GpuBuffer();
@@ -48,8 +55,10 @@ namespace Timefall::RHI
 		GpuBuffer(const GpuBuffer&) = delete;
 		GpuBuffer& operator=(const GpuBuffer&) = delete;
 
+		// HostWrite only. Returns false (and logs) on a DeviceLocal buffer or an out-of-range write.
 		bool Write(const void* data, uint64_t size, uint64_t offset = 0);
 
+		// nullptr for DeviceLocal. Valid for the buffer's whole lifetime - the mapping is persistent.
 		void* GetMapped() const;
 
 		uint64_t Size() const;
@@ -64,6 +73,8 @@ namespace Timefall::RHI
 		Impl* m_Impl = nullptr;
 	};
 
+	// Coalesces every upload made during its lifetime into one command buffer and one GPU
+	// round-trip. Nesting is refcounted; only the outermost scope submits.
 	class TF_API UploadScope
 	{
 	public:
