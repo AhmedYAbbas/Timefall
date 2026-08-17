@@ -5,6 +5,7 @@
 #include "Timefall/RHI/Pipeline.h"
 
 #include "Platform/Vulkan/VulkanContext.h"
+#include "Platform/Vulkan/VulkanUploadContext.h"
 #include "Platform/Vulkan/VulkanSwapchain.h"
 #include "Platform/Vulkan/VulkanFrameRing.h"
 #include "Platform/Vulkan/VulkanDeletionQueue.h"
@@ -171,6 +172,7 @@ namespace Timefall::RHI
 
 		m_Impl = impl.release();
 		GPUProfiler::Init();
+		VulkanUploadContext::Init();
 	}
 
 	const Limits& RenderDevice::GetLimits() const
@@ -320,6 +322,7 @@ namespace Timefall::RHI
 		WaitIdle();
 		GPUProfiler::Shutdown();
 		m_Impl->DeletionQueue.FlushAll();
+		VulkanUploadContext::Shutdown();
 		m_Impl->Frames.Shutdown();
 		m_Impl->Swapchain.Shutdown();
 		delete m_Impl;

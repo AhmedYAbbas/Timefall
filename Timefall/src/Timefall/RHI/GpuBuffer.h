@@ -7,13 +7,12 @@
 
 namespace Timefall::RHI
 {
-	enum class BufferUsage : uint8_t
-	{
-		None		= 0,
-		Vertex		= BIT(0),
-		Index		= BIT(1),
-		Uniform		= BIT(2),
-		Storage		= BIT(3),
+	enum class BufferUsage : uint8_t {
+		None = 0,
+		Vertex = BIT(0),
+		Index = BIT(1),
+		Uniform = BIT(2),
+		Storage = BIT(3),
 		TransferSrc = BIT(4),
 		TransferDst = BIT(5)
 	};
@@ -28,11 +27,7 @@ namespace Timefall::RHI
 		return ((uint8_t)value & (uint8_t)flag) != 0;
 	}
 
-	enum  class MemoryType : uint8_t
-	{
-		DeviceLocal = 0,
-		HostWrite
-	};
+	enum class MemoryType : uint8_t { DeviceLocal = 0, HostWrite };
 
 	struct GpuBufferDesc
 	{
@@ -46,6 +41,7 @@ namespace Timefall::RHI
 	{
 	public:
 		static Ref<GpuBuffer> Create(const GpuBufferDesc& desc);
+		static Ref<GpuBuffer> CreateWithData(const GpuBufferDesc& desc, const void* data);
 
 		~GpuBuffer();
 
@@ -66,5 +62,15 @@ namespace Timefall::RHI
 
 		struct Impl;
 		Impl* m_Impl = nullptr;
+	};
+
+	class TF_API UploadScope
+	{
+	public:
+		UploadScope();
+		~UploadScope();
+
+		UploadScope(const UploadScope&) = delete;
+		UploadScope& operator=(const UploadScope&) = delete;
 	};
 }

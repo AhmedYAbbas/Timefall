@@ -5,6 +5,7 @@
 
 #include "Platform/Vulkan/VulkanContext.h"
 #include "Platform/Vulkan/VulkanRHIImpl.h"
+#include "Platform/Vulkan/VulkanUploadContext.h"
 #include "Platform/Vulkan/GPUMemoryTracker.h"
 
 #include <atomic>
@@ -72,6 +73,32 @@ namespace Timefall::RHI
 		GPUMemoryTracker::Track(GPUMemCategory::Buffers, impl.TrackerId, allocated.size);
 
 		return buffer;
+	}
+
+	Ref<GpuBuffer> GpuBuffer::CreateWithData(const GpuBufferDesc& desc, const void* data)
+	{
+		TF_PROFILE_FUNCTION();
+		TF_CORE_ASSERT(desc.Memory == MemoryType::DeviceLocal, "CreateWithData is the DeviceLocal path; HostWrite uses Write");
+
+		GpuBufferDesc target = desc;
+		target.Usage = target.Usage | BufferUsage::TransferDst;
+
+		Ref<GpuBuffer> buffer = Create(target);
+		if (!buffer->IsValid())
+			return buffer;
+
+		VulkanUploadContext::UploadBuffer(buffer->m_Impl->Buffer, 0, data, desc.Size);
+		return buffer;
+	}
+
+	UploadScope::UploadScope()
+	{
+		VulkanUploadContext::Begin();
+	}
+
+	UploadScope::~UploadScope()
+	{
+		VulkanUploadContext::End();
 	}
 
 	GpuBuffer::~GpuBuffer()

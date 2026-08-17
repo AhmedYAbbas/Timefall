@@ -1,0 +1,241 @@
+#include "tfpch.h"
+#include "VulkanUploadContext.h"
+
+#include "Platform/Vulkan/VulkanContext.h"
+#include "Platform/Vulkan/GPUMemoryTracker.h"
+
+namespace Timefall
+{
+	namespace
+	{
+		vk::CommandPool s_Pool;
+		vk::CommandBuffer s_Cmd;
+		vk::Semaphore s_Timeline;
+		uint64_t s_Value = 0;
+
+		vk::Buffer s_Staging;
+		VmaAllocation s_StagingAlloc = nullptr;
+		uint8_t* s_StagingMapped = nullptr;
+		uint64_t s_StagingCapacity = 0;
+		uint64_t s_StagingOffset = 0;
+		uint64_t s_CopyAlignment = 16;
+
+		uint32_t s_ScopeDepth = 0;
+		bool s_Recording = false;
+
+		constexpr uint32_t STAGING_TRACKER_ID = UINT32_MAX;
+
+		constexpr uint64_t Align(uint64_t value, uint64_t alignment)
+		{
+			return (value + alignment - 1) & ~(alignment - 1);
+		}
+
+		void EnsureRecording()
+		{
+			if (s_Recording)
+				return;
+
+			(void)VulkanContext::Get().GetDevice().resetCommandPool(s_Pool);
+			(void)s_Cmd.begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+			s_Recording = true;
+		}
+
+		void FlushIfUnscoped()
+		{
+			if (s_ScopeDepth == 0)
+				VulkanUploadContext::Flush();
+		}
+	}
+
+	void VulkanUploadContext::Init(uint64_t stagingBytes)
+	{
+		TF_CORE_ASSERT(stagingBytes > 0, "Upload context needs a non-zero staging ring");
+
+		auto device = VulkanContext::Get().GetDevice();
+
+		auto pool = device.createCommandPool(
+			{.flags = vk::CommandPoolCreateFlagBits::eTransient, .queueFamilyIndex = VulkanContext::Get().GetGraphicsQueueFamily()});
+		if (!pool)
+		{
+			TF_CORE_ERROR("Upload context createCommandPool failed: {0}", vk::to_string(pool.error()));
+			return;
+		}
+
+		s_Pool = *pool;
+
+		auto buffers = device.allocateCommandBuffers({.commandPool = s_Pool, .level = vk::CommandBufferLevel::ePrimary, .commandBufferCount = 1});
+		if (!buffers)
+		{
+			TF_CORE_ERROR("Upload context allocateCommandBuffers failed: {0}", vk::to_string(buffers.error()));
+			return;
+		}
+
+		s_Cmd = (*buffers)[0];
+
+		const vk::StructureChain timelineInfo{vk::SemaphoreCreateInfo{}, vk::SemaphoreTypeCreateInfo{.semaphoreType = vk::SemaphoreType::eTimeline, .initialValue = 0}};
+
+		auto semaphore = device.createSemaphore(timelineInfo.get<vk::SemaphoreCreateInfo>());
+		if (!semaphore)
+		{
+			TF_CORE_ERROR("Upload context createSemaphore failed: {0}", vk::to_string(semaphore.error()));
+			return;
+		}
+
+		s_Timeline = *semaphore;
+		s_Value = 0;
+
+		VulkanContext::Get().SetObjectName(s_Timeline, "UploadTimeline");
+
+		const vk::BufferCreateInfo stagingInfo{.size = stagingBytes, .usage = vk::BufferUsageFlagBits::eTransferSrc, .sharingMode = vk::SharingMode::eExclusive};
+
+		VmaAllocationCreateInfo allocInfo{};
+		allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
+		allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+		allocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+		VkBuffer raw = VK_NULL_HANDLE;
+		VmaAllocationInfo allocated{};
+		const VkResult result = vmaCreateBuffer(VulkanContext::Get().GetAllocator(), reinterpret_cast<const VkBufferCreateInfo*>(&stagingInfo), &allocInfo, &raw, &s_StagingAlloc, &allocated);
+		if (result != VK_SUCCESS)
+		{
+			TF_CORE_ERROR("Upload context staging ring ({0} KB) failed: {1}", stagingBytes / 1024, vk::to_string((vk::Result)result));
+			return;
+		}
+
+		s_Staging = raw;
+		s_StagingMapped = (uint8_t*)allocated.pMappedData;
+		s_StagingCapacity = stagingBytes;
+		s_StagingOffset = 0;
+
+		VulkanContext::Get().SetObjectName(s_Staging, "UploadStagingRing");
+		GPUMemoryTracker::Track(GPUMemCategory::Buffers, STAGING_TRACKER_ID, allocated.size);
+
+		s_CopyAlignment = std::max<uint64_t>(
+			VulkanContext::Get().GetPhysicalDevice().getProperties2().properties.limits.optimalBufferCopyOffsetAlignment, 16);
+
+		TF_CORE_INFO("UploadContext: {0} KB staging ring", stagingBytes / 1024);
+	}
+
+	void VulkanUploadContext::Shutdown()
+	{
+		TF_CORE_ASSERT(s_ScopeDepth == 0, "An UploadScope is still open at shutdown");
+
+		Flush();
+
+		auto device = VulkanContext::Get().GetDevice();
+
+		if (s_Staging)
+		{
+			GPUMemoryTracker::Untrack(GPUMemCategory::Buffers, STAGING_TRACKER_ID);
+			vmaDestroyBuffer(VulkanContext::Get().GetAllocator(), (VkBuffer)s_Staging, s_StagingAlloc);
+		}
+
+		if (s_Timeline)
+			device.destroySemaphore(s_Timeline);
+		if (s_Pool)
+			device.destroyCommandPool(s_Pool);
+
+		s_Staging = nullptr;
+		s_StagingAlloc = nullptr;
+		s_StagingMapped = nullptr;
+		s_StagingCapacity = 0;
+		s_StagingOffset = 0;
+		s_Timeline = nullptr;
+		s_Pool = nullptr;
+		s_Cmd = nullptr;
+		s_Value = 0;
+	}
+
+	void VulkanUploadContext::Begin()
+	{
+		s_ScopeDepth++;
+	}
+
+	void VulkanUploadContext::End()
+	{
+		TF_CORE_ASSERT(s_ScopeDepth > 0, "UploadScope closed more times than it was opened");
+
+		if (--s_ScopeDepth == 0)
+			Flush();
+	}
+
+	bool VulkanUploadContext::UploadBuffer(vk::Buffer dst, uint64_t dstOffset, const void* data, uint64_t size)
+	{
+		TF_PROFILE_FUNCTION();
+
+		if (!s_Cmd || !s_StagingMapped)
+		{
+			TF_CORE_ERROR("VulkanUploadContext::UploadBuffer before Init");
+			return false;
+		}
+
+		const uint8_t* source = (const uint8_t*)data;
+		uint64_t written = 0;
+
+		while (written < size)
+		{
+			uint64_t offset = Align(s_StagingOffset, s_CopyAlignment);
+			const uint64_t remaining = size - written;
+
+			if (offset + remaining > s_StagingCapacity && offset != 0)
+			{
+				Flush();
+				offset = 0;
+			}
+
+			const uint64_t chunk = std::min(remaining, s_StagingCapacity - offset);
+
+			EnsureRecording();
+			std::memcpy(s_StagingMapped + offset, source + written, chunk);
+
+			const vk::BufferCopy2 region{.srcOffset = offset, .dstOffset = dstOffset + written, .size = chunk};
+			s_Cmd.copyBuffer2({.srcBuffer = s_Staging, .dstBuffer = dst, .regionCount = 1, .pRegions = &region});
+
+			s_StagingOffset = offset + chunk;
+			written += chunk;
+		}
+
+		FlushIfUnscoped();
+		return true;
+	}
+
+	void VulkanUploadContext::Record(const std::function<void(vk::CommandBuffer)>& fn)
+	{
+		TF_PROFILE_FUNCTION();
+
+		if (!s_Cmd)
+		{
+			TF_CORE_ERROR("VulkanUploadContext::Record before Init");
+			return;
+		}
+
+		EnsureRecording();
+		fn(s_Cmd);
+		FlushIfUnscoped();
+	}
+
+	void VulkanUploadContext::Flush()
+	{
+		TF_PROFILE_FUNCTION();
+
+		if (!s_Recording)
+			return;
+
+		const vk::MemoryBarrier2 barrier{.srcStageMask = vk::PipelineStageFlagBits2::eCopy, .srcAccessMask = vk::AccessFlagBits2::eTransferWrite, .dstStageMask = vk::PipelineStageFlagBits2::eAllCommands, .dstAccessMask = vk::AccessFlagBits2::eMemoryRead};
+
+		s_Cmd.pipelineBarrier2({.memoryBarrierCount = 1, .pMemoryBarriers = &barrier});
+
+		(void)s_Cmd.end();
+		s_Recording = false;
+
+		const uint64_t signalValue = ++s_Value;
+
+		const vk::CommandBufferSubmitInfo cmdInfo{.commandBuffer = s_Cmd};
+		const vk::SemaphoreSubmitInfo signal{.semaphore = s_Timeline, .value = signalValue, .stageMask = vk::PipelineStageFlagBits2::eAllCommands};
+
+		(void)VulkanContext::Get().GetGraphicsQueue().submit2({vk::SubmitInfo2{.commandBufferInfoCount = 1, .pCommandBufferInfos = &cmdInfo, .signalSemaphoreInfoCount = 1, .pSignalSemaphoreInfos = &signal}});
+		(void)VulkanContext::Get().GetDevice().waitSemaphores({ .semaphoreCount = 1, .pSemaphores = &s_Timeline, .pValues = &signalValue}, UINT64_MAX);
+
+		s_StagingOffset = 0;
+	}
+}
