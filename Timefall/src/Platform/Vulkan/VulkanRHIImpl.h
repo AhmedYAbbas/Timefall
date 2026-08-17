@@ -6,6 +6,7 @@
 
 #include "Timefall/RHI/CommandList.h"
 #include "Timefall/RHI/Pipeline.h"
+#include "Timefall/RHI/GpuBuffer.h"
 
 namespace Timefall::RHI
 {
@@ -32,5 +33,14 @@ namespace Timefall::RHI
 		vk::ShaderStageFlags PushStages;
 		uint32_t PushSize = 0;
 		uint32_t BuiltRevision = 0;
+	};
+
+	struct GpuBuffer::Impl
+	{
+		vk::Buffer Buffer;
+		VmaAllocation Allocation = nullptr;
+		void* Mapped = nullptr;
+		uint64_t Size = 0;
+		uint32_t TrackerId = 0;
 	};
 }
