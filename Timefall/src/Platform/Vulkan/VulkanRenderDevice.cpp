@@ -3,6 +3,7 @@
 #include "Timefall/RHI/RenderDevice.h"
 #include "Timefall/RHI/CommandList.h"
 #include "Timefall/RHI/Pipeline.h"
+#include "Timefall/RHI/FrameAllocator.h"
 
 #include "Platform/Vulkan/VulkanContext.h"
 #include "Platform/Vulkan/VulkanUploadContext.h"
@@ -173,6 +174,7 @@ namespace Timefall::RHI
 		m_Impl = impl.release();
 		GPUProfiler::Init();
 		VulkanUploadContext::Init();
+		FrameAllocator::Init();
 	}
 
 	const Limits& RenderDevice::GetLimits() const
@@ -203,6 +205,7 @@ namespace Timefall::RHI
 		device.resetCommandPool(frame.Pool);
 
 		m_Impl->DeletionQueue.Flush(m_Impl->Frames.CompletedValue());
+		FrameAllocator::BeginFrame((uint32_t)(m_Impl->Frames.FrameValue() & FRAMES_IN_FLIGHT));
 
 		(void)frame.Cmd.begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
 
@@ -321,6 +324,7 @@ namespace Timefall::RHI
 
 		WaitIdle();
 		GPUProfiler::Shutdown();
+		FrameAllocator::Shutdown();
 		m_Impl->DeletionQueue.FlushAll();
 		VulkanUploadContext::Shutdown();
 		m_Impl->Frames.Shutdown();
