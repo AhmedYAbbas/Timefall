@@ -8,19 +8,6 @@
 
 namespace Timefall::RHI
 {
-	static vk::Format ToVkFormat(Format format)
-	{
-		switch (format)
-		{
-			case Format::RGBA8Unorm: return vk::Format::eR8G8B8A8Unorm;
-			case Format::BGRA8Unorm: return vk::Format::eB8G8R8A8Unorm;
-			case Format::RGBA16F: return vk::Format::eR16G16B16A16Sfloat;
-			case Format::R32I: return vk::Format::eR32Sint;
-			case Format::D32F: return vk::Format::eD32Sfloat;
-			default: return vk::Format::eUndefined;
-		}
-	}
-
 	static vk::Format ToVkFormat(ShaderDataType type)
 	{
 		switch (type)

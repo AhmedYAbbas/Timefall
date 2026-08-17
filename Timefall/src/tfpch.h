@@ -18,6 +18,9 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include <atomic>
+#include <cmath>
+
 #include "Timefall/Core/Log.h"
 #include "Timefall/Core/Buffer.h"
 #include "Timefall/Debug/Profiler.h"
