@@ -1,7 +1,6 @@
 #include "tfpch.h"
 
 #include "Timefall/Renderer/Mesh.h"
-#include "Timefall/Renderer/Buffer.h"
 
 #include <glm/gtc/constants.hpp>
 
@@ -11,16 +10,8 @@ namespace Timefall
 		const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices, const std::vector<Submesh>& submeshes)
 		: m_Submeshes(submeshes)
 	{
-		Ref<VertexBuffer> vbo = VertexBuffer::Create((float*)vertices.data(), (uint32_t)(vertices.size() * sizeof(MeshVertex)));
-		vbo->SetLayout({
-			{ShaderDataType::Float3, "a_Position"},
-			{ShaderDataType::Float3, "a_Normal"},
-			{ShaderDataType::Float2, "a_TexCoord"},
-			{ShaderDataType::Float3, "a_Tangent"},
-			{ShaderDataType::Float3, "a_Bitangent"},
-		});
-
-		Ref<IndexBuffer> ibo = IndexBuffer::Create((uint32_t*)indices.data(), (uint32_t)indices.size());
+		(void)vertices;
+		(void)indices;
 	}
 
 	Ref<MeshSource> MeshSource::Create(

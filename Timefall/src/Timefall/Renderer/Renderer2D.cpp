@@ -66,7 +66,6 @@ namespace Timefall
 		static constexpr uint32_t MaxTextureSlots = 32;
 
 		// Quads
-		Ref<VertexBuffer> QuadVertexBuffer;
 		Ref<Shader> QuadShader;
 		Ref<Texture2D> WhiteTexture;
 
@@ -75,7 +74,6 @@ namespace Timefall
 		QuadVertex* QuadVertexBufferPtr = nullptr;
 
 		// Circles
-		Ref<VertexBuffer> CircleVertexBuffer;
 		Ref<Shader> CircleShader;
 
 		uint32_t CircleIndexCount = 0;
@@ -83,7 +81,6 @@ namespace Timefall
 		CircleVertex* CircleVertexBufferPtr = nullptr;
 
 		// Lines
-		Ref<VertexBuffer> LineVertexBuffer;
 		Ref<Shader> LineShader;
 
 		uint32_t LineVertexCount = 0;
@@ -93,7 +90,7 @@ namespace Timefall
 		float LineWidth = 2.0f;
 
 		// Texts
-		Ref<VertexBuffer> TextVertexBuffer;
+		//Ref<VertexBuffer> TextVertexBuffer;
 		Ref<Shader> TextShader;
 
 		uint32_t TextIndexCount = 0;
