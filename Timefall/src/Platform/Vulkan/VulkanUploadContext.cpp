@@ -229,7 +229,7 @@ namespace Timefall
 		}
 
 		const uint64_t rowBytes = (uint64_t)width * bytesPerPixel;
-		if (rowBytes || rowBytes > s_StagingCapacity)
+		if (rowBytes == 0 || rowBytes > s_StagingCapacity)
 		{
 			TF_CORE_ERROR("UploadImage row of {0} bytes does not fit the {1} byte staging ring", rowBytes, s_StagingCapacity);
 			return false;

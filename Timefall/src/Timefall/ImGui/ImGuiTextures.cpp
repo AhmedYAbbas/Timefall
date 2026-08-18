@@ -39,28 +39,4 @@ namespace Timefall::UI
 		rhi->SetUIHandle(set, &DestroyTextureID);
 		return (ImTextureID)(uint64_t)set;
 	}
-
-	void Image(ImTextureID texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1)
-	{
-		if (!texture)
-		{
-			ImGui::Dummy(size);
-			return;
-		}
-
-		ImGui::Image(texture, size, uv0, uv1);
-	}
-
-	bool ImageButton(const char* strId, ImTextureID texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1,
-		const ImVec4& bgColor, const ImVec4& tintColor)
-	{
-		if (!texture)
-		{
-			// Matches ImageButton's own framing so the fallback keeps the layout and stays clickable.
-			const ImVec2 padding = ImGui::GetStyle().FramePadding;
-			return ImGui::InvisibleButton(strId, {size.x + padding.x * 2.0f, size.y + padding.y * 2.0f});
-		}
-
-		return ImGui::ImageButton(strId, texture, size, uv0, uv1, bgColor, tintColor);
-	}
 }
