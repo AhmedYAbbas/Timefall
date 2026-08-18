@@ -20,6 +20,9 @@ namespace Timefall
 
 		static Ref<Font> GetDefault();
 
+		// Releases the cached default font (its atlas is a GPU texture). Call before the render device dies.
+		static void Shutdown();
+
 	private:
 		MSDFData* m_MSDFData;
 		Ref<Texture2D> m_AtlasTexture;

@@ -365,7 +365,10 @@ namespace Timefall
 
 	void Renderer3D::Init() {}
 
-	void Renderer3D::Shutdown() {}
+	void Renderer3D::Shutdown()
+	{
+		s_Data = {}; // every Ref it holds owns a GPU resource that must die before the device
+	}
 
 	void Renderer3D::SetTargetFramebuffer(const Ref<Framebuffer>& target) {}
 
@@ -393,8 +396,10 @@ namespace Timefall
 
 	Ref<Material> Renderer3D::GetDefaultMaterial()
 	{
-		static Ref<Material> s_Default = CreateRef<Material>();
-		return s_Default;
+		if (!s_Data.DefaultMaterial)
+			s_Data.DefaultMaterial = CreateRef<Material>();
+
+		return s_Data.DefaultMaterial;
 	}
 
 	void Renderer3D::RegisterBuiltInMeshes(EditorAssetManager& assetManager) {}

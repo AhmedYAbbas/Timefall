@@ -29,6 +29,7 @@ namespace Timefall
 		spec.Height = bitmap.height;
 		spec.Format = ImageFormat::RGB8;
 		spec.GenerateMips = false;
+		spec.DebugName = std::format("{} FontAtlas", fontName);
 
 		Ref<Texture2D> texture = Texture2D::Create(spec);
 		texture->SetData(Buffer((void*)bitmap.pixels, bitmap.width * bitmap.height * 3));
@@ -112,7 +113,7 @@ namespace Timefall
 		}
 
 		m_AtlasTexture = CreateAndCacheAtlas<uint8_t, float, 3, msdf_atlas::msdfGenerator>(
-			"Test", (float)emSize, m_MSDFData->Glyphs, m_MSDFData->FontGeometry, width, height);
+			filepath.stem().string(), (float)emSize, m_MSDFData->Glyphs, m_MSDFData->FontGeometry, width, height);
 
 #if 0
 		msdfgen::Shape shape;
@@ -133,13 +134,19 @@ namespace Timefall
 		msdfgen::deinitializeFreetype(ft);
 	}
 
+	static Ref<Font> s_DefaultFont;
+
 	Ref<Font> Font::GetDefault()
 	{
-		static Ref<Font> DefaultFont;
-		if (!DefaultFont)
-			DefaultFont = CreateRef<Font>("assets/fonts/OpenSans/static/OpenSans-Regular.ttf");
+		if (!s_DefaultFont)
+			s_DefaultFont = CreateRef<Font>("assets/fonts/OpenSans/static/OpenSans-Regular.ttf");
 
-		return DefaultFont;
+		return s_DefaultFont;
+	}
+
+	void Font::Shutdown()
+	{
+		s_DefaultFont.reset();
 	}
 
 	Font::~Font()

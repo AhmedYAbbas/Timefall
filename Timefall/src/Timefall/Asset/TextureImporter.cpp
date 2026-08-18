@@ -44,6 +44,7 @@ namespace Timefall
 			spec.Height = height;
 			spec.Format = ImageFormat::RGB32F;
 			spec.GenerateMips = false;
+			spec.DebugName = path.filename().string();
 
 			data.Data = (uint8_t*)pixels;
 			data.Size = (uint64_t)width * height * 3 * sizeof(float);
@@ -79,6 +80,7 @@ namespace Timefall
 		TextureSpecification spec;
 		spec.Width = width;
 		spec.Height = height;
+		spec.DebugName = path.filename().string();
 
 		switch (loadedChannels)
 		{

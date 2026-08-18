@@ -17,6 +17,8 @@
 #include "Timefall/RHI/CommandList.h"
 #include "Timefall/RHI/FrameAllocator.h"
 
+#include "Timefall/ImGui/ImGuiTextures.h"
+
 #include <imgui/imgui.h>
 #include "ImGuizmo.h"
 
@@ -122,6 +124,8 @@ namespace Timefall
 		m_TrianglePipeline.reset();
 		m_TriangleVertexBuffer.reset();
 		m_TriangleIndexBuffer.reset();
+
+		s_Font.reset(); // file-scope, so it would otherwise outlive the device along with its atlas
 	}
 
 	Ref<Scene> EditorLayer::GetActiveScene() const
@@ -366,7 +370,7 @@ namespace Timefall
 
 		ImGui::Begin("Settings");
 		ImGui::Checkbox("Show Physics Colliders", &m_ShowPhysicsColliders);
-		ImGui::Image((ImTextureID)(uint64_t)s_Font->GetAtlasTexture()->GetRendererID(), {512, 512}, {0, 1}, {1, 0});
+		ImGui::Image(UI::GetTextureID(s_Font->GetAtlasTexture()), {512, 512}, {0, 1}, {1, 0});
 		ImGui::End();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
@@ -484,8 +488,7 @@ namespace Timefall
 		if (hasPlayButton)
 		{
 			Ref<Texture2D> icon = (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Simulate) ? m_PlayIcon : m_StopIcon;
-			std::string id = std::to_string(icon->GetRendererID());
-			if (ImGui::ImageButton(id.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1),
+			if (ImGui::ImageButton("##toolbar_play", UI::GetTextureID(icon), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1),
 					ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor)
 				&& toolbarEnabled)
 			{
@@ -503,8 +506,7 @@ namespace Timefall
 				ImGui::SameLine();
 
 			Ref<Texture2D> icon = (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play) ? m_SimulateIcon : m_StopIcon;
-			std::string id = std::to_string(icon->GetRendererID());
-			if (ImGui::ImageButton(id.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1),
+			if (ImGui::ImageButton("##toolbar_simulate", UI::GetTextureID(icon), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1),
 					ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor)
 				&& toolbarEnabled)
 			{
@@ -521,9 +523,8 @@ namespace Timefall
 			ImGui::SameLine();
 			{
 				Ref<Texture2D> icon = m_PauseIcon;
-				std::string id = std::to_string(icon->GetRendererID());
-				if (ImGui::ImageButton(id.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0),
-						ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor)
+				if (ImGui::ImageButton("##toolbar_pause", UI::GetTextureID(icon), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1),
+						ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor)
 					&& toolbarEnabled)
 					GetActiveScene()->SetPaused(!isPaused);
 			}
@@ -534,9 +535,8 @@ namespace Timefall
 				ImGui::SameLine();
 				{
 					Ref<Texture2D> icon = m_StepIcon;
-					std::string id = std::to_string(icon->GetRendererID());
-					if (ImGui::ImageButton(id.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0),
-							ImVec2(1, 1), ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor)
+					if (ImGui::ImageButton("##toolbar_step", UI::GetTextureID(icon), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1),
+							ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor)
 						&& toolbarEnabled)
 						GetActiveScene()->Step();
 				}

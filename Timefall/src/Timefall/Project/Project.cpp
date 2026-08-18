@@ -30,6 +30,13 @@ namespace Timefall
 		return nullptr;
 	}
 
+	void Project::Shutdown()
+	{
+		// The asset manager holds every loaded texture and mesh; dropping it here keeps their GPU
+		// allocations from outliving the allocator and dying against a destroyed device at exit.
+		s_ActiveProject.reset();
+	}
+
 	bool Project::SaveActive(const std::filesystem::path& path)
 	{
 		ProjectSerializer serializer(s_ActiveProject);

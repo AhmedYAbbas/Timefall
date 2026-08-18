@@ -4,6 +4,9 @@
 #include "Timefall/Core/Input.h"
 #include "Timefall/Core/Timestep.h"
 #include "Timefall/Renderer/Renderer.h"
+#include "Timefall/Renderer/Font.h"
+#include "Timefall/Scene/SceneManager.h"
+#include "Timefall/Project/Project.h"
 #include "Timefall/Scripting/ScriptEngine.h"
 #include "Timefall/Debug/PerformanceStats.h"
 
@@ -60,7 +63,14 @@ namespace Timefall
 		m_LayerStack.Clear();
 		m_ImGuiLayer = nullptr;
 
+		// Every static that owns a GPU resource has to let go before the device does: its deferred
+		// destroy is only drained by RenderDevice::Shutdown, and past that there is no allocator left
+		// to free against.
 		Renderer::Shutdown();
+		SceneManager::Shutdown();
+		Project::Shutdown();
+		Font::Shutdown();
+
 		RHI::RenderDevice::Get().Shutdown();
 		VulkanContext::Get().Shutdown();
 

@@ -25,5 +25,8 @@ namespace Timefall
 		static bool ProcessPendingLoad();
 
 		static void SetViewportSize(uint32_t width, uint32_t height);
+
+		// Releases the active scene (and the GPU resources its entities reference). Call before the render device dies.
+		static void Shutdown();
 	};
 }

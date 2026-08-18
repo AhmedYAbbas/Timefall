@@ -46,6 +46,15 @@ namespace Timefall
 		TF_CORE_WARN("SceneManager::LoadScene: no scene asset named '{}'", name);
 	}
 
+	void SceneManager::Shutdown()
+	{
+		if (s_ActiveScene && s_ActiveScene->IsRunning())
+			s_ActiveScene->OnRuntimeStop();
+
+		s_ActiveScene.reset();
+		s_PendingLoadHandle = 0;
+	}
+
 	bool SceneManager::ProcessPendingLoad()
 	{
 		if (s_PendingLoadHandle == 0)

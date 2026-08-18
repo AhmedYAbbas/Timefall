@@ -58,6 +58,9 @@ namespace Timefall
 		static Ref<Project> Load(const std::filesystem::path& path);
 		static bool SaveActive(const std::filesystem::path& path);
 
+		// Releases the active project (and with it every loaded asset). Call before the render device dies.
+		static void Shutdown();
+
 	private:
 		ProjectConfig m_Config;
 		std::filesystem::path m_ProjectDirectory;

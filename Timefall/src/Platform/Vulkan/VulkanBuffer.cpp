@@ -74,8 +74,10 @@ namespace Timefall::RHI
 		impl.Buffer = raw;
 		impl.Mapped = allocated.pMappedData;
 
-		if (desc.DebugName)
-			VulkanContext::Get().SetObjectName(impl.Buffer, desc.DebugName);
+		// Falls back to something identifiable: an unnamed buffer is a bare handle in validation output.
+		const std::string name = desc.DebugName ? desc.DebugName : std::format("Buffer[{} bytes]", desc.Size);
+		VulkanContext::Get().SetObjectName(impl.Buffer, name);
+		vmaSetAllocationName(VulkanContext::Get().GetAllocator(), impl.Allocation, name.c_str());
 
 		impl.TrackerId = s_NextTrackerID++;
 

@@ -8,11 +8,11 @@ namespace Timefall
 	{
 		switch (format)
 		{
-			case ImageFormat::R8:	  return RHI::Format::R8Unorm;
-			case ImageFormat::RGB8:   // widened
-			case ImageFormat::RGBA8:  return RHI::Format::RGBA8Unorm;
+			case ImageFormat::R8: return RHI::Format::R8Unorm;
+			case ImageFormat::RGB8: // widened
+			case ImageFormat::RGBA8: return RHI::Format::RGBA8Unorm;
 			case ImageFormat::RGB32F: return RHI::Format::RGBA32F;
-			default:				  return RHI::Format::Undefined;
+			default: return RHI::Format::Undefined;
 		}
 	}
 
@@ -62,7 +62,12 @@ namespace Timefall
 			return;
 		}
 
-		const RHI::TextureDesc desc{.Width = spec.Width, .Height = spec.Height, .PixelFormat = format, .MipLevels = spec.GenerateMips ? 0u : 1u, .SRGBView = format == RHI::Format::RGBA8Unorm};
+		const RHI::TextureDesc desc{.Width = spec.Width,
+			.Height = spec.Height,
+			.PixelFormat = format,
+			.MipLevels = spec.GenerateMips ? 0u : 1u,
+			.SRGBView = format == RHI::Format::RGBA8Unorm,
+			.DebugName = m_Spec.DebugName.empty() ? nullptr : m_Spec.DebugName.c_str()};
 		m_Texture = RHI::Texture::Create(desc);
 
 		if (data)

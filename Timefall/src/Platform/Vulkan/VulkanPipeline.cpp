@@ -65,19 +65,20 @@ namespace Timefall::RHI
 		return flags;
 	}
 
-	static vk::ShaderModule CreateModule(vk::Device device, std::span<const uint32_t> spirv)
+	static vk::ShaderModule CreateModule(vk::Device device, std::span<const uint32_t> spirv, const std::string& debugName)
 	{
 		auto module = device.createShaderModule({.codeSize = spirv.size() * sizeof(uint32_t), .pCode = spirv.data()});
 		if (!module)
 		{
-			TF_CORE_ERROR("createShaderModule failed: {0}", vk::to_string(module.error()));
+			TF_CORE_ERROR("createShaderModule failed for '{0}': {1}", debugName, vk::to_string(module.error()));
 			return nullptr;
 		}
 
+		VulkanContext::Get().SetObjectName(*module, debugName);
 		return *module;
 	}
 
-	static std::vector<vk::DescriptorSetLayout> BuildSetLayouts(const ShaderReflection& reflection, const char* debugName)
+	static std::vector<vk::DescriptorSetLayout> BuildSetLayouts(const ShaderReflection& reflection, const std::string& debugName)
 	{
 		auto& ctx = VulkanContext::Get();
 		auto device = ctx.GetDevice();
@@ -126,8 +127,7 @@ namespace Timefall::RHI
 				const auto highest = std::ranges::max_element(bindings, {}, &vk::DescriptorSetLayoutBinding::binding);
 				const size_t index = (size_t)std::distance(bindings.begin(), highest);
 				if (!(bindingFlags[index] & vk::DescriptorBindingFlagBits::eVariableDescriptorCount))
-					TF_CORE_ERROR(
-						"'{0}': the runtime-sized array in set {1} is not the highest binding", debugName ? debugName : "<shader>", set);
+					TF_CORE_ERROR("'{0}': the runtime-sized array in set {1} is not the highest binding", debugName, set);
 			}
 
 			const vk::DescriptorSetLayoutBindingFlagsCreateInfo flagsInfo{
@@ -141,10 +141,11 @@ namespace Timefall::RHI
 
 			if (!layout)
 			{
-				TF_CORE_ERROR("createDescriptorSetLayout failed: {0}", vk::to_string(layout.error()));
+				TF_CORE_ERROR("createDescriptorSetLayout failed for '{0}' set {1}: {2}", debugName, set, vk::to_string(layout.error()));
 				return {};
 			}
 
+			ctx.SetObjectName(*layout, std::format("{}:SetLayout[{}]", debugName, set));
 			layouts.push_back(*layout);
 		}
 
@@ -190,7 +191,10 @@ namespace Timefall::RHI
 			return false;
 		}
 
-		impl.SetLayouts = BuildSetLayouts(reflection, desc.DebugName);
+		// The shader's own name beats a synthesized one when the pipeline was declared without a name.
+		const std::string name = desc.DebugName ? desc.DebugName : std::format("Pipeline[{}]", shader->GetName());
+
+		impl.SetLayouts = BuildSetLayouts(reflection, name);
 		impl.PushSize = reflection.PushConstantSize;
 		impl.PushStages = StageFlagsFrom(reflection);
 
@@ -208,9 +212,10 @@ namespace Timefall::RHI
 		}
 
 		impl.Layout = *layout;
+		ctx.SetObjectName(impl.Layout, std::format("{}:Layout", name));
 
-		const vk::ShaderModule vertexModule = CreateModule(device, shader->GetSpirv(ShaderStage::Vertex));
-		const vk::ShaderModule fragmentModule = CreateModule(device, shader->GetSpirv(ShaderStage::Fragment));
+		const vk::ShaderModule vertexModule = CreateModule(device, shader->GetSpirv(ShaderStage::Vertex), std::format("{}:VS", name));
+		const vk::ShaderModule fragmentModule = CreateModule(device, shader->GetSpirv(ShaderStage::Fragment), std::format("{}:FS", name));
 		if (!vertexModule || !fragmentModule)
 		{
 			if (vertexModule)
@@ -319,18 +324,14 @@ namespace Timefall::RHI
 
 		if (!pipeline.has_value())
 		{
-			TF_CORE_ERROR("createGraphicsPipeline failed!");
+			TF_CORE_ERROR("createGraphicsPipeline failed for '{0}'!", name);
 			return false;
 		}
 
 		impl.Pipeline = *pipeline;
 		impl.BuiltRevision = shader->GetRevision();
 
-		if (desc.DebugName)
-		{
-			ctx.SetObjectName(impl.Pipeline, desc.DebugName);
-			ctx.SetObjectName(impl.Layout, desc.DebugName);
-		}
+		ctx.SetObjectName(impl.Pipeline, name);
 
 		return true;
 	}

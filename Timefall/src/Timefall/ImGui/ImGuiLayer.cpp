@@ -1,5 +1,8 @@
 #include "tfpch.h"
+
 #include "Timefall/ImGui/ImGuiLayer.h"
+#include "Timefall/ImGui/ImGuiTextures.h"
+
 #include "Timefall/Core/Application.h"
 
 #include "Platform/Vulkan/VulkanContext.h"
@@ -79,6 +82,7 @@ namespace Timefall
 			return;
 		}
 		m_ImGuiPool = *pool;
+		ctx.SetObjectName(m_ImGuiPool, "ImGui:DescriptorPool");
 
 		static vk::Instance s_Instance = ctx.GetInstance();
 
@@ -117,12 +121,14 @@ namespace Timefall
 
 		ImGui_ImplGlfw_InitForVulkan(window, true);
 		ImGui_ImplVulkan_Init(&init);
+		UI::SetBackendAlive(true);
 	}
 
 	void ImGuiLayer::OnDetach()
 	{
 		TF_PROFILE_FUNCTION();
 
+		UI::SetBackendAlive(false);
 		ImGui_ImplVulkan_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		VulkanContext::Get().GetDevice().destroyDescriptorPool(m_ImGuiPool);

@@ -37,6 +37,12 @@ namespace Timefall
 			SetObjectName((uint64_t)(typename T::NativeType)handle, T::objectType, name);
 		}
 
+		// Convention is "Base:Suffix" - the resource's name, then the derived object it owns.
+		template <typename T> void SetObjectName(T handle, const std::string& name) const
+		{
+			SetObjectName((uint64_t)(typename T::NativeType)handle, T::objectType, name.c_str());
+		}
+
 	private:
 		std::expected<void, std::string> CreateInstance();
 		std::expected<void, std::string> CreateDebugMessenger();

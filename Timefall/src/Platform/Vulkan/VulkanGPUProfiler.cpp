@@ -61,7 +61,8 @@ namespace Timefall
 
 		s_Context = TracyVkContext(ctx.GetInstance(), ctx.GetPhysicalDevice(), device, ctx.GetGraphicsQueue(), s_Cmd,
 			VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr, VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceProcAddr);
-		ctx.SetObjectName(s_Pool, "TracyGPUPool");
+		ctx.SetObjectName(s_Pool, "TracyGPU:Pool");
+		ctx.SetObjectName(s_Cmd, "TracyGPU:Cmd");
 		TF_CORE_INFO("Tracy GPU profiling initialised");
 	}
 

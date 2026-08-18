@@ -1,6 +1,5 @@
 #include "tfpch.h"
 
-
 #include "Timefall/RHI/Texture.h"
 #include "Timefall/RHI/RenderDevice.h"
 #include "Timefall/RHI/GpuBuffer.h"
@@ -28,7 +27,7 @@ namespace Timefall::RHI
 
 			if (auto it = s_Cache.find(format); it != s_Cache.end())
 				return it->second;
-			
+
 			const auto props =
 				VulkanContext::Get().GetPhysicalDevice().getFormatProperties2<vk::FormatProperties2, vk::FormatProperties3>(format);
 			const vk::FormatFeatureFlags2 optimal = props.get<vk::FormatProperties3>().optimalTilingFeatures;
@@ -67,13 +66,19 @@ namespace Timefall::RHI
 			{
 				case vk::Format::eR8G8B8A8Unorm: return vk::Format::eR8G8B8A8Srgb;
 				case vk::Format::eB8G8R8A8Unorm: return vk::Format::eB8G8R8A8Srgb;
-				default:						 return vk::Format::eUndefined;
+				default: return vk::Format::eUndefined;
 			}
 		}
 
 		uint32_t FullMipChain(uint32_t width, uint32_t height)
 		{
 			return (uint32_t)std::floor(std::log2((float)std::max(width, height))) + 1;
+		}
+
+		// Falls back to something identifiable: an unnamed image is a bare handle in validation output.
+		std::string ResolveName(const TextureDesc& desc, vk::Format format)
+		{
+			return desc.DebugName ? desc.DebugName : std::format("Texture[{}x{} {}]", desc.Width, desc.Height, vk::to_string(format));
 		}
 
 		vk::ImageSubresourceRange ColorRange(uint32_t mipLevels)
@@ -87,17 +92,19 @@ namespace Timefall::RHI
 			const vk::Filter filter = GetFormatCaps(format).LinearBlit ? vk::Filter::eLinear : vk::Filter::eNearest;
 
 			VulkanUploadContext::Record([=](vk::CommandBuffer cmd) {
-				auto transition = [&cmd, image](uint32_t level, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::AccessFlags2 srcAccess, vk::AccessFlags2 dstAccess) {
-					const vk::ImageMemoryBarrier2 barrier{.srcStageMask = vk::PipelineStageFlagBits2::eBlit,
+				auto transition = [&cmd, image](uint32_t level, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
+									  vk::AccessFlags2 srcAccess, vk::AccessFlags2 dstAccess) {
+					// AllTransfer, not Blit: level 0's incoming write comes from the upload copy, not a blit
+					const vk::ImageMemoryBarrier2 barrier{.srcStageMask = vk::PipelineStageFlagBits2::eAllTransfer,
 						.srcAccessMask = srcAccess,
-						.dstStageMask = vk::PipelineStageFlagBits2::eBlit,
+						.dstStageMask = vk::PipelineStageFlagBits2::eAllTransfer,
 						.dstAccessMask = dstAccess,
 						.oldLayout = oldLayout,
 						.newLayout = newLayout,
 						.srcQueueFamilyIndex = vk::QueueFamilyIgnored,
 						.dstQueueFamilyIndex = vk::QueueFamilyIgnored,
 						.image = image,
-						.subresourceRange = {vk::ImageAspectFlagBits::eColor, level, 1, 0}};
+						.subresourceRange = {vk::ImageAspectFlagBits::eColor, level, 1, 0, 1}};
 
 					cmd.pipelineBarrier2({.imageMemoryBarrierCount = 1, .pImageMemoryBarriers = &barrier});
 				};
@@ -127,8 +134,7 @@ namespace Timefall::RHI
 						.dstImageLayout = vk::ImageLayout::eTransferDstOptimal,
 						.regionCount = 1,
 						.pRegions = &blit,
-						.filter = filter
-						});
+						.filter = filter});
 
 					transition(level, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eTransferSrcOptimal,
 						vk::AccessFlagBits2::eTransferWrite, vk::AccessFlagBits2::eTransferRead);
@@ -137,7 +143,9 @@ namespace Timefall::RHI
 					levelHeight = nextHeight;
 				}
 
-				const vk::ImageMemoryBarrier2 toRead{.srcStageMask = vk::PipelineStageFlagBits2::eBlit,
+				// TransferRead only: TRANSFER_SRC_OPTIMAL admits no other access, and the per-level barriers
+				// already made every blit write available — this chains off their TransferRead second scope
+				const vk::ImageMemoryBarrier2 toRead{.srcStageMask = vk::PipelineStageFlagBits2::eAllTransfer,
 					.srcAccessMask = vk::AccessFlagBits2::eTransferRead,
 					.dstStageMask = vk::PipelineStageFlagBits2::eFragmentShader,
 					.dstAccessMask = vk::AccessFlagBits2::eShaderSampledRead,
@@ -208,7 +216,8 @@ namespace Timefall::RHI
 
 		VkImage raw = VK_NULL_HANDLE;
 		VmaAllocationInfo allocated{};
-		const VkResult result = vmaCreateImage(VulkanContext::Get().GetAllocator(), reinterpret_cast<const VkImageCreateInfo*>(&imageInfo), &allocInfo, &raw, &impl.Allocation, &allocated);
+		const VkResult result = vmaCreateImage(VulkanContext::Get().GetAllocator(), reinterpret_cast<const VkImageCreateInfo*>(&imageInfo),
+			&allocInfo, &raw, &impl.Allocation, &allocated);
 		if (result != VK_SUCCESS)
 		{
 			TF_CORE_ERROR("vmaCreateImage failed for '{0}' ({1}x{2}): {3}", desc.DebugName ? desc.DebugName : "<unnamed>", desc.Width,
@@ -218,32 +227,29 @@ namespace Timefall::RHI
 
 		impl.Image = raw;
 
-		auto makeView = [&](vk::Format viewFormat) -> vk::ImageView
-		{
-			auto view = VulkanContext::Get().GetDevice().createImageView(
-				{.image = impl.Image, .viewType = vk::ImageViewType::e2D, .format = viewFormat, .subresourceRange = ColorRange(impl.MipLevels)
-			});
+		const std::string name = ResolveName(desc, format);
+		VulkanContext::Get().SetObjectName(impl.Image, name);
+		vmaSetAllocationName(VulkanContext::Get().GetAllocator(), impl.Allocation, name.c_str());
+
+		auto makeView = [&](vk::Format viewFormat, std::string_view suffix) -> vk::ImageView {
+			auto view = VulkanContext::Get().GetDevice().createImageView({.image = impl.Image,
+				.viewType = vk::ImageViewType::e2D,
+				.format = viewFormat,
+				.subresourceRange = ColorRange(impl.MipLevels)});
 
 			if (!view)
 			{
-				TF_CORE_ERROR(
-					"createImageView failed for '{0}': {1}", desc.DebugName ? desc.DebugName : "<unnamed>", vk::to_string(view.error()));
+				TF_CORE_ERROR("createImageView failed for '{0}:{1}': {2}", name, suffix, vk::to_string(view.error()));
 				return nullptr;
 			}
 
+			VulkanContext::Get().SetObjectName(*view, std::format("{}:{}", name, suffix));
 			return *view;
 		};
 
-		impl.View = makeView(format);
+		impl.View = makeView(format, "View");
 		if (wantsSRGBView)
-			impl.SRGBView = makeView(srgbFormat);
-
-		if (desc.DebugName)
-		{
-			VulkanContext::Get().SetObjectName(impl.Image, desc.DebugName);
-			if (impl.View)
-				VulkanContext::Get().SetObjectName(impl.View, desc.DebugName);
-		}
+			impl.SRGBView = makeView(srgbFormat, "SRGBView");
 
 		impl.TrackerId = s_NextTrackerId++;
 		GPUMemoryTracker::Track(GPUMemCategory::Textures, impl.TrackerId, allocated.size);
@@ -270,8 +276,7 @@ namespace Timefall::RHI
 				.image = impl.Image,
 				.subresourceRange = ColorRange(impl.MipLevels)};
 
-			VulkanUploadContext::Record([&barrier](vk::CommandBuffer cmd)
-			{
+			VulkanUploadContext::Record([&barrier](vk::CommandBuffer cmd) {
 				cmd.pipelineBarrier2({.imageMemoryBarrierCount = 1, .pImageMemoryBarriers = &barrier});
 			});
 		}
@@ -313,8 +318,10 @@ namespace Timefall::RHI
 		if (impl.HostCopyable)
 		{
 			const vk::ImageLayout copyLayout = HostCopyDstLayout();
-			const vk::HostImageLayoutTransitionInfo toCopy{
-				.image = impl.Image, .oldLayout = vk::ImageLayout::eUndefined, .newLayout = copyLayout, .subresourceRange = ColorRange(impl.MipLevels)};
+			const vk::HostImageLayoutTransitionInfo toCopy{.image = impl.Image,
+				.oldLayout = vk::ImageLayout::eUndefined,
+				.newLayout = copyLayout,
+				.subresourceRange = ColorRange(impl.MipLevels)};
 
 			(void)VulkanContext::Get().GetDevice().transitionImageLayout(toCopy);
 
@@ -353,9 +360,8 @@ namespace Timefall::RHI
 
 		if (impl.MipLevels == 1)
 		{
-			VulkanUploadContext::Record([&impl](vk::CommandBuffer cmd){
-				const vk::ImageMemoryBarrier2 toRead{
-					.srcStageMask = vk::PipelineStageFlagBits2::eCopy,
+			VulkanUploadContext::Record([&impl](vk::CommandBuffer cmd) {
+				const vk::ImageMemoryBarrier2 toRead{.srcStageMask = vk::PipelineStageFlagBits2::eCopy,
 					.srcAccessMask = vk::AccessFlagBits2::eTransferWrite,
 					.dstStageMask = vk::PipelineStageFlagBits2::eFragmentShader,
 					.dstAccessMask = vk::AccessFlagBits2::eShaderSampledRead,
@@ -364,8 +370,7 @@ namespace Timefall::RHI
 					.srcQueueFamilyIndex = vk::QueueFamilyIgnored,
 					.dstQueueFamilyIndex = vk::QueueFamilyIgnored,
 					.image = impl.Image,
-					.subresourceRange = ColorRange(impl.MipLevels)
-				};
+					.subresourceRange = ColorRange(impl.MipLevels)};
 
 				cmd.pipelineBarrier2({.imageMemoryBarrierCount = 1, .pImageMemoryBarriers = &toRead});
 			});

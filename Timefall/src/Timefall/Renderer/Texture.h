@@ -15,6 +15,7 @@ namespace Timefall
 		uint32_t Height = 1;
 		ImageFormat Format = ImageFormat::RGBA8;
 		bool GenerateMips = true;
+		std::string DebugName; // owned: the RHI desc takes a raw pointer and copies at name-set time
 	};
 
 	class TF_API Texture2D final : public Asset

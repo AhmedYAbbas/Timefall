@@ -8,6 +8,8 @@
 #include "Timefall/Asset/MeshImporter.h"
 #include "Timefall/Scene/Scene.h"
 
+#include "Timefall/ImGui/ImGuiTextures.h"
+
 #include <imgui.h>
 
 namespace Timefall
@@ -91,8 +93,7 @@ namespace Timefall
 
 				Ref<Texture2D> icon = isDirectory ? m_DirectoryIcon : m_FileIcon;
 				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-				ImGui::ImageButton(
-					itemStr.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), {thumbnailSize, thumbnailSize}, {0, 1}, {1, 0});
+				ImGui::ImageButton(itemStr.c_str(), UI::GetTextureID(icon), {thumbnailSize, thumbnailSize}, {0, 1}, {1, 0});
 
 				if (ImGui::BeginPopupContextItem())
 				{
@@ -128,8 +129,7 @@ namespace Timefall
 
 				Ref<Texture2D> icon = directoryEntry.is_directory() ? m_DirectoryIcon : m_FileIcon;
 				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-				ImGui::ImageButton(
-					filenameString.c_str(), (ImTextureID)(uint64_t)icon->GetRendererID(), {thumbnailSize, thumbnailSize}, {0, 1}, {1, 0});
+				ImGui::ImageButton(filenameString.c_str(), UI::GetTextureID(icon), {thumbnailSize, thumbnailSize}, {0, 1}, {1, 0});
 
 				if (ImGui::BeginPopupContextItem())
 				{

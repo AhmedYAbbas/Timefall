@@ -330,7 +330,11 @@ namespace Timefall::RHI
 	{
 		if (!m_Impl)
 		{
-			fn(); // no device: nothing is in flight, so run it now
+			// Nothing is in flight, so run it now - unless the context is gone too, in which case the
+			// object died with the device and freeing it would touch a destroyed allocator.
+			if (VulkanContext::Get().GetDevice())
+				fn();
+
 			return;
 		}
 

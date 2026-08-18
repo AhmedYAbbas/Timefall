@@ -75,6 +75,9 @@ namespace Timefall
 
 		s_Cmd = (*buffers)[0];
 
+		VulkanContext::Get().SetObjectName(s_Pool, "Upload:Pool");
+		VulkanContext::Get().SetObjectName(s_Cmd, "Upload:Cmd");
+
 		// Its own timeline, never the frame ring's: that counter is the frame clock, and
 		// `waitValue = signalValue - FRAMES_IN_FLIGHT` would read a foreign signal as a retired frame.
 		// StructureChain, matching VulkanFrameRing::Init - a raw pNext to a local would dangle.
@@ -91,7 +94,7 @@ namespace Timefall
 		s_Timeline = *semaphore;
 		s_Value = 0;
 
-		VulkanContext::Get().SetObjectName(s_Timeline, "UploadTimeline");
+		VulkanContext::Get().SetObjectName(s_Timeline, "Upload:Timeline");
 
 		const vk::BufferCreateInfo stagingInfo{
 			.size = stagingBytes, .usage = vk::BufferUsageFlagBits::eTransferSrc, .sharingMode = vk::SharingMode::eExclusive};
@@ -119,7 +122,8 @@ namespace Timefall
 		s_StagingCapacity = stagingBytes;
 		s_StagingOffset = 0;
 
-		VulkanContext::Get().SetObjectName(s_Staging, "UploadStagingRing");
+		VulkanContext::Get().SetObjectName(s_Staging, "Upload:StagingRing");
+		vmaSetAllocationName(VulkanContext::Get().GetAllocator(), s_StagingAlloc, "Upload:StagingRing");
 		GPUMemoryTracker::Track(GPUMemCategory::Buffers, STAGING_TRACKER_ID, allocated.size);
 
 		s_CopyAlignment = std::max<uint64_t>(
@@ -240,15 +244,15 @@ namespace Timefall
 		EnsureRecording();
 
 		const vk::ImageMemoryBarrier2 toDst{.srcStageMask = vk::PipelineStageFlagBits2::eNone,
-		.srcAccessMask = vk::AccessFlagBits2::eNone,
-		.dstStageMask = vk::PipelineStageFlagBits2::eCopy,
-		.dstAccessMask = vk::AccessFlagBits2::eTransferWrite,
-		.oldLayout = vk::ImageLayout::eUndefined,
-		.newLayout = vk::ImageLayout::eTransferDstOptimal,
-		.srcQueueFamilyIndex = vk::QueueFamilyIgnored,
-		.dstQueueFamilyIndex = vk::QueueFamilyIgnored,
-		.image = dst,
-		.subresourceRange = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
+			.srcAccessMask = vk::AccessFlagBits2::eNone,
+			.dstStageMask = vk::PipelineStageFlagBits2::eCopy,
+			.dstAccessMask = vk::AccessFlagBits2::eTransferWrite,
+			.oldLayout = vk::ImageLayout::eUndefined,
+			.newLayout = vk::ImageLayout::eTransferDstOptimal,
+			.srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+			.dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+			.image = dst,
+			.subresourceRange = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
 
 		s_Cmd.pipelineBarrier2({.imageMemoryBarrierCount = 1, .pImageMemoryBarriers = &toDst});
 
@@ -272,10 +276,11 @@ namespace Timefall
 			std::memcpy(s_StagingMapped + offset, source + (uint64_t)row * rowBytes, chunkBytes);
 
 			const vk::BufferImageCopy2 region{.bufferOffset = offset,
-			.bufferRowLength = width,
-			.bufferImageHeight = rowsThisChunk, .imageSubresource = {vk::ImageAspectFlagBits::eColor, 0, 0, 1},
-			.imageOffset = {0, (int32_t)row, 0},
-			.imageExtent = {width, rowsThisChunk, 1}};
+				.bufferRowLength = width,
+				.bufferImageHeight = rowsThisChunk,
+				.imageSubresource = {vk::ImageAspectFlagBits::eColor, 0, 0, 1},
+				.imageOffset = {0, (int32_t)row, 0},
+				.imageExtent = {width, rowsThisChunk, 1}};
 
 			s_Cmd.copyBufferToImage2({.srcBuffer = s_Staging,
 				.dstImage = dst,
