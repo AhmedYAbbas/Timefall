@@ -3,6 +3,7 @@
 #include "Timefall/Core/Core.h"
 #include "Timefall/Core/Buffer.h"
 #include "Timefall/Asset/Asset.h"
+#include "Timefall/RHI/Texture.h"
 
 namespace Timefall
 {
@@ -16,38 +17,30 @@ namespace Timefall
 		bool GenerateMips = true;
 	};
 
-	class TF_API Texture : public Asset
-	{
-	public:
-		virtual ~Texture() = default;
-
-		virtual const TextureSpecification& GetSpecification() const = 0;
-
-		virtual uint32_t GetWidth() const = 0;
-		virtual uint32_t GetHeight() const = 0;
-		virtual uint32_t GetRendererID() const = 0;
-
-		// OpenGL specific?
-		virtual uint32_t GetInternalFormat() const = 0;
-		virtual uint32_t GetDataFormat() const = 0;
-
-		virtual std::vector<uint8_t> GetData() const = 0;
-		virtual void SetData(Buffer data) = 0;
-		virtual void SetData(const std::vector<uint8_t>& data, uint32_t dataFormat) = 0;
-
-		virtual void Bind(int slot = 0) const = 0;
-		// Bind an sRGB-decoding view of this texture's storage (for albedo/color maps).
-		virtual void BindAsSRGB(int slot = 0) const = 0;
-
-		virtual bool operator==(const Texture& other) const = 0;
-	};
-
-	class TF_API Texture2D : public Texture
+	class TF_API Texture2D final : public Asset
 	{
 	public:
 		static Ref<Texture2D> Create(const TextureSpecification& spec, Buffer data = Buffer());
 
+		const TextureSpecification& GetSpecification() const { return m_Spec; }
+
+		uint32_t GetWidth() const { return m_Spec.Width; }
+		uint32_t GetHeight() const { return m_Spec.Height; }
+
+		void SetData(Buffer data);
+
+		const Ref<RHI::Texture>& GetRHITexture() const { return m_Texture; }
+		bool IsValid() const;
+
+		virtual bool operator==(const Texture2D& other) const { return this == &other; }
+
 		static AssetType GetStaticType() { return AssetType::Texture2D; }
 		virtual AssetType GetType() const override { return GetStaticType(); }
+
+	private:
+		Texture2D(const TextureSpecification& spec, Buffer data);
+
+		TextureSpecification m_Spec;
+		Ref<RHI::Texture> m_Texture;
 	};
 }
