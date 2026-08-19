@@ -124,10 +124,15 @@ namespace Timefall::RHI
 		if (!pipeline.IsValid())
 			return;
 
-		m_Impl->Cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.m_Impl->Pipeline);
-		m_Impl->BoundLayout = pipeline.m_Impl->Layout;
-		m_Impl->BoundPushStages = pipeline.m_Impl->PushStages;
-		m_Impl->BoundPushSize = pipeline.m_Impl->PushSize;
+		const auto& impl = *pipeline.m_Impl;
+
+		m_Impl->Cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, impl.Pipeline);
+		m_Impl->BoundLayout = impl.Layout;
+		m_Impl->BoundPushStages = impl.PushStages;
+		m_Impl->BoundPushSize = impl.PushSize;
+
+		if (impl.HasGlobalPrefix)
+			VulkanBindings::BindGlobalSets(m_Impl->Cmd, impl.Layout);
 	}
 
 	void CommandList::PushConstants(const void* data, uint32_t size, uint32_t offset)

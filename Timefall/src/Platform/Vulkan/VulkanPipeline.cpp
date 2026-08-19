@@ -5,6 +5,7 @@
 
 #include "Platform/Vulkan/VulkanContext.h"
 #include "Platform/Vulkan/VulkanRHIImpl.h"
+#include "Platform/Vulkan/VulkanBindings.h"
 
 namespace Timefall::RHI
 {
@@ -39,32 +40,6 @@ namespace Timefall::RHI
 		}
 	}
 
-	// Set 0 is the per-frame tier: its buffers are dynamic so one offset selects the
-	// frame-in-flight slice. Every other set is plain
-	static vk::DescriptorType ToVkDescriptorType(ShaderBindingType type, uint32_t set)
-	{
-		switch (type)
-		{
-			case ShaderBindingType::UniformBuffer:
-				return set == 0 ? vk::DescriptorType::eUniformBufferDynamic : vk::DescriptorType::eUniformBuffer;
-			case ShaderBindingType::StorageBuffer:
-				return set == 0 ? vk::DescriptorType::eStorageBufferDynamic : vk::DescriptorType::eStorageBuffer;
-			case ShaderBindingType::SampledImage: return vk::DescriptorType::eSampledImage;
-			default: return vk::DescriptorType::eSampler;
-		}
-	}
-
-	static vk::ShaderStageFlags StageFlagsFrom(const ShaderReflection& reflection)
-	{
-		vk::ShaderStageFlags flags;
-		if (reflection.HasStage(ShaderStage::Vertex))
-			flags |= vk::ShaderStageFlagBits::eVertex;
-		if (reflection.HasStage(ShaderStage::Fragment))
-			flags |= vk::ShaderStageFlagBits::eFragment;
-
-		return flags;
-	}
-
 	static vk::ShaderModule CreateModule(vk::Device device, std::span<const uint32_t> spirv, const std::string& debugName)
 	{
 		auto module = device.createShaderModule({.codeSize = spirv.size() * sizeof(uint32_t), .pCode = spirv.data()});
@@ -78,90 +53,13 @@ namespace Timefall::RHI
 		return *module;
 	}
 
-	static std::vector<vk::DescriptorSetLayout> BuildSetLayouts(const ShaderReflection& reflection, const std::string& debugName)
+	static void RetireObjects(vk::Pipeline pipeline)
 	{
-		auto& ctx = VulkanContext::Get();
-		auto device = ctx.GetDevice();
-		const vk::ShaderStageFlags stages = StageFlagsFrom(reflection);
+		if (!pipeline)
+			return;
 
-		uint32_t setCount = 0;
-		for (const auto& binding : reflection.Bindings)
-			setCount = std::max(setCount, binding.Set + 1);
-
-		std::vector<vk::DescriptorSetLayout> layouts;
-		layouts.reserve(setCount);
-
-		for (uint32_t set = 0; set < setCount; set++)
-		{
-			std::vector<vk::DescriptorSetLayoutBinding> bindings;
-			std::vector<vk::DescriptorBindingFlags> bindingFlags;
-			bool updateAfterBind = false;
-
-			for (const auto& binding : reflection.Bindings)
-			{
-				if (binding.Set != set)
-					continue;
-
-				const bool unsized = binding.Count == 0;
-				const uint32_t count = unsized ? ctx.GetLimits().MaxBindlessTextures : binding.Count;
-
-				bindings.push_back({.binding = binding.Binding,
-					.descriptorType = ToVkDescriptorType(binding.Type, set),
-					.descriptorCount = count,
-					.stageFlags = stages});
-
-				vk::DescriptorBindingFlags flags{};
-				if (unsized)
-				{
-					flags = vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind
-						| vk::DescriptorBindingFlagBits::eVariableDescriptorCount;
-					updateAfterBind = true;
-				}
-
-				bindingFlags.push_back(flags);
-			}
-
-			// A variable-count binding must be the highest binding number in its set
-			if (updateAfterBind && !bindings.empty())
-			{
-				const auto highest = std::ranges::max_element(bindings, {}, &vk::DescriptorSetLayoutBinding::binding);
-				const size_t index = (size_t)std::distance(bindings.begin(), highest);
-				if (!(bindingFlags[index] & vk::DescriptorBindingFlagBits::eVariableDescriptorCount))
-					TF_CORE_ERROR("'{0}': the runtime-sized array in set {1} is not the highest binding", debugName, set);
-			}
-
-			const vk::DescriptorSetLayoutBindingFlagsCreateInfo flagsInfo{
-				.bindingCount = (uint32_t)bindingFlags.size(), .pBindingFlags = bindingFlags.data()};
-
-			auto layout = device.createDescriptorSetLayout({.pNext = &flagsInfo,
-				.flags =
-					updateAfterBind ? vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool : vk::DescriptorSetLayoutCreateFlags{},
-				.bindingCount = (uint32_t)bindings.size(),
-				.pBindings = bindings.data()});
-
-			if (!layout)
-			{
-				TF_CORE_ERROR("createDescriptorSetLayout failed for '{0}' set {1}: {2}", debugName, set, vk::to_string(layout.error()));
-				return {};
-			}
-
-			ctx.SetObjectName(*layout, std::format("{}:SetLayout[{}]", debugName, set));
-			layouts.push_back(*layout);
-		}
-
-		return layouts;
-	}
-
-	static void RetireObjects(vk::Pipeline pipeline, vk::PipelineLayout layout, std::vector<vk::DescriptorSetLayout> setLayouts)
-	{
-		RenderDevice::Get().DeferDestroy([pipeline, layout, setLayouts = std::move(setLayouts)]() {
-			auto device = VulkanContext::Get().GetDevice();
-			if (pipeline)
-				device.destroyPipeline(pipeline);
-			if (layout)
-				device.destroyPipelineLayout(layout);
-			for (auto& setLayout : setLayouts)
-				device.destroyDescriptorSetLayout(setLayout);
+		RenderDevice::Get().DeferDestroy([pipeline]() {
+			VulkanContext::Get().GetDevice().destroyPipeline(pipeline);
 		});
 	}
 
@@ -194,24 +92,14 @@ namespace Timefall::RHI
 		// The shader's own name beats a synthesized one when the pipeline was declared without a name.
 		const std::string name = desc.DebugName ? desc.DebugName : std::format("Pipeline[{}]", shader->GetName());
 
-		impl.SetLayouts = BuildSetLayouts(reflection, name);
-		impl.PushSize = reflection.PushConstantSize;
-		impl.PushStages = StageFlagsFrom(reflection);
-
-		const vk::PushConstantRange pushRange{.stageFlags = impl.PushStages, .offset = 0, .size = impl.PushSize};
-
-		auto layout = device.createPipelineLayout({.setLayoutCount = (uint32_t)impl.SetLayouts.size(),
-			.pSetLayouts = impl.SetLayouts.data(),
-			.pushConstantRangeCount = impl.PushSize > 0 ? 1u : 0u,
-			.pPushConstantRanges = &pushRange});
-
-		if (!layout)
-		{
-			TF_CORE_ERROR("createPipelineLayout failed: {0}", vk::to_string(layout.error()));
+		impl.Layout = VulkanBindings::GetLayoutFor(reflection, name);
+		if (!impl.Layout)
 			return false;
-		}
 
-		impl.Layout = *layout;
+		impl.HasGlobalPrefix = true;
+		impl.PushStages = VulkanBindings::kAllStages;
+		impl.PushSize = reflection.PushConstantSize;
+
 		ctx.SetObjectName(impl.Layout, std::format("{}:Layout", name));
 
 		const vk::ShaderModule vertexModule = CreateModule(device, shader->GetSpirv(ShaderStage::Vertex), std::format("{}:VS", name));
@@ -381,7 +269,7 @@ namespace Timefall::RHI
 		if (!m_Impl)
 			return;
 
-		RetireObjects(m_Impl->Pipeline, m_Impl->Layout, std::move(m_Impl->SetLayouts));
+		RetireObjects(m_Impl->Pipeline);
 		delete m_Impl;
 		m_Impl = nullptr;
 	}
@@ -396,22 +284,18 @@ namespace Timefall::RHI
 
 		const vk::Pipeline oldPipeline = m_Impl->Pipeline;
 		const vk::PipelineLayout oldLayout = m_Impl->Layout;
-		std::vector<vk::DescriptorSetLayout> oldSetLayouts = std::move(m_Impl->SetLayouts);
 
 		m_Impl->Pipeline = nullptr;
 		m_Impl->Layout = nullptr;
-		m_Impl->SetLayouts.clear();
 
 		if (!Build())
 		{
-			RetireObjects(m_Impl->Pipeline, m_Impl->Layout, std::move(m_Impl->SetLayouts));
 			m_Impl->Pipeline = oldPipeline;
 			m_Impl->Layout = oldLayout;
-			m_Impl->SetLayouts = std::move(oldSetLayouts);
 			return false;
 		}
 
-		RetireObjects(oldPipeline, oldLayout, std::move(oldSetLayouts));
+		RetireObjects(oldPipeline);
 		return true;
 	}
 

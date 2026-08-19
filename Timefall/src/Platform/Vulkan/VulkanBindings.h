@@ -1,13 +1,12 @@
 #pragma once
 
 #include "Timefall/RHI/Bindings.h"
+#include "Timefall/Renderer/ShaderReflection.h"
 
 #include <vulkan/vulkan.hpp>
 
 namespace Timefall
 {
-	class ShaderReflection;
-
 	class VulkanBindings
 	{
 	public:

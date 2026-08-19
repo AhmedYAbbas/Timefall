@@ -62,10 +62,10 @@ namespace Timefall::RHI
 		GraphicsPipelineDesc Desc;
 		vk::Pipeline Pipeline;
 		vk::PipelineLayout Layout;
-		std::vector<vk::DescriptorSetLayout> SetLayouts;
 		vk::ShaderStageFlags PushStages;
 		uint32_t PushSize = 0;
 		uint32_t BuiltRevision = 0;
+		bool HasGlobalPrefix = false;
 	};
 
 	struct GpuBuffer::Impl

@@ -8,6 +8,8 @@
 #include "Timefall/RHI/GpuBuffer.h"
 #include "Timefall/RHI/Texture.h"
 
+#include "Timefall/Renderer/ShaderReflection.h"
+
 namespace Timefall
 {
 	namespace
@@ -15,6 +17,9 @@ namespace Timefall
 		vk::DescriptorPool s_Pool;
 		std::array<vk::DescriptorSetLayout, VulkanBindings::SetCount> s_SetLayouts;
 		std::array<vk::DescriptorSet, VulkanBindings::SetCount> s_Sets{};
+
+		std::unordered_map<uint64_t, vk::PipelineLayout> s_LayoutCache;
+		std::vector<vk::DescriptorSetLayout> s_PrivateSetLayouts;
 
 		vk::PipelineLayout s_GlobalLayout;
 
@@ -205,6 +210,107 @@ namespace Timefall
 			VulkanContext::Get().SetObjectName(s_GlobalLayout, "Bindings:GlobalLayout");
 			return true;
 		}
+
+		struct CanonicalBinding
+		{
+			uint32_t Set;
+			uint32_t Binding;
+			ShaderBindingType Type;
+			uint32_t Count;
+		};
+
+		constexpr CanonicalBinding kCanonical[]{{0, 0, ShaderBindingType::UniformBuffer, 1},
+			{2, VulkanBindings::BindingSamplers, ShaderBindingType::Sampler, (uint32_t)RHI::SamplerSlot::Count}, {2, VulkanBindings::BindingTextures, ShaderBindingType::SampledImage, 0}};
+
+		const char* BindingTypeName(ShaderBindingType type)
+		{
+			switch (type)
+			{
+				case ShaderBindingType::UniformBuffer: return "UniformBuffer";
+				case ShaderBindingType::StorageBuffer: return "StorageBuffer";
+				case ShaderBindingType::SampledImage:  return "SampledImage";
+				default:							   return "Sampler";
+			}
+		}
+
+		bool ValidateAndSplit(const ShaderReflection& reflection, const std::string& name, std::vector<ShaderBinding>& privateBindings)
+		{
+			bool ok = true;
+
+			if (reflection.PushConstantSize > VulkanBindings::kPushConstantBytes)
+			{
+				TF_CORE_ERROR("'{0}': push constant block is {1} bytes; the shared range is {2}", name, reflection.PushConstantSize,
+					VulkanBindings::kPushConstantBytes);
+				ok = false;
+			}
+
+			for (const auto& binding : reflection.Bindings)
+			{
+				TF_CORE_INFO(
+					"'{0}': set {1} binding {2} {3} count {4}", name, binding.Set, binding.Binding, BindingTypeName(binding.Type), binding.Count);
+
+				if (binding.Set >= VulkanBindings::SetCount)
+				{
+					privateBindings.push_back(binding);
+					continue;
+				}
+
+				const auto match = std::ranges::find_if(
+					kCanonical, [&binding](const CanonicalBinding& c) { return c.Set == binding.Set && c.Binding == binding.Binding; });
+
+				if (match == std::end(kCanonical))
+				{
+					TF_CORE_ERROR(
+						"'{0}': set {1} binding {2} is not part of the canonical layout - private resources go in set {3} or above", name,
+						binding.Set, binding.Binding, VulkanBindings::SetCount);
+					ok = false;
+					continue;
+				}
+
+				if (match->Type != binding.Type || match->Count != binding.Count)
+				{
+					TF_CORE_ERROR("'{0}': set {1} binding {2} is declared {3}[{4}] but the canonical layout says {5}[{6}]", name,
+						binding.Set, binding.Binding, BindingTypeName(binding.Type), binding.Count, BindingTypeName(match->Type),
+						match->Count);
+					ok = false;
+				}
+			}
+
+			return ok;
+		}
+
+		uint64_t HashPrivateBindings(const std::vector<ShaderBinding>& bindings)
+		{
+			uint64_t hash = 14695981039346656037ull;
+			const auto mix = [&hash](uint32_t value) {
+				for (uint32_t byte = 0; byte < 4; byte++)
+				{
+					hash ^= (value >> (byte * 8)) & 0xFF;
+					hash *= 1099511628211ull;
+				}
+			};
+
+			for (const auto& binding : bindings)
+			{
+				mix(binding.Set);
+				mix(binding.Binding);
+				mix((uint32_t)binding.Type);
+				mix(binding.Count);
+			}
+
+			return hash;
+		}
+
+		vk::DescriptorType ToVkDescriptorType(ShaderBindingType type)
+		{
+			switch (type)
+			{
+				case ShaderBindingType::UniformBuffer: return vk::DescriptorType::eUniformBuffer;
+				case ShaderBindingType::StorageBuffer: return vk::DescriptorType::eStorageBuffer;
+				case ShaderBindingType::SampledImage:  return vk::DescriptorType::eSampledImage;
+				default:							   return vk::DescriptorType::eSampler;
+			}
+		}
 	}
 
 	void VulkanBindings::Init()
@@ -243,6 +349,14 @@ namespace Timefall
 		s_WhiteTexture.reset();
 		s_FrameUniforms.reset();
 
+		for (auto& [key, layout] : s_LayoutCache)
+			device.destroyPipelineLayout(layout);
+		s_LayoutCache.clear();
+
+		for (auto& layout : s_PrivateSetLayouts)
+			device.destroyDescriptorSetLayout(layout);
+		s_PrivateSetLayouts.clear();
+
 		if (s_GlobalLayout)
 			device.destroyPipelineLayout(s_GlobalLayout);
 		s_GlobalLayout = nullptr;
@@ -276,6 +390,72 @@ namespace Timefall
 	vk::PipelineLayout VulkanBindings::GetGlobalLayout()
 	{
 		return s_GlobalLayout;
+	}
+
+	vk::PipelineLayout VulkanBindings::GetLayoutFor(const ShaderReflection& reflection, const std::string& debugName)
+	{
+		if (!s_Ready)
+		{
+			TF_CORE_ERROR("GetLayoutFor before VulkanBindings::Init");
+			return nullptr;
+		}
+
+		std::vector<ShaderBinding> privateBindings;
+		if (!ValidateAndSplit(reflection, debugName, privateBindings))
+			return nullptr;
+
+		if (privateBindings.empty())
+			return s_GlobalLayout;
+
+		const uint64_t key = HashPrivateBindings(privateBindings);
+		if (auto it = s_LayoutCache.find(key); it != s_LayoutCache.end())
+			return it->second;
+
+		uint32_t highestSet = SetCount - 1;
+		for (const auto& binding : privateBindings)
+			highestSet = std::max(highestSet, binding.Set);
+
+		std::vector<vk::DescriptorSetLayout> layouts{s_SetLayouts.begin(), s_SetLayouts.end()};
+
+		for (uint32_t set = SetCount; set <= highestSet; set++)
+		{
+			std::vector<vk::DescriptorSetLayoutBinding> bindings;
+			for (const auto& binding : privateBindings)
+			{
+				if (binding.Set != set)
+					continue;
+
+				bindings.push_back({.binding = binding.Binding, .descriptorType = ToVkDescriptorType(binding.Type), .descriptorCount = binding.Count, .stageFlags = kAllStages});
+			}
+
+			const std::vector<vk::DescriptorBindingFlags> flags(bindings.size(), vk::DescriptorBindingFlags{});
+			const std::string name = std::format("{}:PrivateSet[{}]", debugName, set);
+
+			vk::DescriptorSetLayout layout = CreateSetLayout(bindings, flags, false, name.c_str());
+			if (!layout)
+				return nullptr;
+
+			s_PrivateSetLayouts.push_back(layout);
+			layouts.push_back(layout);
+		}
+
+		const vk::PushConstantRange pushRange{.stageFlags = kAllStages, .offset = 0, .size = kPushConstantBytes};
+
+		auto layout = VulkanContext::Get().GetDevice().createPipelineLayout(
+			{.setLayoutCount = (uint32_t)layouts.size(), .pSetLayouts = layouts.data(), .pushConstantRangeCount = 1, .pPushConstantRanges = &pushRange});
+		if (!layout)
+		{
+			TF_CORE_ERROR("createPipelineLayout failed for '{0}': {1}", debugName, vk::to_string(layout.error()));
+			return nullptr;
+		}
+
+		VulkanContext::Get().SetObjectName(*layout, std::format("{}:Layout", debugName));
+		s_LayoutCache.emplace(key, *layout);
+
+		TF_CORE_INFO("Pipeline layout cache: new entry for '{0}' with {1} private set(s), {2} entries total", debugName,
+			highestSet + 1 - SetCount, s_LayoutCache.size());
+
+		return *layout;
 	}
 
 	void VulkanBindings::BindGlobalSets(vk::CommandBuffer cmd, vk::PipelineLayout layout)
