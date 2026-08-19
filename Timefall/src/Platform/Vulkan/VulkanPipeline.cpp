@@ -53,14 +53,12 @@ namespace Timefall::RHI
 		return *module;
 	}
 
-	static void RetireObjects(vk::Pipeline pipeline)
+	static void RetirePipeline(vk::Pipeline pipeline)
 	{
 		if (!pipeline)
 			return;
 
-		RenderDevice::Get().DeferDestroy([pipeline]() {
-			VulkanContext::Get().GetDevice().destroyPipeline(pipeline);
-		});
+		RenderDevice::Get().DeferDestroy([pipeline]() { VulkanContext::Get().GetDevice().destroyPipeline(pipeline); });
 	}
 
 	bool GraphicsPipeline::Build()
@@ -267,7 +265,7 @@ namespace Timefall::RHI
 		if (!m_Impl)
 			return;
 
-		RetireObjects(m_Impl->Pipeline);
+		RetirePipeline(m_Impl->Pipeline);
 		delete m_Impl;
 		m_Impl = nullptr;
 	}
@@ -293,7 +291,7 @@ namespace Timefall::RHI
 			return false;
 		}
 
-		RetireObjects(oldPipeline);
+		RetirePipeline(oldPipeline);
 		return true;
 	}
 

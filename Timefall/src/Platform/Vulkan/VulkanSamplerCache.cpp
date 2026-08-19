@@ -5,17 +5,20 @@
 
 namespace Timefall
 {
-	static std::vector<std::pair<VulkanSamplerCache::SamplerDesc, vk::Sampler>> s_Cache;
-	static std::array<vk::Sampler, (size_t)RHI::SamplerSlot::Count> s_Table{};
-
-	static const char* SlotName(RHI::SamplerSlot slot)
+	namespace
 	{
-		switch (slot)
+		std::vector<std::pair<VulkanSamplerCache::SamplerDesc, vk::Sampler>> s_Cache;
+		std::array<vk::Sampler, (size_t)RHI::SamplerSlot::Count> s_Table{};
+
+		const char* SlotName(RHI::SamplerSlot slot)
 		{
-			case RHI::SamplerSlot::LinearRepeat:	 return "LinearRepeat";
-			case RHI::SamplerSlot::LinearClampEdge:  return "LinearClampEdge";
-			case RHI::SamplerSlot::NearestClampEdge: return "NearestClampEdge";
-			default:								 return "<unknown>";
+			switch (slot)
+			{
+				case RHI::SamplerSlot::LinearRepeat: return "LinearRepeat";
+				case RHI::SamplerSlot::LinearClampEdge: return "LinearClampEdge";
+				case RHI::SamplerSlot::NearestClampEdge: return "NearestClampEdge";
+				default: return "<unknown>";
+			}
 		}
 	}
 
@@ -40,7 +43,7 @@ namespace Timefall
 			.minLod = 0.0f,
 			.maxLod = vk::LodClampNone,
 			.borderColor = vk::BorderColor::eFloatOpaqueWhite,
-			.unnormalizedCoordinates = vk::False };
+			.unnormalizedCoordinates = vk::False};
 
 		auto sampler = ctx.GetDevice().createSampler(info);
 		if (!sampler)

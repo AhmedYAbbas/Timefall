@@ -6,31 +6,35 @@
 
 namespace Timefall
 {
-	struct BindlessTableData
+	namespace
 	{
-		vk::DescriptorSet Set;
-		vk::ImageView WhiteView;
-		uint32_t Capacity = 0;
-		uint32_t Next = 1;
-		std::vector<uint32_t> Free;
-		uint32_t Used = 0;
-		bool Ready = false;
-		bool ExhaustionLogged = false;
-	};
-	static BindlessTableData s_TableData{};
+		struct BindlessTableData
+		{
+			vk::DescriptorSet Set;
+			vk::ImageView WhiteView;
+			uint32_t Capacity = 0;
+			uint32_t Next = 1;
+			std::vector<uint32_t> Free;
+			uint32_t Used = 0;
+			bool Ready = false;
+			bool ExhaustionLogged = false;
+		};
 
-	static void WriteSlot(uint32_t index, vk::ImageView view)
-	{
-		const vk::DescriptorImageInfo info{.imageView = view, .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal};
+		BindlessTableData s_TableData{};
 
-		const vk::WriteDescriptorSet write{.dstSet = s_TableData.Set,
-			.dstBinding = VulkanBindings::BindingTextures,
-			.dstArrayElement = index,
-			.descriptorCount = 1,
-			.descriptorType = vk::DescriptorType::eSampledImage,
-			.pImageInfo = &info};
+		void WriteSlot(uint32_t index, vk::ImageView view)
+		{
+			const vk::DescriptorImageInfo info{.imageView = view, .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal};
 
-		VulkanContext::Get().GetDevice().updateDescriptorSets(write, {});
+			const vk::WriteDescriptorSet write{.dstSet = s_TableData.Set,
+				.dstBinding = VulkanBindings::BindingTextures,
+				.dstArrayElement = index,
+				.descriptorCount = 1,
+				.descriptorType = vk::DescriptorType::eSampledImage,
+				.pImageInfo = &info};
+
+			VulkanContext::Get().GetDevice().updateDescriptorSets(write, {});
+		}
 	}
 
 	void VulkanBindlessTable::Init(vk::DescriptorSet set, uint32_t capacity, vk::ImageView whiteView)
