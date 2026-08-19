@@ -162,9 +162,11 @@ namespace Timefall::RHI
 			| vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 
 		std::vector<vk::PipelineColorBlendAttachmentState> blendAttachments(desc.ColorCount);
-		for (auto& attachment : blendAttachments)
+		for (uint32_t i = 0; i < desc.ColorCount; i++)
 		{
-			attachment.blendEnable = desc.Blend != BlendMode::None;
+			auto& attachment = blendAttachments[i];
+
+			attachment.blendEnable = desc.Blend != BlendMode::None && !IsIntegerFormat(desc.ColorFormats[i]);
 			attachment.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
 			attachment.dstColorBlendFactor = desc.Blend == BlendMode::Additive ? vk::BlendFactor::eOne : vk::BlendFactor::eOneMinusSrcAlpha;
 			attachment.colorBlendOp = vk::BlendOp::eAdd;
