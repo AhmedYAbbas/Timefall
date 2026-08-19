@@ -195,6 +195,9 @@ namespace Timefall
 		{
 			if (RHI::CommandList* cmd = RHI::RenderDevice::Get().GetCurrentCommandList())
 			{
+				const ImVec4& background = ImGui::GetStyle().Colors[ImGuiCol_DockingEmptyBg];
+				cmd->BeginPass({.DebugName = "BringUpPass", .Color{{.Load = RHI::LoadOp::Clear, .ClearValue = {background.x, background.y, background.z, 1.0f}}}});
+				
 				struct
 				{
 					glm::vec3 Tint;
@@ -287,6 +290,8 @@ namespace Timefall
 						cmd->DrawIndexed(6);
 					}
 				}
+
+				cmd->EndPass();
 			}
 		}
 

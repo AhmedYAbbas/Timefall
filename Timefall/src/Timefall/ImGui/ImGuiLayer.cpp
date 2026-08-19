@@ -6,8 +6,10 @@
 #include "Timefall/Core/Application.h"
 
 #include "Platform/Vulkan/VulkanContext.h"
+
 #include "Timefall/RHI/RenderDevice.h"
 #include "Timefall/RHI/CommandList.h"
+#include "Timefall/RHI/RenderTarget.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -151,8 +153,18 @@ namespace Timefall
 
 		ImGui::Render();
 
-		if (auto* cmd = RHI::RenderDevice::Get().GetCurrentCommandList())
-			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), (VkCommandBuffer)cmd->GetNativeHandle());
+		auto* cmd = RHI::RenderDevice::Get().GetCurrentCommandList(); 
+		if (!cmd)
+			return;
+
+		const ImVec4& background = ImGui::GetStyle().Colors[ImGuiCol_DockingEmptyBg];
+
+		cmd->BeginPass({.DebugName = "ImGuiPass", .Color = {{.Load = RHI::LoadOp::Load, .ClearValue = {background.x, background.y, background.z, 1.0f}}}});
+
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), (VkCommandBuffer)cmd->GetNativeHandle());
+
+		cmd->EndPass();
+			
 	}
 
 	void ImGuiLayer::OnEvent(Event& e)
@@ -171,6 +183,7 @@ namespace Timefall
 	void ImGuiLayer::SetDarkThemeColors()
 	{
 		auto& colors = ImGui::GetStyle().Colors;
+		colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.15f, 0.15f, 0.20f, 1.0f);
 		colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.105f, 0.11f, 1.0f);
 
 		// Headers

@@ -148,10 +148,6 @@ namespace Timefall
 				continue;
 			}
 
-			const RHI::PassDesc pass{.DebugName = "MainPass",
-				.Color = {{.Load = RHI::LoadOp::Clear, .ClearValue = {0.15f, 0.15f, 0.20f, 1.0f}}}};
-			cmd->BeginPass(pass);
-
 			if (!m_Minimized)
 			{
 				{
@@ -171,7 +167,6 @@ namespace Timefall
 			}
 			m_ImGuiLayer->End();
 
-			cmd->EndPass();
 			RHI::RenderDevice::Get().EndFrame();
 
 			m_Window->OnUpdate();
