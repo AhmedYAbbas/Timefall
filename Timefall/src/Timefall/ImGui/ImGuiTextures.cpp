@@ -21,22 +21,28 @@ namespace Timefall::UI
 		s_BackendAlive = alive;
 	}
 
-	ImTextureID GetTextureID(const Ref<Texture2D>& texture)
+	ImTextureID GetTextureID(const Ref<RHI::Texture>& texture)
 	{
 		if (!s_BackendAlive || !texture || !texture->IsValid())
 			return 0;
 
-		const Ref<RHI::Texture>& rhi = texture->GetRHITexture();
-
-		if (void* cached = rhi->GetUIHandle())
+		if (void* cached = texture->GetUIHandle())
 			return (ImTextureID)(uint64_t)cached;
 
-		VkDescriptorSet set = ImGui_ImplVulkan_AddTexture((VkImageView)rhi->GetNativeView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		VkDescriptorSet set = ImGui_ImplVulkan_AddTexture((VkImageView)texture->GetNativeView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 		if (!set)
 			return 0;
 
-		rhi->SetUIHandle(set, &DestroyTextureID);
+		texture->SetUIHandle(set, &DestroyTextureID);
 		return (ImTextureID)(uint64_t)set;
+	}
+
+	ImTextureID GetTextureID(const Ref<Texture2D>& texture)
+	{
+		if (!texture || !texture->IsValid())
+			return 0;
+
+		return GetTextureID(texture->GetRHITexture());
 	}
 }

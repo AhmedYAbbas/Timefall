@@ -18,6 +18,12 @@ struct VSOutput
 	float3 color : COLOR0;
 }
 
+struct FSOutput
+{
+	float4 color : SV_Target0;
+	int entityID : SV_Target1;
+}
+
 [shader("vertex")]
 VSOutput vsMain(float3 position, float3 color)
 {
@@ -28,7 +34,10 @@ VSOutput vsMain(float3 position, float3 color)
 }
 
 [shader("fragment")]
-float4 fsMain(VSOutput input) : SV_Target
+FSOutput fsMain(VSOutput input)
 {
-	return float4(input.color * u_Push.Tint, 1.0);
+	FSOutput output;
+	output.color = float4(input.color * u_Push.Tint, 1.0);
+	output.entityID = -1;
+	return output;
 }

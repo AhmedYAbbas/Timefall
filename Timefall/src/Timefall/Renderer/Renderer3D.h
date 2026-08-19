@@ -2,12 +2,13 @@
 
 #include "Timefall/Renderer/EditorCamera.h"
 #include "Timefall/Renderer/Camera.h"
-#include "Timefall/Renderer/Framebuffer.h"
 #include "Timefall/Renderer/Mesh.h"
 #include "Timefall/Renderer/Material.h"
 #include "Timefall/Renderer/ShadowSettings.h"
 #include "Timefall/Renderer/PostProcessSettings.h"
 #include "Timefall/Asset/Asset.h"
+
+#include "Timefall/RHI/RenderTarget.h"
 
 #include <glm/glm.hpp>
 
@@ -28,7 +29,7 @@ namespace Timefall
 		static void Init();
 		static void Shutdown();
 
-		static void SetTargetFramebuffer(const Ref<Framebuffer>& target);
+		static void SetTargetRenderTarget(const Ref<RHI::RenderTarget>& target);
 
 		static void BeginScene(const EditorCamera& camera);
 		static void BeginScene(const Camera& camera, const glm::mat4& transform);

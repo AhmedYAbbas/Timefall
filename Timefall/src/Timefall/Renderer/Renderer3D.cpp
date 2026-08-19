@@ -2,7 +2,6 @@
 
 #include "Timefall/Renderer/Renderer3D.h"
 
-#include "Timefall/Renderer/Framebuffer.h"
 #include "Timefall/Renderer/Shader.h"
 #include "Timefall/Renderer/UniformBuffer.h"
 #include "Timefall/Renderer/Texture.h"
@@ -184,8 +183,6 @@ namespace Timefall
 		std::vector<PointCaster> PointCasters;
 		bool AnyPointCasts = false;
 
-		Ref<Framebuffer> TargetFB; // external LDR target (owns id+depth we alias)
-		Ref<Framebuffer> HdrFB; // internal RGBA16F scene buffer
 		Ref<Shader> ResolveShader;
 		Ref<Shader> SkyboxShader;
 		PostProcessSettings PostProcess;
@@ -334,35 +331,6 @@ namespace Timefall
 	static const glm::vec3 s_CubeFaceDir[6] = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
 	static const glm::vec3 s_CubeFaceUp[6] = {{0, -1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}, {0, -1, 0}, {0, -1, 0}};
 
-	static void EnsureHdrFramebuffer()
-	{
-		const auto& target = s_Data.TargetFB;
-		if (!target)
-			return;
-
-		const FramebufferSpecification& tspec = target->GetSpecification();
-		bool needsRebuild = !s_Data.HdrFB || s_Data.HdrFB->GetSpecification().Width != tspec.Width
-			|| s_Data.HdrFB->GetSpecification().Height != tspec.Height;
-
-		if (!needsRebuild)
-			return;
-
-		FramebufferSpecification spec;
-		spec.Width = tspec.Width;
-		spec.Height = tspec.Height;
-
-		FramebufferTextureSpecification hdrColor(FramebufferTextureFormat::RGBA16F);
-
-		FramebufferTextureSpecification idAlias(FramebufferTextureFormat::RED_INTEGER);
-		idAlias.ExternalRendererID = target->GetColorAttachmentRendererID(1);
-
-		FramebufferTextureSpecification depthAlias(FramebufferTextureFormat::DEPTH24STENCIL8);
-		depthAlias.ExternalRendererID = target->GetDepthAttachmentRendererID();
-
-		spec.Attachments = {hdrColor, idAlias, depthAlias};
-		s_Data.HdrFB = Framebuffer::Create(spec);
-	}
-
 	void Renderer3D::Init() {}
 
 	void Renderer3D::Shutdown()
@@ -370,7 +338,7 @@ namespace Timefall
 		s_Data = {}; // every Ref it holds owns a GPU resource that must die before the device
 	}
 
-	void Renderer3D::SetTargetFramebuffer(const Ref<Framebuffer>& target) {}
+	void Renderer3D::SetTargetRenderTarget(const Ref<RHI::RenderTarget>& target) {}
 
 	void Renderer3D::BeginScene(const EditorCamera& camera) {}
 

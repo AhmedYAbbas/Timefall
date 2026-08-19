@@ -9,6 +9,7 @@
 
 #include "Timefall/RHI/Pipeline.h"
 #include "Timefall/RHI/GpuBuffer.h"
+#include "Timefall/RHI/RenderTarget.h"
 
 #include <filesystem>
 
@@ -72,8 +73,7 @@ namespace Timefall
 		Ref<RHI::GpuBuffer> m_QuadIndexBuffer;
 		Ref<RHI::Texture> m_QuadTexture; // mid-tone bring-up swatch; the editor's icons are black-on-alpha
 
-		// Temp
-		Ref<Framebuffer> m_Framebuffer;
+		Ref<RHI::RenderTarget> m_ViewportTarget;
 
 		Ref<Scene> m_EditorScene;
 		std::filesystem::path m_EditorScenePath;

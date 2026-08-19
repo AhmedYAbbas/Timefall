@@ -49,18 +49,22 @@ namespace Timefall
 		m_StepIcon = TextureImporter::LoadTexture2D("Resources/Icons/StepButton.png");
 		m_StopIcon = TextureImporter::LoadTexture2D("Resources/Icons/StopButton.png");
 
-		FramebufferSpecification fbSpec;
-		fbSpec.Attachments = {FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::DEPTH};
-		fbSpec.Width = 1280;
-		fbSpec.Height = 720;
-		m_Framebuffer = Framebuffer::Create(fbSpec);
+		m_ViewportTarget = RHI::RenderTarget::Create({.Width = 1280,
+			.Height = 720,
+			.ColorFormat = {RHI::Format::RGBA8Unorm, RHI::Format::R32I},
+			.ColorCount = 2,
+			.DepthFormat = RHI::Format::D32F,
+			.DebugName = "ViewportTarget"});
 
 		m_TriangleShader = ShaderLibrary::Load("Assets/Shaders/Triangle.slang");
 
 		RHI::GraphicsPipelineDesc triangleDesc;
 		triangleDesc.ShaderModule = m_TriangleShader;
-		triangleDesc.ColorFormats[0] = RHI::RenderDevice::Get().GetSwapchainColorFormat();
-		triangleDesc.ColorCount = 1;
+		triangleDesc.ColorFormats[0] = RHI::Format::RGBA8Unorm;
+		triangleDesc.ColorFormats[1] = RHI::Format::R32I;
+		triangleDesc.ColorCount = 2;
+		triangleDesc.DepthFormat = RHI::Format::D32F;
+		triangleDesc.Depth = {.Test = true, .Write = true};
 		triangleDesc.Raster.Cull = RHI::CullMode::None;
 		triangleDesc.DebugName = "TrianglePipeline";
 		triangleDesc.VertexLayout = {{ShaderDataType::Float3, "a_Position"}, {ShaderDataType::Float3, "a_Color"}};
@@ -95,8 +99,11 @@ namespace Timefall
 
 		RHI::GraphicsPipelineDesc quadDesc;
 		quadDesc.ShaderModule = m_QuadShader;
-		quadDesc.ColorFormats[0] = RHI::RenderDevice::Get().GetSwapchainColorFormat();
-		quadDesc.ColorCount = 1;
+		quadDesc.ColorFormats[0] = RHI::Format::RGBA8Unorm;
+		quadDesc.ColorFormats[1] = RHI::Format::R32I;
+		quadDesc.ColorCount = 2;
+		triangleDesc.DepthFormat = RHI::Format::D32F;
+		triangleDesc.Depth = {.Test = true, .Write = true};
 		quadDesc.Raster.Cull = RHI::CullMode::None;
 		quadDesc.DebugName = "TexturedQuadPipeline";
 		quadDesc.VertexLayout = {{ShaderDataType::Float2, "a_Position"}, {ShaderDataType::Float2, "a_TexCoord"}};
@@ -179,6 +186,7 @@ namespace Timefall
 		m_QuadIndexBuffer.reset();
 		m_QuadTexture.reset();
 
+		m_ViewportTarget.reset();
 		s_Font.reset(); // file-scope, so it would otherwise outlive the device along with its atlas
 	}
 
@@ -193,10 +201,19 @@ namespace Timefall
 
 		if (m_TrianglePipeline && m_TrianglePipeline->IsValid())
 		{
-			if (RHI::CommandList* cmd = RHI::RenderDevice::Get().GetCurrentCommandList())
+			if (m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f
+				&& m_ViewportTarget->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y))
 			{
-				const ImVec4& background = ImGui::GetStyle().Colors[ImGuiCol_DockingEmptyBg];
-				cmd->BeginPass({.DebugName = "BringUpPass", .Color{{.Load = RHI::LoadOp::Clear, .ClearValue = {background.x, background.y, background.z, 1.0f}}}});
+				m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
+			}
+
+			if (RHI::CommandList* cmd = RHI::RenderDevice::Get().GetCurrentCommandList(); cmd && m_ViewportTarget->IsValid())
+			{
+				cmd->BeginPass({.DebugName = "ViewportPass",
+					.Target = m_ViewportTarget.get(),
+					.Color = {{.Load = RHI::LoadOp::Clear, .ClearValue = {0.1f, 0.1f, 0.12f, 1.0f}},
+						{.Load = RHI::LoadOp::Clear, .ClearInt = {-1, -1, -1}}},
+					.Depth = {.Load = RHI::LoadOp::Clear, .ClearDepth = 1.0f}});
 				
 				struct
 				{
@@ -298,19 +315,9 @@ namespace Timefall
 		GetActiveScene()->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		SceneManager::SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 
-		// Resize
-		if (FramebufferSpecification spec = m_Framebuffer->GetSpecification();
-			(spec.Width != m_ViewportSize.x || spec.Height != m_ViewportSize.y))
-		{
-			m_Framebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
-			m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
-		}
-
 		// Render
+		Renderer3D::SetTargetRenderTarget(m_ViewportTarget);
 		Renderer2D::ResetStats();
-		m_Framebuffer->Bind();
-		Renderer3D::SetTargetFramebuffer(m_Framebuffer);
-		m_Framebuffer->ClearColorAttachment(1, -1);
 
 		// Feed the viewport-relative mouse (top-left origin) to the engine so scripts get world input.
 		{
@@ -341,23 +348,9 @@ namespace Timefall
 			}
 		}
 
-		auto [mx, my] = ImGui::GetMousePos();
-		mx -= m_ViewportBounds[0].x;
-		my -= m_ViewportBounds[0].y;
-		glm::vec2 viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
-		my = viewportSize.y - my;
-		int mouseX = (int)mx;
-		int mouseY = (int)my;
-
-		if (mouseX >= 0 && mouseX < viewportSize.x && mouseY >= 0 && mouseY < viewportSize.y)
-		{
-			int data = m_Framebuffer->ReadPixel(1, mouseX, mouseY);
-			m_HoveredEntity = data == -1 ? Entity() : Entity{(entt::entity)data, GetActiveScene().get()};
-		}
+		m_HoveredEntity = Entity();
 
 		OnOverlayRender();
-
-		m_Framebuffer->Unbind();
 	}
 
 	void EditorLayer::OnEvent(Event& e)
@@ -498,8 +491,8 @@ namespace Timefall
 
 		m_ViewportSize = {viewportPanelSize.x, viewportPanelSize.y};
 
-		uint32_t textureID = m_Framebuffer->GetColorAttachmentRendererID();
-		ImGui::Image((ImTextureID)(uint64_t)textureID, viewportPanelSize, ImVec2{0, 1}, ImVec2{1, 0});
+		if (m_ViewportTarget->IsValid())
+			ImGui::Image(UI::GetTextureID(m_ViewportTarget->GetColor(0)), viewportPanelSize);
 
 		if (ImGui::BeginDragDropTarget())
 		{

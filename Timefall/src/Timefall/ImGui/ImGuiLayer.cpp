@@ -159,7 +159,7 @@ namespace Timefall
 
 		const ImVec4& background = ImGui::GetStyle().Colors[ImGuiCol_DockingEmptyBg];
 
-		cmd->BeginPass({.DebugName = "ImGuiPass", .Color = {{.Load = RHI::LoadOp::Load, .ClearValue = {background.x, background.y, background.z, 1.0f}}}});
+		cmd->BeginPass({.DebugName = "ImGuiPass", .Color = {{.Load = RHI::LoadOp::Clear, .ClearValue = {background.x, background.y, background.z, 1.0f}}}});
 
 		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), (VkCommandBuffer)cmd->GetNativeHandle());
 

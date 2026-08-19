@@ -25,6 +25,12 @@ struct VSOutput
 	float2 uv : TEXCOORD0;
 }
 
+struct FSOutput
+{
+	float4 color : SV_Target0;
+	int entityID : SV_Target1;
+}
+
 [shader("vertex")]
 VSOutput vsMain(float2 position, float2 texCoord)
 {
@@ -37,7 +43,10 @@ VSOutput vsMain(float2 position, float2 texCoord)
 }
 
 [shader("fragment")]
-float4 fsMain(VSOutput input) : SV_Target
+FSOutput fsMain(VSOutput input)
 {
-	return SampleBindless(u_Push.TextureIndex, u_Push.SamplerSlot, input.uv);
+	FSOutput output;
+	output.color = SampleBindless(u_Push.TextureIndex, u_Push.SamplerSlot, input.uv);
+	output.entityID = -1;
+	return output;
 }
