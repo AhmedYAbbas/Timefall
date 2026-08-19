@@ -35,6 +35,7 @@ namespace Timefall
 			.mipLodBias = 0.0f,
 			.anisotropyEnable = desc.Anisotropic ? vk::True : vk::False,
 			.maxAnisotropy = desc.Anisotropic ? ctx.GetLimits().MaxSamplerAnisotropy : 1.0f,
+			.compareEnable = desc.CompareDepth ? vk::True : vk::False,
 			.compareOp = desc.CompareDepth ? vk::CompareOp::eLessOrEqual : vk::CompareOp::eNever,
 			.minLod = 0.0f,
 			.maxLod = vk::LodClampNone,
@@ -73,7 +74,7 @@ namespace Timefall
 			.MipMode = vk::SamplerMipmapMode::eNearest,
 			.AddressMode = vk::SamplerAddressMode::eClampToEdge});
 
-		auto ctx = VulkanContext::Get();
+		auto& ctx = VulkanContext::Get();
 		for (uint32_t i = 0; i < (uint32_t)RHI::SamplerSlot::Count; i++)
 		{
 			if (!s_Table[i])

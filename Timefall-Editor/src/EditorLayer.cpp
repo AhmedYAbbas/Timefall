@@ -120,7 +120,7 @@ namespace Timefall
 			RHI::UploadScope upload;
 
 			m_QuadVertexBuffer = RHI::GpuBuffer::CreateWithData(
-				{.Size = sizeof(quadVertices), .Usage = RHI::BufferUsage::Vertex, .DebugName = "QuadVerteices"}, quadVertices);
+				{.Size = sizeof(quadVertices), .Usage = RHI::BufferUsage::Vertex, .DebugName = "QuadVertices"}, quadVertices);
 			m_QuadIndexBuffer = RHI::GpuBuffer::CreateWithData(
 				{.Size = sizeof(quadIndices), .Usage = RHI::BufferUsage::Index, .DebugName = "QuadIndices"}, quadIndices);
 		}
@@ -235,56 +235,56 @@ namespace Timefall
 					cmd->BindVertexBuffer(*vertices.Buffer, vertices.Offset);
 					cmd->BindIndexBuffer(*indices.Buffer, RHI::IndexType::U32, indices.Offset);
 					cmd->DrawIndexed(6);
+				}
 
-					const Ref<Texture2D> atlas = s_Font ? s_Font->GetAtlasTexture() : nullptr;
-					const bool quadReady = m_QuadPipeline && m_QuadPipeline->IsValid() && m_QuadVertexBuffer
-						&& m_QuadVertexBuffer->IsValid() && m_QuadTexture && m_QuadTexture->IsValid() && atlas && atlas->GetRHITexture();
+				const Ref<Texture2D> atlas = s_Font ? s_Font->GetAtlasTexture() : nullptr;
+				const bool quadReady = m_QuadPipeline && m_QuadPipeline->IsValid() && m_QuadVertexBuffer && m_QuadVertexBuffer->IsValid()
+					&& m_QuadTexture && m_QuadTexture->IsValid() && atlas && atlas->GetRHITexture();
 
-					if (quadReady)
+				if (quadReady)
+				{
+					struct
 					{
-						struct
-						{
-							glm::mat4 ViewProjection;
-							float Time;
-						} frame{};
+						glm::mat4 ViewProjection;
+						float Time;
+					} frame{};
 
-						const float aspect = m_ViewportSize.y > 0.0f ? m_ViewportSize.x / m_ViewportSize.y : 1.778f;
-						frame.ViewProjection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, -1.0f, 1.0f)
-							* glm::rotate(glm::mat4(1.0f), 0.3f * (float)ImGui::GetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
-						frame.Time = (float)ImGui::GetTime();
+					const float aspect = m_ViewportSize.y > 0.0f ? m_ViewportSize.x / m_ViewportSize.y : 1.778f;
+					frame.ViewProjection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, -1.0f, 1.0f)
+						* glm::rotate(glm::mat4(1.0f), 0.3f * (float)ImGui::GetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+					frame.Time = (float)ImGui::GetTime();
 
-						RHI::Bindings::WriteFrameUniforms(&frame, sizeof(frame));
+					RHI::Bindings::WriteFrameUniforms(&frame, sizeof(frame));
 
-						cmd->BindPipeline(*m_QuadPipeline);
-						cmd->BindVertexBuffer(*m_QuadVertexBuffer);
-						cmd->BindIndexBuffer(*m_QuadIndexBuffer, RHI::IndexType::U32);
+					cmd->BindPipeline(*m_QuadPipeline);
+					cmd->BindVertexBuffer(*m_QuadVertexBuffer);
+					cmd->BindIndexBuffer(*m_QuadIndexBuffer, RHI::IndexType::U32);
 
-						struct QuadPush
-						{
-							glm::vec2 Center;
-							float Scale;
-							uint32_t TextureIndex;
-							uint32_t SamplerSlot;
-						};
-						static_assert(sizeof(QuadPush) == 20);
+					struct QuadPush
+					{
+						glm::vec2 Center;
+						float Scale;
+						uint32_t TextureIndex;
+						uint32_t SamplerSlot;
+					};
+					static_assert(sizeof(QuadPush) == 20);
 
-						// One image through both its views, then a second texture: the middle quad must come
-						// out visibly darker than the left, and the right proves a second bindless slot.
-						// Nearest on the 2x2 swatch keeps the quadrants flat and the comparison honest.
-						constexpr uint32_t nearestClamp = (uint32_t)RHI::SamplerSlot::NearestClampEdge;
-						constexpr uint32_t linearClamp = (uint32_t)RHI::SamplerSlot::LinearClampEdge;
+					// One image through both its views, then a second texture: the middle quad must come
+					// out visibly darker than the left, and the right proves a second bindless slot.
+					// Nearest on the 2x2 swatch keeps the quadrants flat and the comparison honest.
+					constexpr uint32_t nearestClamp = (uint32_t)RHI::SamplerSlot::NearestClampEdge;
+					constexpr uint32_t linearClamp = (uint32_t)RHI::SamplerSlot::LinearClampEdge;
 
-						const QuadPush quads[]{
-							{{-1.0f, 0.0f}, 0.5f, m_QuadTexture->GetBindlessIndex(false), nearestClamp},
-							{{0.0f, 0.0f}, 0.5f, m_QuadTexture->GetBindlessIndex(true), nearestClamp},
-							{{1.0f, 0.0f}, 0.5f, atlas->GetRHITexture()->GetBindlessIndex(false), linearClamp},
-						};
+					const QuadPush quads[]{
+						{{-1.0f, 0.0f}, 0.5f, m_QuadTexture->GetBindlessIndex(false), nearestClamp},
+						{{0.0f, 0.0f}, 0.5f, m_QuadTexture->GetBindlessIndex(true), nearestClamp},
+						{{1.0f, 0.0f}, 0.5f, atlas->GetRHITexture()->GetBindlessIndex(false), linearClamp},
+					};
 
-						for (const auto& push : quads)
-						{
-							cmd->PushConstants(&push, sizeof(push));
-							cmd->DrawIndexed(6);
-						}
+					for (const auto& push : quads)
+					{
+						cmd->PushConstants(&push, sizeof(push));
+						cmd->DrawIndexed(6);
 					}
 				}
 			}

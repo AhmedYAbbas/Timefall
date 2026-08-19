@@ -100,8 +100,6 @@ namespace Timefall::RHI
 		impl.PushStages = VulkanBindings::kAllStages;
 		impl.PushSize = reflection.PushConstantSize;
 
-		ctx.SetObjectName(impl.Layout, std::format("{}:Layout", name));
-
 		const vk::ShaderModule vertexModule = CreateModule(device, shader->GetSpirv(ShaderStage::Vertex), std::format("{}:VS", name));
 		const vk::ShaderModule fragmentModule = CreateModule(device, shader->GetSpirv(ShaderStage::Fragment), std::format("{}:FS", name));
 		if (!vertexModule || !fragmentModule)

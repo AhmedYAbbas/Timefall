@@ -63,7 +63,7 @@ namespace Timefall
 
 			if (!layout)
 			{
-				TF_CORE_ERROR("createDescriptorSetLayout failed for '{0}: {1}", name, vk::to_string(layout.error()));
+				TF_CORE_ERROR("createDescriptorSetLayout failed for '{0}': {1}", name, vk::to_string(layout.error()));
 				return nullptr;
 			}
 
@@ -153,7 +153,7 @@ namespace Timefall
 				return false;
 			}
 
-			TF_CORE_INFO("Frame uniforms: {0} bytes per slot, {1} byte stride (alignmnet {2})", RHI::FrameUniformSlotBytes,
+			TF_CORE_INFO("Frame uniforms: {0} bytes per slot, {1} byte stride (alignment {2})", RHI::FrameUniformSlotBytes,
 				s_FrameUniformStride, alignment);
 			return true;
 		}
