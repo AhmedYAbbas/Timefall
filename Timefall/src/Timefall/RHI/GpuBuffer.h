@@ -61,6 +61,8 @@ namespace Timefall::RHI
 		// nullptr for DeviceLocal. Valid for the buffer's whole lifetime - the mapping is persistent.
 		void* GetMapped() const;
 
+		void* GetNativeHandle() const;
+
 		uint64_t Size() const;
 		bool IsValid() const;
 

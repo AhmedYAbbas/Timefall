@@ -11,6 +11,8 @@
 #include "Platform/Vulkan/VulkanFrameRing.h"
 #include "Platform/Vulkan/VulkanDeletionQueue.h"
 #include "Platform/Vulkan/VulkanRHIImpl.h"
+#include "Platform/Vulkan/VulkanSamplerCache.h"
+#include "Platform/Vulkan/VulkanBindings.h"
 
 #include "Timefall/Renderer/GPUProfiler.h"
 
@@ -205,6 +207,8 @@ namespace Timefall::RHI
 		GPUProfiler::Init();
 		VulkanUploadContext::Init();
 		FrameAllocator::Init();
+		VulkanSamplerCache::Init();
+		VulkanBindings::Init();
 	}
 
 	const Limits& RenderDevice::GetLimits() const
@@ -239,6 +243,7 @@ namespace Timefall::RHI
 		// Same slot arithmetic as VulkanFrameRing::Current(); WaitForSlot has already proven this
 		// slot's previous frame retired, which is what makes the bump reset free.
 		FrameAllocator::BeginFrame((uint32_t)(m_Impl->Frames.FrameValue() % FRAMES_IN_FLIGHT));
+		VulkanBindings::BeginFrame((uint32_t)(m_Impl->Frames.FrameValue() % FRAMES_IN_FLIGHT));
 
 		(void)frame.Cmd.begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
 
@@ -366,10 +371,14 @@ namespace Timefall::RHI
 		// so FlushAll must follow it or they leak; the upload context goes last because a queued
 		// lambda may still be destroying a buffer it wrote into.
 		FrameAllocator::Shutdown();
+		VulkanBindings::Shutdown();
+		VulkanSamplerCache::Shutdown();
 		m_Impl->DeletionQueue.FlushAll();
 		VulkanUploadContext::Shutdown();
+
 		m_Impl->Frames.Shutdown();
 		m_Impl->Swapchain.Shutdown();
+
 		delete m_Impl;
 		m_Impl = nullptr;
 	}

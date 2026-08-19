@@ -163,6 +163,11 @@ namespace Timefall::RHI
 		return m_Impl ? m_Impl->Mapped : nullptr;
 	}
 
+	void* GpuBuffer::GetNativeHandle() const
+	{
+		return m_Impl ? (void*)(VkBuffer)m_Impl->Buffer : nullptr;
+	}
+
 	uint64_t GpuBuffer::Size() const
 	{
 		return m_Impl ? m_Impl->Size : 0;
