@@ -89,7 +89,7 @@ namespace Timefall::RHI
 		m_Impl = nullptr;
 	}
 
-	bool RenderTarget::Resize(uint32_t width, UINT height)
+	bool RenderTarget::Resize(uint32_t width, uint32_t height)
 	{
 		TF_PROFILE_FUNCTION();
 

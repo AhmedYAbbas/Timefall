@@ -102,8 +102,8 @@ namespace Timefall
 		quadDesc.ColorFormats[0] = RHI::Format::RGBA8Unorm;
 		quadDesc.ColorFormats[1] = RHI::Format::R32I;
 		quadDesc.ColorCount = 2;
-		triangleDesc.DepthFormat = RHI::Format::D32F;
-		triangleDesc.Depth = {.Test = true, .Write = true};
+		quadDesc.DepthFormat = RHI::Format::D32F;
+		quadDesc.Depth = {.Test = true, .Write = true};
 		quadDesc.Raster.Cull = RHI::CullMode::None;
 		quadDesc.DebugName = "TexturedQuadPipeline";
 		quadDesc.VertexLayout = {{ShaderDataType::Float2, "a_Position"}, {ShaderDataType::Float2, "a_TexCoord"}};
@@ -212,7 +212,7 @@ namespace Timefall
 				cmd->BeginPass({.DebugName = "ViewportPass",
 					.Target = m_ViewportTarget.get(),
 					.Color = {{.Load = RHI::LoadOp::Clear, .ClearValue = {0.1f, 0.1f, 0.12f, 1.0f}},
-						{.Load = RHI::LoadOp::Clear, .ClearInt = {-1, -1, -1}}},
+						{.Load = RHI::LoadOp::Clear, .ClearInt = {-1, -1, -1, 0}}},
 					.Depth = {.Load = RHI::LoadOp::Clear, .ClearDepth = 1.0f}});
 				
 				struct
