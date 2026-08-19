@@ -21,6 +21,17 @@ namespace Timefall::RHI
 	enum class LoadOp { Load = 0, Clear, DontCare };
 	enum class StoreOp { Store = 0, DontCare };
 	enum class IndexType : uint8_t { U16 = 0, U32 };
+	enum class TextureUsage : uint32_t { Sampled = BIT(0), ColorAttachment = BIT(1), DepthAttachment = BIT(2) };
+
+	constexpr TextureUsage operator|(TextureUsage a, TextureUsage b)
+	{
+		return (TextureUsage)((uint32_t)a | (uint32_t)b);
+	}
+
+	constexpr bool HasFlag(TextureUsage value, TextureUsage flag)
+	{
+		return ((uint32_t)value & (uint32_t)flag) != 0;
+	}
 
 	struct ColorTarget
 	{

@@ -8,8 +8,8 @@ namespace Timefall
 {
 	enum class GPUMemCategory : uint8_t { Textures = 0, Buffers, Framebuffers, Count };
 
-	// Byte ledger of GL allocations keyed by (category, GL object id). Re-Track with the same
-	// id replaces the old size (resize). "Tracked VRAM" = bytes requested; driver padding unseen.
+	// Byte ledger of VMA allocations keyed by (category, tracker id). Re-Track with the same id
+	// replaces the old size (resize). "Tracked VRAM" = bytes requested; driver padding unseen
 	class TF_API GPUMemoryTracker
 	{
 	public:

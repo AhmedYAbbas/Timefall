@@ -14,6 +14,7 @@ namespace Timefall::RHI
 		Format PixelFormat = Format::RGBA8Unorm;
 		uint32_t MipLevels = 1; // 0 == full chain derived from Width/Height
 		bool SRGBView = false;
+		TextureUsage Usage = TextureUsage::Sampled;
 		const char* DebugName = nullptr;
 	};
 

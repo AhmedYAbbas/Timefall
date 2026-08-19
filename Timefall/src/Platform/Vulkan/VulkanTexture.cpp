@@ -182,19 +182,32 @@ namespace Timefall::RHI
 		impl.PixelFormat = desc.PixelFormat;
 		impl.Width = desc.Width;
 		impl.Height = desc.Height;
-		impl.MipLevels = desc.MipLevels == 0 ? FullMipChain(desc.Width, desc.Height) : desc.MipLevels;
 
-		const FormatCaps& caps = GetFormatCaps(format);
-		impl.HostCopyable = caps.HostCopy;
+		const bool isAttachment = HasFlag(desc.Usage, TextureUsage::ColorAttachment) || HasFlag(desc.Usage, TextureUsage::DepthAttachment);
+		impl.IsAttachment = isAttachment;
 
-		// TransferSrc as well as TransferDst; The mip chain blits level N-1 into level N
-		vk::ImageUsageFlags usage =
-			vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
-		if (caps.HostCopy)
-			usage |= vk::ImageUsageFlagBits::eHostTransfer;
+		impl.Aspect = IsDepthFormat(desc.PixelFormat) ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
+
+		impl.MipLevels = isAttachment ? 1 : (desc.MipLevels == 0 ? FullMipChain(desc.Width, desc.Height) : desc.MipLevels);
+
+		vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eSampled;
+		if (HasFlag(desc.Usage, TextureUsage::ColorAttachment))
+			usage |= vk::ImageUsageFlagBits::eColorAttachment;
+		if (HasFlag(desc.Usage, TextureUsage::DepthAttachment))
+			usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
+
+		if (!isAttachment)
+		{
+			const FormatCaps& caps = GetFormatCaps(format);
+			impl.HostCopyable = caps.HostCopy;
+
+			usage |= vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
+			if (caps.HostCopy)
+				usage |= vk::ImageUsageFlagBits::eHostTransfer;
+		}
 
 		const vk::Format srgbFormat = SRGBCounterpart(format);
-		const bool wantsSRGBView = desc.SRGBView && srgbFormat != vk::Format::eUndefined;
+		const bool wantsSRGBView = desc.SRGBView && srgbFormat != vk::Format::eUndefined && !isAttachment;
 
 		const vk::Format viewFormats[]{format, srgbFormat};
 		const vk::ImageFormatListCreateInfo formatList{.viewFormatCount = 2, .pViewFormats = viewFormats};
@@ -235,8 +248,7 @@ namespace Timefall::RHI
 		auto makeView = [&](vk::Format viewFormat, std::string_view suffix) -> vk::ImageView {
 			auto view = VulkanContext::Get().GetDevice().createImageView({.image = impl.Image,
 				.viewType = vk::ImageViewType::e2D,
-				.format = viewFormat,
-				.subresourceRange = ColorRange(impl.MipLevels)});
+				.format = viewFormat, .subresourceRange = {impl.Aspect, 0, impl.MipLevels, 0, 1}});
 
 			if (!view)
 			{
@@ -253,7 +265,10 @@ namespace Timefall::RHI
 			impl.SRGBView = makeView(srgbFormat, "SRGBView");
 
 		impl.TrackerId = s_NextTrackerId++;
-		GPUMemoryTracker::Track(GPUMemCategory::Textures, impl.TrackerId, allocated.size);
+		GPUMemoryTracker::Track(isAttachment ? GPUMemCategory::Framebuffers : GPUMemCategory::Textures, impl.TrackerId, allocated.size);
+
+		if (isAttachment)
+			return texture;
 
 		if (impl.HostCopyable)
 		{
@@ -282,6 +297,8 @@ namespace Timefall::RHI
 			});
 		}
 
+		impl.CurrentLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
 		return texture;
 	}
 
@@ -303,6 +320,12 @@ namespace Timefall::RHI
 		if (!IsValid() || !data)
 		{
 			TF_CORE_ERROR("Texture::Upload on an invalid texture, or with no data");
+			return false;
+		}
+
+		if (m_Impl->IsAttachment)
+		{
+			TF_CORE_ERROR("Texture::Upload on a render target attachment - attachments are rendered into, not uploaded");
 			return false;
 		}
 
@@ -390,7 +413,7 @@ namespace Timefall::RHI
 
 		if (m_Impl->Image)
 		{
-			GPUMemoryTracker::Untrack(GPUMemCategory::Textures, m_Impl->TrackerId);
+			GPUMemoryTracker::Untrack(m_Impl->IsAttachment ? GPUMemCategory::Framebuffers : GPUMemCategory::Textures, m_Impl->TrackerId);
 			RenderDevice::Get().DeferDestroy(
 				[image = m_Impl->Image, view = m_Impl->View, srgbView = m_Impl->SRGBView, allocation = m_Impl->Allocation,
 					uiHandle = m_Impl->UIHandle, uiDestroy = m_Impl->UIHandleDestroy, bindless = m_Impl->BindlessIndex, bindlessSRGB = m_Impl->BindlessSRGBIndex]() {

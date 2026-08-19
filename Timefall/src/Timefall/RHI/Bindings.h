@@ -6,8 +6,7 @@
 
 namespace Timefall::RHI
 {
-	enum class SamplerSlot : uint32_t
-	{
+	enum class SamplerSlot : uint32_t {
 		LinearRepeat = 0, // every material texture: linear, mip-linear, repeat, max anisotropy
 		LinearClampEdge, // MSDF atlases, IBL, fullscreen resolves
 		NearestClampEdge, // point-sampled reads: entity IDs, unfiltered blits

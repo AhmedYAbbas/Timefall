@@ -43,6 +43,16 @@ namespace Timefall::RHI
 		}
 	}
 
+	inline bool IsDepthFormat(Format format)
+	{
+		return format == Format::D32F;
+	}
+
+	inline bool IsIntegerFormat(Format format)
+	{
+		return format == Format::R32I;
+	}
+
 	struct CommandList::Impl
 	{
 		vk::CommandBuffer Cmd;
@@ -93,6 +103,9 @@ namespace Timefall::RHI
 		uint32_t BindlessIndex = UINT32_MAX;
 		uint32_t BindlessSRGBIndex = UINT32_MAX;
 		bool HostCopyable = false;
+		vk::ImageLayout CurrentLayout = vk::ImageLayout::eUndefined;
+		vk::ImageAspectFlagBits Aspect = vk::ImageAspectFlagBits::eColor;
+		bool IsAttachment = false;
 		void* UIHandle = nullptr;
 		void (*UIHandleDestroy)(void*) = nullptr;
 	};
