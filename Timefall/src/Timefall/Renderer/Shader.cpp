@@ -7,6 +7,28 @@ namespace Timefall
 {
 	static const std::string s_Empty;
 
+	uint64_t Shader::ModuleHash(std::span<const Entry> entries)
+	{
+		uint64_t hash = 14695981039346656037ull;
+		const auto mix = [&hash](const void* data, size_t size) {
+			const auto* bytes = (const uint8_t*)data;
+			for (size_t i = 0; i < size; i++)
+			{
+				hash ^= bytes[i];
+				hash *= 1099511628211ull;
+			}
+		};
+
+		for (const auto& entry : entries)
+		{
+			mix(entry.Name.data(), entry.Name.size());
+			mix(&entry.Stage, sizeof(entry.Stage));
+			mix(entry.Spirv.data(), entry.Spirv.size() * sizeof(uint32_t));
+		}
+
+		return hash;
+	}
+
 	Shader::Shader(const std::filesystem::path& path)
 		: m_Path(path),
 		  m_Name(path.stem().string())
@@ -37,7 +59,14 @@ namespace Timefall
 
 		m_Reflection = std::move(compiled->Reflection);
 		m_Dependencies = std::move(compiled->Dependencies);
-		++m_Revision;
+
+		const uint64_t hash = ModuleHash(m_EntryPoints);
+		if (hash != m_ModuleHash)
+		{
+			m_ModuleHash = hash;
+			++m_Revision;
+		}
+
 		return true;
 	}
 
@@ -52,8 +81,11 @@ namespace Timefall
 			return false;
 		}
 
+		if (m_Revision == previous)
+			return false;
+
 		TF_CORE_INFO("Shader '{0}' reloaded (revision {1})", m_Name, m_Revision);
-		return m_Revision != previous;
+		return true;
 	}
 
 	bool Shader::HasStage(ShaderStage stage) const

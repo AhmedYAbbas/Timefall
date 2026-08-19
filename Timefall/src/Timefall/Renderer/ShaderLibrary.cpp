@@ -21,7 +21,37 @@ namespace Timefall
 	}
 
 	static Scope<filewatch::FileWatch<std::wstring>> s_Watcher;
-	static std::atomic<bool> s_ReloadPending = false;
+	static std::atomic<uint64_t> s_EventGeneration = 0;
+	static std::atomic<bool> s_ReloadScheduled = false;
+
+	static void ScheduleReload();
+
+	static void RunReload()
+	{
+		const uint64_t serviced = s_EventGeneration.load();
+
+		uint32_t reloaded = 0;
+		ShaderLibrary::ForEach([&reloaded](const Ref<Shader>& shader) { reloaded += shader->Reload() ? 1 : 0; });
+
+		if (reloaded > 0)
+		{
+			const uint32_t rebuilt = RHI::GraphicsPipeline::RecreateAll();
+			TF_CORE_INFO("Shader reload: {0} module(s) changed, {1} pipeline(s) rebuilt", reloaded, rebuilt);
+		}
+
+		s_ReloadScheduled = false;
+
+		if (s_EventGeneration.load() != serviced)
+			ScheduleReload();
+	}
+
+	static void ScheduleReload()
+	{
+		if (s_ReloadScheduled.exchange(true))
+			return;
+
+		Application::Get().SubmitToMainThread(RunReload);
+	}
 
 	static void OnShaderFileEvent(const std::wstring& path, const filewatch::Event change)
 	{
@@ -30,22 +60,8 @@ namespace Timefall
 		if (std::filesystem::path(path).extension() != ".slang")
 			return;
 
-		// Editors emit two events per save; collapse them into one main-thread reload
-		if (s_ReloadPending.exchange(true))
-			return;
-
-		Application::Get().SubmitToMainThread([]() {
-			s_ReloadPending = false;
-
-			uint32_t reloaded = 0;
-			ShaderLibrary::ForEach([&reloaded](const Ref<Shader>& shader) { reloaded += shader->Reload() ? 1 : 0; });
-
-			if (reloaded == 0)
-				return;
-
-			const uint32_t rebuilt = RHI::GraphicsPipeline::RecreateAll();
-			TF_CORE_INFO("Shader reload: {0} module(s) changed, {1} pipeline(s) rebuilt", reloaded, rebuilt);
-		});
+		s_EventGeneration.fetch_add(1);
+		ScheduleReload();
 	}
 
 	Ref<Shader> ShaderLibrary::Load(const std::filesystem::path& path)

@@ -42,11 +42,14 @@ namespace Timefall
 			std::vector<uint32_t> Spirv;
 		};
 
+		static uint64_t ModuleHash(std::span<const Entry> entries);
+
 		std::filesystem::path m_Path;
 		std::string m_Name;
 		std::vector<Entry> m_EntryPoints;
 		ShaderReflection m_Reflection;
 		std::vector<std::filesystem::path> m_Dependencies;
+		uint64_t m_ModuleHash = 0;
 		uint32_t m_Revision = 0;
 	};
 }
