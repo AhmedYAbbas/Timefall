@@ -34,7 +34,7 @@ namespace Timefall::RHI
 	};
 
 	static void TransitionImage(vk::CommandBuffer cmd, vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
-		vk::PipelineStageFlags2 srcStage, vk::AccessFlags2 srcAccess, vk::PipelineStageFlags2 dstStage, vk::AccessFlags2 dstAccess)
+		vk::PipelineStageFlags2 srcStage, vk::AccessFlags2 srcAccess, vk::PipelineStageFlags2 dstStage, vk::AccessFlags2 dstAccess, vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor)
 	{
 		const vk::ImageMemoryBarrier2 barrier{.srcStageMask = srcStage,
 			.srcAccessMask = srcAccess,
@@ -45,9 +45,20 @@ namespace Timefall::RHI
 			.srcQueueFamilyIndex = vk::QueueFamilyIgnored,
 			.dstQueueFamilyIndex = vk::QueueFamilyIgnored,
 			.image = image,
-			.subresourceRange = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
+			.subresourceRange = {aspect, 0, vk::RemainingMipLevels, 0, vk::RemainingArrayLayers}};
 
 		cmd.pipelineBarrier2({.imageMemoryBarrierCount = 1, .pImageMemoryBarriers = &barrier});
+	}
+
+	static vk::AttachmentLoadOp ToVkLoadOp(LoadOp op)
+	{
+		return op == LoadOp::Clear ? vk::AttachmentLoadOp::eClear : op == LoadOp::Load ? vk::AttachmentLoadOp::eLoad
+								   : vk::AttachmentLoadOp::eDontCare;
+	}
+
+	static vk::AttachmentStoreOp ToVkStoreOp(StoreOp op)
+	{
+		return op == StoreOp::Store ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare;
 	}
 
 	// --------------------------------CommandList--------------------------------
@@ -56,53 +67,139 @@ namespace Timefall::RHI
 		TF_CORE_ASSERT(!m_Impl->InPass, "BeginPass called while a pass is already open");
 
 		auto& ctx = VulkanContext::Get();
-		if (ctx.IsDebugEnabled() && desc.DebugName)
+		m_Impl->PassLabelPushed = ctx.IsDebugEnabled() && desc.DebugName;
+		if (m_Impl->PassLabelPushed)
 			m_Impl->Cmd.beginDebugUtilsLabelEXT({.pLabelName = desc.DebugName});
 
-		const auto& target = desc.Color[0];
+		vk::RenderingAttachmentInfo colorInfos[8]{};
+		vk::ClearValue colorClears[8]{};
+		uint32_t colorCount = 0;
+		vk::Extent2D extent{};
 
-		// Only Load has contents worth preserving; Clear/DontCare take Undefined so the driver
-		// can skip the reformat and discard whatever is there.
-		const vk::ImageLayout oldLayout = target.Load == LoadOp::Load ? *m_Impl->TargetLayout : vk::ImageLayout::eUndefined;
+		if (desc.Target)
+		{
+			TF_CORE_ASSERT(desc.Target->IsValid(), "BeginPass on an invalid RenderTarget");
 
-		// srcStage must match the stage EndFrame waits ImageAvailable on, or the transition
-		// (an image write) can run before the presentation engine has released the image.
-		// dstAccess needs Read as well as Write: LoadOp::Load and blending both read the attachment.
-		TransitionImage(m_Impl->Cmd, m_Impl->TargetImage, oldLayout, vk::ImageLayout::eColorAttachmentOptimal,
-			vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eNone,
-			vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-			vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentRead);
+			colorCount = desc.Target->GetColorCount();
+			extent = {desc.Target->GetWidth(), desc.Target->GetHeight()};
 
-		*m_Impl->TargetLayout = vk::ImageLayout::eColorAttachmentOptimal;
+			for (uint32_t i = 0; i < colorCount; i++)
+			{
+				const ColorTarget& target = desc.Color[i];
+				Texture::Impl& attachment = *desc.Target->GetColor(i)->m_Impl;
 
-		vk::ClearValue clear{};
-		clear.color =
-			vk::ClearColorValue{std::array{target.ClearValue[0], target.ClearValue[1], target.ClearValue[2], target.ClearValue[3]}};
+				const vk::ImageLayout oldLayout = target.Load == LoadOp::Load ? attachment.CurrentLayout : vk::ImageLayout::eUndefined;
 
-		const vk::RenderingAttachmentInfo color{.imageView = m_Impl->TargetView,
-			.imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
-			.loadOp = target.Load == LoadOp::Clear ? vk::AttachmentLoadOp::eClear
-				: target.Load == LoadOp::Load      ? vk::AttachmentLoadOp::eLoad
-												   : vk::AttachmentLoadOp::eDontCare,
-			.storeOp = target.Store == StoreOp::Store ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
-			.clearValue = clear};
+				TransitionImage(m_Impl->Cmd, attachment.Image, oldLayout, vk::ImageLayout::eColorAttachmentOptimal,
+					vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderSampledRead,
+					vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+					vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentRead);
 
-		m_Impl->Cmd.beginRendering(
-			{.renderArea = {{0, 0}, m_Impl->TargetExtent}, .layerCount = 1, .colorAttachmentCount = 1, .pColorAttachments = &color});
+				attachment.CurrentLayout = vk::ImageLayout::eColorAttachmentOptimal;
+
+				if (IsIntegerFormat(attachment.PixelFormat))
+					colorClears[i].color.int32 = std::array{target.ClearInt[0], target.ClearInt[1], target.ClearInt[2], target.ClearInt[3]};
+				else
+					colorClears[i].color.float32 =
+						std::array{target.ClearValue[0], target.ClearValue[1], target.ClearValue[2], target.ClearValue[3]};
+
+				colorInfos[i] = {.imageView = attachment.View,
+					.imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+					.loadOp = ToVkLoadOp(target.Load),
+					.storeOp = ToVkStoreOp(target.Store),
+					.clearValue = colorClears[i]};
+			}
+		}
+		else
+		{
+			const ColorTarget& target = desc.Color[0];
+
+			colorCount = 1;
+			extent = m_Impl->SwapExtent;
+
+			const vk::ImageLayout oldLayout = target.Load == LoadOp::Load ? *m_Impl->SwapLayout : vk::ImageLayout::eUndefined;
+
+			TransitionImage(m_Impl->Cmd, m_Impl->SwapImage, oldLayout, vk::ImageLayout::eColorAttachmentOptimal,
+				vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eNone,
+				vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+				vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentRead);
+
+			*m_Impl->SwapLayout = vk::ImageLayout::eColorAttachmentOptimal;
+
+			colorClears[0].color.float32 =
+				std::array{target.ClearValue[0], target.ClearValue[1], target.ClearValue[2], target.ClearValue[3]};
+
+			colorInfos[0] = {.imageView = m_Impl->SwapView,
+				.imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+				.loadOp = ToVkLoadOp(target.Load),
+				.storeOp = ToVkStoreOp(target.Store),
+				.clearValue = colorClears[0]};
+		}
+
+		vk::RenderingAttachmentInfo depthInfo{};
+		const bool hasDepth = desc.Target && desc.Target->GetDepth();
+
+		if (hasDepth)
+		{
+			Texture::Impl& attachment = *desc.Target->GetDepth()->m_Impl;
+
+			const vk::ImageLayout oldLayout = desc.Depth.Load == LoadOp::Load ? attachment.CurrentLayout : vk::ImageLayout::eUndefined;
+
+			TransitionImage(m_Impl->Cmd, attachment.Image, oldLayout, vk::ImageLayout::eDepthAttachmentOptimal,
+				vk::PipelineStageFlagBits2::eLateFragmentTests, vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+				vk::PipelineStageFlagBits2::eEarlyFragmentTests,
+				vk::AccessFlagBits2::eDepthStencilAttachmentWrite | vk::AccessFlagBits2::eDepthStencilAttachmentRead,
+				vk::ImageAspectFlagBits::eDepth);
+
+			attachment.CurrentLayout = vk::ImageLayout::eDepthAttachmentOptimal;
+
+			vk::ClearValue depthClear{};
+			depthClear.depthStencil = vk::ClearDepthStencilValue{.depth = desc.Depth.ClearDepth, .stencil = 0};
+
+			depthInfo = {.imageView = attachment.View,
+				.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal,
+				.loadOp = ToVkLoadOp(desc.Depth.Load),
+				.storeOp = ToVkStoreOp(desc.Depth.Store),
+				.clearValue = depthClear};
+		}
+
+		m_Impl->Cmd.beginRendering({.renderArea = {{0, 0}, extent}, .layerCount = 1, .colorAttachmentCount = colorCount, .pColorAttachments = colorInfos, .pDepthAttachment = hasDepth ? &depthInfo : nullptr});
 
 		m_Impl->InPass = true;
+		m_Impl->PassTarget = desc.Target;
+		m_Impl->PassColorCount = colorCount;
 
-		SetViewport(0, 0, m_Impl->TargetExtent.width, m_Impl->TargetExtent.height);
-		SetScissor(0, 0, m_Impl->TargetExtent.width, m_Impl->TargetExtent.height);
+		SetViewport(0, 0, extent.width, extent.height);
+		SetScissor(0, 0, extent.width, extent.height);
 	}
 
 	void CommandList::EndPass()
 	{
 		m_Impl->Cmd.endRendering();
+
+		if (m_Impl->PassTarget)
+		{
+			for (uint32_t i = 0; i < m_Impl->PassColorCount; i++)
+			{
+				Texture::Impl& attachment = *m_Impl->PassTarget->GetColor(i)->m_Impl;
+
+				TransitionImage(m_Impl->Cmd, attachment.Image, attachment.CurrentLayout, vk::ImageLayout::eShaderReadOnlyOptimal,
+					vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentWrite,
+					vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderSampledRead);
+
+				attachment.CurrentLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+			}
+		}
+
+		m_Impl->PassTarget = nullptr;
+		m_Impl->PassColorCount = 0;
 		m_Impl->InPass = false;
 
-		if (VulkanContext::Get().IsDebugEnabled())
+		if (m_Impl->PassLabelPushed)
+		{
 			m_Impl->Cmd.endDebugUtilsLabelEXT();
+			m_Impl->PassLabelPushed = false;
+		}
 	}
 
 	void CommandList::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
@@ -255,10 +352,10 @@ namespace Timefall::RHI
 		m_Impl->ImageIndex = imageIndex;
 		m_Impl->FrameSignalValue = signalValue;
 		m_Impl->ListImpl.Cmd = frame.Cmd;
-		m_Impl->ListImpl.TargetImage = m_Impl->Swapchain.GetImage(imageIndex);
-		m_Impl->ListImpl.TargetView = m_Impl->Swapchain.GetImageView(imageIndex);
-		m_Impl->ListImpl.TargetExtent = m_Impl->Swapchain.GetExtent();
-		m_Impl->ListImpl.TargetLayout = &m_Impl->Swapchain.GetImageLayout(imageIndex);
+		m_Impl->ListImpl.SwapImage = m_Impl->Swapchain.GetImage(imageIndex);
+		m_Impl->ListImpl.SwapView = m_Impl->Swapchain.GetImageView(imageIndex);
+		m_Impl->ListImpl.SwapExtent = m_Impl->Swapchain.GetExtent();
+		m_Impl->ListImpl.SwapLayout = &m_Impl->Swapchain.GetImageLayout(imageIndex);
 		m_Impl->FrameActive = true;
 
 		return &m_Impl->List;
@@ -275,11 +372,11 @@ namespace Timefall::RHI
 		// Tracked: a frame that opened no pass never reached ColorAttachmentOptimal.
 		// dstStage must match the stage RenderFinished is signalled at, or present can begin
 		// before this transition completes.
-		TransitionImage(frame.Cmd, m_Impl->ListImpl.TargetImage, *m_Impl->ListImpl.TargetLayout, vk::ImageLayout::ePresentSrcKHR,
+		TransitionImage(frame.Cmd, m_Impl->ListImpl.SwapImage, *m_Impl->ListImpl.SwapLayout, vk::ImageLayout::ePresentSrcKHR,
 			vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentWrite,
 			vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eNone);
 
-		*m_Impl->ListImpl.TargetLayout = vk::ImageLayout::ePresentSrcKHR;
+		*m_Impl->ListImpl.SwapLayout = vk::ImageLayout::ePresentSrcKHR;
 
 		GPUProfiler::Collect();
 		(void)frame.Cmd.end();

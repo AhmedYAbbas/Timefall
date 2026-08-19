@@ -33,20 +33,28 @@ namespace Timefall::RHI
 		return ((uint32_t)value & (uint32_t)flag) != 0;
 	}
 
+	class RenderTarget;
+
 	struct ColorTarget
 	{
-		void* Image = nullptr; // nullptr == current swap chain image
 		LoadOp Load = LoadOp::Clear;
 		StoreOp Store = StoreOp::Store;
 		float ClearValue[4]{0.0f, 0.0f, 0.0f, 1.0f};
+		int32_t ClearInt[4]{};
+	};
+
+	struct DepthTarget
+	{
+		LoadOp Load = LoadOp::Clear;
+		StoreOp Store = StoreOp::Store;
+		float ClearDepth = 1.0f;
 	};
 
 	struct PassDesc
 	{
 		const char* DebugName = nullptr;
+		RenderTarget* Target = nullptr;
 		ColorTarget Color[8]{};
-		uint32_t ColorCount = 0;
-		uint32_t Width = 0;
-		uint32_t Height = 0;
+		DepthTarget Depth{};
 	};
 }

@@ -149,8 +149,7 @@ namespace Timefall
 			}
 
 			const RHI::PassDesc pass{.DebugName = "MainPass",
-				.Color = {{.Load = RHI::LoadOp::Clear, .ClearValue = {0.15f, 0.15f, 0.20f, 1.0f}}},
-				.ColorCount = 1};
+				.Color = {{.Load = RHI::LoadOp::Clear, .ClearValue = {0.15f, 0.15f, 0.20f, 1.0f}}}};
 			cmd->BeginPass(pass);
 
 			if (!m_Minimized)

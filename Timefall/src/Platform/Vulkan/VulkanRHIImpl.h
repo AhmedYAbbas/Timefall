@@ -8,6 +8,7 @@
 #include "Timefall/RHI/Pipeline.h"
 #include "Timefall/RHI/GpuBuffer.h"
 #include "Timefall/RHI/Texture.h"
+#include "Timefall/RHI/RenderTarget.h"
 
 namespace Timefall::RHI
 {
@@ -56,11 +57,16 @@ namespace Timefall::RHI
 	struct CommandList::Impl
 	{
 		vk::CommandBuffer Cmd;
-		vk::Image TargetImage;
-		vk::ImageView TargetView;
-		vk::Extent2D TargetExtent;
-		vk::ImageLayout* TargetLayout = nullptr; // points at the owner's layout slot, updated in place
+
+		vk::Image SwapImage;
+		vk::ImageView SwapView;
+		vk::Extent2D SwapExtent;
+		vk::ImageLayout* SwapLayout = nullptr;
+
 		bool InPass = false;
+		bool PassLabelPushed = false;
+		RenderTarget* PassTarget = nullptr;
+		uint32_t PassColorCount = 0;
 
 		vk::PipelineLayout BoundLayout;
 		vk::ShaderStageFlags BoundPushStages;
