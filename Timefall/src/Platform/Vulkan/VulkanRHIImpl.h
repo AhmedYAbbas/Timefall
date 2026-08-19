@@ -90,6 +90,8 @@ namespace Timefall::RHI
 		uint32_t Height = 0;
 		uint32_t MipLevels = 1;
 		uint32_t TrackerId = 0;
+		uint32_t BindlessIndex = UINT32_MAX;
+		uint32_t BindlessSRGBIndex = UINT32_MAX;
 		bool HostCopyable = false;
 		void* UIHandle = nullptr;
 		void (*UIHandleDestroy)(void*) = nullptr;

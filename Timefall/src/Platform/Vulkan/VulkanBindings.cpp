@@ -3,9 +3,10 @@
 
 #include "Platform/Vulkan/VulkanContext.h"
 #include "Platform/Vulkan/VulkanSamplerCache.h"
+#include "Platform/Vulkan/VulkanBindlessTable.h"
 
 #include "Timefall/RHI/GpuBuffer.h"
-#include "Timefall/Renderer/ShaderReflection.h"
+#include "Timefall/RHI/Texture.h"
 
 namespace Timefall
 {
@@ -18,6 +19,7 @@ namespace Timefall
 		vk::PipelineLayout s_GlobalLayout;
 
 		Ref<RHI::GpuBuffer> s_FrameUniforms;
+		Ref<RHI::Texture> s_WhiteTexture;
 		uint64_t s_FrameUniformStride = 0;
 		uint32_t s_Slot = 0;
 		bool s_Ready = false;
@@ -151,6 +153,22 @@ namespace Timefall
 			return true;
 		}
 
+		bool CreateWhiteTexture()
+		{
+			constexpr uint32_t white = 0xFFFFFFFF;
+
+			s_WhiteTexture = RHI::Texture::CreateWithData(
+				{.Width = 1, .Height = 1, .PixelFormat = RHI::Format::RGBA8Unorm, .MipLevels = 1, .SRGBView = false, .DebugName = "BindlessWhite"}, &white, sizeof(white));
+
+			if (!s_WhiteTexture || !s_WhiteTexture->IsValid())
+			{
+				TF_CORE_ERROR("The bindless white texture failed to create");
+				return false;
+			}
+
+			return true;
+		}
+
 		void WriteInitialDescriptors()
 		{
 			const vk::DescriptorBufferInfo frameInfo{.buffer = (VkBuffer)s_FrameUniforms->GetNativeHandle(), .offset = 0, .range = RHI::FrameUniformSlotBytes};
@@ -201,13 +219,14 @@ namespace Timefall
 		}
 
 		if (!CreatePool(capacity) || !CreateSetLayouts(capacity) || !AllocateSets(capacity) || !CreateFrameUniforms()
-			|| !CreateGlobalLayout())
+			|| !CreateGlobalLayout() || !CreateWhiteTexture())
 		{
 			Shutdown();
 			return;
 		}
 
 		WriteInitialDescriptors();
+		VulkanBindlessTable::Init(s_Sets[2], capacity, (VkImageView)s_WhiteTexture->GetNativeView());
 		s_Ready = true;
 
 		TF_CORE_INFO(
@@ -220,6 +239,8 @@ namespace Timefall
 
 		auto device = VulkanContext::Get().GetDevice();
 
+		VulkanBindlessTable::Shutdown();
+		s_WhiteTexture.reset();
 		s_FrameUniforms.reset();
 
 		if (s_GlobalLayout)
@@ -283,5 +304,20 @@ namespace Timefall
 		}
 
 		return s_FrameUniforms->Write(data, size, s_Slot * s_FrameUniformStride);
+	}
+
+	uint32_t RHI::Bindings::GetBindlessCapacity()
+	{
+		return VulkanBindlessTable::GetCapacity();
+	}
+
+	uint32_t RHI::Bindings::GetBindlessUsed()
+	{
+		return VulkanBindlessTable::GetUsed();
+	}
+
+	uint32_t RHI::Bindings::GetWhiteTextureIndex()
+	{
+		return VulkanBindlessTable::WhiteIndex;
 	}
 }

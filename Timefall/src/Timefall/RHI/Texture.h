@@ -37,6 +37,7 @@ namespace Timefall::RHI
 		bool IsValid() const;
 
 		void* GetNativeView(bool srgb = false) const;
+		uint32_t GetBindlessIndex(bool srgb = false);
 
 		void* GetUIHandle() const;
 		void SetUIHandle(void* handle, void (*destroy)(void*));

@@ -7,6 +7,7 @@
 #include "Platform/Vulkan/VulkanContext.h"
 #include "Platform/Vulkan/VulkanRHIImpl.h"
 #include "Platform/Vulkan/VulkanUploadContext.h"
+#include "Platform/Vulkan/VulkanBindlessTable.h"
 #include "Platform/Vulkan/GPUMemoryTracker.h"
 
 namespace Timefall::RHI
@@ -392,7 +393,11 @@ namespace Timefall::RHI
 			GPUMemoryTracker::Untrack(GPUMemCategory::Textures, m_Impl->TrackerId);
 			RenderDevice::Get().DeferDestroy(
 				[image = m_Impl->Image, view = m_Impl->View, srgbView = m_Impl->SRGBView, allocation = m_Impl->Allocation,
-					uiHandle = m_Impl->UIHandle, uiDestroy = m_Impl->UIHandleDestroy]() {
+					uiHandle = m_Impl->UIHandle, uiDestroy = m_Impl->UIHandleDestroy, bindless = m_Impl->BindlessIndex, bindlessSRGB = m_Impl->BindlessSRGBIndex]() {
+
+					VulkanBindlessTable::Release(bindless);
+					VulkanBindlessTable::Release(bindlessSRGB);
+
 					if (uiHandle && uiDestroy)
 						uiDestroy(uiHandle);
 
@@ -442,6 +447,25 @@ namespace Timefall::RHI
 
 		const vk::ImageView view = srgb && m_Impl->SRGBView ? m_Impl->SRGBView : m_Impl->View;
 		return (void*)(VkImageView)view;
+	}
+
+	uint32_t Texture::GetBindlessIndex(bool srgb)
+	{
+		if (!IsValid())
+			return VulkanBindlessTable::WhiteIndex;
+
+		const bool wantsSRGB = srgb && m_Impl->SRGBView;
+		uint32_t& slot = wantsSRGB ? m_Impl->BindlessSRGBIndex : m_Impl->BindlessIndex;
+
+		if (slot != VulkanBindlessTable::InvalidIndex)
+			return slot;
+
+		const uint32_t index = VulkanBindlessTable::Acquire(wantsSRGB ? m_Impl->SRGBView : m_Impl->View);
+		if (index == VulkanBindlessTable::InvalidIndex)
+			return VulkanBindlessTable::WhiteIndex;
+
+		slot = index;
+		return slot;
 	}
 
 	void* Texture::GetUIHandle() const
