@@ -23,6 +23,10 @@ namespace Timefall
 		return gipa;
 	}
 
+	constexpr std::string_view s_SuppressedMessageIds[]{
+		"BestPractices-PushConstants",
+	};
+
 	VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT severity, vk::DebugUtilsMessageTypeFlagsEXT type,
 		const vk::DebugUtilsMessengerCallbackDataEXT* data, void*)
 	{
@@ -31,12 +35,19 @@ namespace Timefall
 
 		const char* tag = (type & Type::ePerformance) ? "[Vulkan][Perf]" : "[Vulkan]";
 
+		// The message id names the check: a VUID- prefix is a spec violation, anything else is the
+		// layer's own advice. Without it a warning and an error read the same in the log.
+		const char* id = data->pMessageIdName ? data->pMessageIdName : "<no-id>";
+
+		if (std::ranges::contains(s_SuppressedMessageIds, std::string_view(id)))
+			return vk::False;
+
 		if (severity & Severity::eError)
-			TF_CORE_ERROR("{0} {1}", tag, data->pMessage);
+			TF_CORE_ERROR("{0}[{1}] {2}", tag, id, data->pMessage);
 		else if (severity & Severity::eWarning)
-			TF_CORE_WARN("{0} {1}", tag, data->pMessage);
+			TF_CORE_WARN("{0}[{1}] {2}", tag, id, data->pMessage);
 		else
-			TF_CORE_INFO("{0} {1}", tag, data->pMessage);
+			TF_CORE_INFO("{0}[{1}] {2}", tag, id, data->pMessage);
 
 		return vk::False;
 	}
@@ -209,8 +220,9 @@ namespace Timefall
 
 		const std::pair<vk::Bool32, const char*> required[]{{s11.shaderDrawParameters, "shaderDrawParameters"},
 			{s12.timelineSemaphore, "timelineSemaphore"}, {s14.hostImageCopy, "hostImageCopy"}, {s14.maintenance5, "maintenance5"},
-			{s14.maintenance6, "maintenance6"}, {s13.dynamicRendering, "dynamicRendering"}, {s13.synchronization2, "synchronization2"},
-			{s12.descriptorIndexing, "descriptorIndexing"}, {s12.runtimeDescriptorArray, "runtimeDescriptorArray"},
+			{s14.maintenance6, "maintenance6"}, {s13.maintenance4, "maintenance4"}, {s13.dynamicRendering, "dynamicRendering"},
+			{s13.synchronization2, "synchronization2"}, {s12.descriptorIndexing, "descriptorIndexing"},
+			{s12.runtimeDescriptorArray, "runtimeDescriptorArray"},
 			{s12.descriptorBindingPartiallyBound, "descriptorBindingPartiallyBound"},
 			{s12.descriptorBindingVariableDescriptorCount, "descriptorBindingVariableDescriptorCount"},
 			{s12.descriptorBindingSampledImageUpdateAfterBind, "descriptorBindingSampledImageUpdateAfterBind"},
@@ -229,6 +241,7 @@ namespace Timefall
 		vk::PhysicalDeviceVulkan13Features f13{.pNext = &f14};
 		f13.dynamicRendering = vk::True;
 		f13.synchronization2 = vk::True;
+		f13.maintenance4 = vk::True; // a draw may push a subrange of the layout's shared 128-byte range
 
 		vk::PhysicalDeviceVulkan12Features f12{.pNext = &f13};
 		f12.timelineSemaphore = vk::True; // the frame clock; there are no fences

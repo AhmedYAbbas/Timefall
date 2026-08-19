@@ -1,11 +1,15 @@
 #include "ProfilerPanel.h"
 
 #include "Timefall/Debug/PerformanceStats.h"
+#include "Timefall/Debug/RenderDocCapture.h"
+
 #include "Timefall/Renderer/Renderer2D.h"
 #include "Timefall/Renderer/Renderer3D.h"
+
+#include "Timefall/RHI/Bindings.h"
+
 #include "Platform/Vulkan/GPUMemoryTracker.h"
 
-#include "Timefall/Debug/RenderDocCapture.h"
 
 #include <imgui/imgui.h>
 
@@ -94,6 +98,8 @@ namespace Timefall
 			ImGui::Text("  Textures: %.1f MB", ToMB(GPUMemoryTracker::GetBytes(GPUMemCategory::Textures)));
 			ImGui::Text("  Buffers: %.1f MB", ToMB(GPUMemoryTracker::GetBytes(GPUMemCategory::Buffers)));
 			ImGui::Text("  Framebuffers: %.1f MB", ToMB(GPUMemoryTracker::GetBytes(GPUMemCategory::Framebuffers)));
+			ImGui::Separator();
+			ImGui::Text("Bindless textures: %u / %u", RHI::Bindings::GetBindlessUsed(), RHI::Bindings::GetBindlessCapacity());
 		}
 
 		ImGui::End();

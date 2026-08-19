@@ -66,6 +66,12 @@ namespace Timefall
 		Ref<RHI::GpuBuffer> m_TriangleVertexBuffer;
 		Ref<RHI::GpuBuffer> m_TriangleIndexBuffer;
 
+		Ref<Shader> m_QuadShader;
+		Ref<RHI::GraphicsPipeline> m_QuadPipeline;
+		Ref<RHI::GpuBuffer> m_QuadVertexBuffer;
+		Ref<RHI::GpuBuffer> m_QuadIndexBuffer;
+		Ref<RHI::Texture> m_QuadTexture; // mid-tone bring-up swatch; the editor's icons are black-on-alpha
+
 		// Temp
 		Ref<Framebuffer> m_Framebuffer;
 

@@ -47,19 +47,19 @@ project "Timefall-Editor"
 		"Timefall"
 	}
 
-	filter "files:assets/shaders/**.slang"
+	filter "files:Assets/Shaders/*.slang"
 		buildmessage "Validating %{file.relpath}"
 		buildcommands{
-			'"$(VULKAN_SDK)/Bin/slangc.exe" "%{file.relpath}" -I "assets/shaders" -target spirv -profile spirv_1_6 -matrix-layout-column-major -o "%{cfg.objdir}/shaders/%{file.basename}.spv"'
+			'"$(VULKAN_SDK)/Bin/slangc.exe" "%{file.relpath}" -I "Assets/Shaders" -target spirv -profile spirv_1_6 -matrix-layout-column-major -o "%{cfg.objdir}/Shaders/%{file.basename}.spv"'
 		}
-		buildoutputs { "%{cfg.objdir}/shaders/%{file.basename}.spv" }
+		buildoutputs { "%{cfg.objdir}/Shaders/%{file.basename}.spv" }
 	filter {}
 
-	filter "files:assets/shaders/Common/**.slang"
+	filter "files:Assets/Shaders/Common/**.slang"
 		buildaction "None"
 	filter {}
 
-	filter "files:assets/shaders/Renderer3D_HDRResolve.slang"
+	filter "files:Assets/Shaders/Renderer3D_HDRResolve.slang"
 		buildaction "None"
 	filter {}
 

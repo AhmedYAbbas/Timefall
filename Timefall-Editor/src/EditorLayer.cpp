@@ -16,6 +16,7 @@
 #include "Timefall/RHI/RenderDevice.h"
 #include "Timefall/RHI/CommandList.h"
 #include "Timefall/RHI/FrameAllocator.h"
+#include "Timefall/RHI/Bindings.h"
 
 #include "Timefall/ImGui/ImGuiTextures.h"
 
@@ -42,11 +43,11 @@ namespace Timefall
 	{
 		TF_PROFILE_FUNCTION();
 
-		m_PlayIcon = TextureImporter::LoadTexture2D("resources/icons/PlayButton.png");
-		m_PauseIcon = TextureImporter::LoadTexture2D("resources/icons/PauseButton.png");
-		m_SimulateIcon = TextureImporter::LoadTexture2D("resources/icons/SimulateButton.png");
-		m_StepIcon = TextureImporter::LoadTexture2D("resources/icons/StepButton.png");
-		m_StopIcon = TextureImporter::LoadTexture2D("resources/icons/StopButton.png");
+		m_PlayIcon = TextureImporter::LoadTexture2D("Resources/Icons/PlayButton.png");
+		m_PauseIcon = TextureImporter::LoadTexture2D("Resources/Icons/PauseButton.png");
+		m_SimulateIcon = TextureImporter::LoadTexture2D("Resources/Icons/SimulateButton.png");
+		m_StepIcon = TextureImporter::LoadTexture2D("Resources/Icons/StepButton.png");
+		m_StopIcon = TextureImporter::LoadTexture2D("Resources/Icons/StopButton.png");
 
 		FramebufferSpecification fbSpec;
 		fbSpec.Attachments = {FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::DEPTH};
@@ -54,7 +55,7 @@ namespace Timefall
 		fbSpec.Height = 720;
 		m_Framebuffer = Framebuffer::Create(fbSpec);
 
-		m_TriangleShader = ShaderLibrary::Load("assets/shaders/Triangle.slang");
+		m_TriangleShader = ShaderLibrary::Load("Assets/Shaders/Triangle.slang");
 
 		RHI::GraphicsPipelineDesc triangleDesc;
 		triangleDesc.ShaderModule = m_TriangleShader;
@@ -90,7 +91,53 @@ namespace Timefall
 				{.Size = sizeof(triangleIndices), .Usage = RHI::BufferUsage::Index, .DebugName = "TriangleIndices"}, triangleIndices);
 		}
 
-		ShaderLibrary::EnableHotReload("assets/shaders");
+		m_QuadShader = ShaderLibrary::Load("Assets/Shaders/TexturedQuad.slang");
+
+		RHI::GraphicsPipelineDesc quadDesc;
+		quadDesc.ShaderModule = m_QuadShader;
+		quadDesc.ColorFormats[0] = RHI::RenderDevice::Get().GetSwapchainColorFormat();
+		quadDesc.ColorCount = 1;
+		quadDesc.Raster.Cull = RHI::CullMode::None;
+		quadDesc.DebugName = "TexturedQuadPipeline";
+		quadDesc.VertexLayout = {{ShaderDataType::Float2, "a_Position"}, {ShaderDataType::Float2, "a_TexCoord"}};
+		m_QuadPipeline = RHI::GraphicsPipeline::Create(quadDesc);
+
+		struct QuadVertex
+		{
+			glm::vec2 Position;
+			glm::vec2 UV;
+		};
+
+		constexpr QuadVertex quadVertices[]{
+			{{-0.5f, -0.5f}, {0.0f, 1.0f}},
+			{{0.5f, -0.5f}, {1.0f, 1.0f}},
+			{{0.5f, 0.5f}, {1.0f, 0.0f}},
+			{{-0.5f, 0.5f}, {0.0f, 0.0f}},
+		};
+		constexpr uint32_t quadIndices[]{0, 1, 2, 2, 3, 0};
+
+		{
+			RHI::UploadScope upload;
+
+			m_QuadVertexBuffer = RHI::GpuBuffer::CreateWithData(
+				{.Size = sizeof(quadVertices), .Usage = RHI::BufferUsage::Vertex, .DebugName = "QuadVerteices"}, quadVertices);
+			m_QuadIndexBuffer = RHI::GpuBuffer::CreateWithData(
+				{.Size = sizeof(quadIndices), .Usage = RHI::BufferUsage::Index, .DebugName = "QuadIndices"}, quadIndices);
+		}
+
+		// 0xAABBGGRR. Every channel mid-tone on purpose: sRGB decoding only shows on values away from
+		// 0 and 1, and every icon in Resources/ is a black glyph carried entirely by its alpha.
+		constexpr uint32_t quadSwatch[]{0xFF808080, 0xFF4040C0, 0xFF40C040, 0xFFC04040};
+
+		m_QuadTexture = RHI::Texture::CreateWithData({.Width = 2,
+														 .Height = 2,
+														 .PixelFormat = RHI::Format::RGBA8Unorm,
+														 .MipLevels = 1,
+														 .SRGBView = true,
+														 .DebugName = "QuadBringUpSwatch"},
+			quadSwatch, sizeof(quadSwatch));
+
+		ShaderLibrary::EnableHotReload("Assets/Shaders");
 
 		m_EditorScene = CreateRef<Scene>();
 
@@ -120,10 +167,17 @@ namespace Timefall
 		TF_PROFILE_FUNCTION();
 
 		ShaderLibrary::Shutdown();
+
 		m_TriangleShader.reset();
 		m_TrianglePipeline.reset();
 		m_TriangleVertexBuffer.reset();
 		m_TriangleIndexBuffer.reset();
+
+		m_QuadShader.reset();
+		m_QuadPipeline.reset();
+		m_QuadVertexBuffer.reset();
+		m_QuadIndexBuffer.reset();
+		m_QuadTexture.reset();
 
 		s_Font.reset(); // file-scope, so it would otherwise outlive the device along with its atlas
 	}
@@ -181,6 +235,57 @@ namespace Timefall
 					cmd->BindVertexBuffer(*vertices.Buffer, vertices.Offset);
 					cmd->BindIndexBuffer(*indices.Buffer, RHI::IndexType::U32, indices.Offset);
 					cmd->DrawIndexed(6);
+
+					const Ref<Texture2D> atlas = s_Font ? s_Font->GetAtlasTexture() : nullptr;
+					const bool quadReady = m_QuadPipeline && m_QuadPipeline->IsValid() && m_QuadVertexBuffer
+						&& m_QuadVertexBuffer->IsValid() && m_QuadTexture && m_QuadTexture->IsValid() && atlas && atlas->GetRHITexture();
+
+					if (quadReady)
+					{
+						struct
+						{
+							glm::mat4 ViewProjection;
+							float Time;
+						} frame{};
+
+						const float aspect = m_ViewportSize.y > 0.0f ? m_ViewportSize.x / m_ViewportSize.y : 1.778f;
+						frame.ViewProjection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, -1.0f, 1.0f)
+							* glm::rotate(glm::mat4(1.0f), 0.3f * (float)ImGui::GetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+						frame.Time = (float)ImGui::GetTime();
+
+						RHI::Bindings::WriteFrameUniforms(&frame, sizeof(frame));
+
+						cmd->BindPipeline(*m_QuadPipeline);
+						cmd->BindVertexBuffer(*m_QuadVertexBuffer);
+						cmd->BindIndexBuffer(*m_QuadIndexBuffer, RHI::IndexType::U32);
+
+						struct QuadPush
+						{
+							glm::vec2 Center;
+							float Scale;
+							uint32_t TextureIndex;
+							uint32_t SamplerSlot;
+						};
+						static_assert(sizeof(QuadPush) == 20);
+
+						// One image through both its views, then a second texture: the middle quad must come
+						// out visibly darker than the left, and the right proves a second bindless slot.
+						// Nearest on the 2x2 swatch keeps the quadrants flat and the comparison honest.
+						constexpr uint32_t nearestClamp = (uint32_t)RHI::SamplerSlot::NearestClampEdge;
+						constexpr uint32_t linearClamp = (uint32_t)RHI::SamplerSlot::LinearClampEdge;
+
+						const QuadPush quads[]{
+							{{-1.0f, 0.0f}, 0.5f, m_QuadTexture->GetBindlessIndex(false), nearestClamp},
+							{{0.0f, 0.0f}, 0.5f, m_QuadTexture->GetBindlessIndex(true), nearestClamp},
+							{{1.0f, 0.0f}, 0.5f, atlas->GetRHITexture()->GetBindlessIndex(false), linearClamp},
+						};
+
+						for (const auto& push : quads)
+						{
+							cmd->PushConstants(&push, sizeof(push));
+							cmd->DrawIndexed(6);
+						}
+					}
 				}
 			}
 		}
