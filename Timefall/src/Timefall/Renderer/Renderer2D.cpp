@@ -197,6 +197,12 @@ namespace Timefall
 			{{ShaderDataType::Float3, "a_Position"}, {ShaderDataType::Float4, "a_Color"}, {ShaderDataType::Int, "a_EntityID"}},
 			RHI::Topology::LineList, "Renderer2DLinePipeline");
 
+		s_Data.TextShader = ShaderLibrary::Load("Assets/Shaders/Renderer2D_Text.slang");
+		s_Data.TextPipeline = CreatePipeline(s_Data.TextShader,
+			{{ShaderDataType::Float3, "a_Position"}, {ShaderDataType::Float4, "a_Color"}, {ShaderDataType::Float2, "a_TexCoord"},
+				{ShaderDataType::UInt, "a_AtlasIndex"}, {ShaderDataType::Int, "a_EntityID"}},
+			RHI::Topology::TriangleList, "Renderer2DTextPipeline");
+
 		s_Data.QuadVertexPositions[0] = {-0.5f, -0.5f, 0.0f, 1.0f};
 		s_Data.QuadVertexPositions[1] = {0.5f, -0.5f, 0.0f, 1.0f};
 		s_Data.QuadVertexPositions[2] = {0.5f, 0.5f, 0.0f, 1.0f};
@@ -373,6 +379,25 @@ namespace Timefall
 				s_Data.Stats.DrawCalls++;
 			}
 		}
+
+		if (s_Data.TextIndexCount)
+		{
+			const uint64_t size = (uint8_t*)s_Data.TextVertexBufferPtr - (uint8_t*)s_Data.TextVertexBufferBase;
+			const RHI::FrameAllocation vertices = RHI::FrameAllocator::Allocate(size);
+
+			if (vertices.IsValid())
+			{
+				std::memcpy(vertices.Mapped, s_Data.TextVertexBufferBase, size);
+
+				cmd->BindPipeline(*s_Data.TextPipeline);
+				cmd->PushConstants(&s_Data.ViewProjection, sizeof(glm::mat4));
+				cmd->BindVertexBuffer(*vertices.Buffer, vertices.Offset);
+				cmd->BindIndexBuffer(*s_Data.QuadIndexBuffer, RHI::IndexType::U32);
+				cmd->DrawIndexed(s_Data.TextIndexCount);
+
+				s_Data.Stats.DrawCalls++;
+			}
+		}
 	}
 
 	void Renderer2D::DrawQuadInternal(
@@ -541,9 +566,118 @@ namespace Timefall
 
 	void Renderer2D::DrawString(
 		const std::string& text, const Ref<Font>& font, const glm::mat4& transform, const TextParams& params, int entityID)
-	{}
+	{
+		TF_PROFILE_FUNCTION();
 
-	void Renderer2D::DrawString(const std::string& text, const glm::mat4& transform, const TextComponent& component, int entityID) {}
+		if (!font)
+			return;
+
+		const Ref<Texture2D> fontAtlas = font->GetAtlasTexture();
+		if (!fontAtlas)
+			return;
+
+		const uint32_t atlasIndex = BindlessIndexOf(fontAtlas);
+
+		const auto& fontGeometry = font->GetMSDFData()->FontGeometry;
+		const auto& metrics = fontGeometry.getMetrics();
+
+		double x = 0.0;
+		double y = 0.0;
+		const double fsScale = 1.0 / (metrics.ascenderY - metrics.descenderY);
+		const float spaceGlyphAdvance = fontGeometry.getGlyph(' ')->getAdvance();
+
+		const float texelWidth = 1.0f / fontAtlas->GetWidth();
+		const float texelHeight = 1.0f / fontAtlas->GetHeight();
+
+		for (size_t i = 0; i < text.size(); i++)
+		{
+			const char character = text[i];
+
+			if (character == '\r')
+				continue;
+
+			if (character == '\n')
+			{
+				x = 0.0;
+				y -= fsScale * metrics.lineHeight + params.LineSpacing;
+				continue;
+			}
+
+			if (character == ' ')
+			{
+				float advance = spaceGlyphAdvance;
+				if (i < text.size() - 1)
+				{
+					double dAdvance;
+					fontGeometry.getAdvance(dAdvance, character, text[i + 1]);
+					advance = (float)dAdvance;
+				}
+
+				x += fsScale * advance + params.Kerning;
+				continue;
+			}
+
+			if (character == '\t')
+			{
+				x += 4.0 * (fsScale * spaceGlyphAdvance + params.Kerning);
+				continue;
+			}
+
+			auto glyph = fontGeometry.getGlyph(character);
+			if (!glyph)
+				glyph = fontGeometry.getGlyph('?');
+			if (!glyph)
+				return;
+
+			if (s_Data.TextIndexCount >= Renderer2DData::MaxIndices)
+				FlushAndReset();
+
+			double al, ab, ar, at;
+			glyph->getQuadAtlasBounds(al, ab, ar, at);
+			glm::vec2 texCoordMin((float)al, (float)ab);
+			glm::vec2 texCoordMax((float)ar, (float)at);
+
+			double pl, pb, pr, pt;
+			glyph->getQuadPlaneBounds(pl, pb, pr, pt);
+			glm::vec2 quadMin((float)pl, (float)pb);
+			glm::vec2 quadMax((float)pr, (float)pt);
+
+			quadMin *= fsScale, quadMax *= fsScale;
+			quadMin += glm::vec2(x, y);
+			quadMax += glm::vec2(x, y);
+
+			texCoordMin *= glm::vec2(texelWidth, texelHeight);
+			texCoordMax *= glm::vec2(texelWidth, texelHeight);
+
+			const glm::vec2 positions[4]{quadMin, {quadMin.x, quadMax.y}, quadMax, {quadMax.x, quadMin.y}};
+			const glm::vec2 coords[4]{texCoordMin, {texCoordMin.x, texCoordMax.y}, texCoordMax, {texCoordMax.x, texCoordMin.y}};
+
+			for (int v = 0; v < 4; ++v)
+			{
+				s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(positions[v], 0.0f, 1.0f);
+				s_Data.TextVertexBufferPtr->Color = params.Color;
+				s_Data.TextVertexBufferPtr->TexCoords = coords[v];
+				s_Data.TextVertexBufferPtr->AtlasIndex = atlasIndex;
+				s_Data.TextVertexBufferPtr->EntityID = entityID;
+				s_Data.TextVertexBufferPtr++;
+			}
+
+			s_Data.TextIndexCount += 6;
+			s_Data.Stats.QuadCount++;
+
+			if (i < text.size() - 1)
+			{
+				double advance = glyph->getAdvance();
+				fontGeometry.getAdvance(advance, character, text[i + 1]);
+				x += fsScale * advance + params.Kerning;
+			}
+		}
+	}
+
+	void Renderer2D::DrawString(const std::string& text, const glm::mat4& transform, const TextComponent& component, int entityID)
+	{
+		DrawString(text, component.FontAsset, transform, {component.Color, component.Kerning, component.LineSpacing}, entityID);
+	}
 
 	float Renderer2D::GetLineWidth()
 	{
