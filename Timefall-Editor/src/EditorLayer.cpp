@@ -106,22 +106,12 @@ namespace Timefall
 			m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
 		}
 
-		// Temporary: task 3 replaces this with Renderer2D::SetTargetRenderTarget.
-		if (RHI::CommandList* cmd = RHI::RenderDevice::Get().GetCurrentCommandList(); cmd && m_ViewportTarget->IsValid())
-		{
-			cmd->BeginPass({.DebugName = "ViewportClear",
-				.Target = m_ViewportTarget.get(),
-				.Color = {{.Load = RHI::LoadOp::Clear, .ClearValue = {0.1f, 0.1f, 0.1f, 1.0f}},
-					{.Load = RHI::LoadOp::Clear, .ClearInt = {-1, -1, -1, 0}}},
-				.Depth = {.Load = RHI::LoadOp::Clear, .ClearDepth = 1.0f}});
-			cmd->EndPass();
-		}
-
 		GetActiveScene()->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		SceneManager::SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 
 		// Render
 		Renderer3D::SetTargetRenderTarget(m_ViewportTarget);
+		Renderer2D::SetTargetRenderTarget(m_ViewportTarget, true);
 		Renderer2D::ResetStats();
 
 		// Feed the viewport-relative mouse (top-left origin) to the engine so scripts get world input.
@@ -155,6 +145,7 @@ namespace Timefall
 
 		m_HoveredEntity = Entity();
 
+		Renderer2D::SetTargetRenderTarget(m_ViewportTarget, false);
 		OnOverlayRender();
 	}
 
@@ -328,7 +319,7 @@ namespace Timefall
 
 				// Editor Camera
 				const glm::mat4& cameraProjection = m_EditorCamera.GetProjection();
-				glm::mat4 cameraView = m_EditorCamera.GetViewMatrix();
+				glm::mat4 cameraView = m_EditorCamera.GetView();
 
 				// Entity transform — operate in WORLD space so the gizmo tracks the entity's actual
 				// on-screen location even when it's a child (local != world).

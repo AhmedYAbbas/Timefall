@@ -27,7 +27,7 @@ namespace Timefall
 
 	void Renderer::BeginScene(OrthographicCamera& camera)
 	{
-		s_SceneData->ViewProjectionMatrix = camera.GetViewProjectionMatrix();
+		s_SceneData->ViewProjectionMatrix = camera.GetViewProjection();
 	}
 
 	void Renderer::EndScene() {}

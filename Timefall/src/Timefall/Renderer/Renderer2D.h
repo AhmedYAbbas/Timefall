@@ -6,6 +6,9 @@
 #include "Timefall/Renderer/SubTexture2D.h"
 #include "Timefall/Renderer/EditorCamera.h"
 #include "Timefall/Renderer/Font.h"
+
+#include "Timefall/RHI/RenderTarget.h"
+
 #include "Timefall/Scene/Components.h"
 
 namespace Timefall
@@ -15,6 +18,8 @@ namespace Timefall
 	public:
 		static void Init();
 		static void Shutdown();
+
+		static void SetTargetRenderTarget(const Ref<RHI::RenderTarget>& target, bool clear);
 
 		static void BeginScene(const Camera& camera, const glm::mat4& transform);
 		static void BeginScene(const OrthographicCamera& camera);
@@ -75,6 +80,8 @@ namespace Timefall
 		static void ResetStats();
 
 	private:
+		static void DrawQuadInternal(const glm::mat4& transform, const glm::vec4& color, uint32_t textureIndex, const glm::vec2* texCoords,
+			float tiling, int entityID);
 		static void FlushAndReset();
 		static void StartBatch();
 	};

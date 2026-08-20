@@ -11,9 +11,9 @@ namespace Timefall
 
 		void SetProjection(float left, float right, float bottom, float top, float zNear = -1, float zFar = 1);
 
-		const glm::mat4& GetProjectionMatrix() const { return m_ProjectionMatrix; }
-		const glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
-		const glm::mat4& GetViewProjectionMatrix() const { return m_ViewProjectionMatrix; }
+		const glm::mat4& GetProjection() const { return m_ProjectionMatrix; }
+		const glm::mat4& GetView() const { return m_ViewMatrix; }
+		const glm::mat4& GetViewProjection() const { return m_ViewProjectionMatrix; }
 		const glm::vec3& GetPosition() const { return m_Position; }
 		float GetRotation() const { return m_Rotation; }
 

@@ -231,13 +231,15 @@ namespace Timefall
 		const std::pair<vk::Bool32, const char*> required[]{{s11.shaderDrawParameters, "shaderDrawParameters"},
 			{s12.timelineSemaphore, "timelineSemaphore"}, {s14.hostImageCopy, "hostImageCopy"}, {s14.maintenance5, "maintenance5"},
 			{s14.maintenance6, "maintenance6"}, {s13.maintenance4, "maintenance4"}, {s13.dynamicRendering, "dynamicRendering"},
-			{s13.synchronization2, "synchronization2"}, {s12.descriptorIndexing, "descriptorIndexing"},
+			{s13.synchronization2, "synchronization2"},
+			{s13.shaderDemoteToHelperInvocation, "shaderDemoteToHelperInvocation"},
+			{s12.descriptorIndexing, "descriptorIndexing"},
 			{s12.runtimeDescriptorArray, "runtimeDescriptorArray"},
 			{s12.descriptorBindingPartiallyBound, "descriptorBindingPartiallyBound"},
 			{s12.descriptorBindingVariableDescriptorCount, "descriptorBindingVariableDescriptorCount"},
 			{s12.descriptorBindingSampledImageUpdateAfterBind, "descriptorBindingSampledImageUpdateAfterBind"},
 			{s12.shaderSampledImageArrayNonUniformIndexing, "shaderSampledImageArrayNonUniformIndexing"},
-			{sBase.samplerAnisotropy, "samplerAnisotropy"}};
+			{sBase.samplerAnisotropy, "samplerAnisotropy"}, {sBase.independentBlend, "independentBlend"}};
 
 		for (const auto& [ok, name] : required)
 			if (!ok)
@@ -256,6 +258,7 @@ namespace Timefall
 		f13.dynamicRendering = vk::True;
 		f13.synchronization2 = vk::True;
 		f13.maintenance4 = vk::True; // a draw may push a subrange of the layout's shared 128-byte range
+		f13.shaderDemoteToHelperInvocation = vk::True; // Slang lowers `discard` to OpDemoteToHelperInvocation
 
 		vk::PhysicalDeviceVulkan12Features f12{.pNext = &f13};
 		f12.timelineSemaphore = vk::True; // the frame clock; there are no fences
@@ -271,6 +274,7 @@ namespace Timefall
 
 		vk::PhysicalDeviceFeatures2 features2{.pNext = &f11};
 		features2.features.samplerAnisotropy = vk::True;
+		features2.features.independentBlend = vk::True; // entity-ID attachment disables blending while color keeps it
 		features2.features.wideLines = m_WideLinesAvailable ? vk::True : vk::False;
 
 		constexpr float priority = 1.0f;

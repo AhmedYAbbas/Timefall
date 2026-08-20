@@ -24,7 +24,7 @@ namespace Timefall
 
 		void SetViewportSize(float width, float height);
 
-		const glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
+		const glm::mat4& GetView() const { return m_ViewMatrix; }
 		glm::mat4 GetViewProjection() const { return m_Projection * m_ViewMatrix; }
 
 		glm::vec3 GetUpDirection() const;
