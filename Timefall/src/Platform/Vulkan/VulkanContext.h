@@ -26,6 +26,10 @@ namespace Timefall
 		uint32_t GetGraphicsQueueFamily() const { return m_GraphicsQueueFamily; }
 		VmaAllocator GetAllocator() const { return m_Allocator; }
 
+		bool SupportsWideLines() const { return m_WideLinesAvailable; }
+		bool SupportsSmoothLines() const { return m_SmoothLinesAvailable; }
+		float ClampLineWidth(float width) const;
+
 		const RHI::Limits& GetLimits() const { return m_Limits; }
 		bool IsDebugEnabled() const { return m_DebugEnabled; }
 
@@ -54,6 +58,10 @@ namespace Timefall
 	private:
 		bool m_DebugEnabled = true;
 		bool m_Robustness2Avaiable = false;
+		bool m_WideLinesAvailable = false;
+		bool m_SmoothLinesAvailable = false;
+		float m_LineWidthRange[2]{1.0f, 1.0f};
+		float m_LineWidthGranularity = 0.0f;
 
 		vk::Instance m_Instance;
 		vk::DebugUtilsMessengerEXT m_Messenger;

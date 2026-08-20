@@ -17,6 +17,7 @@ namespace Timefall::RHI
 			case ShaderDataType::Float2: return vk::Format::eR32G32Sfloat;
 			case ShaderDataType::Float3: return vk::Format::eR32G32B32Sfloat;
 			case ShaderDataType::Float4: return vk::Format::eR32G32B32A32Sfloat;
+			case ShaderDataType::UInt: return vk::Format::eR32Uint;
 			case ShaderDataType::Int: return vk::Format::eR32Sint;
 			case ShaderDataType::Int2: return vk::Format::eR32G32Sint;
 			case ShaderDataType::Int3: return vk::Format::eR32G32B32Sint;
@@ -146,7 +147,12 @@ namespace Timefall::RHI
 
 		const vk::PipelineViewportStateCreateInfo viewport{.viewportCount = 1, .scissorCount = 1};
 
-		const vk::PipelineRasterizationStateCreateInfo raster{.polygonMode = vk::PolygonMode::eFill,
+		const bool isLineList = desc.Primitive == Topology::LineList;
+		const vk::PipelineRasterizationLineStateCreateInfo lineState{.lineRasterizationMode = vk::LineRasterizationMode::eRectangularSmooth};
+
+		const bool smoothLines = isLineList && VulkanContext::Get().SupportsSmoothLines();
+
+		const vk::PipelineRasterizationStateCreateInfo raster{.pNext = smoothLines ? &lineState : nullptr, .polygonMode = vk::PolygonMode::eFill,
 			.cullMode = desc.Raster.Cull == CullMode::None ? vk::CullModeFlags{}
 				: desc.Raster.Cull == CullMode::Front      ? vk::CullModeFlags{vk::CullModeFlagBits::eFront}
 														   : vk::CullModeFlags{vk::CullModeFlagBits::eBack},
@@ -179,9 +185,12 @@ namespace Timefall::RHI
 		const vk::PipelineColorBlendStateCreateInfo blend{
 			.attachmentCount = (uint32_t)blendAttachments.size(), .pAttachments = blendAttachments.data()};
 
-		const vk::DynamicState dynamicStates[]{vk::DynamicState::eViewport, vk::DynamicState::eScissor};
+		std::vector<vk::DynamicState> dynamicStates{vk::DynamicState::eViewport, vk::DynamicState::eScissor};
+		if (isLineList)
+			dynamicStates.push_back(vk::DynamicState::eLineWidth);
+
 		const vk::PipelineDynamicStateCreateInfo dynamic{
-			.dynamicStateCount = (uint32_t)std::size(dynamicStates), .pDynamicStates = dynamicStates};
+			.dynamicStateCount = (uint32_t)dynamicStates.size(), .pDynamicStates = dynamicStates.data()};
 
 		std::array<vk::Format, 8> colorFormats{};
 		for (uint32_t i = 0; i < desc.ColorCount; i++)

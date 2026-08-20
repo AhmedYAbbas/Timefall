@@ -12,6 +12,8 @@ namespace Timefall::RHI
 		uint64_t MinStorageBufferOffsetAlignment = 0;
 		float MaxSamplerAnisotropy = 0.0f;
 		bool SupportsRobustness2 = false;
+		bool SupportsWideLines = false;
+		bool SupportsSmoothLines = false;
 	};
 
 	inline constexpr uint32_t TF_BINDLESS_TEXTURE_BUDGET = 16384;

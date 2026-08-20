@@ -216,6 +216,11 @@ namespace Timefall::RHI
 		m_Impl->Cmd.setScissor(0, 1, &rect);
 	}
 
+	void CommandList::SetLineWidth(float width)
+	{
+		m_Impl->Cmd.setLineWidth(VulkanContext::Get().ClampLineWidth(width));
+	}
+
 	void CommandList::BindPipeline(const GraphicsPipeline& pipeline)
 	{
 		if (!pipeline.IsValid())

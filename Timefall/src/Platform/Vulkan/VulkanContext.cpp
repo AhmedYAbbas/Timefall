@@ -159,6 +159,16 @@ namespace Timefall
 		return {};
 	}
 
+	float VulkanContext::ClampLineWidth(float width) const
+	{
+		float clamped = std::clamp(width, m_LineWidthRange[0], m_LineWidthRange[1]);
+
+		if (m_LineWidthGranularity > 0.0f)
+			clamped = m_LineWidthRange[0] + std::round((clamped - m_LineWidthRange[0]) / m_LineWidthGranularity) * m_LineWidthGranularity;
+
+		return std::clamp(clamped, m_LineWidthRange[0], m_LineWidthRange[1]);
+	}
+
 	void VulkanContext::SetObjectName(uint64_t handle, vk::ObjectType type, const char* name) const
 	{
 		if (!m_DebugEnabled || !m_Device)
@@ -233,10 +243,14 @@ namespace Timefall
 			if (!ok)
 				return std::unexpected(std::format("Device lacks required feature {0}", name));
 
+		m_WideLinesAvailable = sBase.wideLines == vk::True;
+		m_SmoothLinesAvailable = s14.smoothLines == vk::True;
+
 		vk::PhysicalDeviceVulkan14Features f14{};
 		f14.hostImageCopy = vk::True; // vkCopyMemoryToImage - no staging buffer for textures
 		f14.maintenance5 = vk::True; // bindIndexBuffer2, BufferUsageFlags2
 		f14.maintenance6 = vk::True; // bindDescriptorSets2, pushConstants2, pushDescriptorSet2
+		f14.smoothLines = m_SmoothLinesAvailable ? vk::True : vk::False;
 
 		vk::PhysicalDeviceVulkan13Features f13{.pNext = &f14};
 		f13.dynamicRendering = vk::True;
@@ -257,6 +271,7 @@ namespace Timefall
 
 		vk::PhysicalDeviceFeatures2 features2{.pNext = &f11};
 		features2.features.samplerAnisotropy = vk::True;
+		features2.features.wideLines = m_WideLinesAvailable ? vk::True : vk::False;
 
 		constexpr float priority = 1.0f;
 		const vk::DeviceQueueCreateInfo queue{.queueFamilyIndex = m_GraphicsQueueFamily, .queueCount = 1, .pQueuePriorities = &priority};
@@ -275,6 +290,15 @@ namespace Timefall
 
 		m_Device = *device;
 		VULKAN_HPP_DEFAULT_DISPATCHER.init(m_Device);
+
+		const auto deviceLimits = m_PhysicalDevice.getProperties().limits;
+		m_LineWidthRange[0] = m_WideLinesAvailable ? deviceLimits.lineWidthRange[0] : 1.0f;
+		m_LineWidthRange[1] = m_WideLinesAvailable ? deviceLimits.lineWidthRange[1] : 1.0f;
+		m_LineWidthGranularity = deviceLimits.lineWidthGranularity;
+
+		TF_CORE_INFO("Line rasterization: wideLines {0} (range {1}-{2}), smoothLines {3}",
+			m_WideLinesAvailable ? "supported" : "unavailable", m_LineWidthRange[0], m_LineWidthRange[1],
+			m_SmoothLinesAvailable ? "supported" : "unavailable");
 
 		m_GraphicsQueue = m_Device.getQueue2({.queueFamilyIndex = m_GraphicsQueueFamily, .queueIndex = 0});
 
@@ -324,6 +348,8 @@ namespace Timefall
 		m_Limits.MinStorageBufferOffsetAlignment = props.limits.minStorageBufferOffsetAlignment;
 		m_Limits.MaxSamplerAnisotropy = props.limits.maxSamplerAnisotropy;
 		m_Limits.SupportsRobustness2 = m_Robustness2Avaiable;
+		m_Limits.SupportsWideLines = m_WideLinesAvailable;
+		m_Limits.SupportsSmoothLines = m_SmoothLinesAvailable;
 
 		TF_CORE_INFO("Bindless textures: {0} (device reports {1}, budget {2})", m_Limits.MaxBindlessTextures, deviceMax,
 			RHI::TF_BINDLESS_TEXTURE_BUDGET);

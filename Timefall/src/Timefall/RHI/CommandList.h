@@ -16,6 +16,7 @@ namespace Timefall::RHI
 
 		void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 		void SetScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
+		void SetLineWidth(float width);
 
 		void BindPipeline(const GraphicsPipeline& pipeline);
 
