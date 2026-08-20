@@ -177,7 +177,11 @@ namespace Timefall::RHI
 			attachment.dstColorBlendFactor = desc.Blend == BlendMode::Additive ? vk::BlendFactor::eOne : vk::BlendFactor::eOneMinusSrcAlpha;
 			attachment.colorBlendOp = vk::BlendOp::eAdd;
 			attachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
-			attachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;
+
+			// Source-over on alpha, not replace: the target's coverage must survive a blended draw or
+			// ImGui composites the viewport texture through the hole it left.
+			attachment.dstAlphaBlendFactor
+				= desc.Blend == BlendMode::Additive ? vk::BlendFactor::eOne : vk::BlendFactor::eOneMinusSrcAlpha;
 			attachment.alphaBlendOp = vk::BlendOp::eAdd;
 			attachment.colorWriteMask = allChannels;
 		}

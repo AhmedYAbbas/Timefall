@@ -186,6 +186,12 @@ namespace Timefall
 				{ShaderDataType::Float, "a_TilingFactor"}, {ShaderDataType::Int, "a_EntityID"}},
 			RHI::Topology::TriangleList, "Renderer2DQuadPipeline");
 
+		s_Data.CircleShader = ShaderLibrary::Load("Assets/Shaders/Renderer2D_Circle.slang");
+		s_Data.CirclePipeline = CreatePipeline(s_Data.CircleShader,
+			{{ShaderDataType::Float3, "a_WorldPosition"}, {ShaderDataType::Float2, "a_LocalPosition"}, {ShaderDataType::Float4, "a_Color"},
+				{ShaderDataType::Float, "a_Thickness"}, {ShaderDataType::Float, "a_Fade"}, {ShaderDataType::Int, "a_Entity"}},
+			RHI::Topology::TriangleList, "Renderer2DCirclePipeline");
+
 		s_Data.QuadVertexPositions[0] = {-0.5f, -0.5f, 0.0f, 1.0f};
 		s_Data.QuadVertexPositions[1] = {0.5f, -0.5f, 0.0f, 1.0f};
 		s_Data.QuadVertexPositions[2] = {0.5f, 0.5f, 0.0f, 1.0f};
@@ -324,6 +330,25 @@ namespace Timefall
 				s_Data.Stats.DrawCalls++;
 			}
 		}
+
+		if (s_Data.CircleIndexCount)
+		{
+			const uint64_t size = (uint8_t*)s_Data.CircleVertexBufferPtr - (uint8_t*)s_Data.CircleVertexBufferBase;
+			const RHI::FrameAllocation vertices = RHI::FrameAllocator::Allocate(size);
+
+			if (vertices.IsValid())
+			{
+				std::memcpy(vertices.Mapped, s_Data.CircleVertexBufferBase, size);
+
+				cmd->BindPipeline(*s_Data.CirclePipeline);
+				cmd->PushConstants(&s_Data.ViewProjection, sizeof(glm::mat4));
+				cmd->BindVertexBuffer(*vertices.Buffer, vertices.Offset);
+				cmd->BindIndexBuffer(*s_Data.QuadIndexBuffer, RHI::IndexType::U32);
+				cmd->DrawIndexed(s_Data.CircleIndexCount);
+
+				s_Data.Stats.DrawCalls++;
+			}
+		}
 	}
 
 	void Renderer2D::DrawQuadInternal(
@@ -425,7 +450,27 @@ namespace Timefall
 		DrawQuadInternal(transform, src.Color, textureIndex, kDefaultTexCoords, src.TilingFactor, entityID);
 	}
 
-	void Renderer2D::DrawCircle(const glm::mat4& transform, const glm::vec4& color, float thickness, float fade, int entityID) {}
+	void Renderer2D::DrawCircle(const glm::mat4& transform, const glm::vec4& color, float thickness, float fade, int entityID)
+	{
+		TF_PROFILE_FUNCTION();
+
+		if (s_Data.CircleIndexCount >= Renderer2DData::MaxIndices)
+			FlushAndReset();
+
+		for (size_t i = 0; i < 4; i++)
+		{
+			s_Data.CircleVertexBufferPtr->WorldPosition = transform * s_Data.QuadVertexPositions[i];
+			s_Data.CircleVertexBufferPtr->LocalPosition = s_Data.QuadVertexPositions[i] * 2.0f;
+			s_Data.CircleVertexBufferPtr->Color = color;
+			s_Data.CircleVertexBufferPtr->Thickness = thickness;
+			s_Data.CircleVertexBufferPtr->Fade = fade;
+			s_Data.CircleVertexBufferPtr->EntityID = entityID;
+			s_Data.CircleVertexBufferPtr++;
+		}
+
+		s_Data.CircleIndexCount += 6;
+		s_Data.Stats.CircleCount++;
+	}
 
 	void Renderer2D::DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color, int entityID) {}
 
