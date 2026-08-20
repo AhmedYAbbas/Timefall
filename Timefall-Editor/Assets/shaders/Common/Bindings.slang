@@ -8,7 +8,6 @@
 // appended, never reordered: the C++ side writes a matching struct and only offsets are contractual
 struct FrameUniforms
 {
-	float4x4 ViewProjection;
 	float Time;
 }
 

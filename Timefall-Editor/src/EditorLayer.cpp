@@ -56,94 +56,6 @@ namespace Timefall
 			.DepthFormat = RHI::Format::D32F,
 			.DebugName = "ViewportTarget"});
 
-		m_TriangleShader = ShaderLibrary::Load("Assets/Shaders/Triangle.slang");
-
-		RHI::GraphicsPipelineDesc triangleDesc;
-		triangleDesc.ShaderModule = m_TriangleShader;
-		triangleDesc.ColorFormats[0] = RHI::Format::RGBA8Unorm;
-		triangleDesc.ColorFormats[1] = RHI::Format::R32I;
-		triangleDesc.ColorCount = 2;
-		triangleDesc.DepthFormat = RHI::Format::D32F;
-		triangleDesc.Depth = {.Test = true, .Write = true};
-		triangleDesc.Raster.Cull = RHI::CullMode::None;
-		triangleDesc.DebugName = "TrianglePipeline";
-		triangleDesc.VertexLayout = {{ShaderDataType::Float3, "a_Position"}, {ShaderDataType::Float3, "a_Color"}};
-		m_TrianglePipeline = RHI::GraphicsPipeline::Create(triangleDesc);
-
-		struct BringUpVertex
-		{
-			glm::vec3 Position;
-			glm::vec3 Color;
-		};
-
-		constexpr BringUpVertex triangleVertices[]{
-			{{-0.9f, 0.6f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-			{{-0.1f, 0.6f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-			{{-0.5f, -0.6f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-		};
-		constexpr uint32_t triangleIndices[]{0, 1, 2};
-
-		{
-			// Both buffers in one command buffer and one round-trip. The braces are load-bearing:
-			// neither buffer holds its data until the scope closes.
-			RHI::UploadScope upload;
-
-			m_TriangleVertexBuffer = RHI::GpuBuffer::CreateWithData(
-				{.Size = sizeof(triangleVertices), .Usage = RHI::BufferUsage::Vertex, .DebugName = "TriangleVertices"}, triangleVertices);
-
-			m_TriangleIndexBuffer = RHI::GpuBuffer::CreateWithData(
-				{.Size = sizeof(triangleIndices), .Usage = RHI::BufferUsage::Index, .DebugName = "TriangleIndices"}, triangleIndices);
-		}
-
-		m_QuadShader = ShaderLibrary::Load("Assets/Shaders/TexturedQuad.slang");
-
-		RHI::GraphicsPipelineDesc quadDesc;
-		quadDesc.ShaderModule = m_QuadShader;
-		quadDesc.ColorFormats[0] = RHI::Format::RGBA8Unorm;
-		quadDesc.ColorFormats[1] = RHI::Format::R32I;
-		quadDesc.ColorCount = 2;
-		quadDesc.DepthFormat = RHI::Format::D32F;
-		quadDesc.Depth = {.Test = true, .Write = true};
-		quadDesc.Raster.Cull = RHI::CullMode::None;
-		quadDesc.DebugName = "TexturedQuadPipeline";
-		quadDesc.VertexLayout = {{ShaderDataType::Float2, "a_Position"}, {ShaderDataType::Float2, "a_TexCoord"}};
-		m_QuadPipeline = RHI::GraphicsPipeline::Create(quadDesc);
-
-		struct QuadVertex
-		{
-			glm::vec2 Position;
-			glm::vec2 UV;
-		};
-
-		constexpr QuadVertex quadVertices[]{
-			{{-0.5f, -0.5f}, {0.0f, 1.0f}},
-			{{0.5f, -0.5f}, {1.0f, 1.0f}},
-			{{0.5f, 0.5f}, {1.0f, 0.0f}},
-			{{-0.5f, 0.5f}, {0.0f, 0.0f}},
-		};
-		constexpr uint32_t quadIndices[]{0, 1, 2, 2, 3, 0};
-
-		{
-			RHI::UploadScope upload;
-
-			m_QuadVertexBuffer = RHI::GpuBuffer::CreateWithData(
-				{.Size = sizeof(quadVertices), .Usage = RHI::BufferUsage::Vertex, .DebugName = "QuadVertices"}, quadVertices);
-			m_QuadIndexBuffer = RHI::GpuBuffer::CreateWithData(
-				{.Size = sizeof(quadIndices), .Usage = RHI::BufferUsage::Index, .DebugName = "QuadIndices"}, quadIndices);
-		}
-
-		// 0xAABBGGRR. Every channel mid-tone on purpose: sRGB decoding only shows on values away from
-		// 0 and 1, and every icon in Resources/ is a black glyph carried entirely by its alpha.
-		constexpr uint32_t quadSwatch[]{0xFF808080, 0xFF4040C0, 0xFF40C040, 0xFFC04040};
-
-		m_QuadTexture = RHI::Texture::CreateWithData({.Width = 2,
-														 .Height = 2,
-														 .PixelFormat = RHI::Format::RGBA8Unorm,
-														 .MipLevels = 1,
-														 .SRGBView = true,
-														 .DebugName = "QuadBringUpSwatch"},
-			quadSwatch, sizeof(quadSwatch));
-
 		ShaderLibrary::EnableHotReload("Assets/Shaders");
 
 		m_EditorScene = CreateRef<Scene>();
@@ -175,17 +87,6 @@ namespace Timefall
 
 		ShaderLibrary::Shutdown();
 
-		m_TriangleShader.reset();
-		m_TrianglePipeline.reset();
-		m_TriangleVertexBuffer.reset();
-		m_TriangleIndexBuffer.reset();
-
-		m_QuadShader.reset();
-		m_QuadPipeline.reset();
-		m_QuadVertexBuffer.reset();
-		m_QuadIndexBuffer.reset();
-		m_QuadTexture.reset();
-
 		m_ViewportTarget.reset();
 		s_Font.reset(); // file-scope, so it would otherwise outlive the device along with its atlas
 	}
@@ -199,117 +100,21 @@ namespace Timefall
 	{
 		TF_PROFILE_FUNCTION();
 
-		if (m_TrianglePipeline && m_TrianglePipeline->IsValid())
+		if (m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f
+			&& m_ViewportTarget->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y))
 		{
-			if (m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f
-				&& m_ViewportTarget->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y))
-			{
-				m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
-			}
+			m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
+		}
 
-			if (RHI::CommandList* cmd = RHI::RenderDevice::Get().GetCurrentCommandList(); cmd && m_ViewportTarget->IsValid())
-			{
-				cmd->BeginPass({.DebugName = "ViewportPass",
-					.Target = m_ViewportTarget.get(),
-					.Color = {{.Load = RHI::LoadOp::Clear, .ClearValue = {0.1f, 0.1f, 0.12f, 1.0f}},
-						{.Load = RHI::LoadOp::Clear, .ClearInt = {-1, -1, -1, 0}}},
-					.Depth = {.Load = RHI::LoadOp::Clear, .ClearDepth = 1.0f}});
-				
-				struct
-				{
-					glm::vec3 Tint;
-					float Time;
-				} push{{1.0f, 1.0f, 1.0f}, (float)ImGui::GetTime()};
-
-				cmd->BindPipeline(*m_TrianglePipeline);
-				cmd->PushConstants(&push, sizeof(push));
-
-				if (m_TriangleVertexBuffer && m_TriangleVertexBuffer->IsValid())
-				{
-					cmd->BindVertexBuffer(*m_TriangleVertexBuffer);
-					cmd->BindIndexBuffer(*m_TriangleIndexBuffer, RHI::IndexType::U32);
-					cmd->DrawIndexed(3);
-				}
-
-				struct BringUpVertex
-				{
-					glm::vec3 Position;
-					glm::vec3 Color;
-				};
-
-				// Streamed quad: fresh vertices into this frame's slot, proving the ring resets and
-				// stays coherent across both slots. Flicker here means the slot arithmetic is wrong.
-				const float pulse = 0.5f + 0.5f * std::sin(push.Time * 2.0f);
-				const BringUpVertex quadVertices[]{{{0.1f, -0.6f, 0.0f}, {pulse, 0.2f, 1.0f - pulse}},
-					{{0.9f, -0.6f, 0.0f}, {1.0f - pulse, pulse, 0.2f}}, {{0.9f, 0.6f, 0.0f}, {0.2f, 1.0f - pulse, pulse}},
-					{{0.1f, 0.6f, 0.0f}, {pulse, pulse, pulse}}};
-				const uint32_t quadIndices[]{0, 1, 2, 2, 3, 0};
-
-				const RHI::FrameAllocation vertices = RHI::FrameAllocator::Allocate(sizeof(quadVertices));
-				const RHI::FrameAllocation indices = RHI::FrameAllocator::Allocate(sizeof(quadIndices), sizeof(uint32_t));
-
-				if (vertices.IsValid() && indices.IsValid())
-				{
-					std::memcpy(vertices.Mapped, quadVertices, sizeof(quadVertices));
-					std::memcpy(indices.Mapped, quadIndices, sizeof(quadIndices));
-					cmd->BindVertexBuffer(*vertices.Buffer, vertices.Offset);
-					cmd->BindIndexBuffer(*indices.Buffer, RHI::IndexType::U32, indices.Offset);
-					cmd->DrawIndexed(6);
-				}
-
-				const Ref<Texture2D> atlas = s_Font ? s_Font->GetAtlasTexture() : nullptr;
-				const bool quadReady = m_QuadPipeline && m_QuadPipeline->IsValid() && m_QuadVertexBuffer && m_QuadVertexBuffer->IsValid()
-					&& m_QuadTexture && m_QuadTexture->IsValid() && atlas && atlas->GetRHITexture();
-
-				if (quadReady)
-				{
-					struct
-					{
-						glm::mat4 ViewProjection;
-						float Time;
-					} frame{};
-
-					const float aspect = m_ViewportSize.y > 0.0f ? m_ViewportSize.x / m_ViewportSize.y : 1.778f;
-					frame.ViewProjection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, -1.0f, 1.0f)
-						* glm::rotate(glm::mat4(1.0f), 0.3f * (float)ImGui::GetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
-					frame.Time = (float)ImGui::GetTime();
-
-					RHI::Bindings::WriteFrameUniforms(&frame, sizeof(frame));
-
-					cmd->BindPipeline(*m_QuadPipeline);
-					cmd->BindVertexBuffer(*m_QuadVertexBuffer);
-					cmd->BindIndexBuffer(*m_QuadIndexBuffer, RHI::IndexType::U32);
-
-					struct QuadPush
-					{
-						glm::vec2 Center;
-						float Scale;
-						uint32_t TextureIndex;
-						uint32_t SamplerSlot;
-					};
-					static_assert(sizeof(QuadPush) == 20);
-
-					// One image through both its views, then a second texture: the middle quad must come
-					// out visibly darker than the left, and the right proves a second bindless slot.
-					// Nearest on the 2x2 swatch keeps the quadrants flat and the comparison honest.
-					constexpr uint32_t nearestClamp = (uint32_t)RHI::SamplerSlot::NearestClampEdge;
-					constexpr uint32_t linearClamp = (uint32_t)RHI::SamplerSlot::LinearClampEdge;
-
-					const QuadPush quads[]{
-						{{-1.0f, 0.0f}, 0.5f, m_QuadTexture->GetBindlessIndex(false), nearestClamp},
-						{{0.0f, 0.0f}, 0.5f, m_QuadTexture->GetBindlessIndex(true), nearestClamp},
-						{{1.0f, 0.0f}, 0.5f, atlas->GetRHITexture()->GetBindlessIndex(false), linearClamp},
-					};
-
-					for (const auto& push : quads)
-					{
-						cmd->PushConstants(&push, sizeof(push));
-						cmd->DrawIndexed(6);
-					}
-				}
-
-				cmd->EndPass();
-			}
+		// Temporary: task 3 replaces this with Renderer2D::SetTargetRenderTarget.
+		if (RHI::CommandList* cmd = RHI::RenderDevice::Get().GetCurrentCommandList(); cmd && m_ViewportTarget->IsValid())
+		{
+			cmd->BeginPass({.DebugName = "ViewportClear",
+				.Target = m_ViewportTarget.get(),
+				.Color = {{.Load = RHI::LoadOp::Clear, .ClearValue = {0.1f, 0.1f, 0.1f, 1.0f}},
+					{.Load = RHI::LoadOp::Clear, .ClearInt = {-1, -1, -1, 0}}},
+				.Depth = {.Load = RHI::LoadOp::Clear, .ClearDepth = 1.0f}});
+			cmd->EndPass();
 		}
 
 		GetActiveScene()->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
