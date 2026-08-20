@@ -192,6 +192,11 @@ namespace Timefall
 				{ShaderDataType::Float, "a_Thickness"}, {ShaderDataType::Float, "a_Fade"}, {ShaderDataType::Int, "a_Entity"}},
 			RHI::Topology::TriangleList, "Renderer2DCirclePipeline");
 
+		s_Data.LineShader = ShaderLibrary::Load("Assets/Shaders/Renderer2D_Line.slang");
+		s_Data.LinePipeline = CreatePipeline(s_Data.LineShader,
+			{{ShaderDataType::Float3, "a_Position"}, {ShaderDataType::Float4, "a_Color"}, {ShaderDataType::Int, "a_EntityID"}},
+			RHI::Topology::LineList, "Renderer2DLinePipeline");
+
 		s_Data.QuadVertexPositions[0] = {-0.5f, -0.5f, 0.0f, 1.0f};
 		s_Data.QuadVertexPositions[1] = {0.5f, -0.5f, 0.0f, 1.0f};
 		s_Data.QuadVertexPositions[2] = {0.5f, 0.5f, 0.0f, 1.0f};
@@ -349,6 +354,25 @@ namespace Timefall
 				s_Data.Stats.DrawCalls++;
 			}
 		}
+
+		if (s_Data.LineVertexCount)
+		{
+			const uint64_t size = (uint8_t*)s_Data.LineVertexBufferPtr - (uint8_t*)s_Data.LineVertexBufferBase;
+			const RHI::FrameAllocation vertices = RHI::FrameAllocator::Allocate(size);
+
+			if (vertices.IsValid())
+			{
+				std::memcpy(vertices.Mapped, s_Data.LineVertexBufferBase, size);
+
+				cmd->BindPipeline(*s_Data.LinePipeline);
+				cmd->PushConstants(&s_Data.ViewProjection, sizeof(glm::mat4));
+				cmd->SetLineWidth(s_Data.LineWidth);
+				cmd->BindVertexBuffer(*vertices.Buffer, vertices.Offset);
+				cmd->Draw(s_Data.LineVertexCount);
+
+				s_Data.Stats.DrawCalls++;
+			}
+		}
 	}
 
 	void Renderer2D::DrawQuadInternal(
@@ -472,11 +496,48 @@ namespace Timefall
 		s_Data.Stats.CircleCount++;
 	}
 
-	void Renderer2D::DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color, int entityID) {}
+	void Renderer2D::DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color, int entityID)
+	{
+		if (s_Data.LineVertexCount >= Renderer2DData::MaxVertices)
+			FlushAndReset();
 
-	void Renderer2D::DrawRect(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color, int entityID) {}
+		s_Data.LineVertexBufferPtr->Position = p0;
+		s_Data.LineVertexBufferPtr->Color = color;
+		s_Data.LineVertexBufferPtr->EntityID = entityID;
+		s_Data.LineVertexBufferPtr++;
 
-	void Renderer2D::DrawRect(const glm::mat4& transform, const glm::vec4& color, int entityID) {}
+		s_Data.LineVertexBufferPtr->Position = p1;
+		s_Data.LineVertexBufferPtr->Color = color;
+		s_Data.LineVertexBufferPtr->EntityID = entityID;
+		s_Data.LineVertexBufferPtr++;
+
+		s_Data.LineVertexCount += 2;
+	}
+
+	void Renderer2D::DrawRect(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color, int entityID)
+	{
+		const glm::vec3 p0{position.x - size.x * 0.5f, position.y - size.y * 0.5f, position.z};
+		const glm::vec3 p1{position.x + size.x * 0.5f, position.y - size.y * 0.5f, position.z};
+		const glm::vec3 p2{position.x + size.x * 0.5f, position.y + size.y * 0.5f, position.z};
+		const glm::vec3 p3{position.x - size.x * 0.5f, position.y + size.y * 0.5f, position.z};
+
+		DrawLine(p0, p1, color, entityID);
+		DrawLine(p1, p2, color, entityID);
+		DrawLine(p2, p3, color, entityID);
+		DrawLine(p3, p0, color, entityID);
+	}
+
+	void Renderer2D::DrawRect(const glm::mat4& transform, const glm::vec4& color, int entityID)
+	{
+		glm::vec3 corners[4];
+		for (int i = 0; i < 4; i++)
+			corners[i] = transform * s_Data.QuadVertexPositions[i];
+
+		DrawLine(corners[0], corners[1], color, entityID);
+		DrawLine(corners[1], corners[2], color, entityID);
+		DrawLine(corners[2], corners[3], color, entityID);
+		DrawLine(corners[3], corners[0], color, entityID);
+	}
 
 	void Renderer2D::DrawString(
 		const std::string& text, const Ref<Font>& font, const glm::mat4& transform, const TextParams& params, int entityID)
