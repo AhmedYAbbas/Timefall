@@ -53,7 +53,6 @@ namespace Timefall
 			.Height = 720,
 			.ColorFormat = {RHI::Format::RGBA8Unorm, RHI::Format::R32I},
 			.ColorCount = 2,
-			.DepthFormat = RHI::Format::D32F,
 			.DebugName = "ViewportTarget"});
 
 		ShaderLibrary::EnableHotReload("Assets/Shaders");

@@ -118,7 +118,7 @@ namespace Timefall
 	{
 		constexpr RHI::Format kColorFormat = RHI::Format::RGBA8Unorm;
 		constexpr RHI::Format kIDFormat = RHI::Format::R32I;
-		constexpr RHI::Format kDepthFormat = RHI::Format::D32F;
+		constexpr RHI::Format kDepthFormat = RHI::Format::Undefined;
 
 		constexpr glm::vec2 kDefaultTexCoords[4]{{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
 
