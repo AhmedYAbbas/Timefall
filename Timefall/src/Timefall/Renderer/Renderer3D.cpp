@@ -409,9 +409,15 @@ namespace Timefall
 		s_Data.LDRTarget = target;
 	}
 
-	void Renderer3D::BeginScene(const EditorCamera& camera) {}
+	void Renderer3D::BeginScene(const EditorCamera& camera)
+	{
+		ResetStats();
+	}
 
-	void Renderer3D::BeginScene(const Camera& camera, const glm::mat4& transform) {}
+	void Renderer3D::BeginScene(const Camera& camera, const glm::mat4& transform)
+	{
+		ResetStats();
+	}
 
 	void Renderer3D::SetShadowSettings(const ShadowSettings& settings) {}
 
@@ -424,7 +430,6 @@ namespace Timefall
 	{
 		TF_PROFILE_FUNCTION();
 
-		ResetStats(); // stats are per-frame; Record only ever increments
 		if (Prepare())
 			Record();
 	}

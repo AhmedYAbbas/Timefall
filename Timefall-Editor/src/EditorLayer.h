@@ -34,6 +34,7 @@ namespace Timefall
 		bool OnWindowDrop(WindowDropEvent& e);
 
 		void OnOverlayRender();
+		void ClearViewportTarget();
 
 		void NewProject();
 		bool OpenProject();

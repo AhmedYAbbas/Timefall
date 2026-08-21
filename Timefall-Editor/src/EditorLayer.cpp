@@ -145,6 +145,10 @@ namespace Timefall
 
 		m_HoveredEntity = Entity();
 
+		// Play with no camera renders nothing, and the resolve is the only clear, so the panel would keep the previous frame.
+		if (m_SceneState == SceneState::Play && !GetActiveScene()->GetPrimaryCameraEntity())
+			ClearViewportTarget();
+
 		Renderer2D::SetTargetRenderTarget(m_ViewportTarget, false);
 		OnOverlayRender();
 	}
@@ -626,6 +630,18 @@ namespace Timefall
 				Renderer2D::DrawLine(pos, edge, color);
 			}
 		}
+	}
+
+	void EditorLayer::ClearViewportTarget()
+	{
+		RHI::CommandList* cmd = RHI::RenderDevice::Get().GetCurrentCommandList();
+		if (!cmd || !m_ViewportTarget || !m_ViewportTarget->IsValid())
+			return;
+
+		cmd->BeginPass({.DebugName = "Viewport Clear",
+			.Target = m_ViewportTarget.get(),
+			.Color = {{.Load = RHI::LoadOp::Clear}, {.Load = RHI::LoadOp::Clear, .ClearInt = {-1, -1, -1, 0}}}});
+		cmd->EndPass();
 	}
 
 	void EditorLayer::OnOverlayRender()
