@@ -196,15 +196,23 @@ namespace Timefall::RHI
 		if (HasFlag(desc.Usage, TextureUsage::DepthAttachment))
 			usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
 
+		if (HasFlag(desc.Usage, TextureUsage::TransferSrc))
+			usage |= vk::ImageUsageFlagBits::eTransferSrc;
+		if (HasFlag(desc.Usage, TextureUsage::TransferDst))
+			usage |= vk::ImageUsageFlagBits::eTransferDst;
+
 		if (!isAttachment)
 		{
 			const FormatCaps& caps = GetFormatCaps(format);
 			impl.HostCopyable = caps.HostCopy;
 
+			// sampled textures always stage through a transfer: upload writes them, mip generation reads them back
 			usage |= vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
 			if (caps.HostCopy)
 				usage |= vk::ImageUsageFlagBits::eHostTransfer;
 		}
+
+		impl.UsageFlags = usage;
 
 		const vk::Format srgbFormat = SRGBCounterpart(format);
 		const bool wantsSRGBView = desc.SRGBView && srgbFormat != vk::Format::eUndefined && !isAttachment;

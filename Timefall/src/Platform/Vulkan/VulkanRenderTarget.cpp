@@ -24,7 +24,7 @@ namespace Timefall::RHI
 					.Height = Desc.Height,
 					.PixelFormat = Desc.ColorFormat[i],
 					.MipLevels = 1,
-					.Usage = TextureUsage::Sampled | TextureUsage::ColorAttachment,
+					.Usage = TextureUsage::Sampled | TextureUsage::ColorAttachment | Desc.ColorUsage[i],
 					.DebugName = name.c_str()});
 
 				if (!Color[i] || !Color[i]->IsValid())

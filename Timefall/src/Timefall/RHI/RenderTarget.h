@@ -12,6 +12,7 @@ namespace Timefall::RHI
 		uint32_t Height = 1;
 		Format ColorFormat[8]{};
 		uint32_t ColorCount = 1;
+		TextureUsage ColorUsage[8]{}; // extra per-attachment usage, OR'd onto Sampled|ColorAttachment
 		Format DepthFormat = Format::Undefined; // Undefined == no depth attachment
 		const char* DebugName = nullptr;
 	};

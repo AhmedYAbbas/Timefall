@@ -53,6 +53,7 @@ namespace Timefall
 			.Height = 720,
 			.ColorFormat = {RHI::Format::RGBA8Unorm, RHI::Format::R32I},
 			.ColorCount = 2,
+			.ColorUsage = {RHI::TextureUsage::None, RHI::TextureUsage::TransferDst},
 			.DebugName = "ViewportTarget"});
 
 		ShaderLibrary::EnableHotReload("Assets/Shaders");
@@ -110,7 +111,7 @@ namespace Timefall
 
 		// Render
 		Renderer3D::SetTargetRenderTarget(m_ViewportTarget);
-		Renderer2D::SetTargetRenderTarget(m_ViewportTarget, true);
+		Renderer2D::SetTargetRenderTarget(m_ViewportTarget, false);
 		Renderer2D::ResetStats();
 
 		// Feed the viewport-relative mouse (top-left origin) to the engine so scripts get world input.

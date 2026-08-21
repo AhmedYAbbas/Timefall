@@ -112,6 +112,7 @@ namespace Timefall::RHI
 		vk::ImageLayout CurrentLayout = vk::ImageLayout::eUndefined;
 		vk::ImageAspectFlagBits Aspect = vk::ImageAspectFlagBits::eColor;
 		bool IsAttachment = false;
+		vk::ImageUsageFlags UsageFlags{};
 		void* UIHandle = nullptr;
 		void (*UIHandleDestroy)(void*) = nullptr;
 	};

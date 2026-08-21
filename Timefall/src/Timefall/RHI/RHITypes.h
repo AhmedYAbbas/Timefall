@@ -23,7 +23,7 @@ namespace Timefall::RHI
 	enum class LoadOp { Load = 0, Clear, DontCare };
 	enum class StoreOp { Store = 0, DontCare };
 	enum class IndexType : uint8_t { U16 = 0, U32 };
-	enum class TextureUsage : uint32_t { Sampled = BIT(0), ColorAttachment = BIT(1), DepthAttachment = BIT(2) };
+	enum class TextureUsage : uint32_t { None = 0, Sampled = BIT(0), ColorAttachment = BIT(1), DepthAttachment = BIT(2), TransferSrc = BIT(3), TransferDst = BIT(4) };
 
 	constexpr TextureUsage operator|(TextureUsage a, TextureUsage b)
 	{

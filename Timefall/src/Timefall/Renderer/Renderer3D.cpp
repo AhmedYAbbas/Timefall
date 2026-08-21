@@ -3,15 +3,17 @@
 #include "Timefall/Renderer/Renderer3D.h"
 
 #include "Timefall/Renderer/Shader.h"
-#include "Timefall/Renderer/UniformBuffer.h"
-#include "Timefall/Renderer/Texture.h"
-#include "Timefall/Renderer/ShadowMap.h"
-#include "Timefall/Renderer/CubeShadowMap.h"
-#include "Timefall/Renderer/Environment.h"
+#include "Timefall/Renderer/ShaderLibrary.h"
 #include "Timefall/Renderer/GPUProfiler.h"
 #include "Timefall/Debug/PerformanceStats.h"
 #include "Timefall/Asset/AssetManager.h"
 #include "Timefall/Asset/EditorAssetManager.h"
+
+#include "Timefall/RHI/CommandList.h"
+#include "Timefall/RHI/Pipeline.h"
+#include "Timefall/RHI/RenderDevice.h"
+#include "Timefall/RHI/RenderTarget.h"
+#include "Timefall/RHI/Texture.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -135,86 +137,39 @@ namespace Timefall
 		uint32_t Layer;
 	};
 
+	// Mirros ResolvePush in Renderer3D_HDRResolve.slang. 16 bytes
+	struct ResolvePush
+	{
+		uint32_t HDRColorIndex = 0;
+		float ExposureEV = 0.0f;
+		int32_t Operator = 0;
+		float WhitePoint = 4.0f;
+	};
+
 	struct Renderer3DData
 	{
-		Ref<MeshSource> CubeMesh;
-		Ref<MeshSource> SphereMesh;
-		Ref<MeshSource> PlaneMesh;
-
-		Ref<Shader> LitShader;
-		Ref<UniformBuffer> CameraUniformBuffer;
-		CameraData CameraBuffer;
-
-		Ref<UniformBuffer> LightsUniformBuffer;
-		LightsData LightsBuffer;
-		bool LightsDirty = true;
-
-		Ref<UniformBuffer> MaterialUniformBuffer;
-		MaterialData MaterialBuffer;
-
-		Ref<UniformBuffer> EnvironmentUniformBuffer;
-		EnvironmentData EnvironmentBuffer;
-
-		Ref<Texture2D> WhiteTexture;
-		Ref<Texture2D> FlatNormalTexture;
-		Ref<Material> DefaultMaterial;
-
-		std::vector<MeshSubmission> Submissions;
-
-		Ref<ShadowMap> SunShadowMap;
-		Ref<Shader> ShadowDepthShader;
-		Ref<Shader> PointShadowDepthShader;
-		Ref<UniformBuffer> ShadowUniformBuffer;
-		ShadowData ShadowBuffer;
-		bool SunCastsShadow = false;
-		glm::vec3 SunDirection{0.0f, -1.0f, 0.0f};
-		float SunShadowSoftness = 0.5f;
-		float SunDepthBias = 1.0f;
-		ShadowSettings Shadows;
-
-		Ref<ShadowMap> SpotShadowMap;
-		Ref<UniformBuffer> SpotShadowUniformBuffer;
-		SpotShadowData SpotShadowBuffer;
-		bool AnySpotCasts = false;
-
-		Ref<CubeShadowMap> PointShadowMap;
-		Ref<UniformBuffer> PointShadowUniformBuffer;
-		PointShadowData PointShadowBuffer;
-		std::vector<PointCaster> PointCasters;
-		bool AnyPointCasts = false;
+		Ref<RHI::RenderTarget> LDRTarget; // The LDR target the layer name; not owned
+		Ref<RHI::RenderTarget> HDRTarget;
 
 		Ref<Shader> ResolveShader;
-		Ref<Shader> SkyboxShader;
-		PostProcessSettings PostProcess;
+		Ref<RHI::GraphicsPipeline> ResolvePipeline;
 
-		static constexpr uint32_t BASE_COLOR_SAMPLER_SLOT = 0;
-		static constexpr uint32_t METALLIC_SAMPLER_SLOT = 1;
-		static constexpr uint32_t SHADOW_SAMPLER_SLOT = 2;
-		static constexpr uint32_t SPOT_SHADOW_SAMPLER_SLOT = 3;
-		static constexpr uint32_t POINT_SHADOW_SAMPLER_SLOT = 4;
-		static constexpr uint32_t NORMAL_SAMPLER_SLOT = 5;
-		static constexpr uint32_t ROUGHNESS_SAMPLER_SLOT = 6;
-		static constexpr uint32_t AO_SAMPLER_SLOT = 7;
-		static constexpr uint32_t EMISSIVE_SAMPLER_SLOT = 8;
-		static constexpr uint32_t IRRADIANCE_SAMPLER_SLOT = 9;
-		static constexpr uint32_t PREFILTER_SAMPLER_SLOT = 10;
-		static constexpr uint32_t SKYBOX_SAMPLER_SLOT = 11;
-		static constexpr float SHADOW_DEPTH_EXTENT = 6.0f; // ortho slab = radius * this each way along the light
+		uint32_t HDRColorBindlessIndex = 0;
 
-		// Per-frame render-state cache (reset in BeginScene) to skip redundant GL state changes
-		// across the many SubmitMesh calls of a frame.
-		const Material* CurrentMaterial = nullptr;
+		PostProcessSettings PostProcessSettings;
 
-		AssetHandle ActiveEnvironmentHandle = 0;
-		float EnvIntensity = 1.0f;
-		float EnvRotationRadians = 0.0f;
-		std::unordered_map<AssetHandle, Ref<Environment>> EnvironmentCache;
-		Ref<Environment> ActiveEnvironment;
+		bool NoTargetWarned = false;
+
+		static constexpr float SHADOW_DEPTH_EXTENT = 6.0f;
 
 		Renderer3D::Statistics Stats;
 	};
-
 	static Renderer3DData s_Data;
+
+	static constexpr RHI::Format kHDRFormat = RHI::Format::RGBA16F;
+	static constexpr RHI::Format kIDFormat = RHI::Format::R32I;
+	static constexpr RHI::Format kDepthFormat = RHI::Format::D32F;
+	static constexpr RHI::Format kLDRFormat = RHI::Format::RGBA8Unorm;
 
 	static glm::vec3 SRGBToLinear(const glm::vec3& c)
 	{
@@ -331,14 +286,128 @@ namespace Timefall
 	static const glm::vec3 s_CubeFaceDir[6] = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
 	static const glm::vec3 s_CubeFaceUp[6] = {{0, -1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}, {0, -1, 0}, {0, -1, 0}};
 
-	void Renderer3D::Init() {}
+	static bool EnsureHDRTarget()
+	{
+		const uint32_t width = s_Data.LDRTarget->GetWidth();
+		const uint32_t height = s_Data.LDRTarget->GetHeight();
+
+		if (s_Data.HDRTarget)
+			s_Data.HDRTarget->Resize(width, height);
+		else
+			s_Data.HDRTarget = RHI::RenderTarget::Create({.Width = width,
+				.Height = height,
+				.ColorFormat = {kHDRFormat, kIDFormat},
+				.ColorCount = 2,
+				.ColorUsage = {RHI::TextureUsage::None, RHI::TextureUsage::TransferSrc},
+				.DepthFormat = kDepthFormat,
+				.DebugName = "HDRTarget"});
+
+		return s_Data.HDRTarget && s_Data.HDRTarget->IsValid();
+	}
+
+	static bool Prepare()
+	{
+		TF_PROFILE_FUNCTION();
+
+		if (!s_Data.LDRTarget || !s_Data.LDRTarget->IsValid())
+		{
+			if (!s_Data.NoTargetWarned)
+			{
+				TF_CORE_ERROR("Renderer3D::EndScene with no render target - call SetTargetRenderTarget first");
+				s_Data.NoTargetWarned = true;
+			}
+
+			return false;
+		}
+
+		if (!s_Data.ResolvePipeline || !s_Data.ResolvePipeline->IsValid())
+			return false;
+
+		if (!EnsureHDRTarget())
+			return false;
+
+		s_Data.HDRColorBindlessIndex = s_Data.HDRTarget->GetColor(0)->GetBindlessIndex(false);
+		return true;
+	}
+
+	static void Record()
+	{
+		TF_PROFILE_FUNCTION();
+
+		RHI::CommandList* cmd = RHI::RenderDevice::Get().GetCurrentCommandList();
+		if (!cmd)
+			return;
+
+		{
+			TF_PROFILE_SCOPE("Forward Opaque");
+			TF_PROFILE_GPU_SCOPE("Forward Opaque");
+			PerformanceStats::ScopedPassTimer passTimer("Forward Opaque");
+
+			cmd->BeginPass(
+				{
+				.DebugName = "Forward Opaque", .Target = s_Data.HDRTarget.get(), .Color = {
+					{.Load = RHI::LoadOp::Clear, .ClearValue = {0.0f, 0.0f, 0.0f, 1.0f}},
+					{.Load = RHI::LoadOp::Clear, .ClearInt = {-1, -1, -1, 0}}},
+				.Depth = {.Load = RHI::LoadOp::Clear, .ClearDepth = 1.0f}});
+
+			cmd->EndPass();
+		}
+
+		cmd->CopyTexture(*s_Data.HDRTarget->GetColor(1), *s_Data.LDRTarget->GetColor(1));
+
+		{
+			TF_PROFILE_SCOPE("HDR Resolve");
+			TF_PROFILE_GPU_SCOPE("HDR Resolve");
+			PerformanceStats::ScopedPassTimer passTimer("HDR Resolve");
+
+			cmd->BeginPass({.DebugName = "HDR Resolve", .Target = s_Data.LDRTarget.get(), .Color = {{.Load = RHI::LoadOp::DontCare}, {.Load = RHI::LoadOp::Load}}});
+
+			cmd->BindPipeline(*s_Data.ResolvePipeline);
+
+			const ResolvePush push{.HDRColorIndex = s_Data.HDRColorBindlessIndex,
+				.ExposureEV = s_Data.PostProcessSettings.ExposureEV,
+				.Operator = (int32_t)s_Data.PostProcessSettings.Operator,
+				.WhitePoint = s_Data.PostProcessSettings.ReinhardWhitePoint};
+
+			cmd->PushConstants(&push, sizeof(push));
+			cmd->Draw(3);
+			s_Data.Stats.DrawCalls++;
+
+			cmd->EndPass();
+		}
+	}
+
+	void Renderer3D::Init()
+	{
+		TF_PROFILE_FUNCTION();
+
+		s_Data.ResolveShader = ShaderLibrary::Load("Assets/Shaders/Renderer3D_HDRResolve.slang");
+
+		RHI::GraphicsPipelineDesc desc;
+		desc.ShaderModule = s_Data.ResolveShader;
+		desc.Primitive = RHI::Topology::TriangleList;
+		desc.ColorFormats[0] = kLDRFormat;
+		desc.ColorFormats[1] = kIDFormat;
+		desc.ColorCount = 2;
+		desc.ColorWrite[1] = false; // the ids were copied in already; the resolve must not touch them
+		desc.DepthFormat = RHI::Format::Undefined;
+		desc.Depth = {.Test = false, .Write = false};
+		desc.Blend = RHI::BlendMode::None;
+		desc.Raster.Cull = RHI::CullMode::None;
+		desc.DebugName = "Renderer3DResolvePipeline";
+
+		s_Data.ResolvePipeline = RHI::GraphicsPipeline::Create(desc);
+	}
 
 	void Renderer3D::Shutdown()
 	{
 		s_Data = {}; // every Ref it holds owns a GPU resource that must die before the device
 	}
 
-	void Renderer3D::SetTargetRenderTarget(const Ref<RHI::RenderTarget>& target) {}
+	void Renderer3D::SetTargetRenderTarget(const Ref<RHI::RenderTarget>& target)
+	{
+		s_Data.LDRTarget = target;
+	}
 
 	void Renderer3D::BeginScene(const EditorCamera& camera) {}
 
@@ -346,9 +415,19 @@ namespace Timefall
 
 	void Renderer3D::SetShadowSettings(const ShadowSettings& settings) {}
 
-	void Renderer3D::SetPostProcessSettings(const PostProcessSettings& settings) {}
+	void Renderer3D::SetPostProcessSettings(const PostProcessSettings& settings)
+	{
+		s_Data.PostProcessSettings = settings;
+	}
 
-	void Renderer3D::EndScene() {}
+	void Renderer3D::EndScene()
+	{
+		TF_PROFILE_FUNCTION();
+
+		ResetStats(); // stats are per-frame; Record only ever increments
+		if (Prepare())
+			Record();
+	}
 
 	void Renderer3D::SubmitMesh(
 		const glm::mat4& transform, const Ref<MeshSource>& mesh, uint32_t submeshIndex, const Ref<Material>& material, int entityID)
@@ -356,18 +435,21 @@ namespace Timefall
 
 	Renderer3D::Statistics& Renderer3D::GetStats()
 	{
-		static Statistics s_Empty{};
-		return s_Empty;
+		return s_Data.Stats;
 	}
 
-	void Renderer3D::ResetStats() {}
+	void Renderer3D::ResetStats()
+	{
+		s_Data.Stats = {};
+	}
 
 	Ref<Material> Renderer3D::GetDefaultMaterial()
 	{
-		if (!s_Data.DefaultMaterial)
-			s_Data.DefaultMaterial = CreateRef<Material>();
-
-		return s_Data.DefaultMaterial;
+		//if (!s_Data.DefaultMaterial)
+		//	s_Data.DefaultMaterial = CreateRef<Material>();
+		//
+		//return s_Data.DefaultMaterial;
+		return {};
 	}
 
 	void Renderer3D::RegisterBuiltInMeshes(EditorAssetManager& assetManager) {}

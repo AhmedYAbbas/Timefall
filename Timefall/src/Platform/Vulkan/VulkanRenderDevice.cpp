@@ -50,6 +50,26 @@ namespace Timefall::RHI
 		cmd.pipelineBarrier2({.imageMemoryBarrierCount = 1, .pImageMemoryBarriers = &barrier});
 	}
 
+	// what an image was last used for, inferred from the layout it is sitting in
+	static std::pair<vk::PipelineStageFlags2, vk::AccessFlags2> LayoutSourceSync(vk::ImageLayout layout)
+	{
+		switch (layout)
+		{
+			case vk::ImageLayout::eColorAttachmentOptimal:
+				return {vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentWrite};
+			case vk::ImageLayout::eDepthAttachmentOptimal:
+				return {vk::PipelineStageFlagBits2::eLateFragmentTests, vk::AccessFlagBits2::eDepthStencilAttachmentWrite};
+			case vk::ImageLayout::eShaderReadOnlyOptimal:
+				return {vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderSampledRead};
+			case vk::ImageLayout::eTransferSrcOptimal:
+				return {vk::PipelineStageFlagBits2::eCopy, vk::AccessFlagBits2::eTransferRead};
+			case vk::ImageLayout::eTransferDstOptimal:
+				return {vk::PipelineStageFlagBits2::eCopy, vk::AccessFlagBits2::eTransferWrite};
+			default:
+				return {vk::PipelineStageFlagBits2::eTopOfPipe, vk::AccessFlagBits2::eNone};
+		}
+	}
+
 	static vk::AttachmentLoadOp ToVkLoadOp(LoadOp op)
 	{
 		return op == LoadOp::Clear ? vk::AttachmentLoadOp::eClear : op == LoadOp::Load ? vk::AttachmentLoadOp::eLoad
@@ -296,13 +316,22 @@ namespace Timefall::RHI
 			return;
 		}
 
-		TransitionImage(m_Impl->Cmd, s.Image, s.CurrentLayout, vk::ImageLayout::eTransferSrcOptimal,
-			vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentWrite,
+		if (!(s.UsageFlags & vk::ImageUsageFlagBits::eTransferSrc) || !(d.UsageFlags & vk::ImageUsageFlagBits::eTransferDst))
+		{
+			TF_CORE_ERROR("CopyTexture needs TextureUsage::TransferSrc on the source and TextureUsage::TransferDst on the destination");
+			return;
+		}
+
+		const auto [srcStage, srcAccess] = LayoutSourceSync(s.CurrentLayout);
+
+		TransitionImage(m_Impl->Cmd, s.Image, s.CurrentLayout, vk::ImageLayout::eTransferSrcOptimal, srcStage, srcAccess,
 			vk::PipelineStageFlagBits2::eCopy, vk::AccessFlagBits2::eTransferRead, s.Aspect);
 		s.CurrentLayout = vk::ImageLayout::eTransferSrcOptimal;
 
+		// the copy rewrites every texel, so the old contents are discarded; only the write-after-read against
+		// whatever last sampled the destination needs ordering, and the execution dependency alone gives that
 		TransitionImage(m_Impl->Cmd, d.Image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal,
-			vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderSampledRead, vk::PipelineStageFlagBits2::eCopy,
+			LayoutSourceSync(d.CurrentLayout).first, vk::AccessFlagBits2::eNone, vk::PipelineStageFlagBits2::eCopy,
 			vk::AccessFlagBits2::eTransferWrite, d.Aspect);
 		d.CurrentLayout = vk::ImageLayout::eTransferDstOptimal;
 
@@ -323,7 +352,6 @@ namespace Timefall::RHI
 			vk::PipelineStageFlagBits2::eCopy, vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eFragmentShader,
 			vk::AccessFlagBits2::eShaderSampledRead, d.Aspect);
 		d.CurrentLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-
 	}
 
 	void* CommandList::GetNativeHandle()

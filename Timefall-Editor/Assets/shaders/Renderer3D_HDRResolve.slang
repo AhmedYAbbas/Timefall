@@ -32,12 +32,6 @@ VSOutput vsMain(uint vertexID : SV_VertexID)
     return output;
 }
 
-uniform Sampler2D u_HDRColor;
-uniform float u_ExposureEV;
-uniform int u_Operator;
-uniform float u_WhitePoint;
-
-
 // Accurate sRGB OETF (linear -> display).
 float3 LinearToSRGB(float3 c)
 {
@@ -159,7 +153,7 @@ float3 Tonemap(float3 c)
 	{
 		case 0:  return c;                                // None / Linear
 		case 1:  return Reinhard(c);
-		case 2:  return ReinhardExtended(c, u_WhitePoint);
+		case 2:  return ReinhardExtended(c, u_Push.WhitePoint);
 		case 3:  return HableFilmic(c);
 		case 4:  return ACESNarkowicz(c);
 		case 5:  return ACESHill(c);
