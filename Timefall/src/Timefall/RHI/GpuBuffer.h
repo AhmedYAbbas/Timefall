@@ -14,7 +14,8 @@ namespace Timefall::RHI
 		Uniform = BIT(2),
 		Storage = BIT(3),
 		TransferSrc = BIT(4),
-		TransferDst = BIT(5)
+		TransferDst = BIT(5),
+		ShaderDeviceAddress = BIT(6)
 	};
 
 	constexpr BufferUsage operator|(BufferUsage a, BufferUsage b)
@@ -64,6 +65,7 @@ namespace Timefall::RHI
 		void* GetNativeHandle() const;
 
 		uint64_t Size() const;
+		uint64_t GetDeviceAddress() const;
 		bool IsValid() const;
 
 	private:

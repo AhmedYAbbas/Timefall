@@ -31,6 +31,8 @@ namespace Timefall::RHI
 			flags |= vk::BufferUsageFlagBits::eTransferSrc;
 		if (HasFlag(usage, BufferUsage::TransferDst))
 			flags |= vk::BufferUsageFlagBits::eTransferDst;
+		if (HasFlag(usage, BufferUsage::ShaderDeviceAddress))
+			flags |= vk::BufferUsageFlagBits::eShaderDeviceAddress;
 
 		return flags;
 	}
@@ -44,6 +46,7 @@ namespace Timefall::RHI
 		buffer->m_Impl = new Impl();
 		Impl& impl = *buffer->m_Impl;
 		impl.Size = desc.Size;
+		impl.DeviceAddressable = HasFlag(desc.Usage, BufferUsage::ShaderDeviceAddress);
 
 		const vk::BufferCreateInfo bufferInfo{
 			.size = desc.Size, .usage = ToVkUsage(desc.Usage), .sharingMode = vk::SharingMode::eExclusive};
@@ -171,6 +174,20 @@ namespace Timefall::RHI
 	uint64_t GpuBuffer::Size() const
 	{
 		return m_Impl ? m_Impl->Size : 0;
+	}
+
+	uint64_t GpuBuffer::GetDeviceAddress() const
+	{
+		if (!IsValid())
+			return 0;
+
+		if (!m_Impl->DeviceAddressable)
+		{
+			TF_CORE_ERROR("GetDeviceAddress on a buffer created without BufferUsage::ShaderDeviceAddress");
+			return 0;
+		}
+
+		return VulkanContext::Get().GetDevice().getBufferAddress({.buffer = m_Impl->Buffer});
 	}
 
 	bool GpuBuffer::IsValid() const

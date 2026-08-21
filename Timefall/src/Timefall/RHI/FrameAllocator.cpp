@@ -19,7 +19,7 @@ namespace Timefall::RHI
 				const std::string name = std::format("FrameAllocator[{}]", i);
 				s_Slots[i] = GpuBuffer::Create({.Size = bytesPerSlot,
 					.Usage =
-						BufferUsage::Vertex | BufferUsage::Index | BufferUsage::Uniform | BufferUsage::Storage | BufferUsage::TransferSrc,
+						BufferUsage::Vertex | BufferUsage::Index | BufferUsage::Uniform | BufferUsage::Storage | BufferUsage::TransferSrc | BufferUsage::ShaderDeviceAddress,
 					.Memory = MemoryType::HostWrite,
 					.DebugName = name.c_str()});
 			}
@@ -36,7 +36,8 @@ namespace Timefall::RHI
 		s_Slot = 0;
 		s_Overflowed = false;
 
-		TF_CORE_INFO("FrameAllocator: {0} KB x {1} slots", bytesPerSlot / 1024, (uint32_t)FRAMES_IN_FLIGHT);
+		TF_CORE_INFO("FrameAllocator: {0} KB x {1} slots, slot 0 device address 0x{2:x}", bytesPerSlot / 1024, (uint32_t)FRAMES_IN_FLIGHT,
+			s_Slots[0] ? s_Slots[0]->GetDeviceAddress() : 0);
 	}
 
 	void FrameAllocator::Shutdown()

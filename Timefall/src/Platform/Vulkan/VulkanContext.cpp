@@ -239,6 +239,7 @@ namespace Timefall
 			{s12.descriptorBindingVariableDescriptorCount, "descriptorBindingVariableDescriptorCount"},
 			{s12.descriptorBindingSampledImageUpdateAfterBind, "descriptorBindingSampledImageUpdateAfterBind"},
 			{s12.shaderSampledImageArrayNonUniformIndexing, "shaderSampledImageArrayNonUniformIndexing"},
+			{s12.bufferDeviceAddress, "bufferDeviceAddress"},
 			{sBase.samplerAnisotropy, "samplerAnisotropy"}, {sBase.independentBlend, "independentBlend"}};
 
 		for (const auto& [ok, name] : required)
@@ -268,6 +269,7 @@ namespace Timefall
 		f12.descriptorBindingVariableDescriptorCount = vk::True;
 		f12.descriptorBindingSampledImageUpdateAfterBind = vk::True;
 		f12.shaderSampledImageArrayNonUniformIndexing = vk::True;
+		f12.bufferDeviceAddress = vk::True;
 
 		vk::PhysicalDeviceVulkan11Features f11{.pNext = &f12};
 		f11.shaderDrawParameters = vk::True; // gl_BaseVertex: Slang zero-bases SV_VertexID with it
@@ -323,7 +325,8 @@ namespace Timefall
 		fns.vkGetDeviceProcAddr = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceProcAddr;
 		fns.vkGetPhysicalDeviceMemoryProperties2KHR = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetPhysicalDeviceMemoryProperties2;
 
-		const VmaAllocatorCreateInfo info{.physicalDevice = m_PhysicalDevice,
+		const VmaAllocatorCreateInfo info{.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
+			.physicalDevice = m_PhysicalDevice,
 			.device = m_Device,
 			.pVulkanFunctions = &fns,
 			.instance = m_Instance,

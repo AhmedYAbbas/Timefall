@@ -91,6 +91,7 @@ namespace Timefall::RHI
 		void* Mapped = nullptr;
 		uint64_t Size = 0;
 		uint32_t TrackerId = 0;
+		bool DeviceAddressable = false;
 	};
 
 	struct Texture::Impl
