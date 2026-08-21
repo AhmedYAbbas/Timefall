@@ -7,6 +7,7 @@ namespace Timefall::RHI
 {
 	class GraphicsPipeline;
 	class GpuBuffer;
+	class Texture;
 
 	class TF_API CommandList
 	{
@@ -23,12 +24,12 @@ namespace Timefall::RHI
 		void PushConstants(const void* data, uint32_t size, uint32_t offset = 0);
 
 		void Draw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0);
+		void DrawIndexed(
+			uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, int32_t vertexOffset = 0, uint32_t firstInstance = 0);
+		void CopyTexture(Texture& src, Texture& dst);
 
 		void BindVertexBuffer(const GpuBuffer& buffer, uint64_t offset = 0);
 		void BindIndexBuffer(const GpuBuffer& buffer, IndexType type, uint64_t offset = 0);
-
-		void DrawIndexed(
-			uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, int32_t vertexOffset = 0, uint32_t firstInstance = 0);
 
 		void* GetNativeHandle();
 

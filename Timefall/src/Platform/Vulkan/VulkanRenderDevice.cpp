@@ -280,6 +280,52 @@ namespace Timefall::RHI
 		m_Impl->Cmd.drawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 	}
 
+	void CommandList::CopyTexture(Texture& src, Texture& dst)
+	{
+		TF_CORE_ASSERT(!m_Impl->InPass, "CopyTexture must be called outside a pass");
+
+		if (!src.IsValid() || !dst.IsValid())
+			return;
+
+		Texture::Impl& s = *src.m_Impl;
+		Texture::Impl& d = *dst.m_Impl;
+
+		if (s.Format != d.Format || s.Width != d.Width || s.Height != d.Height)
+		{
+			TF_CORE_ERROR("CopyTexture needs matching format and extent");
+			return;
+		}
+
+		TransitionImage(m_Impl->Cmd, s.Image, s.CurrentLayout, vk::ImageLayout::eTransferSrcOptimal,
+			vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentWrite,
+			vk::PipelineStageFlagBits2::eCopy, vk::AccessFlagBits2::eTransferRead, s.Aspect);
+		s.CurrentLayout = vk::ImageLayout::eTransferSrcOptimal;
+
+		TransitionImage(m_Impl->Cmd, d.Image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal,
+			vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderSampledRead, vk::PipelineStageFlagBits2::eCopy,
+			vk::AccessFlagBits2::eTransferWrite, d.Aspect);
+		d.CurrentLayout = vk::ImageLayout::eTransferDstOptimal;
+
+		const vk::ImageCopy2 region{.srcSubresource = {s.Aspect, 0, 0, 1},
+			.srcOffset = {0, 0, 0},
+			.dstSubresource = {d.Aspect, 0, 0, 1},
+			.dstOffset = {0, 0, 0},
+			.extent = {s.Width, s.Height, 1}};
+
+		m_Impl->Cmd.copyImage2({.srcImage = s.Image, .srcImageLayout = vk::ImageLayout::eTransferSrcOptimal, .dstImage = d.Image, .dstImageLayout = vk::ImageLayout::eTransferDstOptimal, .regionCount = 1, .pRegions = &region});
+
+		TransitionImage(m_Impl->Cmd, s.Image, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eShaderReadOnlyOptimal,
+			vk::PipelineStageFlagBits2::eCopy, vk::AccessFlagBits2::eTransferRead, vk::PipelineStageFlagBits2::eFragmentShader,
+			vk::AccessFlagBits2::eShaderSampledRead, s.Aspect);
+		s.CurrentLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+		TransitionImage(m_Impl->Cmd, d.Image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal,
+			vk::PipelineStageFlagBits2::eCopy, vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eFragmentShader,
+			vk::AccessFlagBits2::eShaderSampledRead, d.Aspect);
+		d.CurrentLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+	}
+
 	void* CommandList::GetNativeHandle()
 	{
 		return (void*)(VkCommandBuffer)m_Impl->Cmd;

@@ -183,7 +183,7 @@ namespace Timefall::RHI
 			attachment.dstAlphaBlendFactor
 				= desc.Blend == BlendMode::Additive ? vk::BlendFactor::eOne : vk::BlendFactor::eOneMinusSrcAlpha;
 			attachment.alphaBlendOp = vk::BlendOp::eAdd;
-			attachment.colorWriteMask = allChannels;
+			attachment.colorWriteMask = desc.ColorWrite[i] ? allChannels : vk::ColorComponentFlags{};
 		}
 
 		const vk::PipelineColorBlendStateCreateInfo blend{

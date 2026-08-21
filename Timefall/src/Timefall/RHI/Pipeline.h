@@ -35,6 +35,7 @@ namespace Timefall::RHI
 		Topology Primitive = Topology::TriangleList;
 		Format ColorFormats[8]{};
 		uint32_t ColorCount = 0;
+		bool ColorWrite[8]{true, true, true, true, true, true, true, true};
 		Format DepthFormat = Format::Undefined;
 		DepthState Depth{};
 		BlendMode Blend = BlendMode::None;
