@@ -5,6 +5,7 @@
 #include "Timefall/Renderer/Shader.h"
 #include "Timefall/Renderer/ShaderLibrary.h"
 #include "Timefall/Renderer/GPUProfiler.h"
+#include "Timefall/Renderer/PassUniforms.h"
 #include "Timefall/Debug/PerformanceStats.h"
 #include "Timefall/Asset/AssetManager.h"
 #include "Timefall/Asset/EditorAssetManager.h"
@@ -20,75 +21,6 @@
 
 namespace Timefall
 {
-	// std140 layout matching the Camera UBO block in Renderer3D_Lit.glsl.
-	struct CameraData
-	{
-		glm::mat4 ViewProjection;
-		glm::mat4 View;
-		glm::vec3 CameraPosition;
-		float _Padding = 0.0f;
-	};
-
-	static constexpr uint32_t MAX_DIR_LIGHTS = 4;
-	static constexpr uint32_t MAX_POINT_LIGHTS = 32;
-	static constexpr uint32_t MAX_SPOT_LIGHTS = 16;
-
-	// std140 mirrors of the Lights UBO block in Renderer3D_Lit.glsl. All vec4 -> 16-byte aligned.
-	struct GpuDirLight
-	{
-		glm::vec4 Direction;
-		glm::vec4 Color;
-	}; // Color.a = intensity
-	struct GpuPointLight
-	{
-		glm::vec4 Position;
-		glm::vec4 Color;
-	}; // Position.w = range, Color.a = intensity
-	struct GpuSpotLight
-	{
-		glm::vec4 Position;
-		glm::vec4 Direction;
-		glm::vec4 Color;
-		glm::vec4 Params;
-	};
-	// Spot: Position.xyz = position, Direction.xyz = direction, Color.rgb = color,
-	//       Params = (range, innerCos, outerCos, intensity)
-
-	struct LightsData
-	{
-		GpuDirLight DirLights[MAX_DIR_LIGHTS];
-		GpuPointLight PointLights[MAX_POINT_LIGHTS];
-		GpuSpotLight SpotLights[MAX_SPOT_LIGHTS];
-		uint32_t DirCount = 0;
-		uint32_t PointCount = 0;
-		uint32_t SpotCount = 0;
-		uint32_t _Padding = 0;
-	};
-
-	// std140 mirror of the Material UBO block in Renderer3D_Lit.glsl.
-	struct MaterialData
-	{
-		glm::vec3 BaseColor = glm::vec3(1.0f);
-		float Metallic = 0.0f; // vec3 + float share one 16B slot
-		glm::vec3 Emissive = glm::vec3(0.0f);
-		float Roughness = 1.0f;
-		float NormalStrength = 1.0f;
-		float EmissiveIntensity = 1.0f;
-		float Opacity = 1.0f;
-		float AlphaCutoff = 0.5f;
-		int32_t AlphaMode = 0;
-		float _Pad0 = 0.0f, _Pad1 = 0.0f, _Pad2 = 0.0f;
-	};
-
-	// std140 mirror of the Environment UBO block in Renderer3D_Lit.glsl.
-	struct EnvironmentData
-	{
-		float EnvIntensity = 1.0f;
-		float EnvRotation = 0.0f;
-		float MaxReflectionLod = 4.0f;
-		int32_t HasEnvironment = 0;
-	};
-
 	struct MeshSubmission
 	{
 		glm::mat4 Transform;
@@ -96,38 +28,6 @@ namespace Timefall
 		uint32_t SubmeshIndex;
 		Ref<Material> Material;
 		int EntityID;
-	};
-
-	static constexpr uint32_t MAX_CASCADES = 4;
-
-	// std140 mirror of the Shadows UBO block in Renderer3D_Lit.glsl.
-	struct ShadowData
-	{
-		glm::mat4 LightViewProj[MAX_CASCADES];
-		glm::vec4 CascadeSplits; // far view-depth of each cascade
-		glm::vec4 CascadeTexelWorld; // world units per shadow texel, per cascade
-		glm::vec4 CascadeDepthRange; // world depth mapped to [0,1] per cascade
-		uint32_t CascadeCount = 0;
-		uint32_t VisualizeCascades = 0;
-		float LightSize = 0.08f; // PCSS light size (from the sun's ShadowSoftness)
-		float DepthBias = 1.0f; // multiplier on the shader depth bias
-		float CascadeBlend = 0.1f; // boundary blend band (fraction of cascade extent)
-		int32_t BlockerSamples = 16; // PCSS blocker search taps
-		int32_t PCFSamples = 16; // PCSS / fixed-PCF filter taps
-		int32_t SoftShadows = 1; // 1 = PCSS, 0 = fixed-kernel PCF
-	};
-
-	// std140 mirror of the SpotShadows UBO block. Indexed by spot light index.
-	struct SpotShadowData
-	{
-		glm::mat4 LightViewProj[MAX_SPOT_LIGHTS];
-		glm::vec4 Params[MAX_SPOT_LIGHTS]; // x = casts(0/1), y = lightSize, z = depthBias, w = atlas layer
-	};
-
-	// std140 mirror of the PointShadows UBO block. Indexed by point light index.
-	struct PointShadowData
-	{
-		glm::vec4 Params[MAX_POINT_LIGHTS]; // x = casts(0/1), y = lightSize, z = depthBias, w = cubeLayer
 	};
 
 	struct PointCaster
@@ -162,7 +62,6 @@ namespace Timefall
 		Ref<MeshSource> SphereMesh;
 		Ref<MeshSource> PlaneMesh;
 		Ref<Material> DefaultMaterial;
-		
 
 		bool NoTargetWarned = false;
 
@@ -218,7 +117,7 @@ namespace Timefall
 	}
 
 	static void ComputeCascades(const glm::mat4& cameraViewProjection, const glm::mat4& cameraView, const glm::vec3& lightDir,
-		const ShadowSettings& settings, ShadowData& out)
+		const ShadowSettings& settings, PassUniforms& out)
 	{
 		const uint32_t cascadeCount = settings.CascadeCount;
 		const float maxShadowDistance = settings.MaxShadowDistance;
@@ -349,10 +248,9 @@ namespace Timefall
 			TF_PROFILE_GPU_SCOPE("Forward Opaque");
 			PerformanceStats::ScopedPassTimer passTimer("Forward Opaque");
 
-			cmd->BeginPass(
-				{
-				.DebugName = "Forward Opaque", .Target = s_Data.HDRTarget.get(), .Color = {
-					{.Load = RHI::LoadOp::Clear, .ClearValue = {0.0f, 0.0f, 0.0f, 1.0f}},
+			cmd->BeginPass({.DebugName = "Forward Opaque",
+				.Target = s_Data.HDRTarget.get(),
+				.Color = {{.Load = RHI::LoadOp::Clear, .ClearValue = {0.0f, 0.0f, 0.0f, 1.0f}},
 					{.Load = RHI::LoadOp::Clear, .ClearInt = {-1, -1, -1, 0}}},
 				.Depth = {.Load = RHI::LoadOp::Clear, .ClearDepth = 1.0f}});
 
@@ -366,7 +264,9 @@ namespace Timefall
 			TF_PROFILE_GPU_SCOPE("HDR Resolve");
 			PerformanceStats::ScopedPassTimer passTimer("HDR Resolve");
 
-			cmd->BeginPass({.DebugName = "HDR Resolve", .Target = s_Data.LDRTarget.get(), .Color = {{.Load = RHI::LoadOp::DontCare}, {.Load = RHI::LoadOp::Load}}});
+			cmd->BeginPass({.DebugName = "HDR Resolve",
+				.Target = s_Data.LDRTarget.get(),
+				.Color = {{.Load = RHI::LoadOp::DontCare}, {.Load = RHI::LoadOp::Load}}});
 
 			cmd->BindPipeline(*s_Data.ResolvePipeline);
 

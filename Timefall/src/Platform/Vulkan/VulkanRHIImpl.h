@@ -67,6 +67,7 @@ namespace Timefall::RHI
 		bool PassLabelPushed = false;
 		RenderTarget* PassTarget = nullptr;
 		uint32_t PassColorCount = 0;
+		uint32_t PassSlice = 0;
 
 		vk::PipelineLayout BoundLayout;
 		vk::ShaderStageFlags BoundPushStages;

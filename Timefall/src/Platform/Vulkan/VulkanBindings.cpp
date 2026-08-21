@@ -29,10 +29,15 @@ namespace Timefall
 		uint32_t s_Slot = 0;
 		bool s_Ready = false;
 
+		Ref<RHI::GpuBuffer> s_PassUniforms;
+		uint64_t s_PassUniformStride = 0;
+		uint64_t s_PassSlice = 0;
+		bool s_PassSliceExhausted = false;
+
 		bool CreatePool(uint32_t bindlessCapacity)
 		{
 			const vk::DescriptorPoolSize sizes[]{
-				{vk::DescriptorType::eUniformBufferDynamic, 1}, {vk::DescriptorType::eSampler, (uint32_t)RHI::SamplerSlot::Count}, {vk::DescriptorType::eSampledImage, bindlessCapacity}};
+				{vk::DescriptorType::eUniformBufferDynamic, 2}, {vk::DescriptorType::eSampler, (uint32_t)RHI::SamplerSlot::Count}, {vk::DescriptorType::eSampledImage, bindlessCapacity}};
 
 			auto pool = VulkanContext::Get().GetDevice().createDescriptorPool({
 				.flags = vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind,
@@ -80,7 +85,11 @@ namespace Timefall
 			const vk::DescriptorBindingFlags frameFlags[]{{}};
 
 			s_SetLayouts[0] = CreateSetLayout(frameBindings, frameFlags, false, "Bindings:Set0_PerFrame");
-			s_SetLayouts[1] = CreateSetLayout({}, {}, false, "Bindings:Set1_PerPass");
+
+			const vk::DescriptorSetLayoutBinding passBindings[]{{.binding = 0, .descriptorType = vk::DescriptorType::eUniformBufferDynamic, .descriptorCount = 1, .stageFlags = VulkanBindings::kAllStages}};
+			const vk::DescriptorBindingFlags passFlags[]{{}};
+
+			s_SetLayouts[1] = CreateSetLayout(passBindings, passFlags, false, "Bindings:Set1_PerPass");
 
 			const vk::DescriptorSetLayoutBinding bindlessBindings[]{
 				{.binding = VulkanBindings::BindingSamplers,
@@ -158,6 +167,28 @@ namespace Timefall
 			return true;
 		}
 
+		bool CreatePassUniforms()
+		{
+			s_PassUniformStride = RHI::PassUniformSlotBytes;
+			const uint64_t alignment = VulkanContext::Get().GetLimits().MinUniformBufferOffsetAlignment;
+			if (alignment > 0)
+				s_PassUniformStride = (RHI::PassUniformSlotBytes + alignment - 1) & ~(alignment - 1);
+
+			s_PassUniforms = RHI::GpuBuffer::Create({.Size = s_PassUniformStride * RHI::PassUniformSlices * RHI::FRAMES_IN_FLIGHT,
+				.Usage = RHI::BufferUsage::Uniform,
+				.Memory = RHI::MemoryType::HostWrite,
+				.DebugName = "PassUniforms"});
+
+			if (!s_PassUniforms || !s_PassUniforms->IsValid())
+			{
+				TF_CORE_ERROR("PassUniforms buffer failed to allocate");
+				return false;
+			}
+
+			TF_CORE_INFO("Pass uniforms: {0} bytes per slot, {1} byte stride, {2} slices x {3} frames", RHI::PassUniformSlotBytes, s_PassUniformStride, RHI::PassUniformSlices, (uint32_t)RHI::FRAMES_IN_FLIGHT);
+			return true;
+		}
+
 		bool CreateWhiteTexture()
 		{
 			constexpr uint32_t white = 0xFFFFFFFF;
@@ -177,12 +208,14 @@ namespace Timefall
 		void WriteInitialDescriptors()
 		{
 			const vk::DescriptorBufferInfo frameInfo{.buffer = (VkBuffer)s_FrameUniforms->GetNativeHandle(), .offset = 0, .range = RHI::FrameUniformSlotBytes};
+			const vk::DescriptorBufferInfo passInfo{.buffer = (VkBuffer)s_PassUniforms->GetNativeHandle(), .offset = 0, .range = RHI::PassUniformSlotBytes};
 
 			std::array<vk::DescriptorImageInfo, (size_t)RHI::SamplerSlot::Count> samplerInfos{};
 			for (uint32_t i = 0; i < (uint32_t)RHI::SamplerSlot::Count; i++)
 				samplerInfos[i].sampler = VulkanSamplerCache::Get((RHI::SamplerSlot)i);
 
 			const vk::WriteDescriptorSet writes[]{{.dstSet = s_Sets[0], .dstBinding = 0, .dstArrayElement = 0, .descriptorCount = 1, .descriptorType = vk::DescriptorType::eUniformBufferDynamic, .pBufferInfo = &frameInfo},
+				{.dstSet = s_Sets[1], .dstBinding = 0, .dstArrayElement = 0, .descriptorCount = 1, .descriptorType = vk::DescriptorType::eUniformBufferDynamic, .pBufferInfo = &passInfo},
 				{.dstSet = s_Sets[2],
 					.dstBinding = VulkanBindings::BindingSamplers,
 					.dstArrayElement = 0,
@@ -220,6 +253,7 @@ namespace Timefall
 		};
 
 		constexpr CanonicalBinding kCanonical[]{{0, 0, ShaderBindingType::UniformBuffer, 1},
+			{1, 0, ShaderBindingType::UniformBuffer, 1},
 			{2, VulkanBindings::BindingSamplers, ShaderBindingType::Sampler, (uint32_t)RHI::SamplerSlot::Count}, {2, VulkanBindings::BindingTextures, ShaderBindingType::SampledImage, 0}};
 
 		const char* BindingTypeName(ShaderBindingType type)
@@ -325,7 +359,7 @@ namespace Timefall
 		}
 
 		if (!CreatePool(capacity) || !CreateSetLayouts(capacity) || !AllocateSets(capacity) || !CreateFrameUniforms()
-			|| !CreateGlobalLayout() || !CreateWhiteTexture())
+			|| !CreatePassUniforms() || !CreateGlobalLayout() || !CreateWhiteTexture())
 		{
 			Shutdown();
 			return;
@@ -347,6 +381,7 @@ namespace Timefall
 
 		VulkanBindlessTable::Shutdown();
 		s_WhiteTexture.reset();
+		s_PassUniforms.reset();
 		s_FrameUniforms.reset();
 
 		for (auto& [key, layout] : s_LayoutCache)
@@ -374,12 +409,17 @@ namespace Timefall
 		}
 
 		s_FrameUniformStride = 0;
+		s_PassUniformStride = 0;
+		s_PassSlice = 0;
+		s_PassSliceExhausted = false;
 		s_Slot = 0;
 	}
 
 	void VulkanBindings::BeginFrame(uint32_t slot)
 	{
 		s_Slot = slot % RHI::FRAMES_IN_FLIGHT;
+		s_PassSlice = 0;
+		s_PassSliceExhausted = false;
 	}
 
 	vk::DescriptorSet VulkanBindings::GetBindlessSet()
@@ -458,18 +498,21 @@ namespace Timefall
 		return *layout;
 	}
 
-	void VulkanBindings::BindGlobalSets(vk::CommandBuffer cmd, vk::PipelineLayout layout)
+	void VulkanBindings::BindGlobalSets(vk::CommandBuffer cmd, vk::PipelineLayout layout, uint32_t passSlice)
 	{
 		if (!s_Ready || !layout)
 			return;
 
-		const uint32_t dynamicOffset = (uint32_t)(s_Slot * s_FrameUniformStride);
+		const uint32_t dynamicOffsets[]{(uint32_t)(s_Slot * s_FrameUniformStride),
+			(uint32_t)((s_Slot * RHI::PassUniformSlices + std::min(passSlice, RHI::PassUniformSlices - 1)) * s_PassUniformStride)};
 
 		cmd.bindDescriptorSets2({.stageFlags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
 			.layout = layout,
 			.firstSet = 0,
 			.descriptorSetCount = SetCount,
-			.pDescriptorSets = s_Sets.data(), .dynamicOffsetCount = 1, .pDynamicOffsets = &dynamicOffset});
+			.pDescriptorSets = s_Sets.data(),
+			.dynamicOffsetCount = (uint32_t)std::size(dynamicOffsets),
+			.pDynamicOffsets = dynamicOffsets});
 	}
 
 	bool RHI::Bindings::WriteFrameUniforms(const void* data, uint64_t size)
@@ -484,6 +527,33 @@ namespace Timefall
 		}
 
 		return s_FrameUniforms->Write(data, size, s_Slot * s_FrameUniformStride);
+	}
+
+	uint32_t RHI::Bindings::WritePassUniforms(const void* data, uint64_t size)
+	{
+		if (!s_Ready || !data)
+			return UINT32_MAX;
+
+		if (size > RHI::PassUniformSlotBytes)
+		{
+			TF_CORE_ERROR("WritePassUniforms got {0} bytes for a {1} byte slot", size, RHI::PassUniformSlotBytes);
+			return UINT32_MAX;
+		}
+
+		if (s_PassSlice >= RHI::PassUniformSlices)
+		{
+			if (!s_PassSliceExhausted)
+			{
+				TF_CORE_ERROR("Pass uniform slices exhausted ({0} per frame)", RHI::PassUniformSlices);
+				s_PassSliceExhausted = true;
+			}
+
+			return UINT32_MAX;
+		}
+
+		const uint32_t slice = s_PassSlice++;
+		const uint64_t offset = (s_Slot * RHI::PassUniformSlices + slice) * s_PassUniformStride;
+		return s_PassUniforms->Write(data, size, offset) ? slice : UINT32_MAX;
 	}
 
 	uint32_t RHI::Bindings::GetBindlessCapacity()

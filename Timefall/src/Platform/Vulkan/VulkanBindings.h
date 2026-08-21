@@ -31,6 +31,6 @@ namespace Timefall
 
 		static vk::PipelineLayout GetLayoutFor(const ShaderReflection& reflection, const std::string& debugName);
 
-		static void BindGlobalSets(vk::CommandBuffer cmd, vk::PipelineLayout layout);
+		static void BindGlobalSets(vk::CommandBuffer cmd, vk::PipelineLayout layout, uint32_t passSlice);
 	};
 }

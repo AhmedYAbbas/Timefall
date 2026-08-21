@@ -14,11 +14,14 @@ namespace Timefall::RHI
 	};
 
 	inline constexpr uint64_t FrameUniformSlotBytes = 256;
+	inline constexpr uint64_t PassUniformSlotBytes = 4608;
+	inline constexpr uint32_t PassUniformSlices = 16; // per frame in flight
 
 	class TF_API Bindings
 	{
 	public:
 		static bool WriteFrameUniforms(const void* data, uint64_t size);
+		static uint32_t WritePassUniforms(const void* data, uint64_t size);
 
 		static uint32_t GetBindlessCapacity();
 		static uint32_t GetBindlessUsed();

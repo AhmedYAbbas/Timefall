@@ -188,6 +188,7 @@ namespace Timefall::RHI
 		m_Impl->InPass = true;
 		m_Impl->PassTarget = desc.Target;
 		m_Impl->PassColorCount = colorCount;
+		m_Impl->PassSlice = 0;
 
 		SetViewport(0, 0, extent.width, extent.height);
 		SetScissor(0, 0, extent.width, extent.height);
@@ -254,7 +255,12 @@ namespace Timefall::RHI
 		m_Impl->BoundPushSize = impl.PushSize;
 
 		if (impl.HasGlobalPrefix)
-			VulkanBindings::BindGlobalSets(m_Impl->Cmd, impl.Layout);
+			VulkanBindings::BindGlobalSets(m_Impl->Cmd, impl.Layout, m_Impl->PassSlice);
+	}
+
+	void CommandList::SetPassUniformSlice(uint32_t slice)
+	{
+		m_Impl->PassSlice = slice;
 	}
 
 	void CommandList::PushConstants(const void* data, uint32_t size, uint32_t offset)
