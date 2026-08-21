@@ -1,7 +1,20 @@
 //--------------------------
 // - Timefall -
-// HDR Resolve: exposure -> tonemap -> sRGB encode. Fullscreen triangle (no vertex buffer).
+// HDR Resolve: exposure -> tonemap -> sRGB encode. Fullscreen triangle (no vertex buffer)
 // --------------------------
+
+import Common.Bindings;
+
+struct ResolvePush
+{
+	uint HDRColorIndex;
+	float ExposureEV;
+	int Operator;
+	float WhitePoint;
+}
+
+[[vk::push_constant]]
+ConstantBuffer<ResolvePush> u_Push;
 
 struct VSOutput
 {
@@ -14,7 +27,7 @@ VSOutput vsMain(uint vertexID : SV_VertexID)
 {
     float2 pos = float2((vertexID << 1) & 2, vertexID & 2); // (0,0),(2,0),(0,2)
     VSOutput output;
-    output.uv = pos;
+    output.uv = float2(pos.x, 1.0f - pos.y);
     output.position = float4(pos * 2.0 - 1.0, 0.0, 1.0);
     return output;
 }
@@ -142,7 +155,7 @@ float3 KhronosPBRNeutral(float3 color)
 
 float3 Tonemap(float3 c)
 {
-	switch (u_Operator)
+	switch (u_Push.Operator)
 	{
 		case 0:  return c;                                // None / Linear
 		case 1:  return Reinhard(c);
@@ -159,6 +172,6 @@ float3 Tonemap(float3 c)
 [shader("fragment")]
 float4 fsMain(VSOutput i) : SV_Target
 {
-    float3 hdrColor = u_HDRColor.Sample(i.uv).rgb * exp2(u_ExposureEV);
-    return float4(LinearToSRGB(Tonemap(hdrColor)), 1.0);
+    const float3 hdrColor = SampleBindless(u_Push.HDRColorIndex, SAMPLER_LINEAR_CLAMP, i.uv).rgb * exp2(u_Push.ExposureEV);
+	return float4(LinearToSRGB(Tonemap(hdrColor)), 1.0f);
 }
