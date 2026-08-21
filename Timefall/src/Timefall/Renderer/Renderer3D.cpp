@@ -156,7 +156,13 @@ namespace Timefall
 
 		uint32_t HDRColorBindlessIndex = 0;
 
-		PostProcessSettings PostProcessSettings;
+		PostProcessSettings PostProcess;
+
+		Ref<MeshSource> CubeMesh;
+		Ref<MeshSource> SphereMesh;
+		Ref<MeshSource> PlaneMesh;
+		Ref<Material> DefaultMaterial;
+		
 
 		bool NoTargetWarned = false;
 
@@ -365,9 +371,9 @@ namespace Timefall
 			cmd->BindPipeline(*s_Data.ResolvePipeline);
 
 			const ResolvePush push{.HDRColorIndex = s_Data.HDRColorBindlessIndex,
-				.ExposureEV = s_Data.PostProcessSettings.ExposureEV,
-				.Operator = (int32_t)s_Data.PostProcessSettings.Operator,
-				.WhitePoint = s_Data.PostProcessSettings.ReinhardWhitePoint};
+				.ExposureEV = s_Data.PostProcess.ExposureEV,
+				.Operator = (int32_t)s_Data.PostProcess.Operator,
+				.WhitePoint = s_Data.PostProcess.ReinhardWhitePoint};
 
 			cmd->PushConstants(&push, sizeof(push));
 			cmd->Draw(3);
@@ -381,6 +387,14 @@ namespace Timefall
 	{
 		TF_PROFILE_FUNCTION();
 
+		{
+			RHI::UploadScope upload;
+			s_Data.CubeMesh = MeshSource::CreateCube();
+			s_Data.SphereMesh = MeshSource::CreateSphere();
+			s_Data.PlaneMesh = MeshSource::CreatePlane();
+		}
+
+		s_Data.DefaultMaterial = CreateRef<Material>();
 		s_Data.ResolveShader = ShaderLibrary::Load("Assets/Shaders/Renderer3D_HDRResolve.slang");
 
 		RHI::GraphicsPipelineDesc desc;
@@ -423,7 +437,7 @@ namespace Timefall
 
 	void Renderer3D::SetPostProcessSettings(const PostProcessSettings& settings)
 	{
-		s_Data.PostProcessSettings = settings;
+		s_Data.PostProcess = settings;
 	}
 
 	void Renderer3D::EndScene()
@@ -450,14 +464,15 @@ namespace Timefall
 
 	Ref<Material> Renderer3D::GetDefaultMaterial()
 	{
-		//if (!s_Data.DefaultMaterial)
-		//	s_Data.DefaultMaterial = CreateRef<Material>();
-		//
-		//return s_Data.DefaultMaterial;
-		return {};
+		return s_Data.DefaultMaterial;
 	}
 
-	void Renderer3D::RegisterBuiltInMeshes(EditorAssetManager& assetManager) {}
+	void Renderer3D::RegisterBuiltInMeshes(EditorAssetManager& assetManager)
+	{
+		assetManager.AddMemoryOnlyAsset(BuiltInMesh::Cube, s_Data.CubeMesh, "Cube", AssetType::Mesh);
+		assetManager.AddMemoryOnlyAsset(BuiltInMesh::Sphere, s_Data.SphereMesh, "Sphere", AssetType::Mesh);
+		assetManager.AddMemoryOnlyAsset(BuiltInMesh::Plane, s_Data.PlaneMesh, "Plane", AssetType::Mesh);
+	}
 
 	void Renderer3D::SubmitDirectionalLight(
 		const glm::vec3& direction, const glm::vec3& color, float intensity, bool castsShadows, float shadowSoftness, float depthBias)

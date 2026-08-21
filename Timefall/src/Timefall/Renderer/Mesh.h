@@ -3,6 +3,8 @@
 #include "Timefall/Core/Core.h"
 #include "Timefall/Asset/Asset.h"
 
+#include "Timefall/RHI/GpuBuffer.h"
+
 #include <glm/glm.hpp>
 #include <vector>
 #include <string>
@@ -42,6 +44,10 @@ namespace Timefall
 
 		const std::vector<Submesh>& GetSubmeshes() const { return m_Submeshes; }
 
+		const Ref<RHI::GpuBuffer> GetVertexBuffer() const { return m_VertexBuffer; }
+		const Ref<RHI::GpuBuffer> GetIndexBuffer() const { return m_IndexBuffer; }
+		bool HasGpuBuffers() const { return m_VertexBuffer && m_VertexBuffer->IsValid() && m_IndexBuffer && m_IndexBuffer->IsValid(); }
+
 		static AssetType GetStaticType() { return AssetType::Mesh; }
 		virtual AssetType GetType() const override { return GetStaticType(); }
 
@@ -55,6 +61,9 @@ namespace Timefall
 
 	private:
 		std::vector<Submesh> m_Submeshes;
+
+		Ref<RHI::GpuBuffer> m_VertexBuffer;
+		Ref<RHI::GpuBuffer> m_IndexBuffer;
 	};
 
 	// String <-> enum helpers, retained for the legacy serializer shim.

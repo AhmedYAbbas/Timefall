@@ -10,8 +10,20 @@ namespace Timefall
 		const std::vector<MeshVertex>& vertices, const std::vector<uint32_t>& indices, const std::vector<Submesh>& submeshes)
 		: m_Submeshes(submeshes)
 	{
-		(void)vertices;
-		(void)indices;
+		if (vertices.empty() || indices.empty())
+		{
+			TF_CORE_WARN("MeshSource created with no geometry ({0} vertices, {1} indices)", vertices.size(), indices.size());
+			return;
+		}
+
+		RHI::UploadScope upload;
+
+		m_VertexBuffer = RHI::GpuBuffer::CreateWithData(
+			{.Size = vertices.size() * sizeof(MeshVertex), .Usage = RHI::BufferUsage::Vertex, .DebugName = "MeshVertices"},
+			vertices.data());
+
+		m_IndexBuffer = RHI::GpuBuffer::CreateWithData(
+			{.Size = indices.size() * sizeof(uint32_t), .Usage = RHI::BufferUsage::Index, .DebugName = "MeshIncdices"}, indices.data());
 	}
 
 	Ref<MeshSource> MeshSource::Create(
