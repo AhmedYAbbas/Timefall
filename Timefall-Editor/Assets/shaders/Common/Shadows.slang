@@ -1,4 +1,4 @@
-import Bindings;
+import Common.Bindings;
 
 float SunShadow(float3 worldPos, float viewDepth, float3 N, float3 L)
 {

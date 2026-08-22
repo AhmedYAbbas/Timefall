@@ -451,6 +451,8 @@ namespace Timefall
 				.Target = s_Data.LDRTarget.get(),
 				.Color = {{.Load = RHI::LoadOp::DontCare}, {.Load = RHI::LoadOp::Load}}});
 
+			cmd->SetPassUniformSlice(s_Data.PassSlice);
+
 			cmd->BindPipeline(*s_Data.ResolvePipeline);
 
 			const ResolvePush push{.HDRColorIndex = s_Data.HDRColorBindlessIndex,
@@ -526,6 +528,9 @@ namespace Timefall
 
 	void Renderer3D::Shutdown()
 	{
+		s_Data.MaterialIndices.clear();
+		s_Data.Materials.clear();
+		s_Data.Submissions.clear();
 		s_Data = {}; // every Ref it holds owns a GPU resource that must die before the device
 	}
 

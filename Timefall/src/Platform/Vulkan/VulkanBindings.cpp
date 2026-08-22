@@ -31,7 +31,7 @@ namespace Timefall
 
 		Ref<RHI::GpuBuffer> s_PassUniforms;
 		uint64_t s_PassUniformStride = 0;
-		uint64_t s_PassSlice = 0;
+		uint32_t s_PassSlice = 0;
 		bool s_PassSliceExhausted = false;
 
 		bool CreatePool(uint32_t bindlessCapacity)

@@ -41,9 +41,9 @@ namespace Timefall
 		glm::mat4 View{1.0f};
 		glm::vec4 CameraPosition{0.0f};
 
-		GpuDirLight DirLights[MAX_DIR_LIGHTS];
-		GpuPointLight PointLights[MAX_POINT_LIGHTS];
-		GpuSpotLight SpotLights[MAX_SPOT_LIGHTS];
+		GpuDirLight DirLights[MAX_DIR_LIGHTS]{};
+		GpuPointLight PointLights[MAX_POINT_LIGHTS]{};
+		GpuSpotLight SpotLights[MAX_SPOT_LIGHTS]{};
 		uint32_t DirCount = 0;
 		uint32_t PointCount = 0;
 		uint32_t SpotCount = 0;

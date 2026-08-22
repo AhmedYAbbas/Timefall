@@ -44,8 +44,8 @@ namespace Timefall
 
 		const std::vector<Submesh>& GetSubmeshes() const { return m_Submeshes; }
 
-		const Ref<RHI::GpuBuffer> GetVertexBuffer() const { return m_VertexBuffer; }
-		const Ref<RHI::GpuBuffer> GetIndexBuffer() const { return m_IndexBuffer; }
+		const Ref<RHI::GpuBuffer>& GetVertexBuffer() const { return m_VertexBuffer; }
+		const Ref<RHI::GpuBuffer>& GetIndexBuffer() const { return m_IndexBuffer; }
 		bool HasGpuBuffers() const { return m_VertexBuffer && m_VertexBuffer->IsValid() && m_IndexBuffer && m_IndexBuffer->IsValid(); }
 
 		static AssetType GetStaticType() { return AssetType::Mesh; }
