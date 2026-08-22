@@ -608,15 +608,47 @@ namespace Timefall
 
 	void Renderer3D::SubmitDirectionalLight(
 		const glm::vec3& direction, const glm::vec3& color, float intensity, bool castsShadows, float shadowSoftness, float depthBias)
-	{}
+	{
+		if (s_Data.Pass.DirCount >= MAX_DIR_LIGHTS)
+			return;
+
+		GpuDirLight& light = s_Data.Pass.DirLights[s_Data.Pass.DirCount++];
+		light.Direction = glm::vec4(glm::normalize(direction), 0.0f);
+		light.Color = glm::vec4(SRGBToLinear(color), intensity);
+
+		s_Data.Stats.DirectionalLights = s_Data.Pass.DirCount;
+	}
 
 	void Renderer3D::SubmitPointLight(const glm::vec3& position, const glm::vec3& color, float intensity, float range, bool castsShadows,
 		float shadowSoftness, float depthBias)
-	{}
+	{
+		if (s_Data.Pass.PointCount >= MAX_POINT_LIGHTS)
+			return;
+
+		GpuPointLight& light = s_Data.Pass.PointLights[s_Data.Pass.PointCount++];
+		light.Position = glm::vec4(position, range);
+		light.Color = glm::vec4(SRGBToLinear(color), intensity);
+
+		s_Data.Stats.PointLights = s_Data.Pass.PointCount;
+	}
 
 	void Renderer3D::SubmitSpotLight(const glm::vec3& position, const glm::vec3& direction, const glm::vec3& color, float intensity,
 		float range, float innerCutoffDegrees, float outerCutoffDegrees, bool castsShadows, float shadowSoftness, float depthBias)
-	{}
+	{
+		if (s_Data.Pass.SpotCount >= MAX_SPOT_LIGHTS)
+			return;
+
+		const float innerCos = glm::cos(glm::radians(innerCutoffDegrees));
+		const float outerCos = glm::cos(glm::radians(outerCutoffDegrees));
+
+		GpuSpotLight& light = s_Data.Pass.SpotLights[s_Data.Pass.SpotCount++];
+		light.Position = glm::vec4(position, 0.0f);
+		light.Params = glm::vec4(glm::normalize(direction), 0.0f);
+		light.Color = glm::vec4(SRGBToLinear(color), 0.0f);
+		light.Params = glm::vec4(range, innerCos, outerCos, intensity);
+
+		s_Data.Stats.SpotLights = s_Data.Pass.SpotCount;
+	}
 
 	void Renderer3D::SubmitEnvironment(AssetHandle environmentMap, float intensity, float rotationDegrees) {}
 }
