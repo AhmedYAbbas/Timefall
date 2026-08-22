@@ -104,7 +104,57 @@ FSOutput fsMain(VSOutput input)
 	s.AO = SampleBindless(m.Maps1.x, SAMPLER_LINEAR_REPEAT, input.uv).r;
 	s.F0 = lerp(float3(0.04), s.Albedo, s.Metallic);
 
+	const float viewDepth = -mul(u_Pass.View, float4(input.worldPos, 1.0)).z; // view looks down -z
+
 	float3 Lo = EvaluateAmbient(s);
+
+	for (uint i = 0; i < u_Pass.DirCount; i++)
+	{
+		const float3 L = normalize(-u_Pass.DirLights[i].Direction.xyz);
+		const float3 radiance = u_Pass.DirLights[i].Color.rgb * u_Pass.DirLights[i].Color.a;
+
+		const float shadow = i == 0 ? SunShadow(input.worldPos, viewDepth, s.N, L) : 0.0;
+		Lo += (1.0 - shadow) * CookTorrance(s, L, radiance);
+	}
+
+	for (uint i = 0; i < u_Pass.PointCount; i++)
+	{
+		const float3 toLight = u_Pass.PointLights[i].Position.xyz - input.worldPos;
+		const float dist = length(toLight);
+		const float3 L = toLight / max(dist, 0.0001);
+		const float att = Attenuate(dist, u_Pass.PointLights[i].Position.w);
+
+		float3 radiance = u_Pass.PointLights[i].Color.rgb * u_Pass.PointLights[i].Color.a * att;
+		if (u_Pass.PointShadowParams[i].x > 0.5)
+			radiance *= 1.0 - PointShadow(input.worldPos, (int)i, s.N, L);
+
+		Lo += CookTorrance(s, L, radiance);
+	}
+
+	for (uint i = 0; i < u_Pass.SpotCount; i++)
+	{
+		const float range = u_Pass.SpotLights[i].Params.x;
+		const float innerCos = u_Pass.SpotLights[i].Params.y;
+		const float outerCos = u_Pass.SpotLights[i].Params.z;
+		const float intensity = u_Pass.SpotLights[i].Params.w;
+
+		const float3 toLight = u_Pass.SpotLights[i].Position.xyz - input.worldPos;
+		const float dist = length(toLight);
+		const float3 L = toLight / max(dist, 0.0001);
+		const float att = Attenuate(dist, range);
+
+		const float3 spotDir = normalize(u_Pass.SpotLights[i].Direction.xyz);
+		const float theta = dot(-L, spotDir); // 1 when the fragment is on the cone axis
+		const float cone = clamp((theta - outerCos) / max(innerCos - outerCos, 0.0001), 0.0, 1.0);
+
+		float3 radiance = u_Pass.SpotLights[i].Color.rgb * intensity * att * cone;
+		if (u_Pass.SpotShadowParams[i].x > 0.5)
+			radiance *= 1.0 - SpotShadow(input.worldPos, (int)i, s.N, L);
+
+		Lo += CookTorrance(s, L, radiance);
+	}
+
+	Lo += m.EmissiveRoughness.rgb * m.Params.y * SampleBindless(m.Maps1.y, SAMPLER_LINEAR_REPEAT, input.uv).rgb;
 
 	FSOutput o;
 	o.color = float4(Lo, m.Maps1.z == 2 ? alpha : 1.0); // only Blend writes a real alpha
