@@ -6,6 +6,7 @@
 import Common.Bindings;
 import Common.IBL;
 import Common.Shadows;
+import Common.BRDF;
 
 // Reached by device address, not by descriptor. Slang lays these out in its *natural* layout
 // through a pointer, so no float3x3 or bare float3 members: they would pack to 12-byte strides
@@ -82,15 +83,31 @@ FSOutput fsMain(VSOutput input)
 {
 	const GpuMaterial m = u_Draw.Materials[u_Draw.MaterialIndex];
 
-	float4 base = SampleBindless(m.Maps0.x, SAMPLER_LINEAR_REPEAT, input.uv);
-	base.rgb *= m.BaseColorMetallic.rgb;
-	base.a *= m.Params.z;
+	float3 mapN = SampleBindless(m.Maps0.y, SAMPLER_LINEAR_REPEAT, input.uv).rgb * 2.0 - 1.0;
+	mapN.xy *= m.Params.x; // NormalStrength
 
-	if (m.Maps1.z == 1 && base.a < m.Params.w) // AlphaMode::Mask
+	SurfaceParams s;
+	s.N = normalize(mul(input.tbn, normalize(mapN)));
+	s.V = normalize(u_Pass.CameraPosition.xyz - input.worldPos);
+
+	const float4 baseSample = SampleBindless(m.Maps0.x, SAMPLER_LINEAR_REPEAT, input.uv);
+	const float alpha = m.Params.z * baseSample.a; // texture alpha is linear even on sRGB maps
+	if (m.Maps1.z == 1 && alpha < m.Params.w) // Mask: cut the fragment out entirely
 		discard;
 
+	s.Albedo = m.BaseColorMetallic.rgb * baseSample.rgb;
+	// glTF packs metallic (B) + roughness (G) into one texture; a separately-authored grayscale
+	// map has R=G=B, so these channels are correct for both cases
+	s.Metallic = m.BaseColorMetallic.a * SampleBindless(m.Maps0.z, SAMPLER_LINEAR_REPEAT, input.uv).b;
+	s.Roughness = clamp(m.EmissiveRoughness.a * SampleBindless(m.Maps0.w, SAMPLER_LINEAR_REPEAT, input.uv).g, 0.045, 1.0);
+	s.Roughness = clamp(FilterRoughness(s.N, s.Roughness), 0.045, 1.0);
+	s.AO = SampleBindless(m.Maps1.x, SAMPLER_LINEAR_REPEAT, input.uv).r;
+	s.F0 = lerp(float3(0.04), s.Albedo, s.Metallic);
+
+	float3 Lo = EvaluateAmbient(s);
+
 	FSOutput o;
-	o.color = float4(base.rgb, 1.0);
+	o.color = float4(Lo, m.Maps1.z == 2 ? alpha : 1.0); // only Blend writes a real alpha
 	o.entityID = u_Draw.EntityID;
 	return o;
 }

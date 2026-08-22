@@ -1,16 +1,5 @@
 import Common.Bindings;
-
-
-struct SurfaceParams
-{
-	float3 Albedo;
-	float3 N;
-	float3 V;
-	float3 F0;
-	float Roughness;
-	float Metallic;
-	float AO;
-}
+import Common.BRDF;
 
 static const float c_AmbientStrength = 0.09;
 
