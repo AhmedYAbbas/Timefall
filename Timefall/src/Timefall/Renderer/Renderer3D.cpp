@@ -96,6 +96,8 @@ namespace Timefall
 
 		PostProcessSettings PostProcess;
 
+		AssetHandle ActiveEnvironmentHandle = 0;
+
 		Ref<MeshSource> CubeMesh;
 		Ref<MeshSource> SphereMesh;
 		Ref<MeshSource> PlaneMesh;
@@ -650,5 +652,10 @@ namespace Timefall
 		s_Data.Stats.SpotLights = s_Data.Pass.SpotCount;
 	}
 
-	void Renderer3D::SubmitEnvironment(AssetHandle environmentMap, float intensity, float rotationDegrees) {}
+	void Renderer3D::SubmitEnvironment(AssetHandle environmentMap, float intensity, float rotationDegrees)
+	{
+		s_Data.ActiveEnvironmentHandle = environmentMap;
+		s_Data.Pass.EnvIntensity = intensity;
+		s_Data.Pass.EnvRotation = glm::radians(rotationDegrees);
+	}
 }
