@@ -546,6 +546,7 @@ namespace Timefall
 		ResetStats();
 		s_Data.Submissions.clear();
 		s_Data.Pass = {};
+		s_Data.ActiveEnvironmentHandle = 0; // outside Pass, so reset it here: no SkyLight means no environment
 		s_Data.Pass.ViewProjection = camera.GetViewProjection();
 		s_Data.Pass.View = camera.GetView();
 		s_Data.Pass.CameraPosition = glm::vec4(camera.GetPosition(), 1.0f);
@@ -556,6 +557,7 @@ namespace Timefall
 		ResetStats();
 		s_Data.Submissions.clear();
 		s_Data.Pass = {};
+		s_Data.ActiveEnvironmentHandle = 0; // outside Pass, so reset it here: no SkyLight means no environment
 		const glm::mat4 view = glm::inverse(transform);
 		s_Data.Pass.ViewProjection = camera.GetProjection() * view;
 		s_Data.Pass.View = view;
@@ -645,7 +647,7 @@ namespace Timefall
 
 		GpuSpotLight& light = s_Data.Pass.SpotLights[s_Data.Pass.SpotCount++];
 		light.Position = glm::vec4(position, 0.0f);
-		light.Params = glm::vec4(glm::normalize(direction), 0.0f);
+		light.Direction = glm::vec4(glm::normalize(direction), 0.0f);
 		light.Color = glm::vec4(SRGBToLinear(color), 0.0f);
 		light.Params = glm::vec4(range, innerCos, outerCos, intensity);
 
