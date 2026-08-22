@@ -15,12 +15,38 @@
 #include "Timefall/RHI/RenderDevice.h"
 #include "Timefall/RHI/RenderTarget.h"
 #include "Timefall/RHI/Texture.h"
+#include "Timefall/RHI/FrameAllocator.h"
+#include "Timefall/RHI/Bindings.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace Timefall
 {
+	// Twin of GpuTransform in Renderer3D_Lit.slang. Measured ArrayStride 112, members at 0/64/80/96.
+	// The normal basis is three vec4 columns, not a mat3: Slang packs a float3x3 scalar-tight through
+	// a ConstBufferPointer, which would leave the array 100 B strided and unaligned.
+	struct GpuTransform
+	{
+		glm::mat4 Model;
+		glm::vec4 Normal0;
+		glm::vec4 Normal1;
+		glm::vec4 Normal2;
+	};
+	static_assert(sizeof(GpuTransform) == 112);
+
+	// Twin of DrawPush. 32 B of the shared 128-byte range.
+	struct DrawPush
+	{
+		uint64_t Transforms = 0;
+		uint64_t Materials = 0;
+		uint32_t TransformIndex = 0;
+		uint32_t MaterialIndex = 0;
+		int32_t EntityID = -1;
+		uint32_t _Pad = 0;
+	};
+	static_assert(sizeof(DrawPush) == 32);
+
 	struct MeshSubmission
 	{
 		glm::mat4 Transform;
@@ -62,6 +88,19 @@ namespace Timefall
 		Ref<MeshSource> SphereMesh;
 		Ref<MeshSource> PlaneMesh;
 		Ref<Material> DefaultMaterial;
+
+		Ref<Shader> LitShader;
+		Ref<RHI::GraphicsPipeline> ForwardOpaquePipeline;
+
+		std::vector<MeshSubmission> Submissions;
+		std::vector<uint32_t> MaterialSlots;
+
+		PassUniforms Pass;
+		uint32_t PassSlice = 0;
+		uint64_t TransformsAddress = 0;
+		uint64_t MaterialsAddress = 0;
+
+		bool ArrayOverflowWarned = false;
 
 		bool NoTargetWarned = false;
 
@@ -232,6 +271,37 @@ namespace Timefall
 			return false;
 
 		s_Data.HDRColorBindlessIndex = s_Data.HDRTarget->GetColor(0)->GetBindlessIndex(false);
+
+		s_Data.PassSlice = RHI::Bindings::WritePassUniforms(&s_Data.Pass, sizeof(s_Data.Pass));
+		if (s_Data.PassSlice == UINT32_MAX)
+			return false;
+
+		s_Data.TransformsAddress = 0;
+		s_Data.MaterialsAddress = 0;
+
+		if (!s_Data.Submissions.empty())
+		{
+			const RHI::FrameAllocation transforms = RHI::FrameAllocator::Allocate(s_Data.Submissions.size() * sizeof(GpuTransform), 16);
+
+			if (transforms.IsValid())
+			{
+				GpuTransform* out = (GpuTransform*)transforms.Mapped;
+				for (size_t i = 0; i < s_Data.Submissions.size(); i++)
+				{
+					const glm::mat4& model = s_Data.Submissions[i].Transform;
+					const glm::mat3 normal = glm::transpose(glm::inverse(glm::mat3(model)));
+					out[i] = {model, glm::vec4(normal[0], 0.0f), glm::vec4(normal[1], 0.0f), glm::vec4(normal[2], 0.0f)};
+				}
+
+				s_Data.TransformsAddress = transforms.Buffer->GetDeviceAddress() + transforms.Offset;
+			}
+			else if (!s_Data.ArrayOverflowWarned)
+			{
+				TF_CORE_ERROR("Transform array did not fit the frame allocator; dropping {0} draws", s_Data.Submissions.size());
+				s_Data.ArrayOverflowWarned = true;
+			}
+		}
+
 		return true;
 	}
 
@@ -253,6 +323,48 @@ namespace Timefall
 				.Color = {{.Load = RHI::LoadOp::Clear, .ClearValue = {0.0f, 0.0f, 0.0f, 1.0f}},
 					{.Load = RHI::LoadOp::Clear, .ClearInt = {-1, -1, -1, 0}}},
 				.Depth = {.Load = RHI::LoadOp::Clear, .ClearDepth = 1.0f}});
+
+			cmd->SetPassUniformSlice(s_Data.PassSlice);
+
+			if (s_Data.TransformsAddress != 0 && s_Data.ForwardOpaquePipeline && s_Data.ForwardOpaquePipeline->IsValid())
+			{
+				cmd->BindPipeline(*s_Data.ForwardOpaquePipeline);
+
+				const MeshSource* boundMesh = nullptr;
+				for (uint32_t i = 0; i < (uint32_t)s_Data.Submissions.size(); i++)
+				{
+					const MeshSubmission& sub = s_Data.Submissions[i];
+
+					if (sub.Material->Alpha == AlphaMode::Blend)
+					{
+						s_Data.Stats.BlendedMeshes++;
+						continue;
+					}
+
+					if (sub.Mesh.get() != boundMesh)
+					{
+						cmd->BindVertexBuffer(*sub.Mesh->GetVertexBuffer());
+						cmd->BindIndexBuffer(*sub.Mesh->GetIndexBuffer(), RHI::IndexType::U32);
+						boundMesh = sub.Mesh.get();
+					}
+
+					const DrawPush push{.Transforms = s_Data.TransformsAddress,
+						.Materials = s_Data.MaterialsAddress,
+						.TransformIndex = i,
+						.MaterialIndex = i < s_Data.MaterialSlots.size() ? s_Data.MaterialSlots[i] : 0u,
+						.EntityID = sub.EntityID};
+
+					cmd->PushConstants(&push, sizeof(push));
+
+					const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
+					cmd->DrawIndexed(sm.IndexCount, 1, sm.BaseIndex, (int32_t)sm.BaseVertex);
+
+					s_Data.Stats.DrawCalls++;
+					s_Data.Stats.OpaqueMeshes++;
+					s_Data.Stats.IndexCount += sm.IndexCount;
+					s_Data.Stats.TriangleCount += sm.IndexCount / 3;
+				}
+			}
 
 			cmd->EndPass();
 		}
@@ -297,20 +409,38 @@ namespace Timefall
 		s_Data.DefaultMaterial = CreateRef<Material>();
 		s_Data.ResolveShader = ShaderLibrary::Load("Assets/Shaders/Renderer3D_HDRResolve.slang");
 
-		RHI::GraphicsPipelineDesc desc;
-		desc.ShaderModule = s_Data.ResolveShader;
-		desc.Primitive = RHI::Topology::TriangleList;
-		desc.ColorFormats[0] = kLDRFormat;
-		desc.ColorFormats[1] = kIDFormat;
-		desc.ColorCount = 2;
-		desc.ColorWrite[1] = false; // the ids were copied in already; the resolve must not touch them
-		desc.DepthFormat = RHI::Format::Undefined;
-		desc.Depth = {.Test = false, .Write = false};
-		desc.Blend = RHI::BlendMode::None;
-		desc.Raster.Cull = RHI::CullMode::None;
-		desc.DebugName = "Renderer3DResolvePipeline";
+		RHI::GraphicsPipelineDesc hdr;
+		hdr.ShaderModule = s_Data.ResolveShader;
+		hdr.Primitive = RHI::Topology::TriangleList;
+		hdr.ColorFormats[0] = kLDRFormat;
+		hdr.ColorFormats[1] = kIDFormat;
+		hdr.ColorCount = 2;
+		hdr.ColorWrite[1] = false; // the ids were copied in already; the resolve must not touch them
+		hdr.DepthFormat = RHI::Format::Undefined;
+		hdr.Depth = {.Test = false, .Write = false};
+		hdr.Blend = RHI::BlendMode::None;
+		hdr.Raster.Cull = RHI::CullMode::None;
+		hdr.DebugName = "Renderer3DResolvePipeline";
 
-		s_Data.ResolvePipeline = RHI::GraphicsPipeline::Create(desc);
+		s_Data.ResolvePipeline = RHI::GraphicsPipeline::Create(hdr);
+
+		s_Data.LitShader = ShaderLibrary::Load("Assets/Shaders/Renderer3D_Lit.slang");
+
+		RHI::GraphicsPipelineDesc lit;
+		lit.ShaderModule = s_Data.LitShader;
+		lit.VertexLayout = {{ShaderDataType::Float3, "a_Position"}, {ShaderDataType::Float3, "a_Normal"},
+			{ShaderDataType::Float2, "a_TexCoord"}, {ShaderDataType::Float3, "a_Tangent"}, {ShaderDataType::Float3, "a_Bitangent"}};
+		lit.Primitive = RHI::Topology::TriangleList;
+		lit.ColorFormats[0] = kHDRFormat;
+		lit.ColorFormats[1] = kIDFormat;
+		lit.ColorCount = 2;
+		lit.DepthFormat = kDepthFormat;
+		lit.Depth = {.Test = true, .Write = true, .Compare = RHI::CompareOp::Less};
+		lit.Blend = RHI::BlendMode::None;
+		lit.Raster.Cull = RHI::CullMode::Back;
+		lit.DebugName = "Renderer3DForwardOpaquePipeline";
+
+		s_Data.ForwardOpaquePipeline = RHI::GraphicsPipeline::Create(lit);
 	}
 
 	void Renderer3D::Shutdown()
@@ -326,11 +456,22 @@ namespace Timefall
 	void Renderer3D::BeginScene(const EditorCamera& camera)
 	{
 		ResetStats();
+		s_Data.Submissions.clear();
+		s_Data.Pass = {};
+		s_Data.Pass.ViewProjection = camera.GetViewProjection();
+		s_Data.Pass.View = camera.GetView();
+		s_Data.Pass.CameraPosition = glm::vec4(camera.GetPosition(), 1.0f);
 	}
 
 	void Renderer3D::BeginScene(const Camera& camera, const glm::mat4& transform)
 	{
 		ResetStats();
+		s_Data.Submissions.clear();
+		s_Data.Pass = {};
+		const glm::mat4 view = glm::inverse(transform);
+		s_Data.Pass.ViewProjection = camera.GetProjection() * view;
+		s_Data.Pass.View = view;
+		s_Data.Pass.CameraPosition = glm::vec4(glm::vec3(transform[3]), 1.0f);
 	}
 
 	void Renderer3D::SetShadowSettings(const ShadowSettings& settings) {}
@@ -350,7 +491,12 @@ namespace Timefall
 
 	void Renderer3D::SubmitMesh(
 		const glm::mat4& transform, const Ref<MeshSource>& mesh, uint32_t submeshIndex, const Ref<Material>& material, int entityID)
-	{}
+	{
+		if (!mesh || !mesh->HasGpuBuffers() || submeshIndex >= mesh->GetSubmeshes().size())
+			return;
+
+		s_Data.Submissions.push_back({transform, mesh, submeshIndex, material ? material : s_Data.DefaultMaterial, entityID});
+	}
 
 	Renderer3D::Statistics& Renderer3D::GetStats()
 	{
