@@ -1,12 +1,14 @@
 #include "tfpch.h"
-
 #include "Timefall/Renderer/Renderer3D.h"
 
 #include "Timefall/Renderer/Shader.h"
 #include "Timefall/Renderer/ShaderLibrary.h"
 #include "Timefall/Renderer/GPUProfiler.h"
 #include "Timefall/Renderer/PassUniforms.h"
+#include "Timefall/Renderer/Texture.h"
+
 #include "Timefall/Debug/PerformanceStats.h"
+
 #include "Timefall/Asset/AssetManager.h"
 #include "Timefall/Asset/EditorAssetManager.h"
 
@@ -46,6 +48,16 @@ namespace Timefall
 		uint32_t _Pad = 0;
 	};
 	static_assert(sizeof(DrawPush) == 32);
+
+	struct GpuMaterial
+	{
+		glm::vec4 BaseColorMetallic;
+		glm::vec4 EmissiveRoughness;
+		glm::vec4 Params;
+		glm::uvec4 Maps0;
+		glm::uvec4 Maps1;
+	};
+	static_assert(sizeof(GpuMaterial) == 80);
 
 	struct MeshSubmission
 	{
@@ -101,6 +113,12 @@ namespace Timefall
 		uint64_t MaterialsAddress = 0;
 
 		bool ArrayOverflowWarned = false;
+
+		Ref<RHI::Texture> FlatNormalTexture;
+		uint32_t FlatNormalIndex = 0;
+
+		std::unordered_map<const Material*, uint32_t> MaterialIndices; // cleared every frame
+		std::vector<GpuMaterial> Materials; // cleared every frame
 
 		bool NoTargetWarned = false;
 
@@ -249,6 +267,31 @@ namespace Timefall
 		return s_Data.HDRTarget && s_Data.HDRTarget->IsValid();
 	}
 
+	static uint32_t MapIndex(AssetHandle handle, bool srgb, uint32_t fallback)
+	{
+		if (handle == 0 || !AssetManager::IsAssetHandleValid(handle))
+			return fallback;
+
+		Ref<Texture2D> texture = AssetManager::GetAsset<Texture2D>(handle);
+		if (!texture || !texture->GetRHITexture() || !texture->GetRHITexture()->IsValid())
+			return fallback;
+
+		return texture->GetRHITexture()->GetBindlessIndex(srgb);
+	}
+
+	static GpuMaterial BuildGpuMaterial(const Material& m)
+	{
+		const uint32_t white = RHI::Bindings::GetWhiteTextureIndex();
+		const uint32_t flat = s_Data.FlatNormalIndex;
+
+		return {.BaseColorMetallic = glm::vec4(SRGBToLinear(m.BaseColor), m.Metallic),
+			.EmissiveRoughness = glm::vec4(SRGBToLinear(m.Emissive), m.Roughness),
+			.Params = glm::vec4(m.NormalStrength, m.EmissiveIntensity, m.Opacity, m.AlphaCutoff),
+			.Maps0 = {MapIndex(m.BaseColorMap, true, white), MapIndex(m.NormalMap, false, flat), MapIndex(m.MetallicMap, false, white),
+				MapIndex(m.RoughnessMap, false, white)},
+			.Maps1 = {MapIndex(m.AOMap, false, white), MapIndex(m.EmissiveMap, true, white), (uint32_t)m.Alpha, 0u}};
+	}
+
 	static bool Prepare()
 	{
 		TF_PROFILE_FUNCTION();
@@ -300,6 +343,34 @@ namespace Timefall
 				TF_CORE_ERROR("Transform array did not fit the frame allocator; dropping {0} draws", s_Data.Submissions.size());
 				s_Data.ArrayOverflowWarned = true;
 			}
+
+			s_Data.MaterialIndices.clear();
+			s_Data.Materials.clear();
+			s_Data.MaterialSlots.resize(s_Data.Submissions.size());
+
+			for (size_t i = 0; i < s_Data.Submissions.size(); i++)
+			{
+				const Ref<Material>& material = s_Data.Submissions[i].Material;
+				auto [it, inserted] = s_Data.MaterialIndices.try_emplace(material.get(), (uint32_t)s_Data.Materials.size());
+				if (inserted)
+					s_Data.Materials.push_back(BuildGpuMaterial(*material));
+
+				s_Data.MaterialSlots[i] = it->second;
+			}
+
+			const RHI::FrameAllocation materials = RHI::FrameAllocator::Allocate(s_Data.Materials.size() * sizeof(GpuMaterial), 16);
+			if (materials.IsValid())
+			{
+				std::memcpy(materials.Mapped, s_Data.Materials.data(), s_Data.Materials.size() * sizeof(GpuMaterial));
+				s_Data.MaterialsAddress = materials.Buffer->GetDeviceAddress() + materials.Offset;
+			}
+			else if (!s_Data.ArrayOverflowWarned)
+			{
+				TF_CORE_ERROR("Material array did not fit the frame allocator; dropping {0} draws", s_Data.Submissions.size());
+				s_Data.ArrayOverflowWarned = true;
+			}
+
+			s_Data.Stats.MaterialBinds = (uint32_t)s_Data.Materials.size();
 		}
 
 		return true;
@@ -326,7 +397,7 @@ namespace Timefall
 
 			cmd->SetPassUniformSlice(s_Data.PassSlice);
 
-			if (s_Data.TransformsAddress != 0 && s_Data.ForwardOpaquePipeline && s_Data.ForwardOpaquePipeline->IsValid())
+			if (s_Data.TransformsAddress != 0 && s_Data.MaterialsAddress != 0 && s_Data.ForwardOpaquePipeline && s_Data.ForwardOpaquePipeline->IsValid())
 			{
 				cmd->BindPipeline(*s_Data.ForwardOpaquePipeline);
 
@@ -407,6 +478,16 @@ namespace Timefall
 		}
 
 		s_Data.DefaultMaterial = CreateRef<Material>();
+
+		constexpr uint32_t flatNormal = 0xffff8080; // RGBA8 LE -> (128, 128, 255, 255) = tangent-space (0, 0, 1)
+		s_Data.FlatNormalTexture = RHI::Texture::CreateWithData(
+			{.Width = 1, .Height = 1, .PixelFormat = RHI::Format::RGBA8Unorm, .MipLevels = 1, .SRGBView = false, .DebugName = "FlatNormal"},
+			&flatNormal, sizeof(flatNormal));
+
+		s_Data.FlatNormalIndex = (s_Data.FlatNormalTexture && s_Data.FlatNormalTexture->IsValid())
+			? s_Data.FlatNormalTexture->GetBindlessIndex(false)
+			: RHI::Bindings::GetWhiteTextureIndex();
+
 		s_Data.ResolveShader = ShaderLibrary::Load("Assets/Shaders/Renderer3D_HDRResolve.slang");
 
 		RHI::GraphicsPipelineDesc hdr;

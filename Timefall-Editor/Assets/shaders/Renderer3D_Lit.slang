@@ -80,8 +80,17 @@ VSOutput vsMain(float3 position, float3 normal, float2 texCoord, float3 tangent,
 [shader("fragment")]
 FSOutput fsMain(VSOutput input)
 {
+	const GpuMaterial m = u_Draw.Materials[u_Draw.MaterialIndex];
+
+	float4 base = SampleBindless(m.Maps0.x, SAMPLER_LINEAR_REPEAT, input.uv);
+	base.rgb *= m.BaseColorMetallic.rgb;
+	base.a *= m.Params.z;
+
+	if (m.Maps1.z == 1 && base.a < m.Params.w) // AlphaMode::Mask
+		discard;
+
 	FSOutput o;
-	o.color = float4(mul(input.tbn, float3(0.0f, 0.0f, 1.0f)) * 0.5f + 0.5f, 1.0f);
+	o.color = float4(base.rgb, 1.0);
 	o.entityID = u_Draw.EntityID;
 	return o;
 }
