@@ -29,6 +29,7 @@ namespace Timefall::RHI
 		void DrawIndexed(
 			uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, int32_t vertexOffset = 0, uint32_t firstInstance = 0);
 		void CopyTexture(Texture& src, Texture& dst);
+		void GenerateMips(Texture& texture);
 
 		void BindVertexBuffer(const GpuBuffer& buffer, uint64_t offset = 0);
 		void BindIndexBuffer(const GpuBuffer& buffer, IndexType type, uint64_t offset = 0);

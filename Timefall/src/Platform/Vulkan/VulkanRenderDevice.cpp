@@ -373,6 +373,73 @@ namespace Timefall::RHI
 		d.SetAllLayouts(vk::ImageLayout::eShaderReadOnlyOptimal);
 	}
 
+	void CommandList::GenerateMips(Texture& texture)
+	{
+		TF_CORE_ASSERT(!m_Impl->InPass, "GenerateMips must be called outside a pass");
+
+		if (!texture.IsValid())
+			return;
+
+		Texture::Impl& impl = *texture.m_Impl;
+		if (impl.MipLevels <= 1)
+			return;
+
+		if (!(impl.UsageFlags & vk::ImageUsageFlagBits::eTransferSrc) || !(impl.UsageFlags & vk::ImageUsageFlagBits::eTransferDst))
+		{
+			TF_CORE_ERROR("GenerateMips needs TransferSrc and TransferDst usage on the texture");
+			return;
+		}
+
+		const uint32_t layers = impl.ArrayLayers;
+		const vk::Filter filter = impl.LinearBlit ? vk::Filter::eLinear : vk::Filter::eNearest;
+
+		const auto transition = [&](uint32_t mip, vk::ImageLayout newLayout, vk::AccessFlags2 srcAccess, vk::AccessFlags2 dstAccess)
+		{
+			TransitionImage(m_Impl->Cmd, impl.Image, impl.LayoutAt(mip, 0), newLayout, vk::PipelineStageFlagBits2::eAllTransfer, srcAccess,
+				vk::PipelineStageFlagBits2::eAllTransfer, dstAccess, {impl.Aspect, mip, 1, 0, layers});
+
+			for (uint32_t layer = 0; layer < layers; layer++)
+				impl.LayoutAt(mip, layer) = newLayout;
+		};
+
+		transition(0, vk::ImageLayout::eTransferSrcOptimal, vk::AccessFlagBits2::eColorAttachmentWrite, vk::AccessFlagBits2::eTransferRead);
+
+		int32_t levelWidth = (int32_t)impl.Width;
+		int32_t levelHeight = (int32_t)impl.Height;
+
+		for (uint32_t mip = 1; mip < impl.MipLevels; mip++)
+		{
+			const int32_t nextWidth = std::max(levelWidth / 2, 1);
+			const int32_t nextHeight = std::max(levelHeight / 2, 1);
+
+			transition(mip, vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits2::eNone, vk::AccessFlagBits2::eTransferWrite);
+
+			const vk::ImageBlit2 blit{.srcSubresource = {impl.Aspect, mip - 1, 0, layers},
+				.srcOffsets = {{vk::Offset3D{0, 0, 0}, vk::Offset3D{levelWidth, levelHeight, 1}}},
+				.dstSubresource = {impl.Aspect, mip, 0, layers},
+				.dstOffsets = {{vk::Offset3D{0, 0, 0}, vk::Offset3D{nextWidth, nextHeight, 1}}}};
+
+			m_Impl->Cmd.blitImage2({.srcImage = impl.Image,
+				.srcImageLayout = vk::ImageLayout::eTransferSrcOptimal,
+				.dstImage = impl.Image,
+				.dstImageLayout = vk::ImageLayout::eTransferDstOptimal,
+				.regionCount = 1,
+				.pRegions = &blit,
+				.filter = filter});
+
+			transition(mip, vk::ImageLayout::eTransferSrcOptimal, vk::AccessFlagBits2::eTransferWrite, vk::AccessFlagBits2::eTransferRead);
+
+			levelWidth = nextWidth;
+			levelHeight = nextHeight;
+		}
+
+		TransitionImage(m_Impl->Cmd, impl.Image, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eShaderReadOnlyOptimal,
+			vk::PipelineStageFlagBits2::eAllTransfer, vk::AccessFlagBits2::eTransferRead, vk::PipelineStageFlagBits2::eFragmentShader,
+			vk::AccessFlagBits2::eShaderSampledRead, impl.FullRange());
+
+		impl.SetAllLayouts(vk::ImageLayout::eShaderReadOnlyOptimal);
+	}
+
 	void* CommandList::GetNativeHandle()
 	{
 		return (void*)(VkCommandBuffer)m_Impl->Cmd;
