@@ -16,6 +16,7 @@ namespace Timefall
 
 		const Ref<RHI::Texture>& GetSkyboxMap() const;
 		const Ref<RHI::Texture>& GetIrradianceMap() const;
+		const Ref<RHI::Texture>& GetPrefilterMap() const;
 
 		bool IsValid() const;
 
@@ -24,5 +25,6 @@ namespace Timefall
 
 		Ref<RHI::RenderTarget> m_Skybox;
 		Ref<RHI::RenderTarget> m_Irradiance;
+		Ref<RHI::RenderTarget> m_Prefilter;
 	};
 }
