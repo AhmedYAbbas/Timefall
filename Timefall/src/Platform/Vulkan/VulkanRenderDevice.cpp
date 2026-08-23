@@ -172,7 +172,8 @@ namespace Timefall::RHI
 
 			const vk::ImageSubresourceRange range{attachment.Aspect, desc.Mip, 1, desc.Layer, 1};
 
-			const vk::ImageLayout oldLayout = desc.Depth.Load == LoadOp::Load ? attachment.LayoutAt(0, 0) : vk::ImageLayout::eUndefined;
+			const vk::ImageLayout oldLayout =
+				desc.Depth.Load == LoadOp::Load ? attachment.LayoutAt(desc.Mip, desc.Layer) : vk::ImageLayout::eUndefined;
 
 			TransitionImage(m_Impl->Cmd, attachment.Image, oldLayout, vk::ImageLayout::eDepthAttachmentOptimal,
 				vk::PipelineStageFlagBits2::eLateFragmentTests, vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
@@ -217,7 +218,8 @@ namespace Timefall::RHI
 
 				const vk::ImageSubresourceRange range{attachment.Aspect, m_Impl->PassMip, 1, m_Impl->PassLayer, 1};
 
-				TransitionImage(m_Impl->Cmd, attachment.Image, attachment.LayoutAt(0, 0), vk::ImageLayout::eShaderReadOnlyOptimal,
+				TransitionImage(m_Impl->Cmd, attachment.Image, attachment.LayoutAt(m_Impl->PassMip, m_Impl->PassLayer),
+					vk::ImageLayout::eShaderReadOnlyOptimal,
 					vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentWrite,
 					vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderSampledRead, range);
 

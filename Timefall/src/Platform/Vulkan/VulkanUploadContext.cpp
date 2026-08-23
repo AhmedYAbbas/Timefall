@@ -218,7 +218,7 @@ namespace Timefall
 	}
 
 	bool VulkanUploadContext::UploadImage(
-		vk::Image dst, uint32_t width, uint32_t height, uint32_t bytesPerPixel, const void* data, uint64_t size)
+		vk::Image dst, uint32_t width, uint32_t height, uint32_t bytesPerPixel, const void* data, uint64_t size, uint32_t layers)
 	{
 		TF_PROFILE_FUNCTION();
 
@@ -235,9 +235,11 @@ namespace Timefall
 			return false;
 		}
 
-		if (size < rowBytes * height)
+		const uint64_t layerBytes = rowBytes * height;
+		if (size < layerBytes * layers)
 		{
-			TF_CORE_ERROR("UploadImage got {0} bytes for a {1}x{2} image needing {3}", size, width, height, rowBytes * height);
+			TF_CORE_ERROR("UploadImage got {0} bytes for a {1}x{2}x{3} image needing {4}", size, width, height, layers,
+				layerBytes * layers);
 			return false;
 		}
 
@@ -252,9 +254,50 @@ namespace Timefall
 			.srcQueueFamilyIndex = vk::QueueFamilyIgnored,
 			.dstQueueFamilyIndex = vk::QueueFamilyIgnored,
 			.image = dst,
-			.subresourceRange = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}};
+			.subresourceRange = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, layers}};
 
 		s_Cmd.pipelineBarrier2({.imageMemoryBarrierCount = 1, .pImageMemoryBarriers = &toDst});
+
+		// one copy consumes the layers back to back, so a layered payload cannot be split across chunks
+		if (layers > 1)
+		{
+			const uint64_t totalBytes = layerBytes * layers;
+			if (totalBytes > s_StagingCapacity)
+			{
+				TF_CORE_ERROR("UploadImage cannot chunk a {0}-layer image; {1} bytes exceeds the {2} byte staging ring", layers,
+					totalBytes, s_StagingCapacity);
+				return false;
+			}
+
+			uint64_t offset = Align(s_StagingOffset, s_CopyAlignment);
+			if (offset + totalBytes > s_StagingCapacity)
+			{
+				Flush();
+				EnsureRecording();
+
+				offset = 0;
+			}
+
+			std::memcpy(s_StagingMapped + offset, data, totalBytes);
+
+			const vk::BufferImageCopy2 region{.bufferOffset = offset,
+				.bufferRowLength = width,
+				.bufferImageHeight = height,
+				.imageSubresource = {vk::ImageAspectFlagBits::eColor, 0, 0, layers},
+				.imageOffset = {0, 0, 0},
+				.imageExtent = {width, height, 1}};
+
+			s_Cmd.copyBufferToImage2({.srcBuffer = s_Staging,
+				.dstImage = dst,
+				.dstImageLayout = vk::ImageLayout::eTransferDstOptimal,
+				.regionCount = 1,
+				.pRegions = &region});
+
+			s_StagingOffset = offset + totalBytes;
+
+			FlushIfUnscoped();
+			return true;
+		}
 
 		const uint8_t* source = (const uint8_t*)data;
 		uint32_t row = 0;

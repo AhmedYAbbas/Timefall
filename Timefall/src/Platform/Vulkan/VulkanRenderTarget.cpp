@@ -44,7 +44,9 @@ namespace Timefall::RHI
 			Depth = Texture::Create({.Width = Desc.Width,
 				.Height = Desc.Height,
 				.PixelFormat = Desc.DepthFormat,
-				.MipLevels = 1,
+				.MipLevels = Desc.MipLevels,
+				.Dim = Desc.Dim,
+				.ArrayLayers = Desc.ArrayLayers,
 				.Usage = TextureUsage::Sampled | TextureUsage::DepthAttachment,
 				.DebugName = depthName.c_str()});
 
@@ -103,7 +105,7 @@ namespace Timefall::RHI
 
 		if (m_Impl->Desc.Dim != Dimension::Tex2D)
 		{
-			TF_CORE_ERROR("RenderTarget '{0}' is not 2D; layered and cube tarngets are fixed-size",
+			TF_CORE_ERROR("RenderTarget '{0}' is not 2D; layered and cube targets are fixed-size",
 				m_Impl->Desc.DebugName ? m_Impl->Desc.DebugName : "<unnamed>");
 			return false;
 		}

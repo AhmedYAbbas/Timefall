@@ -93,7 +93,7 @@ namespace Timefall::RHI
 			const vk::Filter filter = GetFormatCaps(format).LinearBlit ? vk::Filter::eLinear : vk::Filter::eNearest;
 
 			VulkanUploadContext::Record([=](vk::CommandBuffer cmd) {
-				auto transition = [&cmd, image](uint32_t level, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
+				auto transition = [&cmd, image, layers](uint32_t level, vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
 									  vk::AccessFlags2 srcAccess, vk::AccessFlags2 dstAccess) {
 					// AllTransfer, not Blit: level 0's incoming write comes from the upload copy, not a blit
 					const vk::ImageMemoryBarrier2 barrier{.srcStageMask = vk::PipelineStageFlagBits2::eAllTransfer,
@@ -105,7 +105,7 @@ namespace Timefall::RHI
 						.srcQueueFamilyIndex = vk::QueueFamilyIgnored,
 						.dstQueueFamilyIndex = vk::QueueFamilyIgnored,
 						.image = image,
-						.subresourceRange = {vk::ImageAspectFlagBits::eColor, level, 1, 0, 1}};
+						.subresourceRange = {vk::ImageAspectFlagBits::eColor, level, 1, 0, layers}};
 
 					cmd.pipelineBarrier2({.imageMemoryBarrierCount = 1, .pImageMemoryBarriers = &barrier});
 				};
@@ -124,9 +124,9 @@ namespace Timefall::RHI
 					transition(level, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits2::eNone,
 						vk::AccessFlagBits2::eTransferWrite);
 
-					const vk::ImageBlit2 blit{.srcSubresource = {vk::ImageAspectFlagBits::eColor, level - 1, 0, 1},
+					const vk::ImageBlit2 blit{.srcSubresource = {vk::ImageAspectFlagBits::eColor, level - 1, 0, layers},
 						.srcOffsets = {{vk::Offset3D{0, 0, 0}, vk::Offset3D{levelWidth, levelHeight, 1}}},
-						.dstSubresource = {vk::ImageAspectFlagBits::eColor, level, 0, 1},
+						.dstSubresource = {vk::ImageAspectFlagBits::eColor, level, 0, layers},
 						.dstOffsets = {{vk::Offset3D{0, 0, 0}, vk::Offset3D{nextWidth, nextHeight, 1}}}};
 
 					cmd.blitImage2({.srcImage = image,
@@ -215,7 +215,7 @@ namespace Timefall::RHI
 
 		if (IsCubeDimension(desc.Dim) && (impl.ArrayLayers % 6 != 0 || desc.Width != desc.Height))
 		{
-			TF_CORE_WARN("Cube texture '{0}' needs a square extent and a layer count that is a multiple of 6; got {1}x{2}, {3} layers",
+			TF_CORE_ERROR("Cube texture '{0}' needs a square extent and a layer count that is a multiple of 6; got {1}x{2}, {3} layers",
 				desc.DebugName ? desc.DebugName : "<unnamed>", desc.Width, desc.Height, impl.ArrayLayers);
 			return texture;
 		}
@@ -385,7 +385,7 @@ namespace Timefall::RHI
 		}
 
 		Impl& impl = *m_Impl;
-		const uint64_t expected = (uint64_t)impl.Width * impl.Height * BytesPerPixel(impl.PixelFormat);
+		const uint64_t expected = (uint64_t)impl.Width * impl.Height * BytesPerPixel(impl.PixelFormat) * impl.ArrayLayers;
 		if (size != expected)
 		{
 			TF_CORE_ERROR("Texture::Upload got {0} bytes for a {1}x{2} {3} image needing {4} - the RHI converts nothing", size, impl.Width,
@@ -407,7 +407,7 @@ namespace Timefall::RHI
 			const vk::MemoryToImageCopy region{.pHostPointer = data,
 				.memoryRowLength = 0,
 				.memoryImageHeight = 0,
-				.imageSubresource = {vk::ImageAspectFlagBits::eColor, 0, 0, 1},
+				.imageSubresource = {vk::ImageAspectFlagBits::eColor, 0, 0, impl.ArrayLayers},
 				.imageOffset = {0, 0, 0},
 				.imageExtent = {impl.Width, impl.Height, 1}};
 
@@ -434,7 +434,7 @@ namespace Timefall::RHI
 			return true;
 		}
 
-		if (!VulkanUploadContext::UploadImage(impl.Image, impl.Width, impl.Height, BytesPerPixel(impl.PixelFormat), data, size))
+		if (!VulkanUploadContext::UploadImage(impl.Image, impl.Width, impl.Height, BytesPerPixel(impl.PixelFormat), data, size, impl.ArrayLayers))
 			return false;
 
 		if (impl.MipLevels == 1)
@@ -472,10 +472,18 @@ namespace Timefall::RHI
 			RenderDevice::Get().DeferDestroy(
 				[image = m_Impl->Image, view = m_Impl->View, srgbView = m_Impl->SRGBView, allocation = m_Impl->Allocation,
 					uiHandle = m_Impl->UIHandle, uiDestroy = m_Impl->UIHandleDestroy, bindless = m_Impl->BindlessIndex,
-					bindlessSRGB = m_Impl->BindlessSRGBIndex, subViews = std::move(m_Impl->SubresourceViews)]() {
+					bindlessSRGB = m_Impl->BindlessSRGBIndex, subViews = std::move(m_Impl->SubresourceViews),
+					isCube = IsCubeDimension(m_Impl->Dim)]() {
 
-					VulkanBindlessTable::Release(bindless);
-					VulkanBindlessTable::Release(bindlessSRGB);
+					if (isCube)
+					{
+						VulkanBindlessTable::ReleaseCube(bindless);
+					}
+					else
+					{
+						VulkanBindlessTable::Release(bindless);
+						VulkanBindlessTable::Release(bindlessSRGB);
+					}
 
 					if (uiHandle && uiDestroy)
 						uiDestroy(uiHandle);
@@ -535,6 +543,19 @@ namespace Timefall::RHI
 	{
 		if (!IsValid())
 			return VulkanBindlessTable::WhiteIndex;
+
+		if (IsCubeDimension(m_Impl->Dim))
+		{
+			if (srgb)
+				TF_CORE_WARN("GetBindlessIndex(srgb) on a cube texture; cubes carry no sRGB view");
+
+			if (m_Impl->BindlessIndex != VulkanBindlessTable::InvalidIndex)
+				return m_Impl->BindlessIndex;
+
+			const uint32_t cubeIndex = VulkanBindlessTable::AcquireCube(m_Impl->View);
+			m_Impl->BindlessIndex = cubeIndex == VulkanBindlessTable::InvalidIndex ? VulkanBindlessTable::WhiteCubeIndex : cubeIndex;
+			return m_Impl->BindlessIndex;
+		}
 
 		const bool wantsSRGB = srgb && m_Impl->SRGBView;
 		uint32_t& slot = wantsSRGB ? m_Impl->BindlessSRGBIndex : m_Impl->BindlessIndex;

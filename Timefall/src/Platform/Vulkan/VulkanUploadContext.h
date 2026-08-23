@@ -26,7 +26,7 @@ namespace Timefall
 		// Stages `size` bytes and records the copy into `dst`. Chunked when it exceeds the ring.
 		static bool UploadBuffer(vk::Buffer dst, uint64_t dstOffset, const void* data, uint64_t size);
 
-		static bool UploadImage(vk::Image dst, uint32_t width, uint32_t height, uint32_t bytesPerPixel, const void* data, uint64_t size);
+		static bool UploadImage(vk::Image dst, uint32_t width, uint32_t height, uint32_t bytesPerPixel, const void* data, uint64_t size, uint32_t layers = 1);
 
 		// Escape hatch for transfers this API does not model - image copies, blits, layout
 		// transitions. Runs against the batch's command buffer, and does NOT chunk: a payload

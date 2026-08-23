@@ -76,6 +76,13 @@ static const uint BINDLESS_WHITE = 0;
 [[vk::binding(0, 2)]]
 SamplerState g_Samplers[3];
 
+// Cubes cannot share g_Textures: a set may have only one variable-count binding and it must be the
+// highest, so cubes take a fixed-size array below it. Twin of VulkanBindings::kTextureCubeCapacity
+[[vk::binding(1, 2)]]
+TextureCube g_TextureCubes[64];
+
+static const uint BINDLESS_WHITE_CUBE = 0;
+
 [[vk::binding(15, 2)]]
 Texture2D g_Textures[];
 
@@ -83,4 +90,14 @@ Texture2D g_Textures[];
 float4 SampleBindless(uint index, uint samplerSlot, float2 uv)
 {
 	return g_Textures[NonUniformResourceIndex(index)].Sample(g_Samplers[samplerSlot], uv);
+}
+
+float4 SampleBindlessCube(uint index, uint samplerSlot, float3 dir)
+{
+	return g_TextureCubes[NonUniformResourceIndex(index)].Sample(g_Samplers[samplerSlot], dir);
+}
+
+float4 SampleBindlessCubeLod(uint index, uint samplerSlot, float3 dir, float lod)
+{
+	return g_TextureCubes[NonUniformResourceIndex(index)].SampleLevel(g_Samplers[samplerSlot], dir, lod);
 }

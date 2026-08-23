@@ -14,7 +14,10 @@ namespace Timefall
 
 		// Set 2's binding numbers, deliberately sparse: a variable-count binding must be the highest
 		static constexpr uint32_t BindingSamplers = 0;
+		static constexpr uint32_t BindingTextureCubes = 1;
 		static constexpr uint32_t BindingTextures = 15;
+
+		static constexpr uint32_t kTextureCubeCapacity = 64;
 
 		static constexpr uint32_t kPushConstantBytes = 128;
 		static constexpr vk::ShaderStageFlags kAllStages =
