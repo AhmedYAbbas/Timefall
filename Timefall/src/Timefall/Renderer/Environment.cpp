@@ -145,7 +145,7 @@ namespace Timefall
 		return environment;
 	}
 
-	Environment::~Environment()
+	void Environment::ReleaseResources()
 	{
 		s_EquirectPipeline.reset();
 		s_EquirectShader.reset();

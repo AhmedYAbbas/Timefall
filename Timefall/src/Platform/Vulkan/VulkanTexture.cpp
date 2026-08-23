@@ -553,7 +553,10 @@ namespace Timefall::RHI
 				return m_Impl->BindlessIndex;
 
 			const uint32_t cubeIndex = VulkanBindlessTable::AcquireCube(m_Impl->View);
-			m_Impl->BindlessIndex = cubeIndex == VulkanBindlessTable::InvalidIndex ? VulkanBindlessTable::WhiteCubeIndex : cubeIndex;
+			if (cubeIndex == VulkanBindlessTable::InvalidIndex)
+				return VulkanBindlessTable::WhiteCubeIndex; // uncached, so a later call retries once slots free up
+
+			m_Impl->BindlessIndex = cubeIndex;
 			return m_Impl->BindlessIndex;
 		}
 

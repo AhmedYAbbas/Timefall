@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Timefall/Core/Core.h"
+#include "Timefall/RHI/RenderTarget.h"
 #include "Timefall/Renderer/Texture.h"
-#include "Timefall/Renderer/TextureCube.h"
 
 namespace Timefall
 {
@@ -12,8 +12,7 @@ namespace Timefall
 	{
 	public:
 		static Ref<Environment> Create(const Ref<Texture2D>& equirect);
-
-		~Environment();
+		static void ReleaseResources();
 
 		const Ref<RHI::Texture>& GetSkyboxMap() const;
 		bool IsValid() const;

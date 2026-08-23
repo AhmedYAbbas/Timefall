@@ -552,6 +552,8 @@ namespace Timefall
 		s_Data.Materials.clear();
 		s_Data.Submissions.clear();
 		s_Data = {}; // every Ref it holds owns a GPU resource that must die before the device
+
+		Environment::ReleaseResources();
 	}
 
 	void Renderer3D::SetTargetRenderTarget(const Ref<RHI::RenderTarget>& target)
