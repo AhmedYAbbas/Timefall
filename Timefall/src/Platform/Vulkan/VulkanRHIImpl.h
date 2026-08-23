@@ -111,11 +111,29 @@ namespace Timefall::RHI
 		uint32_t BindlessIndex = UINT32_MAX;
 		uint32_t BindlessSRGBIndex = UINT32_MAX;
 		bool HostCopyable = false;
-		vk::ImageLayout CurrentLayout = vk::ImageLayout::eUndefined;
 		vk::ImageAspectFlagBits Aspect = vk::ImageAspectFlagBits::eColor;
+
+		uint32_t ArrayLayers = 1;
+		std::vector<vk::ImageLayout> Layouts; // mip * ArrayLayers + Layer
+
 		bool IsAttachment = false;
 		vk::ImageUsageFlags UsageFlags{};
 		void* UIHandle = nullptr;
 		void (*UIHandleDestroy)(void*) = nullptr;
+
+		vk::ImageLayout& LayoutAt(uint32_t mip, uint32_t layer)
+		{
+			return Layouts[(size_t)mip * ArrayLayers + layer];
+		}
+
+		void SetAllLayouts(vk::ImageLayout layout)
+		{
+			std::ranges::fill(Layouts, layout);
+		}
+
+		vk::ImageSubresourceRange FullRange() const
+		{
+			return {Aspect, 0, MipLevels, 0, ArrayLayers};
+		}
 	};
 }

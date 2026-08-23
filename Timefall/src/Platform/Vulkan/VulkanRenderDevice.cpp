@@ -108,14 +108,14 @@ namespace Timefall::RHI
 				const ColorTarget& target = desc.Color[i];
 				Texture::Impl& attachment = *desc.Target->GetColor(i)->m_Impl;
 
-				const vk::ImageLayout oldLayout = target.Load == LoadOp::Load ? attachment.CurrentLayout : vk::ImageLayout::eUndefined;
+				const vk::ImageLayout oldLayout = target.Load == LoadOp::Load ? attachment.LayoutAt(0, 0) : vk::ImageLayout::eUndefined;
 
 				TransitionImage(m_Impl->Cmd, attachment.Image, oldLayout, vk::ImageLayout::eColorAttachmentOptimal,
 					vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderSampledRead,
 					vk::PipelineStageFlagBits2::eColorAttachmentOutput,
 					vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentRead);
 
-				attachment.CurrentLayout = vk::ImageLayout::eColorAttachmentOptimal;
+				attachment.SetAllLayouts(vk::ImageLayout::eColorAttachmentOptimal);
 
 				if (IsIntegerFormat(attachment.PixelFormat))
 					colorClears[i].color.int32 = std::array{target.ClearInt[0], target.ClearInt[1], target.ClearInt[2], target.ClearInt[3]};
@@ -163,7 +163,7 @@ namespace Timefall::RHI
 		{
 			Texture::Impl& attachment = *desc.Target->GetDepth()->m_Impl;
 
-			const vk::ImageLayout oldLayout = desc.Depth.Load == LoadOp::Load ? attachment.CurrentLayout : vk::ImageLayout::eUndefined;
+			const vk::ImageLayout oldLayout = desc.Depth.Load == LoadOp::Load ? attachment.LayoutAt(0, 0) : vk::ImageLayout::eUndefined;
 
 			TransitionImage(m_Impl->Cmd, attachment.Image, oldLayout, vk::ImageLayout::eDepthAttachmentOptimal,
 				vk::PipelineStageFlagBits2::eLateFragmentTests, vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
@@ -171,7 +171,7 @@ namespace Timefall::RHI
 				vk::AccessFlagBits2::eDepthStencilAttachmentWrite | vk::AccessFlagBits2::eDepthStencilAttachmentRead,
 				vk::ImageAspectFlagBits::eDepth);
 
-			attachment.CurrentLayout = vk::ImageLayout::eDepthAttachmentOptimal;
+			attachment.SetAllLayouts(vk::ImageLayout::eDepthAttachmentOptimal);
 
 			vk::ClearValue depthClear{};
 			depthClear.depthStencil = vk::ClearDepthStencilValue{.depth = desc.Depth.ClearDepth, .stencil = 0};
@@ -204,11 +204,11 @@ namespace Timefall::RHI
 			{
 				Texture::Impl& attachment = *m_Impl->PassTarget->GetColor(i)->m_Impl;
 
-				TransitionImage(m_Impl->Cmd, attachment.Image, attachment.CurrentLayout, vk::ImageLayout::eShaderReadOnlyOptimal,
+				TransitionImage(m_Impl->Cmd, attachment.Image, attachment.LayoutAt(0, 0), vk::ImageLayout::eShaderReadOnlyOptimal,
 					vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentWrite,
 					vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderSampledRead);
 
-				attachment.CurrentLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+				attachment.SetAllLayouts(vk::ImageLayout::eShaderReadOnlyOptimal);
 			}
 		}
 
@@ -328,18 +328,18 @@ namespace Timefall::RHI
 			return;
 		}
 
-		const auto [srcStage, srcAccess] = LayoutSourceSync(s.CurrentLayout);
+		const auto [srcStage, srcAccess] = LayoutSourceSync(s.LayoutAt(0, 0));
 
-		TransitionImage(m_Impl->Cmd, s.Image, s.CurrentLayout, vk::ImageLayout::eTransferSrcOptimal, srcStage, srcAccess,
+		TransitionImage(m_Impl->Cmd, s.Image, s.LayoutAt(0, 0), vk::ImageLayout::eTransferSrcOptimal, srcStage, srcAccess,
 			vk::PipelineStageFlagBits2::eCopy, vk::AccessFlagBits2::eTransferRead, s.Aspect);
-		s.CurrentLayout = vk::ImageLayout::eTransferSrcOptimal;
+		s.SetAllLayouts(vk::ImageLayout::eTransferSrcOptimal);
 
 		// the copy rewrites every texel, so the old contents are discarded; only the write-after-read against
 		// whatever last sampled the destination needs ordering, and the execution dependency alone gives that
 		TransitionImage(m_Impl->Cmd, d.Image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal,
-			LayoutSourceSync(d.CurrentLayout).first, vk::AccessFlagBits2::eNone, vk::PipelineStageFlagBits2::eCopy,
+			LayoutSourceSync(d.LayoutAt(0, 0)).first, vk::AccessFlagBits2::eNone, vk::PipelineStageFlagBits2::eCopy,
 			vk::AccessFlagBits2::eTransferWrite, d.Aspect);
-		d.CurrentLayout = vk::ImageLayout::eTransferDstOptimal;
+		d.SetAllLayouts(vk::ImageLayout::eTransferDstOptimal);
 
 		const vk::ImageCopy2 region{.srcSubresource = {s.Aspect, 0, 0, 1},
 			.srcOffset = {0, 0, 0},
@@ -352,12 +352,12 @@ namespace Timefall::RHI
 		TransitionImage(m_Impl->Cmd, s.Image, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eShaderReadOnlyOptimal,
 			vk::PipelineStageFlagBits2::eCopy, vk::AccessFlagBits2::eTransferRead, vk::PipelineStageFlagBits2::eFragmentShader,
 			vk::AccessFlagBits2::eShaderSampledRead, s.Aspect);
-		s.CurrentLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		s.SetAllLayouts(vk::ImageLayout::eShaderReadOnlyOptimal);
 
 		TransitionImage(m_Impl->Cmd, d.Image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal,
 			vk::PipelineStageFlagBits2::eCopy, vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eFragmentShader,
 			vk::AccessFlagBits2::eShaderSampledRead, d.Aspect);
-		d.CurrentLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		d.SetAllLayouts(vk::ImageLayout::eShaderReadOnlyOptimal);
 	}
 
 	void* CommandList::GetNativeHandle()

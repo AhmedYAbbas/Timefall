@@ -189,6 +189,7 @@ namespace Timefall::RHI
 		impl.Aspect = IsDepthFormat(desc.PixelFormat) ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
 
 		impl.MipLevels = isAttachment ? 1 : (desc.MipLevels == 0 ? FullMipChain(desc.Width, desc.Height) : desc.MipLevels);
+		impl.Layouts.assign((size_t)impl.MipLevels * impl.ArrayLayers, vk::ImageLayout::eUndefined);
 
 		vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eSampled;
 		if (HasFlag(desc.Usage, TextureUsage::ColorAttachment))
@@ -305,7 +306,7 @@ namespace Timefall::RHI
 			});
 		}
 
-		impl.CurrentLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		impl.SetAllLayouts(vk::ImageLayout::eShaderReadOnlyOptimal);
 
 		return texture;
 	}
