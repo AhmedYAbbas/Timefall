@@ -604,7 +604,7 @@ namespace Timefall
 		sky.ColorFormats[1] = kIDFormat;
 		sky.ColorCount = 2;
 		sky.DepthFormat = kDepthFormat;
-		sky.Depth = {.Test = true, .Write = true, .Compare = RHI::CompareOp::LessOrEqual};
+		sky.Depth = {.Test = true, .Write = false, .Compare = RHI::CompareOp::LessOrEqual};
 		sky.Blend = RHI::BlendMode::None;
 		sky.Raster.Cull = RHI::CullMode::Front;
 		sky.DebugName = "Renderer3DSkyboxPipeline";

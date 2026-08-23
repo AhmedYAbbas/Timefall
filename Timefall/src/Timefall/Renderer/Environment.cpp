@@ -140,7 +140,6 @@ namespace Timefall
 
 				cmd.DrawIndexed(submesh.IndexCount, 1, submesh.BaseIndex, (int32_t)submesh.BaseVertex);
 				cmd.EndPass();
-
 			}
 
 			cmd.GenerateMips(*environment->m_Skybox->GetColor(0));
