@@ -67,9 +67,9 @@ namespace Timefall::RHI
 			case vk::ImageLayout::eShaderReadOnlyOptimal:
 				return {vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderSampledRead};
 			case vk::ImageLayout::eTransferSrcOptimal:
-				return {vk::PipelineStageFlagBits2::eCopy, vk::AccessFlagBits2::eTransferRead};
+				return {vk::PipelineStageFlagBits2::eAllTransfer, vk::AccessFlagBits2::eTransferRead};
 			case vk::ImageLayout::eTransferDstOptimal:
-				return {vk::PipelineStageFlagBits2::eCopy, vk::AccessFlagBits2::eTransferWrite};
+				return {vk::PipelineStageFlagBits2::eAllTransfer, vk::AccessFlagBits2::eTransferWrite};
 			default:
 				return {vk::PipelineStageFlagBits2::eTopOfPipe, vk::AccessFlagBits2::eNone};
 		}
@@ -395,16 +395,21 @@ namespace Timefall::RHI
 		const uint32_t layers = impl.ArrayLayers;
 		const vk::Filter filter = impl.LinearBlit ? vk::Filter::eLinear : vk::Filter::eNearest;
 
-		const auto transition = [&](uint32_t mip, vk::ImageLayout newLayout, vk::AccessFlags2 srcAccess, vk::AccessFlags2 dstAccess)
+		// mip 0 arrives from whatever last wrote it (an attachment write, an upload); the rest of the
+		// chain is transfer-only, so the source sync has to come from the layout each level sits in
+		const auto transition = [&](uint32_t mip, vk::ImageLayout newLayout, vk::AccessFlags2 dstAccess)
 		{
-			TransitionImage(m_Impl->Cmd, impl.Image, impl.LayoutAt(mip, 0), newLayout, vk::PipelineStageFlagBits2::eAllTransfer, srcAccess,
+			const vk::ImageLayout oldLayout = impl.LayoutAt(mip, 0);
+			const auto [srcStage, srcAccess] = LayoutSourceSync(oldLayout);
+
+			TransitionImage(m_Impl->Cmd, impl.Image, oldLayout, newLayout, srcStage, srcAccess,
 				vk::PipelineStageFlagBits2::eAllTransfer, dstAccess, {impl.Aspect, mip, 1, 0, layers});
 
 			for (uint32_t layer = 0; layer < layers; layer++)
 				impl.LayoutAt(mip, layer) = newLayout;
 		};
 
-		transition(0, vk::ImageLayout::eTransferSrcOptimal, vk::AccessFlagBits2::eColorAttachmentWrite, vk::AccessFlagBits2::eTransferRead);
+		transition(0, vk::ImageLayout::eTransferSrcOptimal, vk::AccessFlagBits2::eTransferRead);
 
 		int32_t levelWidth = (int32_t)impl.Width;
 		int32_t levelHeight = (int32_t)impl.Height;
@@ -414,7 +419,7 @@ namespace Timefall::RHI
 			const int32_t nextWidth = std::max(levelWidth / 2, 1);
 			const int32_t nextHeight = std::max(levelHeight / 2, 1);
 
-			transition(mip, vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits2::eNone, vk::AccessFlagBits2::eTransferWrite);
+			transition(mip, vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits2::eTransferWrite);
 
 			const vk::ImageBlit2 blit{.srcSubresource = {impl.Aspect, mip - 1, 0, layers},
 				.srcOffsets = {{vk::Offset3D{0, 0, 0}, vk::Offset3D{levelWidth, levelHeight, 1}}},
@@ -429,7 +434,7 @@ namespace Timefall::RHI
 				.pRegions = &blit,
 				.filter = filter});
 
-			transition(mip, vk::ImageLayout::eTransferSrcOptimal, vk::AccessFlagBits2::eTransferWrite, vk::AccessFlagBits2::eTransferRead);
+			transition(mip, vk::ImageLayout::eTransferSrcOptimal, vk::AccessFlagBits2::eTransferRead);
 
 			levelWidth = nextWidth;
 			levelHeight = nextHeight;

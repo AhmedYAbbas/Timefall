@@ -1,6 +1,7 @@
 #include "tfpch.h"
 
 #include "VulkanContext.h"
+#include "GPUMemoryTracker.h"
 
 #include <vulkan/vulkan.hpp>
 
@@ -374,6 +375,13 @@ namespace Timefall
 
 		if (m_Allocator)
 		{
+			// VMA only asserts about this in a debug build; name the leak either way
+			if (const uint64_t leaked = GPUMemoryTracker::GetTotalBytes(); leaked > 0)
+				TF_CORE_ERROR("{0} bytes of GPU memory still allocated at allocator destruction - textures {1}, buffers {2}, "
+							  "framebuffers {3}. Some static or cached owner outlived RenderDevice::Shutdown.",
+					leaked, GPUMemoryTracker::GetBytes(GPUMemCategory::Textures), GPUMemoryTracker::GetBytes(GPUMemCategory::Buffers),
+					GPUMemoryTracker::GetBytes(GPUMemCategory::Framebuffers));
+
 			vmaDestroyAllocator(m_Allocator);
 			m_Allocator = nullptr;
 		}

@@ -13,6 +13,8 @@ namespace Timefall
 	public:
 		static Ref<Environment> Create(const Ref<Texture2D>& equirect);
 
+		~Environment();
+
 		const Ref<RHI::Texture>& GetSkyboxMap() const;
 		bool IsValid() const;
 

@@ -145,6 +145,13 @@ namespace Timefall
 		return environment;
 	}
 
+	Environment::~Environment()
+	{
+		s_EquirectPipeline.reset();
+		s_EquirectShader.reset();
+		s_CubeMesh.reset();
+	}
+
 	const Ref<RHI::Texture>& Environment::GetSkyboxMap() const
 	{
 		return m_Skybox->GetColor(0);

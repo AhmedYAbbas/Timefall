@@ -6,6 +6,7 @@
 #include "Timefall/Renderer/GPUProfiler.h"
 #include "Timefall/Renderer/PassUniforms.h"
 #include "Timefall/Renderer/Texture.h"
+#include "Timefall/Renderer/Environment.h"
 
 #include "Timefall/Debug/PerformanceStats.h"
 
@@ -97,6 +98,8 @@ namespace Timefall
 		PostProcessSettings PostProcess;
 
 		AssetHandle ActiveEnvironmentHandle = 0;
+		std::unordered_map<AssetHandle, Ref<Environment>> EnvironmentCache; // one bake per environment per session
+		Ref<Environment> ActiveEnvironment;
 
 		Ref<MeshSource> CubeMesh;
 		Ref<MeshSource> SphereMesh;
@@ -316,6 +319,21 @@ namespace Timefall
 			return false;
 
 		s_Data.HDRColorBindlessIndex = s_Data.HDRTarget->GetColor(0)->GetBindlessIndex(false);
+
+		s_Data.ActiveEnvironment = nullptr;
+		if (s_Data.ActiveEnvironmentHandle != 0 && AssetManager::IsAssetHandleValid(s_Data.ActiveEnvironmentHandle))
+		{
+			auto it = s_Data.EnvironmentCache.find(s_Data.ActiveEnvironmentHandle);
+			if (it == s_Data.EnvironmentCache.end())
+			{
+				Ref<Texture2D> equirect = AssetManager::GetAsset<Texture2D>(s_Data.ActiveEnvironmentHandle);
+				it = s_Data.EnvironmentCache.emplace(s_Data.ActiveEnvironmentHandle, equirect ? Environment::Create(equirect) : nullptr)
+						 .first;
+			}
+
+			if (it->second && it->second->IsValid())
+				s_Data.ActiveEnvironment = it->second;
+		}
 
 		s_Data.PassSlice = RHI::Bindings::WritePassUniforms(&s_Data.Pass, sizeof(s_Data.Pass));
 		if (s_Data.PassSlice == UINT32_MAX)
