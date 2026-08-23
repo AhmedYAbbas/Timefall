@@ -17,6 +17,7 @@
 namespace Timefall
 {
 	static constexpr uint32_t kSkyboxSize = 512;
+	static constexpr uint32_t kIrradianceSize = 32;
 	static constexpr RHI::Format kCubeFormat = RHI::Format::RGBA16F;
 
 	// Cube faces are stored top-down, so the RHI's Y-flipped viewport has to be cancelled for the bake
@@ -36,6 +37,8 @@ namespace Timefall
 
 	static const char* s_FacePassNames[6] = {
 		"EquirectToCube +X", "EquirectToCube -X", "EquirectToCube +Y", "EquirectToCube -Y", "EquirectToCube +Z", "EquirectToCube -Z"};
+	static const char* s_IrradiancePassNames[6] = {"IrradianceConvolve +X", "IrradianceConvolve -X", "IrradianceConvolve +Y",
+		"IrradianceConvolve -Y", "IrradianceConvolve +Z", "IrradianceConvolve -Z"};
 
 	struct EquirectPush
 	{
@@ -45,9 +48,20 @@ namespace Timefall
 	};
 	static_assert(sizeof(EquirectPush) == 80);
 
+	struct IrradiancePush
+	{
+		glm::mat4 ViewProjection{1.0f};
+		uint32_t SkyboxIndex = 0;
+		uint32_t _Pad[3]{};
+	};
+	static_assert(sizeof(IrradiancePush) == 80);
+
 	static Ref<MeshSource> s_CubeMesh;
 	static Ref<Shader> s_EquirectShader;
 	static Ref<RHI::GraphicsPipeline> s_EquirectPipeline;
+
+	static Ref<Shader> s_IrradianceShader;
+	static Ref<RHI::GraphicsPipeline> s_IrradiancePipeline;
 
 	static bool EnsureBakeResources()
 	{
@@ -78,7 +92,28 @@ namespace Timefall
 			s_EquirectPipeline = RHI::GraphicsPipeline::Create(desc);
 		}
 
-		return s_CubeMesh && s_CubeMesh->HasGpuBuffers() && s_EquirectPipeline && s_EquirectPipeline->IsValid();
+		if (!s_IrradianceShader)
+			s_IrradianceShader = ShaderLibrary::Load("Assets/Shaders/Renderer3D_IrradianceConvolve.slang");
+
+		if (!s_IrradiancePipeline)
+		{
+			RHI::GraphicsPipelineDesc desc;
+			desc.ShaderModule = s_IrradianceShader;
+			desc.VertexLayout = {{ShaderDataType::Float3, "a_Position"}, {ShaderDataType::Float3, "a_Normal"},
+				{ShaderDataType::Float2, "a_TexCoord"}, {ShaderDataType::Float3, "a_Tangent"}, {ShaderDataType::Float3, "a_Bitangent"}};
+			desc.Primitive = RHI::Topology::TriangleList;
+			desc.ColorFormats[0] = kCubeFormat;
+			desc.ColorCount = 1;
+			desc.DepthFormat = RHI::Format::Undefined;
+			desc.Depth = {.Test = false, .Write = false};
+			desc.Blend = RHI::BlendMode::None;
+			desc.Raster.Cull = RHI::CullMode::None;
+			desc.DebugName = "IrradianceConvolvePipeline";
+
+			s_IrradiancePipeline = RHI::GraphicsPipeline::Create(desc);
+		}
+
+		return s_CubeMesh && s_CubeMesh->HasGpuBuffers() && s_EquirectPipeline && s_EquirectPipeline->IsValid() && s_IrradiancePipeline && s_IrradiancePipeline->IsValid();
 	}
 
 	Ref<Environment> Environment::Create(const Ref<Texture2D>& equirect)
@@ -119,7 +154,26 @@ namespace Timefall
 			return environment;
 		}
 
+		environment->m_Irradiance = RHI::RenderTarget::Create({.Width = kIrradianceSize,
+			.Height = kIrradianceSize,
+			.ColorFormat = {kCubeFormat},
+			.ColorCount = 1,
+			.DepthFormat = RHI::Format::Undefined,
+			.Dim = RHI::Dimension::Cube,
+			.ArrayLayers = 6,
+			.MipLevels = 1,
+			.DebugName = "EnvironmentIrradiance"});
+
+		if (!environment->m_Irradiance || !environment->m_Irradiance->IsValid())
+		{
+			TF_CORE_ERROR("Environment::Create could not allocate the {0}x{0} irradiance cube", kIrradianceSize);
+			environment->m_Skybox.reset();
+			environment->m_Irradiance.reset();
+			return environment;
+		}
+
 		const uint32_t equirectIndex = equirect->GetRHITexture()->GetBindlessIndex(false);
+		const uint32_t skyboxIndex = environment->m_Skybox->GetColor(0)->GetBindlessIndex(false);
 		const Submesh& submesh = s_CubeMesh->GetSubmeshes()[0];
 
 		RHI::RenderDevice::Get().ExecuteImmediate([&](RHI::CommandList& cmd) {
@@ -143,14 +197,35 @@ namespace Timefall
 			}
 
 			cmd.GenerateMips(*environment->m_Skybox->GetColor(0));
+
+			for (uint32_t face = 0; face < 6; face++)
+			{
+				cmd.BeginPass({.DebugName = s_IrradiancePassNames[face],
+					.Target = environment->m_Irradiance.get(),
+					.Layer = face,
+					.Mip = 0,
+					.Color{{.Load = RHI::LoadOp::Clear, .ClearValue = {0.0f, 0.0f, 0.0f, 1.0f}}}});
+
+				cmd.BindPipeline(*s_IrradiancePipeline);
+				cmd.BindVertexBuffer(*s_CubeMesh->GetVertexBuffer());
+				cmd.BindIndexBuffer(*s_CubeMesh->GetIndexBuffer(), RHI::IndexType::U32);
+
+				const IrradiancePush push{.ViewProjection = s_CaptureProj * s_CaptureViews[face], .SkyboxIndex = skyboxIndex};
+				cmd.PushConstants(&push, sizeof(push));
+
+				cmd.DrawIndexed(submesh.IndexCount, 1, submesh.BaseIndex, (int32_t)submesh.BaseVertex);
+				cmd.EndPass();
+			}
 		});
 
-		TF_CORE_INFO("Baked environment skybox: {0}x{0}, 6 faces, {1} mips", kSkyboxSize, mips);
+		TF_CORE_INFO("Baked environment skybox: {0}x{0}, 6 faces, ({1} mips), irradiance {2}x{2}", kSkyboxSize, mips, kIrradianceSize);
 		return environment;
 	}
 
 	void Environment::ReleaseResources()
 	{
+		s_IrradiancePipeline.reset();
+		s_IrradianceShader.reset();
 		s_EquirectPipeline.reset();
 		s_EquirectShader.reset();
 		s_CubeMesh.reset();
@@ -161,8 +236,13 @@ namespace Timefall
 		return m_Skybox->GetColor(0);
 	}
 
+	const Ref<RHI::Texture>& Environment::GetIrradianceMap() const
+	{
+		return m_Irradiance->GetColor(0);
+	}
+
 	bool Environment::IsValid() const
 	{
-		return m_Skybox && m_Skybox->IsValid();
+		return m_Skybox && m_Skybox->IsValid() && m_Irradiance && m_Irradiance->IsValid();
 	}
 }

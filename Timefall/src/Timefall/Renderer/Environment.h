@@ -15,11 +15,14 @@ namespace Timefall
 		static void ReleaseResources();
 
 		const Ref<RHI::Texture>& GetSkyboxMap() const;
+		const Ref<RHI::Texture>& GetIrradianceMap() const;
+
 		bool IsValid() const;
 
 	private:
 		Environment() = default;
 
 		Ref<RHI::RenderTarget> m_Skybox;
+		Ref<RHI::RenderTarget> m_Irradiance;
 	};
 }
