@@ -23,7 +23,9 @@ namespace Timefall::RHI
 				Color[i] = Texture::Create({.Width = Desc.Width,
 					.Height = Desc.Height,
 					.PixelFormat = Desc.ColorFormat[i],
-					.MipLevels = 1,
+					.MipLevels = Desc.MipLevels,
+					.Dim = Desc.Dim,
+					.ArrayLayers = Desc.ArrayLayers,
 					.Usage = TextureUsage::Sampled | TextureUsage::ColorAttachment | Desc.ColorUsage[i],
 					.DebugName = name.c_str()});
 
@@ -98,6 +100,13 @@ namespace Timefall::RHI
 
 		if (width == m_Impl->Desc.Width && height == m_Impl->Desc.Height && IsValid())
 			return false;
+
+		if (m_Impl->Desc.Dim != Dimension::Tex2D)
+		{
+			TF_CORE_ERROR("RenderTarget '{0}' is not 2D; layered and cube tarngets are fixed-size",
+				m_Impl->Desc.DebugName ? m_Impl->Desc.DebugName : "<unnamed>");
+			return false;
+		}
 
 		m_Impl->Desc.Width = width;
 		m_Impl->Desc.Height = height;

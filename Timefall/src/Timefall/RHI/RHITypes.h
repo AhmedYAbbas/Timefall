@@ -24,6 +24,7 @@ namespace Timefall::RHI
 	enum class StoreOp { Store = 0, DontCare };
 	enum class IndexType : uint8_t { U16 = 0, U32 };
 	enum class TextureUsage : uint32_t { None = 0, Sampled = BIT(0), ColorAttachment = BIT(1), DepthAttachment = BIT(2), TransferSrc = BIT(3), TransferDst = BIT(4) };
+	enum class Dimension : uint8_t { Tex2D = 0, Tex2DArray, Cube, CubeArray };
 
 	constexpr TextureUsage operator|(TextureUsage a, TextureUsage b)
 	{

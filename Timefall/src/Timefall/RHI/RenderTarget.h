@@ -14,6 +14,9 @@ namespace Timefall::RHI
 		uint32_t ColorCount = 1;
 		TextureUsage ColorUsage[8]{}; // extra per-attachment usage, OR'd onto Sampled|ColorAttachment
 		Format DepthFormat = Format::Undefined; // Undefined == no depth attachment
+		Dimension Dim = Dimension::Tex2D;
+		uint32_t ArrayLayers = 1;
+		uint32_t MipLevels = 1;
 		const char* DebugName = nullptr;
 	};
 

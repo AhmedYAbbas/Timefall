@@ -13,6 +13,8 @@ namespace Timefall::RHI
 		uint32_t Height = 1;
 		Format PixelFormat = Format::RGBA8Unorm;
 		uint32_t MipLevels = 1; // 0 == full chain derived from Width/Height
+		Dimension Dim = Dimension::Tex2D;
+		uint32_t ArrayLayers = 1;
 		bool SRGBView = false;
 		TextureUsage Usage = TextureUsage::Sampled;
 		const char* DebugName = nullptr;

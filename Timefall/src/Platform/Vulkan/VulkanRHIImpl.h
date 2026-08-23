@@ -28,6 +28,22 @@ namespace Timefall::RHI
 		}
 	}
 
+	inline bool IsCubeDimension(Dimension dim)
+	{
+		return dim == Dimension::Cube || dim == Dimension::CubeArray;
+	}
+
+	inline vk::ImageViewType ToVkImageViewType(Dimension dim)
+	{
+		switch (dim)
+		{
+			case Dimension::Tex2DArray: return vk::ImageViewType::e2DArray;
+			case Dimension::Cube:		return vk::ImageViewType::eCube;
+			case Dimension::CubeArray:	return vk::ImageViewType::eCubeArray;
+			default:					return vk::ImageViewType::e2D;
+		}
+	}
+
 	inline uint32_t BytesPerPixel(Format format)
 	{
 		switch (format)
@@ -115,6 +131,8 @@ namespace Timefall::RHI
 
 		uint32_t ArrayLayers = 1;
 		std::vector<vk::ImageLayout> Layouts; // mip * ArrayLayers + Layer
+		Dimension Dim = Dimension::Tex2D;
+		bool LinearBlit = false;
 
 		bool IsAttachment = false;
 		vk::ImageUsageFlags UsageFlags{};

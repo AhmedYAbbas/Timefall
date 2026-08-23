@@ -82,13 +82,13 @@ namespace Timefall::RHI
 			return desc.DebugName ? desc.DebugName : std::format("Texture[{}x{} {}]", desc.Width, desc.Height, vk::to_string(format));
 		}
 
-		vk::ImageSubresourceRange ColorRange(uint32_t mipLevels)
+		vk::ImageSubresourceRange ColorRange(uint32_t mipLevels, uint32_t layers)
 		{
-			return {vk::ImageAspectFlagBits::eColor, 0, mipLevels, 0, 1};
+			return {vk::ImageAspectFlagBits::eColor, 0, mipLevels, 0, layers};
 		}
 
-		void RecordMipChain(
-			vk::Image image, vk::Format format, uint32_t width, uint32_t height, uint32_t mipLevels, vk::ImageLayout level0Layout)
+		void RecordMipChain(vk::Image image, vk::Format format, uint32_t width, uint32_t height, uint32_t mipLevels,
+			vk::ImageLayout level0Layout, uint32_t layers)
 		{
 			const vk::Filter filter = GetFormatCaps(format).LinearBlit ? vk::Filter::eLinear : vk::Filter::eNearest;
 
@@ -155,7 +155,7 @@ namespace Timefall::RHI
 					.srcQueueFamilyIndex = vk::QueueFamilyIgnored,
 					.dstQueueFamilyIndex = vk::QueueFamilyIgnored,
 					.image = image,
-					.subresourceRange = ColorRange(mipLevels)};
+					.subresourceRange = ColorRange(mipLevels, layers)};
 
 				cmd.pipelineBarrier2({.imageMemoryBarrierCount = 1, .pImageMemoryBarriers = &toRead});
 			});
@@ -183,12 +183,22 @@ namespace Timefall::RHI
 		impl.Width = desc.Width;
 		impl.Height = desc.Height;
 
+		impl.Dim = desc.Dim;
+		impl.ArrayLayers = std::max(1u, desc.ArrayLayers);
+
+		if (IsCubeDimension(desc.Dim) && (impl.ArrayLayers % 6 != 0 || desc.Width != desc.Height))
+		{
+			TF_CORE_WARN("Cube texture '{0}' needs a square extent and a layer count that is a multiple of 6; got {1}x{2}, {3} layers",
+				desc.DebugName ? desc.DebugName : "<unnamed>", desc.Width, desc.Height, impl.ArrayLayers);
+			return texture;
+		}
+
 		const bool isAttachment = HasFlag(desc.Usage, TextureUsage::ColorAttachment) || HasFlag(desc.Usage, TextureUsage::DepthAttachment);
 		impl.IsAttachment = isAttachment;
 
 		impl.Aspect = IsDepthFormat(desc.PixelFormat) ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
 
-		impl.MipLevels = isAttachment ? 1 : (desc.MipLevels == 0 ? FullMipChain(desc.Width, desc.Height) : desc.MipLevels);
+		impl.MipLevels = desc.MipLevels == 0 ? FullMipChain(desc.Width, desc.Height) : desc.MipLevels;
 		impl.Layouts.assign((size_t)impl.MipLevels * impl.ArrayLayers, vk::ImageLayout::eUndefined);
 
 		vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eSampled;
@@ -202,9 +212,11 @@ namespace Timefall::RHI
 		if (HasFlag(desc.Usage, TextureUsage::TransferDst))
 			usage |= vk::ImageUsageFlagBits::eTransferDst;
 
+		const FormatCaps& caps = GetFormatCaps(format);
+		impl.LinearBlit = caps.LinearBlit;
+
 		if (!isAttachment)
 		{
-			const FormatCaps& caps = GetFormatCaps(format);
 			impl.HostCopyable = caps.HostCopy;
 
 			// sampled textures always stage through a transfer: upload writes them, mip generation reads them back
@@ -222,12 +234,13 @@ namespace Timefall::RHI
 		const vk::ImageFormatListCreateInfo formatList{.viewFormatCount = 2, .pViewFormats = viewFormats};
 
 		const vk::ImageCreateInfo imageInfo{.pNext = wantsSRGBView ? &formatList : nullptr,
-			.flags = wantsSRGBView ? vk::ImageCreateFlagBits::eMutableFormat : vk::ImageCreateFlags{},
+			.flags = (wantsSRGBView ? vk::ImageCreateFlagBits::eMutableFormat : vk::ImageCreateFlags{})
+				| (IsCubeDimension(desc.Dim) ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlags{}),
 			.imageType = vk::ImageType::e2D,
 			.format = format,
 			.extent = {desc.Width, desc.Height, 1},
 			.mipLevels = impl.MipLevels,
-			.arrayLayers = 1,
+			.arrayLayers = impl.ArrayLayers,
 			.samples = vk::SampleCountFlagBits::e1,
 			.tiling = vk::ImageTiling::eOptimal,
 			.usage = usage,
@@ -256,8 +269,8 @@ namespace Timefall::RHI
 
 		auto makeView = [&](vk::Format viewFormat, std::string_view suffix) -> vk::ImageView {
 			auto view = VulkanContext::Get().GetDevice().createImageView({.image = impl.Image,
-				.viewType = vk::ImageViewType::e2D,
-				.format = viewFormat, .subresourceRange = {impl.Aspect, 0, impl.MipLevels, 0, 1}});
+				.viewType = ToVkImageViewType(impl.Dim),
+				.format = viewFormat, .subresourceRange = {impl.Aspect, 0, impl.MipLevels, 0, impl.ArrayLayers}});
 
 			if (!view)
 			{
@@ -284,7 +297,7 @@ namespace Timefall::RHI
 			const vk::HostImageLayoutTransitionInfo transition{.image = impl.Image,
 				.oldLayout = vk::ImageLayout::eUndefined,
 				.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
-				.subresourceRange = ColorRange(impl.MipLevels)};
+				.subresourceRange = ColorRange(impl.MipLevels, impl.ArrayLayers)};
 
 			(void)VulkanContext::Get().GetDevice().transitionImageLayout(transition);
 		}
@@ -299,7 +312,7 @@ namespace Timefall::RHI
 				.srcQueueFamilyIndex = vk::QueueFamilyIgnored,
 				.dstQueueFamilyIndex = vk::QueueFamilyIgnored,
 				.image = impl.Image,
-				.subresourceRange = ColorRange(impl.MipLevels)};
+				.subresourceRange = ColorRange(impl.MipLevels, impl.ArrayLayers)};
 
 			VulkanUploadContext::Record([&barrier](vk::CommandBuffer cmd) {
 				cmd.pipelineBarrier2({.imageMemoryBarrierCount = 1, .pImageMemoryBarriers = &barrier});
@@ -338,6 +351,12 @@ namespace Timefall::RHI
 			return false;
 		}
 
+		if (m_Impl->ArrayLayers > 1 && m_Impl->MipLevels > 1)
+		{
+			TF_CORE_ERROR("Texture::Upload cannot fill a layered mip chain - upload mip 0 and call CommandList::GenerateMips");
+			return false;
+		}
+
 		Impl& impl = *m_Impl;
 		const uint64_t expected = (uint64_t)impl.Width * impl.Height * BytesPerPixel(impl.PixelFormat);
 		if (size != expected)
@@ -354,7 +373,7 @@ namespace Timefall::RHI
 			const vk::HostImageLayoutTransitionInfo toCopy{.image = impl.Image,
 				.oldLayout = vk::ImageLayout::eUndefined,
 				.newLayout = copyLayout,
-				.subresourceRange = ColorRange(impl.MipLevels)};
+				.subresourceRange = ColorRange(impl.MipLevels, impl.ArrayLayers)};
 
 			(void)VulkanContext::Get().GetDevice().transitionImageLayout(toCopy);
 
@@ -378,13 +397,13 @@ namespace Timefall::RHI
 				const vk::HostImageLayoutTransitionInfo toRead{.image = impl.Image,
 					.oldLayout = copyLayout,
 					.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
-					.subresourceRange = ColorRange(impl.MipLevels)};
+					.subresourceRange = ColorRange(impl.MipLevels, impl.ArrayLayers)};
 
 				(void)VulkanContext::Get().GetDevice().transitionImageLayout(toRead);
 				return true;
 			}
 
-			RecordMipChain(impl.Image, impl.Format, impl.Width, impl.Height, impl.MipLevels, copyLayout);
+			RecordMipChain(impl.Image, impl.Format, impl.Width, impl.Height, impl.MipLevels, copyLayout, impl.ArrayLayers);
 			return true;
 		}
 
@@ -403,7 +422,7 @@ namespace Timefall::RHI
 					.srcQueueFamilyIndex = vk::QueueFamilyIgnored,
 					.dstQueueFamilyIndex = vk::QueueFamilyIgnored,
 					.image = impl.Image,
-					.subresourceRange = ColorRange(impl.MipLevels)};
+					.subresourceRange = ColorRange(impl.MipLevels, impl.ArrayLayers)};
 
 				cmd.pipelineBarrier2({.imageMemoryBarrierCount = 1, .pImageMemoryBarriers = &toRead});
 			});
@@ -411,7 +430,7 @@ namespace Timefall::RHI
 			return true;
 		}
 
-		RecordMipChain(impl.Image, impl.Format, impl.Width, impl.Height, impl.MipLevels, vk::ImageLayout::eTransferDstOptimal);
+		RecordMipChain(impl.Image, impl.Format, impl.Width, impl.Height, impl.MipLevels, vk::ImageLayout::eTransferDstOptimal, impl.ArrayLayers);
 		return true;
 	}
 
