@@ -349,6 +349,10 @@ namespace Timefall
 				s_Data.ActiveEnvironment = it->second;
 		}
 
+		s_Data.SkyboxCubeIndex = 0;
+		if (s_Data.ActiveEnvironment)
+			s_Data.SkyboxCubeIndex = s_Data.ActiveEnvironment->GetSkyboxMap()->GetBindlessIndex(false);
+
 		s_Data.PassSlice = RHI::Bindings::WritePassUniforms(&s_Data.Pass, sizeof(s_Data.Pass));
 		if (s_Data.PassSlice == UINT32_MAX)
 			return false;
@@ -470,6 +474,36 @@ namespace Timefall
 					s_Data.Stats.TriangleCount += sm.IndexCount / 3;
 				}
 			}
+
+			cmd->EndPass();
+		}
+
+		if (s_Data.ActiveEnvironment && s_Data.SkyboxPipeline && s_Data.SkyboxPipeline->IsValid() && s_Data.CubeMesh
+			&& s_Data.CubeMesh->HasGpuBuffers())
+		{
+			TF_PROFILE_SCOPE("Skybox");
+			TF_PROFILE_GPU_SCOPE("Skybox");
+			PerformanceStats::ScopedPassTimer passTimer("Skybox");
+
+			cmd->BeginPass({.DebugName = "Skybox",
+				.Target = s_Data.HDRTarget.get(),
+				.Color = {{.Load = RHI::LoadOp::Load}, {.Load = RHI::LoadOp::Load}},
+				.Depth = {.Load = RHI::LoadOp::Load}});
+
+			cmd->SetPassUniformSlice(s_Data.PassSlice);
+			cmd->BindPipeline(*s_Data.SkyboxPipeline);
+			cmd->BindVertexBuffer(*s_Data.CubeMesh->GetVertexBuffer());
+			cmd->BindIndexBuffer(*s_Data.CubeMesh->GetIndexBuffer(), RHI::IndexType::U32);
+
+			const SkyboxPush push{.SkyViewProjection = s_Data.Projection * glm::mat4(glm::mat3(s_Data.Pass.View)),
+				.SkyboxIndex = s_Data.SkyboxCubeIndex,
+				.EnvRotation = s_Data.Pass.EnvRotation};
+
+			cmd->PushConstants(&push, sizeof(push));
+
+			const Submesh& sky = s_Data.CubeMesh->GetSubmeshes()[0];
+			cmd->DrawIndexed(sky.IndexCount, 1, sky.BaseIndex, (int32_t)sky.BaseVertex);
+			s_Data.Stats.DrawCalls++;
 
 			cmd->EndPass();
 		}

@@ -19,7 +19,12 @@ namespace Timefall
 	static constexpr uint32_t kSkyboxSize = 512;
 	static constexpr RHI::Format kCubeFormat = RHI::Format::RGBA16F;
 
-	static const glm::mat4 s_CaptureProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+	// Cube faces are stored top-down, so the RHI's Y-flipped viewport has to be cancelled for the bake
+	static const glm::mat4 s_CaptureProj = [] {
+		glm::mat4 proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+		proj[1] *= -1.0f;
+		return proj;
+	}();
 	static const glm::mat4 s_CaptureViews[6] = {
 		glm::lookAt(glm::vec3(0.0f), glm::vec3(1, 0, 0), glm::vec3(0, -1, 0)),
 		glm::lookAt(glm::vec3(0.0f), glm::vec3(-1, 0, 0), glm::vec3(0, -1, 0)),
