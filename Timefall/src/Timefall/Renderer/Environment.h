@@ -11,13 +11,14 @@ namespace Timefall
 	class TF_API Environment
 	{
 	public:
-		virtual ~Environment() = default;
-
-		virtual Ref<TextureCube> GetSkyboxMap() const = 0;
-		virtual Ref<TextureCube> GetIrradianceMap() const = 0;
-		virtual Ref<TextureCube> GetPrefilterMap() const = 0;
-		virtual uint32_t GetPrefilterMipLevels() const = 0;
-
 		static Ref<Environment> Create(const Ref<Texture2D>& equirect);
+
+		const Ref<RHI::Texture>& GetSkyboxMap() const;
+		bool IsValid() const;
+
+	private:
+		Environment() = default;
+
+		Ref<RHI::RenderTarget> m_Skybox;
 	};
 }
