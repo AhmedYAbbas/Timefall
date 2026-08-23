@@ -50,6 +50,15 @@ namespace Timefall
 	};
 	static_assert(sizeof(DrawPush) == 32);
 
+	struct SkyboxPush
+	{
+		glm::mat4 SkyViewProjection{1.0f};
+		uint32_t SkyboxIndex = 0;
+		float EnvRotation = 0.0f;
+		uint32_t _Pad[2]{};
+	};
+	static_assert(sizeof(SkyboxPush) == 80);
+
 	struct GpuMaterial
 	{
 		glm::vec4 BaseColorMetallic;
@@ -100,6 +109,7 @@ namespace Timefall
 		AssetHandle ActiveEnvironmentHandle = 0;
 		std::unordered_map<AssetHandle, Ref<Environment>> EnvironmentCache; // one bake per environment per session
 		Ref<Environment> ActiveEnvironment;
+		uint32_t SkyboxCubeIndex = 0;
 
 		Ref<MeshSource> CubeMesh;
 		Ref<MeshSource> SphereMesh;
@@ -109,6 +119,9 @@ namespace Timefall
 		Ref<Shader> LitShader;
 		Ref<RHI::GraphicsPipeline> ForwardOpaquePipeline;
 
+		Ref<Shader> SkyboxShader;
+		Ref<RHI::GraphicsPipeline> SkyboxPipeline;
+
 		std::vector<MeshSubmission> Submissions;
 		std::vector<uint32_t> MaterialSlots;
 
@@ -116,6 +129,7 @@ namespace Timefall
 		uint32_t PassSlice = 0;
 		uint64_t TransformsAddress = 0;
 		uint64_t MaterialsAddress = 0;
+		glm::mat4 Projection{1.0f};
 
 		bool ArrayOverflowWarned = false;
 
@@ -544,6 +558,24 @@ namespace Timefall
 		lit.DebugName = "Renderer3DForwardOpaquePipeline";
 
 		s_Data.ForwardOpaquePipeline = RHI::GraphicsPipeline::Create(lit);
+
+		s_Data.SkyboxShader = ShaderLibrary::Load("Assets/Shaders/Renderer3D_Skybox.slang");
+
+		RHI::GraphicsPipelineDesc sky;
+		sky.ShaderModule = s_Data.SkyboxShader;
+		sky.VertexLayout = {{ShaderDataType::Float3, "a_Position"}, {ShaderDataType::Float3, "a_Normal"},
+			{ShaderDataType::Float2, "a_TexCoord"}, {ShaderDataType::Float3, "a_Tangent"}, {ShaderDataType::Float3, "a_Bitangent"}};
+		sky.Primitive = RHI::Topology::TriangleList;
+		sky.ColorFormats[0] = kHDRFormat;
+		sky.ColorFormats[1] = kIDFormat;
+		sky.ColorCount = 2;
+		sky.DepthFormat = kDepthFormat;
+		sky.Depth = {.Test = true, .Write = true, .Compare = RHI::CompareOp::LessOrEqual};
+		sky.Blend = RHI::BlendMode::None;
+		sky.Raster.Cull = RHI::CullMode::Front;
+		sky.DebugName = "Renderer3DSkyboxPipeline";
+
+		s_Data.SkyboxPipeline = RHI::GraphicsPipeline::Create(sky);
 	}
 
 	void Renderer3D::Shutdown()
@@ -570,6 +602,7 @@ namespace Timefall
 		s_Data.Pass.ViewProjection = camera.GetViewProjection();
 		s_Data.Pass.View = camera.GetView();
 		s_Data.Pass.CameraPosition = glm::vec4(camera.GetPosition(), 1.0f);
+		s_Data.Projection = camera.GetProjection();
 	}
 
 	void Renderer3D::BeginScene(const Camera& camera, const glm::mat4& transform)
@@ -582,6 +615,7 @@ namespace Timefall
 		s_Data.Pass.ViewProjection = camera.GetProjection() * view;
 		s_Data.Pass.View = view;
 		s_Data.Pass.CameraPosition = glm::vec4(glm::vec3(transform[3]), 1.0f);
+		s_Data.Projection = camera.GetProjection();
 	}
 
 	void Renderer3D::SetShadowSettings(const ShadowSettings& settings) {}
