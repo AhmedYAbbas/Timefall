@@ -83,6 +83,8 @@ namespace Timefall::RHI
 		bool PassLabelPushed = false;
 		RenderTarget* PassTarget = nullptr;
 		uint32_t PassColorCount = 0;
+		uint32_t PassLayer = 0;
+		uint32_t PassMip = 0;
 		uint32_t PassSlice = 0;
 
 		vk::PipelineLayout BoundLayout;
@@ -116,6 +118,7 @@ namespace Timefall::RHI
 		vk::Image Image;
 		vk::ImageView View;
 		vk::ImageView SRGBView;
+		std::vector<vk::ImageView> SubresourceViews; // lazily build, mip * ArrayLayers + layer
 
 		VmaAllocation Allocation = nullptr;
 		vk::Format Format = vk::Format::eUndefined;
@@ -138,6 +141,9 @@ namespace Timefall::RHI
 		vk::ImageUsageFlags UsageFlags{};
 		void* UIHandle = nullptr;
 		void (*UIHandleDestroy)(void*) = nullptr;
+
+		//Single-(mip, layer) 2D view for use as a render-pass attachment. Built on first use
+		vk::ImageView SubresourceView(uint32_t mip, uint32_t layer);
 
 		vk::ImageLayout& LayoutAt(uint32_t mip, uint32_t layer)
 		{

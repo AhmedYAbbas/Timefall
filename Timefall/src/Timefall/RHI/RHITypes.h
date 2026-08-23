@@ -57,6 +57,8 @@ namespace Timefall::RHI
 	{
 		const char* DebugName = nullptr;
 		RenderTarget* Target = nullptr;
+		uint32_t Layer = 0; // array layer / cube face
+		uint32_t Mip = 0;
 		ColorTarget Color[8]{};
 		DepthTarget Depth{};
 	};
