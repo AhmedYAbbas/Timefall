@@ -350,8 +350,19 @@ namespace Timefall
 		}
 
 		s_Data.SkyboxCubeIndex = 0;
+		s_Data.Pass.HasEnvironment = 0;
+		s_Data.Pass.IrradianceIndex = 0;
+		s_Data.Pass.PrefilterIndex = 0;
+		s_Data.Pass.SkyboxIndex = 0;
+
 		if (s_Data.ActiveEnvironment)
+		{
 			s_Data.SkyboxCubeIndex = s_Data.ActiveEnvironment->GetSkyboxMap()->GetBindlessIndex(false);
+			s_Data.Pass.IrradianceIndex = s_Data.ActiveEnvironment->GetIrradianceMap()->GetBindlessIndex(false);
+			s_Data.Pass.PrefilterIndex = s_Data.ActiveEnvironment->GetPrefilterMap()->GetBindlessIndex(false);
+			s_Data.Pass.SkyboxIndex = s_Data.SkyboxCubeIndex;
+			s_Data.Pass.HasEnvironment = 1;
+		}
 
 		s_Data.PassSlice = RHI::Bindings::WritePassUniforms(&s_Data.Pass, sizeof(s_Data.Pass));
 		if (s_Data.PassSlice == UINT32_MAX)
