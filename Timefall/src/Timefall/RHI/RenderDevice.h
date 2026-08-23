@@ -29,6 +29,7 @@ namespace Timefall::RHI
 		void OnResize(uint32_t width, uint32_t height);
 		void SetVSync(bool enabled);
 		void WaitIdle();
+		void ExecuteImmediate(const std::function<void(CommandList&)>& fn);
 
 		void DeferDestroy(std::function<void()>&& fn);
 

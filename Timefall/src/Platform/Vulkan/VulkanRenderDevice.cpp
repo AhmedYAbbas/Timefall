@@ -600,6 +600,28 @@ namespace Timefall::RHI
 		(void)VulkanContext::Get().GetDevice().waitIdle();
 	}
 
+	void RenderDevice::ExecuteImmediate(const std::function<void(CommandList&)>& fn)
+	{
+		TF_PROFILE_FUNCTION();
+
+		if (!fn)
+			return;
+
+		CommandList list;
+		CommandList::Impl impl{};
+		list.m_Impl = &impl;
+
+		VulkanUploadContext::Begin();
+		VulkanUploadContext::Record([&](vk::CommandBuffer cmd)
+		{
+			impl.Cmd = cmd;
+			fn(list);
+		});
+		VulkanUploadContext::End();
+
+		list.m_Impl = nullptr;
+	}
+
 	void RenderDevice::DeferDestroy(std::function<void()>&& fn)
 	{
 		if (!m_Impl)
