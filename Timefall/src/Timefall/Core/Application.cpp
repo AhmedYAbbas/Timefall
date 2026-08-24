@@ -5,6 +5,7 @@
 #include "Timefall/Core/Timestep.h"
 #include "Timefall/Renderer/Renderer.h"
 #include "Timefall/Renderer/Font.h"
+#include "Timefall/Renderer/PassUniforms.h"
 #include "Timefall/Scene/SceneManager.h"
 #include "Timefall/Project/Project.h"
 #include "Timefall/Scripting/ScriptEngine.h"
@@ -204,11 +205,13 @@ namespace Timefall
 	{
 		TF_PROFILE_FUNCTION();
 
-		std::scoped_lock<std::mutex> lock(m_MainThreadQueueMutex);
+		std::vector<std::function<void()>> queue;
+		{
+			std::scoped_lock<std::mutex> lock(m_MainThreadQueueMutex);
+			queue.swap(m_MainThreadQueue);
+		}
 
-		for (auto& func : m_MainThreadQueue)
+		for (auto& func : queue)
 			func();
-
-		m_MainThreadQueue.clear();
 	}
 }
