@@ -1,28 +1,13 @@
 #include "tfpch.h"
 #include "ShaderCache.h"
 
+#include "Timefall/Core/Hash.h"
+
 namespace Timefall
 {
-	static constexpr uint64_t FNV_OFFSET = 14695981039346656037ull;
-	static constexpr uint64_t FNV_PRIME = 1099511628211ull;
 	static constexpr uint32_t META_VERSION = 2; // bumped: entry points now keep their declared SPIR-V names
 
 	static constexpr const char* OPTIMIZATION_TAG = "O-default";
-
-	static void HashBytes(uint64_t& hash, const void* data, size_t size)
-	{
-		const auto* bytes = (const uint8_t*)data;
-		for (size_t i = 0; i < size; i++)
-		{
-			hash ^= bytes[i];
-			hash *= FNV_PRIME;
-		}
-	}
-
-	static void HashString(uint64_t& hash, std::string_view text)
-	{
-		HashBytes(hash, text.data(), text.size());
-	}
 
 	static bool ReadWholeFile(const std::filesystem::path& path, std::string& out)
 	{
