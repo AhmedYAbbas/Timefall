@@ -1,0 +1,97 @@
+Scene: ShaderShowcase
+ShadowSettings:
+  CascadeCount: 4
+  ShadowMapResolution: 2048
+  MaxShadowDistance: 100
+  SplitLambda: 0.85
+  CascadeBlend: 0.1
+  BlockerSearchSamples: 16
+  PCFSamples: 16
+  SoftShadows: true
+  VisualizeCascades: false
+  SpotShadowResolution: 1024
+  PointShadowResolution: 512
+  CullMode: Back
+PostProcessSettings:
+  Operator: KhronosPBRNeutral
+  ExposureEV: 0
+  ReinhardWhitePoint: 4
+Entities:
+  - Entity: 8026696111178602859
+    TagComponent:
+      Tag: Cube
+    TransformComponent:
+      Position: [-1.4728004, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 1
+      Submesh: 0
+      Material: 0
+  - Entity: 14989427286359328411
+    TagComponent:
+      Tag: Sphere
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      Mesh: 2
+      Submesh: 0
+      Material: 0
+  - Entity: 13526951934210842498
+    TagComponent:
+      Tag: Sun Light
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [-0.6403446, 0.4946072, -0.3399449]
+      Scale: [0.9999999, 0.9999995, 0.9999999]
+    LightComponent:
+      Type: Directional
+      Color: [1, 1, 1]
+      Intensity: 0
+      Range: 10
+      InnerCutoff: 12.5
+      OuterCutoff: 17.5
+      CastsShadows: false
+      ShadowSoftness: 0.5
+      DepthBias: 1
+  - Entity: 18303738559783303804
+    TagComponent:
+      Tag: Skybox
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    SkyLightComponent:
+      EnvironmentMap: 15562484090310629946
+      Intensity: 1
+      Rotation: 0
+  - Entity: 6378182095781707484
+    TagComponent:
+      Tag: Camera
+    TransformComponent:
+      Position: [-5.5, 3.8, 14.338681]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    RelationshipComponent:
+      Parent: 0
+      Children:
+        []
+    CameraComponent:
+      Camera:
+        ProjectionType: 0
+        PerspectiveFOV: 90
+        PerspectiveNear: 0.01
+        PerspectiveFar: 1000
+        OrthographicSize: 10
+        OrthographicNear: -1
+        OrthographicFar: 1
+      Primary: true
+      FixedAspectRatio: false
+    ScriptComponent:
+      ModuleName: Sandbox.EditorCameraController
+      ScriptFields:
+        - Name: MoveSpeed
+          Type: Float
+          Data: 2
