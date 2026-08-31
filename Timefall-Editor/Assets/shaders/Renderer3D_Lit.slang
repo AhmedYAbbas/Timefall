@@ -7,6 +7,9 @@ import Common.Bindings;
 import Common.IBL;
 import Common.Shadows;
 import Common.BRDF;
+import Common.Iridescence;
+
+#define SHOWCASE_IRIDESCENCE 1
 
 // Reached by device address, not by descriptor. Slang lays these out in its *natural* layout
 // through a pointer, so no float3x3 or bare float3 members: they would pack to 12-byte strides
@@ -103,6 +106,129 @@ FSOutput fsMain(VSOutput input)
 	s.Roughness = clamp(FilterRoughness(s.N, s.Roughness), 0.045, 1.0);
 	s.AO = SampleBindless(m.Maps1.x, SAMPLER_LINEAR_REPEAT, input.uv).r;
 	s.F0 = lerp(float3(0.04), s.Albedo, s.Metallic);
+
+#if SHOWCASE_IRIDESCENCE
+
+	// Soap bubble
+	if (m.Maps0.x == BINDLESS_WHITE)
+	{
+		IridescenceParams ip;
+		ip.ThicknessMin = 180.0;
+		ip.ThicknessMax = 520.0;
+		ip.FilmIOR = 1.33;
+		ip.SwirlScale = 1.2;
+		ip.FlowSpeed = 0.25;
+		ip.Blend = 0.85;
+		ip.RoughnessMin = 0.03;
+		ip.RoughnessMax = 0.12;
+		ip.Octaves = 4;
+
+		ApplyIridescence(s, input.worldPos, u_Frame.Time, ip);
+	}
+
+	// Oil slick
+	// if (m.Maps0.x == BINDLESS_WHITE)
+	// {
+	// 	IridescenceParams ip;
+	// 	ip.ThicknessMin = 300.0;
+	// 	ip.ThicknessMax = 1400.0;
+	// 	ip.FilmIOR = 1.45;
+	// 	ip.SwirlScale = 3.5;
+	// 	ip.FlowSpeed = 0.5;
+	// 	ip.Blend = 0.9;
+	// 	ip.RoughnessMin = 0.05;
+	// 	ip.RoughnessMax = 0.25;
+	// 	ip.Octaves = 5;
+
+	// 	ApplyIridescence(s, input.worldPos, u_Frame.Time, ip);
+	// }
+
+	// Anodised titanium
+	// if (m.Maps0.x == BINDLESS_WHITE)
+	// {
+	// 	IridescenceParams ip;
+	// 	ip.ThicknessMin = 389.0;
+	// 	ip.ThicknessMax = 680.0;
+	// 	ip.FilmIOR = 2.4;
+	// 	ip.SwirlScale = 0.6;
+	// 	ip.FlowSpeed = 0.05;
+	// 	ip.Blend = 1.0;
+	// 	ip.RoughnessMin = 0.12;
+	// 	ip.RoughnessMax = 0.3;
+	// 	ip.Octaves = 2;
+
+	// 	ApplyIridescence(s, input.worldPos, u_Frame.Time, ip);
+	// }
+
+	// Scarab carapace
+	// if (m.Maps0.x == BINDLESS_WHITE)
+	// {
+	// 	IridescenceParams ip;
+	// 	ip.ThicknessMin = 420.0;
+	// 	ip.ThicknessMax = 560.0;
+	// 	ip.FilmIOR = 1.9;
+	// 	ip.SwirlScale = 8.0;
+	// 	ip.FlowSpeed = 0.15;
+	// 	ip.Blend = 0.95;
+	// 	ip.RoughnessMin = 0.04;
+	// 	ip.RoughnessMax = 0.10;
+	// 	ip.Octaves = 6;
+
+	// 	ApplyIridescence(s, input.worldPos, u_Frame.Time, ip);
+	// }
+
+	// CD / grating
+	// if (m.Maps0.x == BINDLESS_WHITE)
+	// {
+	// 	IridescenceParams ip;
+	// 	ip.ThicknessMin = 900.0;
+	// 	ip.ThicknessMax = 4200.0;
+	// 	ip.FilmIOR = 1.5;
+	// 	ip.SwirlScale = 0.4;
+	// 	ip.FlowSpeed = 0.1;
+	// 	ip.Blend = 1.0;
+	// 	ip.RoughnessMin = 0.02;
+	// 	ip.RoughnessMax = 0.06;
+	// 	ip.Octaves = 1;
+
+	// 	ApplyIridescence(s, input.worldPos, u_Frame.Time, ip);
+	// }
+
+	// Ghost sheen
+	// if (m.Maps0.x == BINDLESS_WHITE)
+	// {
+	// 	IridescenceParams ip;
+	// 	ip.ThicknessMin = 250.0;
+	// 	ip.ThicknessMax = 700.0;
+	// 	ip.FilmIOR = 1.35;
+	// 	ip.SwirlScale = 2.0;
+	// 	ip.FlowSpeed = 0.3;
+	// 	ip.Blend = 0.35;
+	// 	ip.RoughnessMin = 0.05;
+	// 	ip.RoughnessMax = 0.40;
+	// 	ip.Octaves = 4;
+
+	// 	ApplyIridescence(s, input.worldPos, u_Frame.Time, ip);
+	// }
+
+	// Molten
+	// if (m.Maps0.x == BINDLESS_WHITE)
+	// {
+	// 	IridescenceParams ip;
+	// 	ip.ThicknessMin = 200.0;
+	// 	ip.ThicknessMax = 2500.0;
+	// 	ip.FilmIOR = 1.4;
+	// 	ip.SwirlScale = 0.8;
+	// 	ip.FlowSpeed = 2.5;
+	// 	ip.Blend = 1.0;
+	// 	ip.RoughnessMin = 0.10;
+	// 	ip.RoughnessMax = 0.50;
+	// 	ip.Octaves = 3;
+
+	// 	ApplyIridescence(s, input.worldPos, u_Frame.Time, ip);
+	// }
+	
+#endif
 
 	const float viewDepth = -mul(u_Pass.View, float4(input.worldPos, 1.0)).z; // view looks down -z
 
