@@ -62,4 +62,11 @@ namespace Timefall::RHI
 		ColorTarget Color[8]{};
 		DepthTarget Depth{};
 	};
+
+	// One (layer, mip) slice of an image
+	struct TextureRegion
+	{
+		uint32_t Layer = 0; // array layer / cube face
+		uint32_t Mip = 0;
+	};
 }

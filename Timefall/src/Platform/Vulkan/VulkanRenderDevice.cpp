@@ -375,6 +375,123 @@ namespace Timefall::RHI
 		d.SetAllLayouts(vk::ImageLayout::eShaderReadOnlyOptimal);
 	}
 
+	void CommandList::CopyTextureToBuffer(Texture& src, GpuBuffer& dst, const TextureRegion& region, uint64_t dstOffset)
+	{
+		TF_CORE_ASSERT(!m_Impl->InPass, "CopyTextureToBuffer must be called outside a pass");
+
+		if (!src.IsValid() || !dst.IsValid())
+			return;
+
+		Texture::Impl& s = *src.m_Impl;
+
+		if (region.Mip >= s.MipLevels || region.Layer >= s.ArrayLayers)
+		{
+			TF_CORE_ERROR("CopyTextureToBuffer got mip {0} layer {1} on a {2}-mip {3}-layer image", region.Mip, region.Layer, s.MipLevels,
+				s.ArrayLayers);
+			return;
+		}
+
+		if (!(s.UsageFlags & vk::ImageUsageFlagBits::eTransferSrc))
+		{
+			TF_CORE_ERROR("CopyTextureToBuffer needs TextureUsage::TransferSrc on the source");
+			return;
+		}
+
+		const uint32_t width = std::max(1u, s.Width >> region.Mip);
+		const uint32_t height = std::max(1u, s.Height >> region.Mip);
+		const uint64_t bytes = (uint64_t)width * height * BytesPerPixel(s.PixelFormat);
+
+		if (dstOffset + bytes > dst.Size())
+		{
+			TF_CORE_ERROR("CopyTextureToBuffer of {0} bytes at offset {1} exceeds the {2} byte buffer", bytes, dstOffset, dst.Size());
+			return;
+		}
+
+		const vk::ImageSubresourceRange range{s.Aspect, region.Mip, 1, region.Layer, 1};
+		const vk::ImageLayout oldLayout = s.LayoutAt(region.Mip, region.Layer);
+		const auto [srcStage, srcAccess] = LayoutSourceSync(oldLayout);
+
+		TransitionImage(m_Impl->Cmd, s.Image, oldLayout, vk::ImageLayout::eTransferSrcOptimal, srcStage, srcAccess,
+			vk::PipelineStageFlagBits2::eCopy, vk::AccessFlagBits2::eTransferRead, range);
+		s.LayoutAt(region.Mip, region.Layer) = vk::ImageLayout::eTransferSrcOptimal;
+
+		const vk::BufferImageCopy2 copy{.bufferOffset = dstOffset,
+			.bufferRowLength = 0,
+			.bufferImageHeight = 0,
+			.imageSubresource = {s.Aspect, region.Mip, region.Layer, 1},
+			.imageOffset = {0, 0, 0},
+			.imageExtent = {width, height, 1}};
+
+		m_Impl->Cmd.copyImageToBuffer2({.srcImage = s.Image,
+			.srcImageLayout = vk::ImageLayout::eTransferSrcOptimal,
+			.dstBuffer = dst.m_Impl->Buffer,
+			.regionCount = 1,
+			.pRegions = &copy});
+
+		TransitionImage(m_Impl->Cmd, s.Image, vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eShaderReadOnlyOptimal,
+			vk::PipelineStageFlagBits2::eCopy, vk::AccessFlagBits2::eTransferRead, vk::PipelineStageFlagBits2::eFragmentShader,
+			vk::AccessFlagBits2::eShaderSampledRead, range);
+		s.LayoutAt(region.Mip, region.Layer) = vk::ImageLayout::eShaderReadOnlyOptimal;
+	}
+
+	void CommandList::CopyBufferToTexture(const GpuBuffer& src, Texture& dst, const TextureRegion& region, uint64_t srcOffset)
+	{
+		TF_CORE_ASSERT(!m_Impl->InPass, "CopyBufferToTexture must be called outside a pass");
+
+		if (!src.IsValid() || !dst.IsValid())
+			return;
+
+		Texture::Impl d = *dst.m_Impl;
+
+		if (region.Mip >= d.MipLevels || region.Layer >= d.ArrayLayers)
+		{
+			TF_CORE_ERROR("CopyBufferToTexture got mip {0} layer {1} on a {2}-mip {3}-layer image", region.Mip, region.Layer, d.MipLevels,
+				d.ArrayLayers);
+			return;
+		}
+
+		if (!(d.UsageFlags & vk::ImageUsageFlagBits::eTransferDst))
+		{
+			TF_CORE_ERROR("CopyBufferToTexture needs TextureUsage::TransferDst on the destination");
+			return;
+		}
+
+		const uint32_t width = std::max(1u, d.Width >> region.Mip);
+		const uint32_t height = std::max(1u, d.Height >> region.Mip);
+		const uint64_t bytes = (uint64_t)width * height * BytesPerPixel(d.PixelFormat);
+
+		if (srcOffset + bytes > src.Size())
+		{
+			TF_CORE_ERROR("CopyBufferToTexture of {0} bytes at offset {1} exceeds the {2} byte buffer", bytes, srcOffset, src.Size());
+			return;
+		}
+
+		const vk::ImageSubresourceRange range{d.Aspect, region.Mip, 1, region.Layer, 1};
+
+		TransitionImage(m_Impl->Cmd, d.Image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal,
+			LayoutSourceSync(d.LayoutAt(region.Mip, region.Layer)).first, vk::AccessFlagBits2::eNone, vk::PipelineStageFlagBits2::eCopy,
+			vk::AccessFlagBits2::eTransferWrite, range);
+		d.LayoutAt(region.Mip, region.Layer) = vk::ImageLayout::eTransferDstOptimal;
+
+		const vk::BufferImageCopy2 copy{.bufferOffset = srcOffset,
+			.bufferRowLength = 0,
+			.bufferImageHeight = 0,
+			.imageSubresource = {d.Aspect, region.Mip, region.Layer, 1},
+			.imageOffset = {0, 0, 0},
+			.imageExtent = {width, height, 1}};
+
+		m_Impl->Cmd.copyBufferToImage2({.srcBuffer = src.m_Impl->Buffer,
+			.dstImage = d.Image,
+			.dstImageLayout = vk::ImageLayout::eTransferDstOptimal,
+			.regionCount = 1,
+			.pRegions = &copy});
+
+		TransitionImage(m_Impl->Cmd, d.Image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal,
+			vk::PipelineStageFlagBits2::eCopy, vk::AccessFlagBits2::eTransferWrite, vk::PipelineStageFlagBits2::eFragmentShader,
+			vk::AccessFlagBits2::eShaderSampledRead, range);
+		d.LayoutAt(region.Mip, region.Layer) = vk::ImageLayout::eShaderReadOnlyOptimal;
+	}
+
 	void CommandList::GenerateMips(Texture& texture)
 	{
 		TF_CORE_ASSERT(!m_Impl->InPass, "GenerateMips must be called outside a pass");

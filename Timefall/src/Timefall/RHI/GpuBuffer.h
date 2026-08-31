@@ -30,7 +30,8 @@ namespace Timefall::RHI
 
 	// DeviceLocal: no CPU access; fill it through GpuBuffer::CreateWithData.
 	// HostWrite: persistently mapped and write-combined. Write sequentially, never read back.
-	enum class MemoryType : uint8_t { DeviceLocal = 0, HostWrite };
+	// HostVisible: persistently mapped and host-cached. The one type GetMapped() may be read through
+	enum class MemoryType : uint8_t { DeviceLocal = 0, HostWrite, HostVisible };
 
 	struct GpuBufferDesc
 	{

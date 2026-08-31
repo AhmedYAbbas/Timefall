@@ -62,6 +62,12 @@ namespace Timefall::RHI
 			// HOST_VISIBLE, and FrameAllocator's callers write through a raw pointer with no flush.
 			allocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 		}
+		else if (desc.Memory == MemoryType::HostVisible)
+		{
+			// RANDOM, not SEQUENTIAL_WRITE: this is the readback type, so the memory must be host-cached
+			allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+			allocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+		}
 
 		VkBuffer raw = VK_NULL_HANDLE;
 		VmaAllocationInfo allocated{};
