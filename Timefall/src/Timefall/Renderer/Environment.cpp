@@ -3,6 +3,8 @@
 
 #include "Timefall/Renderer/Mesh.h"
 #include "Timefall/Renderer/ShaderLibrary.h"
+#include "Timefall/Renderer/EnvironmentCache.h"
+
 #include "Timefall/RHI/CommandList.h"
 #include "Timefall/RHI/GpuBuffer.h"
 #include "Timefall/RHI/Pipeline.h"
@@ -21,6 +23,18 @@ namespace Timefall
 	static constexpr uint32_t kPrefilterSize = 128;
 	static constexpr uint32_t kPrefilterMips = 5; // MaxReflectionLod = 4, matching PassUniforms' default
 	static constexpr RHI::Format kCubeFormat = RHI::Format::RGBA16F;
+
+	static constexpr uint32_t kIrradianceSamples = 15876; // (2pi / 0.025) * (0.5pi / 0.025)
+	static constexpr uint32_t kPrefilterSamples = 1024; // SAMPLE_COUNT in Renderer3D_Prefilter.slang
+
+	static EnvBakeParams BakeParams()
+	{
+		return {.IrrSize = kIrradianceSize,
+			.PreSize = kPrefilterSize,
+			.PreMips = kPrefilterMips,
+			.IrrSamples = kIrradianceSamples,
+			.PreSamples = kPrefilterSamples};
+	}
 
 	// Cube faces are stored top-down, so the RHI's Y-flipped viewport has to be cancelled for the bake
 	static const glm::mat4 s_CaptureProj = [] {
@@ -153,7 +167,7 @@ namespace Timefall
 		return s_CubeMesh && s_CubeMesh->HasGpuBuffers() && s_EquirectPipeline && s_EquirectPipeline->IsValid() && s_IrradiancePipeline && s_IrradiancePipeline->IsValid() && s_PrefilterPipeline && s_PrefilterPipeline->IsValid();
 	}
 
-	Ref<Environment> Environment::Create(const Ref<Texture2D>& equirect)
+	Ref<Environment> Environment::Create(const Ref<Texture2D>& equirect, const std::filesystem::path& sourcePath)
 	{
 		TF_PROFILE_FUNCTION();
 
@@ -195,6 +209,7 @@ namespace Timefall
 			.Height = kIrradianceSize,
 			.ColorFormat = {kCubeFormat},
 			.ColorCount = 1,
+			.ColorUsage = {RHI::TextureUsage::TransferSrc | RHI::TextureUsage::TransferDst},
 			.DepthFormat = RHI::Format::Undefined,
 			.Dim = RHI::Dimension::Cube,
 			.ArrayLayers = 6,
@@ -213,6 +228,7 @@ namespace Timefall
 			.Height = kPrefilterSize,
 			.ColorFormat = {kCubeFormat},
 			.ColorCount = 1,
+			.ColorUsage = {RHI::TextureUsage::TransferSrc | RHI::TextureUsage::TransferDst},
 			.DepthFormat = RHI::Format::Undefined,
 			.Dim = RHI::Dimension::Cube,
 			.ArrayLayers = 6,
@@ -230,6 +246,22 @@ namespace Timefall
 
 		const uint32_t equirectIndex = equirect->GetRHITexture()->GetBindlessIndex(false);
 		const uint32_t skyboxIndex = environment->m_Skybox->GetColor(0)->GetBindlessIndex(false);
+
+		const EnvBakeParams params = BakeParams();
+		const uint64_t irradianceBytes = IrradianceBytes(params);
+		const uint64_t prefilterBytes = PrefilterBytes(params);
+
+		Ref<RHI::GpuBuffer> readback = RHI::GpuBuffer::Create({.Size = irradianceBytes + prefilterBytes,
+			.Usage = RHI::BufferUsage::TransferDst,
+			.Memory = RHI::MemoryType::HostVisible,
+			.DebugName = "EnvironmentReadback"});
+
+		if (!readback || !readback->IsValid())
+		{
+			TF_CORE_WARN("Environment::Create could not allocate the {0} byte readback buffer - this bake will not be cached",
+				irradianceBytes + prefilterBytes);
+		}
+
 		const Submesh& submesh = s_CubeMesh->GetSubmeshes()[0];
 
 		RHI::RenderDevice::Get().ExecuteImmediate([&](RHI::CommandList& cmd) {
@@ -300,7 +332,42 @@ namespace Timefall
 					cmd.EndPass();
 				}
 			}
+
+			if (readback && readback->IsValid())
+			{
+				uint64_t offset = 0;
+
+				for (uint32_t face = 0; face < 6; face++)
+				{
+					cmd.CopyTextureToBuffer(*environment->m_Irradiance->GetColor(0), *readback, {.Layer = face, .Mip = 0}, offset);
+					offset += (uint64_t)kIrradianceSize * kIrradianceSize * kEnvBytesPerTexel;
+				}
+
+				for (uint32_t mip = 0; mip < kPrefilterMips; mip++)
+				{
+					const uint32_t edge = std::max(1u, kPrefilterSize >> mip);
+
+					for (uint32_t face = 0; face < 6; face++)
+					{
+						cmd.CopyTextureToBuffer(*environment->m_Prefilter->GetColor(0), *readback, {.Layer = face, .Mip = mip}, offset);
+						offset += (uint64_t)edge * edge * kEnvBytesPerTexel;
+					}
+				}
+			}
 		});
+
+		if (readback && readback->IsValid())
+		{
+			const auto* mapped = (const std::byte*)readback->GetMapped();
+			if (mapped)
+			{
+				EnvBlobs blobs;
+				blobs.Irradiance.assign(mapped, mapped + irradianceBytes);
+				blobs.Prefilter.assign(mapped + irradianceBytes, mapped + irradianceBytes + prefilterBytes);
+
+				EnvironmentCache::Store(sourcePath, params, blobs);
+			}
+		}
 
 		TF_CORE_INFO("Baked environment skybox: {0}x{0}, 6 faces, ({1} mips), irradiance {2}x{2}, prefilter {3}x{3} ({4} mips)", kSkyboxSize, mips, kIrradianceSize, kPrefilterSize, kPrefilterMips);
 		return environment;

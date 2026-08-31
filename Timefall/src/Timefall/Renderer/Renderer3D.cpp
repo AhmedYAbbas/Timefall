@@ -107,7 +107,7 @@ namespace Timefall
 		PostProcessSettings PostProcess;
 
 		AssetHandle ActiveEnvironmentHandle = 0;
-		std::unordered_map<AssetHandle, Ref<Environment>> EnvironmentCache; // one bake per environment per session
+		std::unordered_map<AssetHandle, Ref<Environment>> EnvironmentCacheMap; // one bake per environment per session
 		Ref<Environment> ActiveEnvironment;
 		uint32_t SkyboxCubeIndex = 0;
 
@@ -311,6 +311,19 @@ namespace Timefall
 			.Maps1 = {MapIndex(m.AOMap, false, white), MapIndex(m.EmissiveMap, true, white), (uint32_t)m.Alpha, 0u}};
 	}
 
+	static std::filesystem::path ResolveEnvironmentSourcePath(AssetHandle handle)
+	{
+		const Ref<Project>& project = Project::GetActive();
+		if (!project)
+			return {};
+
+		const Ref<EditorAssetManager> editor = std::dynamic_pointer_cast<EditorAssetManager>(project->GetAssetManager());
+		if (!editor)
+			return {};
+
+		return Project::GetAssetFileSystemPath(editor->GetFilePath(handle));
+	}
+
 	static bool Prepare()
 	{
 		TF_PROFILE_FUNCTION();
@@ -337,11 +350,13 @@ namespace Timefall
 		s_Data.ActiveEnvironment = nullptr;
 		if (s_Data.ActiveEnvironmentHandle != 0 && AssetManager::IsAssetHandleValid(s_Data.ActiveEnvironmentHandle))
 		{
-			auto it = s_Data.EnvironmentCache.find(s_Data.ActiveEnvironmentHandle);
-			if (it == s_Data.EnvironmentCache.end())
+			auto it = s_Data.EnvironmentCacheMap.find(s_Data.ActiveEnvironmentHandle);
+			if (it == s_Data.EnvironmentCacheMap.end())
 			{
 				Ref<Texture2D> equirect = AssetManager::GetAsset<Texture2D>(s_Data.ActiveEnvironmentHandle);
-				it = s_Data.EnvironmentCache.emplace(s_Data.ActiveEnvironmentHandle, equirect ? Environment::Create(equirect) : nullptr)
+				const std::filesystem::path sourcePath = ResolveEnvironmentSourcePath(s_Data.ActiveEnvironmentHandle);
+
+				it = s_Data.EnvironmentCacheMap.emplace(s_Data.ActiveEnvironmentHandle, equirect ? Environment::Create(equirect, sourcePath) : nullptr)
 						 .first;
 			}
 

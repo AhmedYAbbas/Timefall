@@ -4,6 +4,8 @@
 #include "Timefall/RHI/RenderTarget.h"
 #include "Timefall/Renderer/Texture.h"
 
+#include <filesystem>
+
 namespace Timefall
 {
 	// Bakes an equirectangular HDR into the three IBL cubemaps. Built once per unique
@@ -11,7 +13,7 @@ namespace Timefall
 	class TF_API Environment
 	{
 	public:
-		static Ref<Environment> Create(const Ref<Texture2D>& equirect);
+		static Ref<Environment> Create(const Ref<Texture2D>& equirect, const std::filesystem::path& sourcePath);
 		static void ReleaseResources();
 
 		const Ref<RHI::Texture>& GetSkyboxMap() const;
