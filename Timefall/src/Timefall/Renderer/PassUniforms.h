@@ -9,6 +9,14 @@
 
 namespace Timefall
 {
+	// Set 0 binding 0. The twin of FrameUniforms in Common/Bindings.slang - fields are appended, never reordered
+	struct FrameUniforms
+	{
+		float Time = 0.0f; // seconds since app start; a wall clock, so shaders animate in edit mode too
+	};
+
+	static_assert(sizeof(FrameUniforms) <= RHI::FrameUniformSlotBytes);
+
 	inline constexpr uint32_t MAX_DIR_LIGHTS = 4;
 	inline constexpr uint32_t MAX_POINT_LIGHTS = 32;
 	inline constexpr uint32_t MAX_SPOT_LIGHTS = 16;
