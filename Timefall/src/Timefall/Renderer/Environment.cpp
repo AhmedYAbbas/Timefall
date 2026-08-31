@@ -42,14 +42,12 @@ namespace Timefall
 		proj[1] *= -1.0f;
 		return proj;
 	}();
-	static const glm::mat4 s_CaptureViews[6] = {
-		glm::lookAt(glm::vec3(0.0f), glm::vec3(1, 0, 0), glm::vec3(0, -1, 0)),
+	static const glm::mat4 s_CaptureViews[6] = {glm::lookAt(glm::vec3(0.0f), glm::vec3(1, 0, 0), glm::vec3(0, -1, 0)),
 		glm::lookAt(glm::vec3(0.0f), glm::vec3(-1, 0, 0), glm::vec3(0, -1, 0)),
 		glm::lookAt(glm::vec3(0.0f), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1)),
 		glm::lookAt(glm::vec3(0.0f), glm::vec3(0, -1, 0), glm::vec3(0, 0, -1)),
 		glm::lookAt(glm::vec3(0.0f), glm::vec3(0, 0, 1), glm::vec3(0, -1, 0)),
-		glm::lookAt(glm::vec3(0.0f), glm::vec3(0, 0, -1), glm::vec3(0, -1, 0))
-	};
+		glm::lookAt(glm::vec3(0.0f), glm::vec3(0, 0, -1), glm::vec3(0, -1, 0))};
 
 	static const char* s_FacePassNames[6] = {
 		"EquirectToCube +X", "EquirectToCube -X", "EquirectToCube +Y", "EquirectToCube -Y", "EquirectToCube +Z", "EquirectToCube -Z"};
@@ -93,7 +91,7 @@ namespace Timefall
 	static Ref<Shader> s_PrefilterShader;
 	static Ref<RHI::GraphicsPipeline> s_PrefilterPipeline;
 
-	static bool EnsureBakeResources()
+	static bool EnsureSkyboxBakeResources()
 	{
 		if (!s_CubeMesh)
 		{
@@ -122,6 +120,11 @@ namespace Timefall
 			s_EquirectPipeline = RHI::GraphicsPipeline::Create(desc);
 		}
 
+		return s_CubeMesh && s_CubeMesh->HasGpuBuffers() && s_EquirectPipeline && s_EquirectPipeline->IsValid();
+	}
+
+	static bool EnsureDerivedBakeResources()
+	{
 		if (!s_IrradianceShader)
 			s_IrradianceShader = ShaderLibrary::Load("Assets/Shaders/Renderer3D_IrradianceConvolve.slang");
 
@@ -164,7 +167,7 @@ namespace Timefall
 			s_PrefilterPipeline = RHI::GraphicsPipeline::Create(desc);
 		}
 
-		return s_CubeMesh && s_CubeMesh->HasGpuBuffers() && s_EquirectPipeline && s_EquirectPipeline->IsValid() && s_IrradiancePipeline && s_IrradiancePipeline->IsValid() && s_PrefilterPipeline && s_PrefilterPipeline->IsValid();
+		return s_IrradiancePipeline && s_IrradiancePipeline->IsValid() && s_PrefilterPipeline && s_PrefilterPipeline->IsValid();
 	}
 
 	Ref<Environment> Environment::Create(const Ref<Texture2D>& equirect, const std::filesystem::path& sourcePath)
@@ -179,7 +182,7 @@ namespace Timefall
 			return environment;
 		}
 
-		if (!EnsureBakeResources())
+		if (!EnsureSkyboxBakeResources())
 		{
 			TF_CORE_ERROR("Environment::Create could not build the bake mesh, shader or pipeline");
 			return environment;
@@ -251,15 +254,52 @@ namespace Timefall
 		const uint64_t irradianceBytes = IrradianceBytes(params);
 		const uint64_t prefilterBytes = PrefilterBytes(params);
 
-		Ref<RHI::GpuBuffer> readback = RHI::GpuBuffer::Create({.Size = irradianceBytes + prefilterBytes,
-			.Usage = RHI::BufferUsage::TransferDst,
-			.Memory = RHI::MemoryType::HostVisible,
-			.DebugName = "EnvironmentReadback"});
+		const std::optional<EnvBlobs> cached = EnvironmentCache::TryLoad(sourcePath, params);
+		if (!cached && !EnsureDerivedBakeResources())
+		{
+			TF_CORE_ERROR("Environment::Create could not build the irradiance or prefilter pipeline");
+			return environment;
+		}
 
-		if (!readback || !readback->IsValid())
+		Ref<RHI::GpuBuffer> readback;
+		if (!cached)
+			readback = RHI::GpuBuffer::Create({.Size = irradianceBytes + prefilterBytes,
+				.Usage = RHI::BufferUsage::TransferDst,
+				.Memory = RHI::MemoryType::HostVisible,
+				.DebugName = "EnvironmentReadback"});
+
+		if (!cached && (!readback || !readback->IsValid()))
 		{
 			TF_CORE_WARN("Environment::Create could not allocate the {0} byte readback buffer - this bake will not be cached",
 				irradianceBytes + prefilterBytes);
+		}
+
+		Ref<RHI::GpuBuffer> restore;
+		if (cached)
+		{
+			restore = RHI::GpuBuffer::Create({.Size = irradianceBytes + prefilterBytes,
+				.Usage = RHI::BufferUsage::TransferSrc,
+				.Memory = RHI::MemoryType::HostWrite,
+				.DebugName = "EnvironmentRestore"});
+
+			if (restore && restore->IsValid())
+			{
+				restore->Write(cached->Irradiance.data(), irradianceBytes, 0);
+				restore->Write(cached->Prefilter.data(), prefilterBytes, irradianceBytes);
+			}
+			else
+			{
+				TF_CORE_WARN("Environment::Create could not allocate the restore buffer - falling back to a full bake");
+				restore.reset();
+			}
+		}
+
+		const bool useCache = cached && restore;
+
+		if (cached && !useCache && !EnsureDerivedBakeResources())
+		{
+			TF_CORE_ERROR("Environment::Create could not build the irradiance or prefilter pipeline for the fallback bake");
+			return environment;
 		}
 
 		const Submesh& submesh = s_CubeMesh->GetSubmeshes()[0];
@@ -285,6 +325,30 @@ namespace Timefall
 			}
 
 			cmd.GenerateMips(*environment->m_Skybox->GetColor(0));
+
+			if (useCache)
+			{
+				uint64_t offset = 0;
+
+				for (uint32_t face = 0; face < 6; face++)
+				{
+					cmd.CopyBufferToTexture(*restore, *environment->m_Irradiance->GetColor(0), {.Layer = face, .Mip = 0}, offset);
+					offset += (uint64_t)kIrradianceSize * kIrradianceSize * kEnvBytesPerTexel;
+				}
+
+				for (uint32_t mip = 0; mip < kPrefilterMips; mip++)
+				{
+					const uint32_t edge = std::max(1u, kPrefilterSize >> mip);
+
+					for (uint32_t face = 0; face < 6; face++)
+					{
+						cmd.CopyBufferToTexture(*restore, *environment->m_Prefilter->GetColor(0), {.Layer = face, .Mip = mip}, offset);
+						offset += (uint64_t)edge * edge * kEnvBytesPerTexel;
+					}
+				}
+
+				return;
+			}
 
 			for (uint32_t face = 0; face < 6; face++)
 			{
@@ -369,7 +433,13 @@ namespace Timefall
 			}
 		}
 
-		TF_CORE_INFO("Baked environment skybox: {0}x{0}, 6 faces, ({1} mips), irradiance {2}x{2}, prefilter {3}x{3} ({4} mips)", kSkyboxSize, mips, kIrradianceSize, kPrefilterSize, kPrefilterMips);
+		if (useCache)
+			TF_CORE_INFO("Restored environment from cache: skybox {0}x{0} ({1} mips), irradiance {2}x{2}, prefilter {3}x{3} ({4} mips)",
+				kSkyboxSize, mips, kIrradianceSize, kPrefilterSize, kPrefilterMips);
+		else
+			TF_CORE_INFO("Baked environment: skybox {0}x{0} ({1} mips), irradiance {2}x{2}, prefilter {3}x{3} ({4} mips)", kSkyboxSize,
+				mips, kIrradianceSize, kPrefilterSize, kPrefilterMips);
+
 		return environment;
 	}
 
