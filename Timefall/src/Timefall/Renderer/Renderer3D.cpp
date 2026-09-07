@@ -457,8 +457,8 @@ namespace Timefall
 
 		const glm::vec3 cameraPosition = glm::vec3(s_Data.Pass.CameraPosition);
 		std::ranges::sort(s_Data.BlendedOrder, [&](uint32_t a, uint32_t b) {
-			const glm::vec3& da = glm::vec3(s_Data.Submissions[a].Transform[3]);
-			const glm::vec3& db = glm::vec3(s_Data.Submissions[b].Transform[3]);
+			const glm::vec3 da = glm::vec3(s_Data.Submissions[a].Transform[3]) - cameraPosition;
+			const glm::vec3 db = glm::vec3(s_Data.Submissions[b].Transform[3]) - cameraPosition	;
 			return glm::dot(da, da) > glm::dot(db, db);
 		});
 
@@ -554,7 +554,7 @@ namespace Timefall
 		}
 
 		if (!s_Data.BlendedOrder.empty() && s_Data.TransformsAddress != 0 && s_Data.MaterialsAddress != 0 && s_Data.ForwardBlendedPipeline
-			&& s_Data.ForwardOpaquePipeline->IsValid())
+			&& s_Data.ForwardBlendedPipeline->IsValid())
 		{
 			TF_PROFILE_SCOPE("Forward Blended");
 			TF_PROFILE_GPU_SCOPE("Forward Blended");
@@ -689,7 +689,7 @@ namespace Timefall
 		blended.Depth = {.Test = true, .Write = false, .Compare = RHI::CompareOp::Less};
 		blended.Blend = RHI::BlendMode::Alpha;
 		blended.DebugName = "Renderer3DForwardBlendedPipeline";
-		
+
 		s_Data.ForwardBlendedPipeline = RHI::GraphicsPipeline::Create(blended);
 
 		s_Data.SkyboxShader = ShaderLibrary::Load("Assets/Shaders/Renderer3D_Skybox.slang");

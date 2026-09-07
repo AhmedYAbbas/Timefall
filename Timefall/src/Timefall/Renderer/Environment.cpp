@@ -254,7 +254,7 @@ namespace Timefall
 		const uint64_t irradianceBytes = IrradianceBytes(params);
 		const uint64_t prefilterBytes = PrefilterBytes(params);
 
-		std::optional<uint64_t> cacheKey = EnvironmentCache::ComputeKey(sourcePath, params);
+		const std::optional<uint64_t> cacheKey = EnvironmentCache::ComputeKey(sourcePath, params);
 		const std::optional<EnvBlobs> cached = cacheKey ? EnvironmentCache::TryLoad(sourcePath, params, *cacheKey) : std::nullopt;
 		if (!cached && !EnsureDerivedBakeResources())
 		{
