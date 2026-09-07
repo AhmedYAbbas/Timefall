@@ -254,7 +254,8 @@ namespace Timefall
 		const uint64_t irradianceBytes = IrradianceBytes(params);
 		const uint64_t prefilterBytes = PrefilterBytes(params);
 
-		const std::optional<EnvBlobs> cached = EnvironmentCache::TryLoad(sourcePath, params);
+		std::optional<uint64_t> cacheKey = EnvironmentCache::ComputeKey(sourcePath, params);
+		const std::optional<EnvBlobs> cached = cacheKey ? EnvironmentCache::TryLoad(sourcePath, params, *cacheKey) : std::nullopt;
 		if (!cached && !EnsureDerivedBakeResources())
 		{
 			TF_CORE_ERROR("Environment::Create could not build the irradiance or prefilter pipeline");
@@ -420,7 +421,7 @@ namespace Timefall
 			}
 		});
 
-		if (readback && readback->IsValid())
+		if (cacheKey && readback && readback->IsValid())
 		{
 			const auto* mapped = (const std::byte*)readback->GetMapped();
 			if (mapped)
@@ -429,7 +430,7 @@ namespace Timefall
 				blobs.Irradiance.assign(mapped, mapped + irradianceBytes);
 				blobs.Prefilter.assign(mapped + irradianceBytes, mapped + irradianceBytes + prefilterBytes);
 
-				EnvironmentCache::Store(sourcePath, params, blobs);
+				EnvironmentCache::Store(sourcePath, params, *cacheKey, blobs);
 			}
 		}
 

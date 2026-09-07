@@ -441,7 +441,7 @@ namespace Timefall::RHI
 		if (!src.IsValid() || !dst.IsValid())
 			return;
 
-		Texture::Impl d = *dst.m_Impl;
+		Texture::Impl& d = *dst.m_Impl;
 
 		if (region.Mip >= d.MipLevels || region.Layer >= d.ArrayLayers)
 		{

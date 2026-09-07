@@ -44,8 +44,10 @@ namespace Timefall
 	public:
 		static const std::filesystem::path& Directory();
 
-		static std::optional<EnvBlobs> TryLoad(const std::filesystem::path& hdrPath, const EnvBakeParams& params);
+		static std::optional<uint64_t> ComputeKey(const std::filesystem::path& hdrPath, const EnvBakeParams& params);
 
-		static void Store(const std::filesystem::path& hdrPath, const EnvBakeParams& params, const EnvBlobs blobs);
+		static std::optional<EnvBlobs> TryLoad(const std::filesystem::path& hdrPath, const EnvBakeParams& params, uint64_t key);
+
+		static void Store(const std::filesystem::path& hdrPath, const EnvBakeParams& params, uint64_t key, const EnvBlobs& blobs);
 	};
 }

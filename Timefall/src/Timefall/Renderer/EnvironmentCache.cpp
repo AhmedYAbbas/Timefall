@@ -30,37 +30,6 @@ namespace Timefall
 		return (bool)in;
 	}
 
-	static bool ComputeKey(const std::filesystem::path& hdrPath, const EnvBakeParams& params, uint64_t& outKey)
-	{
-		std::vector<std::byte> contents;
-		if (!ReadBinaryFile(hdrPath, contents))
-		{
-			TF_CORE_INFO("Environment cache: cannot read '{0}' for keying - the bake will not be cached", hdrPath.string());
-			return false;
-		}
-
-		uint64_t hash = FNV_OFFSET;
-		HashBytes(hash, contents.data(), contents.size());
-
-		for (const char* shader : BAKE_SHADERS)
-		{
-			std::vector<std::byte> source;
-			if (!ReadBinaryFile(shader, source))
-			{
-				TF_CORE_INFO("Environment cache: cannot read '{0}' for keying - the bake will not be cached", shader);
-				return false;
-			}
-
-			HashBytes(hash, source.data(), source.size());
-		}
-
-		HashBytes(hash, &params, sizeof(params));
-		HashBytes(hash, &FORMAT_VERSION, sizeof(FORMAT_VERSION));
-
-		outKey = hash;
-		return true;
-	}
-
 	static std::filesystem::path EntryPath(const std::filesystem::path& hdrPath, uint64_t key)
 	{
 		return EnvironmentCache::Directory() / std::format("{}.{:016x}.tfenv", hdrPath.stem().string(), key);
@@ -72,16 +41,44 @@ namespace Timefall
 		return directory;
 	}
 
-	std::optional<EnvBlobs> EnvironmentCache::TryLoad(const std::filesystem::path& hdrPath, const EnvBakeParams& params)
+	std::optional<uint64_t> EnvironmentCache::ComputeKey(const std::filesystem::path& hdrPath, const EnvBakeParams& params)
 	{
 		TF_PROFILE_FUNCTION();
 
 		if (hdrPath.empty())
 			return std::nullopt;
 
-		uint64_t key = 0;
-		if (!ComputeKey(hdrPath, params, key))
+		std::vector<std::byte> contents;
+		if (!ReadBinaryFile(hdrPath, contents))
+		{
+			TF_CORE_INFO("Environment cache: cannot read '{0}' for keying - the bake will not be cached", hdrPath.string());
 			return std::nullopt;
+		}
+
+		uint64_t hash = FNV_OFFSET;
+		HashBytes(hash, contents.data(), contents.size());
+
+		for (const char* shader : BAKE_SHADERS)
+		{
+			std::vector<std::byte> source;
+			if (!ReadBinaryFile(shader, source))
+			{
+				TF_CORE_INFO("Environment cache: cannot read '{0}' for keying - the bake will not be cached", shader);
+				return std::nullopt;
+			}
+
+			HashBytes(hash, source.data(), source.size());
+		}
+
+		HashBytes(hash, &params, sizeof(params));
+		HashBytes(hash, &FORMAT_VERSION, sizeof(FORMAT_VERSION));
+
+		return hash;
+	}
+
+	std::optional<EnvBlobs> EnvironmentCache::TryLoad(const std::filesystem::path& hdrPath, const EnvBakeParams& params, uint64_t key)
+	{
+		TF_PROFILE_FUNCTION();
 
 		const std::filesystem::path path = EntryPath(hdrPath, key);
 
@@ -105,7 +102,7 @@ namespace Timefall
 		if (!in || std::memcmp(magic, MAGIC, sizeof(MAGIC)) != 0 || version != FORMAT_VERSION || storedKey != key
 			|| std::memcmp(&stored, &params, sizeof(params)) != 0)
 		{
-			TF_CORE_INFO("Environment cache miss: '{0}' is not matching TFENV entry", path.string());
+			TF_CORE_INFO("Environment cache miss: '{0}' is not a matching TFENV entry", path.string());
 			return std::nullopt;
 		}
 
@@ -126,16 +123,9 @@ namespace Timefall
 		return blobs;
 	}
 
-	void EnvironmentCache::Store(const std::filesystem::path& hdrPath, const EnvBakeParams& params, const EnvBlobs blobs)
+	void EnvironmentCache::Store(const std::filesystem::path& hdrPath, const EnvBakeParams& params, uint64_t key, const EnvBlobs& blobs)
 	{
 		TF_PROFILE_FUNCTION();
-
-		if (hdrPath.empty())
-			return;
-
-		uint64_t key = 0;
-		if (!ComputeKey(hdrPath, params, key))
-			return;
 
 		std::error_code ec;
 		std::filesystem::create_directories(Directory(), ec);
@@ -145,7 +135,7 @@ namespace Timefall
 		std::ofstream out(path, std::ios::out | std::ios::binary | std::ios::trunc);
 		if (!out)
 		{
-			TF_CORE_WARN("Environment cahce: could not open '{0}' for writing", path.string());
+			TF_CORE_WARN("Environment cache: could not open '{0}' for writing", path.string());
 			return;
 		}
 
@@ -157,7 +147,7 @@ namespace Timefall
 		out.write((const char*)blobs.Prefilter.data(), (std::streamsize)blobs.Prefilter.size());
 
 		if (!out)
-			TF_CORE_WARN("Environment cache: writing '{0}' falied", path.string());
+			TF_CORE_WARN("Environment cache: writing '{0}' failed", path.string());
 		else
 			TF_CORE_INFO("Environment cache stored: '{0}'", path.string());
 	}
