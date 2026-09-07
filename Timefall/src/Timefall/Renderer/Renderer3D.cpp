@@ -118,6 +118,7 @@ namespace Timefall
 
 		Ref<Shader> LitShader;
 		Ref<RHI::GraphicsPipeline> ForwardOpaquePipeline;
+		Ref<RHI::GraphicsPipeline> ForwardBlendedPipeline;
 
 		Ref<Shader> SkyboxShader;
 		Ref<RHI::GraphicsPipeline> SkyboxPipeline;
@@ -552,6 +553,53 @@ namespace Timefall
 			cmd->EndPass();
 		}
 
+		if (!s_Data.BlendedOrder.empty() && s_Data.TransformsAddress != 0 && s_Data.MaterialsAddress != 0 && s_Data.ForwardBlendedPipeline
+			&& s_Data.ForwardOpaquePipeline->IsValid())
+		{
+			TF_PROFILE_SCOPE("Forward Blended");
+			TF_PROFILE_GPU_SCOPE("Forward Blended");
+			PerformanceStats::ScopedPassTimer passTimer("Forward Blended");
+
+			cmd->BeginPass({.DebugName = "Forward Blended",
+				.Target = s_Data.HDRTarget.get(),
+				.Color = {{.Load = RHI::LoadOp::Load}, {.Load = RHI::LoadOp::Load}},
+				.Depth = {.Load = RHI::LoadOp::Load}});
+
+			cmd->SetPassUniformSlice(s_Data.PassSlice);
+			cmd->BindPipeline(*s_Data.ForwardBlendedPipeline);
+
+			const MeshSource* boundMesh = nullptr;
+			for (uint32_t i : s_Data.BlendedOrder)
+			{
+				const MeshSubmission& sub = s_Data.Submissions[i];
+
+				if (sub.Mesh.get() != boundMesh)
+				{
+					cmd->BindVertexBuffer(*sub.Mesh->GetVertexBuffer());
+					cmd->BindIndexBuffer(*sub.Mesh->GetIndexBuffer(), RHI::IndexType::U32);
+					boundMesh = sub.Mesh.get();
+				}
+
+				const DrawPush push{.Transforms = s_Data.TransformsAddress,
+					.Materials = s_Data.MaterialsAddress,
+					.TransformIndex = i,
+					.MaterialIndex = i < s_Data.MaterialSlots.size() ? s_Data.MaterialSlots[i] : 0u,
+					.EntityID = sub.EntityID};
+
+				cmd->PushConstants(&push, sizeof(push));
+
+				const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
+				cmd->DrawIndexed(sm.IndexCount, 1, sm.BaseIndex, (int32_t)sm.BaseVertex);
+
+				s_Data.Stats.DrawCalls++;
+				s_Data.Stats.BlendedMeshes++;
+				s_Data.Stats.IndexCount += sm.IndexCount;
+				s_Data.Stats.TriangleCount += sm.IndexCount / 3;
+			}
+
+			cmd->EndPass();
+		}
+
 		cmd->CopyTexture(*s_Data.HDRTarget->GetColor(1), *s_Data.LDRTarget->GetColor(1));
 
 		{
@@ -636,6 +684,13 @@ namespace Timefall
 		lit.DebugName = "Renderer3DForwardOpaquePipeline";
 
 		s_Data.ForwardOpaquePipeline = RHI::GraphicsPipeline::Create(lit);
+
+		RHI::GraphicsPipelineDesc blended = lit;
+		blended.Depth = {.Test = true, .Write = false, .Compare = RHI::CompareOp::Less};
+		blended.Blend = RHI::BlendMode::Alpha;
+		blended.DebugName = "Renderer3DForwardBlendedPipeline";
+		
+		s_Data.ForwardBlendedPipeline = RHI::GraphicsPipeline::Create(blended);
 
 		s_Data.SkyboxShader = ShaderLibrary::Load("Assets/Shaders/Renderer3D_Skybox.slang");
 
