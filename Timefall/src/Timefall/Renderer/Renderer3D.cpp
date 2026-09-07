@@ -125,6 +125,11 @@ namespace Timefall
 		std::vector<MeshSubmission> Submissions;
 		std::vector<uint32_t> MaterialSlots;
 
+		// Indices into Submissions, rebuilt every frame. Submissions itself is never reordered:
+		// TransformIndex and MaterialSlots are both positional over it
+		std::vector<uint32_t> OpaqueOrder;
+		std::vector<uint32_t> BlendedOrder;
+
 		PassUniforms Pass;
 		uint32_t PassSlice = 0;
 		uint64_t TransformsAddress = 0;
@@ -437,6 +442,25 @@ namespace Timefall
 			s_Data.Stats.MaterialBinds = (uint32_t)s_Data.Materials.size();
 		}
 
+		s_Data.OpaqueOrder.clear();
+		s_Data.BlendedOrder.clear();
+		s_Data.OpaqueOrder.reserve(s_Data.Submissions.size());
+
+		for (uint32_t i = 0; i < (uint32_t)s_Data.Submissions.size(); i++)
+		{
+			if (s_Data.Submissions[i].Material->Alpha == AlphaMode::Blend)
+				s_Data.BlendedOrder.push_back(i);
+			else
+				s_Data.OpaqueOrder.push_back(i);
+		}
+
+		const glm::vec3 cameraPosition = glm::vec3(s_Data.Pass.CameraPosition);
+		std::ranges::sort(s_Data.BlendedOrder, [&](uint32_t a, uint32_t b) {
+			const glm::vec3& da = glm::vec3(s_Data.Submissions[a].Transform[3]);
+			const glm::vec3& db = glm::vec3(s_Data.Submissions[b].Transform[3]);
+			return glm::dot(da, da) > glm::dot(db, db);
+		});
+
 		return true;
 	}
 
@@ -466,15 +490,9 @@ namespace Timefall
 				cmd->BindPipeline(*s_Data.ForwardOpaquePipeline);
 
 				const MeshSource* boundMesh = nullptr;
-				for (uint32_t i = 0; i < (uint32_t)s_Data.Submissions.size(); i++)
+				for (uint32_t i : s_Data.OpaqueOrder)
 				{
 					const MeshSubmission& sub = s_Data.Submissions[i];
-
-					if (sub.Material->Alpha == AlphaMode::Blend)
-					{
-						s_Data.Stats.BlendedMeshes++;
-						continue;
-					}
 
 					if (sub.Mesh.get() != boundMesh)
 					{
