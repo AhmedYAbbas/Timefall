@@ -69,7 +69,7 @@ namespace Timefall::RHI
 	Ref<RenderTarget> RenderTarget::Create(const RenderTargetDesc& desc)
 	{
 		TF_PROFILE_FUNCTION();
-		TF_CORE_ASSERT(desc.ColorCount > 0 && desc.ColorCount <= 8, "RenderTarget needs 1 to 8 color attachments");
+		TF_CORE_ASSERT(desc.ColorCount <= 8, "RenderTarget supports at most 8 color attachments");
 
 		Ref<RenderTarget> target(new RenderTarget());
 		target->m_Impl = new Impl();

@@ -175,8 +175,10 @@ namespace Timefall::RHI
 			const vk::ImageLayout oldLayout =
 				desc.Depth.Load == LoadOp::Load ? attachment.LayoutAt(desc.Mip, desc.Layer) : vk::ImageLayout::eUndefined;
 
+			const bool fromShaderRead = oldLayout == vk::ImageLayout::eShaderReadOnlyOptimal;
+
 			TransitionImage(m_Impl->Cmd, attachment.Image, oldLayout, vk::ImageLayout::eDepthAttachmentOptimal,
-				vk::PipelineStageFlagBits2::eLateFragmentTests, vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+				fromShaderRead ? vk::PipelineStageFlagBits2::eFragmentShader : vk::PipelineStageFlagBits2::eLateFragmentTests, fromShaderRead ? vk::AccessFlagBits2::eShaderSampledRead : vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
 				vk::PipelineStageFlagBits2::eEarlyFragmentTests,
 				vk::AccessFlagBits2::eDepthStencilAttachmentWrite | vk::AccessFlagBits2::eDepthStencilAttachmentRead,
 				range);
@@ -224,6 +226,19 @@ namespace Timefall::RHI
 					vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderSampledRead, range);
 
 				attachment.LayoutAt(m_Impl->PassMip, m_Impl->PassLayer) = vk::ImageLayout::eShaderReadOnlyOptimal;
+			}
+
+			if (m_Impl->PassTarget->GetDepth())
+			{
+				Texture::Impl& depth = *m_Impl->PassTarget->GetDepth()->m_Impl;
+
+				const vk::ImageSubresourceRange range{depth.Aspect, m_Impl->PassMip, 1, m_Impl->PassLayer, 1};
+
+				TransitionImage(m_Impl->Cmd, depth.Image, depth.LayoutAt(m_Impl->PassMip, m_Impl->PassLayer),
+					vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits2::eLateFragmentTests,
+					vk::AccessFlagBits2::eDepthStencilAttachmentWrite, vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderSampledRead, range);
+
+				depth.LayoutAt(m_Impl->PassMip, m_Impl->PassLayer) = vk::ImageLayout::eShaderReadOnlyOptimal;
 			}
 		}
 
