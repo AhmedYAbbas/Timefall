@@ -10,6 +10,7 @@ namespace Timefall::RHI
 		uint32_t MaxPushConstantSize = 0;
 		uint64_t MinUniformBufferOffsetAlignment = 0;
 		uint64_t MinStorageBufferOffsetAlignment = 0;
+		uint32_t MaxMultiviewViews = 0;
 		float MaxSamplerAnisotropy = 0.0f;
 		bool SupportsRobustness2 = false;
 		bool SupportsWideLines = false;

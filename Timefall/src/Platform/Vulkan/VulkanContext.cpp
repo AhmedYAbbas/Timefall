@@ -274,6 +274,7 @@ namespace Timefall
 
 		vk::PhysicalDeviceVulkan11Features f11{.pNext = &f12};
 		f11.shaderDrawParameters = vk::True; // gl_BaseVertex: Slang zero-bases SV_VertexID with it
+		f11.multiview = vk::True;
 
 		vk::PhysicalDeviceFeatures2 features2{.pNext = &f11};
 		features2.features.samplerAnisotropy = vk::True;
@@ -342,10 +343,11 @@ namespace Timefall
 
 	void VulkanContext::QueryLimits()
 	{
-		auto chain = m_PhysicalDevice.getProperties2<vk::PhysicalDeviceProperties2, vk::PhysicalDeviceDescriptorIndexingProperties>();
+		auto chain = m_PhysicalDevice.getProperties2<vk::PhysicalDeviceProperties2, vk::PhysicalDeviceDescriptorIndexingProperties, vk::PhysicalDeviceMultiviewProperties>();
 
 		const auto& props = chain.get<vk::PhysicalDeviceProperties2>().properties;
 		const auto& di = chain.get<vk::PhysicalDeviceDescriptorIndexingProperties>();
+		const auto& mv = chain.get<vk::PhysicalDeviceMultiviewProperties>();
 
 		const uint32_t deviceMax =
 			std::min(di.maxDescriptorSetUpdateAfterBindSampledImages, di.maxPerStageDescriptorUpdateAfterBindSampledImages);
@@ -356,12 +358,14 @@ namespace Timefall
 		m_Limits.MinStorageBufferOffsetAlignment = props.limits.minStorageBufferOffsetAlignment;
 		m_Limits.MaxSamplerAnisotropy = props.limits.maxSamplerAnisotropy;
 		m_Limits.SupportsRobustness2 = m_Robustness2Avaiable;
+		m_Limits.MaxMultiviewViews = mv.maxMultiviewViewCount;
 		m_Limits.SupportsWideLines = m_WideLinesAvailable;
 		m_Limits.SupportsSmoothLines = m_SmoothLinesAvailable;
 
 		TF_CORE_INFO("Bindless textures: {0} (device reports {1}, budget {2})", m_Limits.MaxBindlessTextures, deviceMax,
 			RHI::TF_BINDLESS_TEXTURE_BUDGET);
 		TF_CORE_INFO("Push constant max: {0} bytes", m_Limits.MaxPushConstantSize);
+		TF_CORE_INFO("Max multiview views: {0}", m_Limits.MaxMultiviewViews);
 		TF_CORE_INFO(
 			"UBO/SSBO offset alignment: {0} / {1}", m_Limits.MinUniformBufferOffsetAlignment, m_Limits.MinStorageBufferOffsetAlignment);
 		TF_CORE_INFO("Max sampler anisotropy: {0}", m_Limits.MaxSamplerAnisotropy);
