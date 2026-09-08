@@ -9,7 +9,7 @@ namespace Timefall
 	{
 		std::vector<std::pair<VulkanSamplerCache::SamplerDesc, vk::Sampler>> s_Cache;
 		std::array<vk::Sampler, (size_t)RHI::SamplerSlot::Count> s_Table{};
-		std::array < vk::Sampler, (size_t)RHI::ComparisonSamplerSlot::Count> s_CmpTable{};
+		std::array<vk::Sampler, (size_t)RHI::ComparisonSamplerSlot::Count> s_CmpTable{};
 
 		const char* SlotName(RHI::SamplerSlot slot)
 		{

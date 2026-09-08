@@ -120,9 +120,9 @@ namespace Timefall
 				.stageFlags = VulkanBindings::kAllStages},
 
 				{.binding = VulkanBindings::BindingComparisonSamplers,
-					.descriptorType = vk::DescriptorType::eSampler,
-					.descriptorCount = (uint32_t)RHI::ComparisonSamplerSlot::Count,
-					.stageFlags = VulkanBindings::kAllStages},
+				.descriptorType = vk::DescriptorType::eSampler,
+				.descriptorCount = (uint32_t)RHI::ComparisonSamplerSlot::Count,
+				.stageFlags = VulkanBindings::kAllStages},
 
 				{.binding = VulkanBindings::BindingTextures,
 				.descriptorType = vk::DescriptorType::eSampledImage,
@@ -262,7 +262,7 @@ namespace Timefall
 
 		bool CreateWhiteArrayTexture()
 		{
-			const uint32_t white = 0xFFFFFFFF;
+			constexpr uint32_t white = 0xFFFFFFFF;
 
 			s_WhiteArrayTexture = RHI::Texture::CreateWithData({.Width = 1,
 																   .Height = 1,
@@ -312,7 +312,7 @@ namespace Timefall
 			for (uint32_t i = 0; i < (uint32_t)RHI::SamplerSlot::Count; i++)
 				samplerInfos[i].sampler = VulkanSamplerCache::Get((RHI::SamplerSlot)i);
 
-			std::array < vk::DescriptorImageInfo, (size_t)RHI::ComparisonSamplerSlot::Count> cmpSamplerInfos{};
+			std::array <vk::DescriptorImageInfo, (size_t)RHI::ComparisonSamplerSlot::Count> cmpSamplerInfos{};
 			for (uint32_t i = 0; i < (uint32_t)RHI::ComparisonSamplerSlot::Count; i++)
 				cmpSamplerInfos[i].sampler = VulkanSamplerCache::Get((RHI::ComparisonSamplerSlot)i);
 

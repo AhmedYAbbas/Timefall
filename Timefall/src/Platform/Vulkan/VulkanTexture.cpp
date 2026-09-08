@@ -187,8 +187,6 @@ namespace Timefall::RHI
 
 		slot = *view;
 		return slot;
-
-
 	}
 
 	vk::ImageView Texture::Impl::SubresourceArrayView(uint32_t mip, uint32_t baseLayer, uint32_t layerCount)

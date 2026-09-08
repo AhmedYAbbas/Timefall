@@ -177,7 +177,7 @@ namespace Timefall::RHI
 			const vk::ImageLayout oldLayout =
 				desc.Depth.Load == LoadOp::Load ? attachment.LayoutAt(desc.Mip, desc.Layer) : vk::ImageLayout::eUndefined;
 
-			const bool fromShaderRead = oldLayout == vk::ImageLayout::eShaderReadOnlyOptimal;
+			const bool fromShaderRead = attachment.LayoutAt(desc.Mip, desc.Layer) == vk::ImageLayout::eShaderReadOnlyOptimal;
 
 			TransitionImage(m_Impl->Cmd, attachment.Image, oldLayout, vk::ImageLayout::eDepthAttachmentOptimal,
 				fromShaderRead ? vk::PipelineStageFlagBits2::eFragmentShader : vk::PipelineStageFlagBits2::eLateFragmentTests, fromShaderRead ? vk::AccessFlagBits2::eShaderSampledRead : vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
