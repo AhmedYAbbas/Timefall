@@ -26,6 +26,8 @@ namespace Timefall
 		Ref<RHI::GpuBuffer> s_FrameUniforms;
 		Ref<RHI::Texture> s_WhiteTexture;
 		Ref<RHI::Texture> s_WhiteCubeTexture;
+		Ref<RHI::Texture> s_WhiteArrayTexture;
+		Ref<RHI::Texture> s_WhiteCubeArrayTexture;
 		uint64_t s_FrameUniformStride = 0;
 		uint32_t s_Slot = 0;
 		bool s_Ready = false;
@@ -38,7 +40,7 @@ namespace Timefall
 		bool CreatePool(uint32_t bindlessCapacity)
 		{
 			const vk::DescriptorPoolSize sizes[]{
-				{vk::DescriptorType::eUniformBufferDynamic, 2}, {vk::DescriptorType::eSampler, (uint32_t)RHI::SamplerSlot::Count}, {vk::DescriptorType::eSampledImage, bindlessCapacity + VulkanBindings::kTextureCubeCapacity}};
+				{vk::DescriptorType::eUniformBufferDynamic, 2}, {vk::DescriptorType::eSampler, (uint32_t)RHI::SamplerSlot::Count}, {vk::DescriptorType::eSampledImage, bindlessCapacity + VulkanBindings::kTextureCubeCapacity + VulkanBindings::kTextureArrayCapacity + VulkanBindings::kTextureCubeArrayCapacity}};
 
 			auto pool = VulkanContext::Get().GetDevice().createDescriptorPool({
 				.flags = vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind,
@@ -103,6 +105,16 @@ namespace Timefall
 				.descriptorCount = VulkanBindings::kTextureCubeCapacity,
 				.stageFlags = VulkanBindings::kAllStages},
 
+				{.binding = VulkanBindings::BindingTextureArrays,
+				.descriptorType = vk::DescriptorType::eSampledImage,
+				.descriptorCount = VulkanBindings::kTextureArrayCapacity,
+				.stageFlags = VulkanBindings::kAllStages},
+
+				{.binding = VulkanBindings::BindingTextureCubeArrays,
+				.descriptorType = vk::DescriptorType::eSampledImage,
+				.descriptorCount = VulkanBindings::kTextureCubeArrayCapacity,
+				.stageFlags = VulkanBindings::kAllStages},
+
 				{.binding = VulkanBindings::BindingTextures,
 				.descriptorType = vk::DescriptorType::eSampledImage,
 				.descriptorCount = bindlessCapacity,
@@ -110,6 +122,8 @@ namespace Timefall
 			};
 
 			const vk::DescriptorBindingFlags bindlessFlags[]{{},
+				vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind,
+				vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind,
 				vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind,
 				vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind
 					| vk::DescriptorBindingFlagBits::eVariableDescriptorCount};
@@ -236,6 +250,49 @@ namespace Timefall
 			return true;
 		}
 
+		bool CreateWhiteArrayTexture()
+		{
+			const uint32_t white = 0xFFFFFFFF;
+
+			s_WhiteArrayTexture = RHI::Texture::CreateWithData({.Width = 1,
+																   .Height = 1,
+																   .PixelFormat = RHI::Format::RGBA8Unorm,
+																   .MipLevels = 1,
+																   .Dim = RHI::Dimension::Tex2DArray,
+																   .ArrayLayers = 1,
+																   .DebugName = "BindlessWhiteArray"},
+				&white, sizeof(white));
+
+			if (!s_WhiteArrayTexture || !s_WhiteArrayTexture->IsValid())
+			{
+				TF_CORE_ERROR("The bindless white array texture failed to create");
+				return false;
+			}
+
+			return true;
+		}
+
+		bool CreateWhiteCubeArrayTexture()
+		{
+			constexpr uint32_t white[6]{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
+			s_WhiteCubeArrayTexture = RHI::Texture::CreateWithData({.Width = 1,
+																	   .Height = 1,
+																	   .PixelFormat = RHI::Format::RGBA8Unorm,
+																	   .MipLevels = 1,
+																	   .Dim = RHI::Dimension::CubeArray,
+																	   .ArrayLayers = 6,
+																	   .DebugName = "BindlessWhiteCubeArray"},
+				white, sizeof(white));
+
+			if (!s_WhiteCubeArrayTexture || !s_WhiteCubeArrayTexture->IsValid())
+			{
+				TF_CORE_ERROR("The bindless white cube array texture failed to create");
+				return false;
+			}
+
+			return true;
+		}
+
 		void WriteInitialDescriptors()
 		{
 			const vk::DescriptorBufferInfo frameInfo{.buffer = (VkBuffer)s_FrameUniforms->GetNativeHandle(), .offset = 0, .range = RHI::FrameUniformSlotBytes};
@@ -287,6 +344,8 @@ namespace Timefall
 			{1, 0, ShaderBindingType::UniformBuffer, 1},
 			{2, VulkanBindings::BindingSamplers, ShaderBindingType::Sampler, (uint32_t)RHI::SamplerSlot::Count},
 			{2, VulkanBindings::BindingTextureCubes, ShaderBindingType::SampledImage, VulkanBindings::kTextureCubeCapacity},
+			{2, VulkanBindings::BindingTextureArrays, ShaderBindingType::SampledImage, VulkanBindings::kTextureArrayCapacity},
+			{2, VulkanBindings::BindingTextureCubeArrays, ShaderBindingType::SampledImage, VulkanBindings::kTextureCubeArrayCapacity},
 			{2, VulkanBindings::BindingTextures, ShaderBindingType::SampledImage, 0}};
 
 		const char* BindingTypeName(ShaderBindingType type)
@@ -392,7 +451,7 @@ namespace Timefall
 		}
 
 		if (!CreatePool(capacity) || !CreateSetLayouts(capacity) || !AllocateSets(capacity) || !CreateFrameUniforms()
-			|| !CreatePassUniforms() || !CreateGlobalLayout() || !CreateWhiteTexture() || !CreateWhiteCubeTexture())
+			|| !CreatePassUniforms() || !CreateGlobalLayout() || !CreateWhiteTexture() || !CreateWhiteCubeTexture() || !CreateWhiteArrayTexture() || !CreateWhiteCubeArrayTexture())
 		{
 			Shutdown();
 			return;
@@ -401,6 +460,8 @@ namespace Timefall
 		WriteInitialDescriptors();
 		VulkanBindlessTable::Init(s_Sets[2], capacity, (VkImageView)s_WhiteTexture->GetNativeView());
 		VulkanBindlessTable::InitCubes(s_Sets[2], kTextureCubeCapacity, (VkImageView)s_WhiteCubeTexture->GetNativeView());
+		VulkanBindlessTable::InitArrays(s_Sets[2], kTextureArrayCapacity, (VkImageView)s_WhiteArrayTexture->GetNativeView());
+		VulkanBindlessTable::InitCubeArrays(s_Sets[2], kTextureCubeArrayCapacity, (VkImageView)s_WhiteCubeArrayTexture->GetNativeView());
 		s_Ready = true;
 
 		TF_CORE_INFO(
@@ -416,6 +477,8 @@ namespace Timefall
 		VulkanBindlessTable::Shutdown();
 		s_WhiteTexture.reset();
 		s_WhiteCubeTexture.reset();
+		s_WhiteArrayTexture.reset();
+		s_WhiteCubeArrayTexture.reset();
 		s_PassUniforms.reset();
 		s_FrameUniforms.reset();
 

@@ -241,7 +241,8 @@ namespace Timefall
 			{s12.descriptorBindingSampledImageUpdateAfterBind, "descriptorBindingSampledImageUpdateAfterBind"},
 			{s12.shaderSampledImageArrayNonUniformIndexing, "shaderSampledImageArrayNonUniformIndexing"},
 			{s12.bufferDeviceAddress, "bufferDeviceAddress"},
-			{sBase.samplerAnisotropy, "samplerAnisotropy"}, {sBase.independentBlend, "independentBlend"}};
+			{sBase.samplerAnisotropy, "samplerAnisotropy"}, {sBase.independentBlend, "independentBlend"},
+			{sBase.imageCubeArray, "imageCubeArray"}};
 
 		for (const auto& [ok, name] : required)
 			if (!ok)
@@ -279,6 +280,7 @@ namespace Timefall
 		vk::PhysicalDeviceFeatures2 features2{.pNext = &f11};
 		features2.features.samplerAnisotropy = vk::True;
 		features2.features.independentBlend = vk::True; // entity-ID attachment disables blending while color keeps it
+		features2.features.imageCubeArray = vk::True; // VK_IMAGE_VIEW_TYPE_CUBE_ARRAY views for the bindless cube-array table
 		features2.features.wideLines = m_WideLinesAvailable ? vk::True : vk::False;
 
 		constexpr float priority = 1.0f;

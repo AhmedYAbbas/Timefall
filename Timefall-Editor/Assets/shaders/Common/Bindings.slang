@@ -83,6 +83,18 @@ TextureCube g_TextureCubes[64];
 
 static const uint BINDLESS_WHITE_CUBE = 0;
 
+// Array textures take their own fixed-size bindings for the same reason cubes do. Twins of
+// VulkanBindings::kTextureArrayCapacity and kTextureCubeArrayCapacity
+[[vk::binding(2, 2)]]
+Texture2DArray g_TextureArrays[16];
+
+static const uint BINDLESS_WHITE_ARRAY = 0;
+
+[[vk::binding(3, 2)]]
+TextureCubeArray g_TextureCubeArrays[8];
+
+static const uint BINDLESS_WHITE_CUBE_ARRAY = 0;
+
 [[vk::binding(15, 2)]]
 Texture2D g_Textures[];
 
@@ -100,4 +112,14 @@ float4 SampleBindlessCube(uint index, uint samplerSlot, float3 dir)
 float4 SampleBindlessCubeLod(uint index, uint samplerSlot, float3 dir, float lod)
 {
 	return g_TextureCubes[NonUniformResourceIndex(index)].SampleLevel(g_Samplers[samplerSlot], dir, lod);
+}
+
+float4 SampleBindlessArray(uint index, uint samplerSlot, float2 uv, uint layer)
+{
+	return g_TextureArrays[NonUniformResourceIndex(index)].Sample(g_Samplers[samplerSlot], float3(uv, layer));
+}
+
+float4 SampleBindlessCubeArray(uint index, uint samplerSlot, float3 dir, float cube)
+{
+	return g_TextureCubeArrays[NonUniformResourceIndex(index)].Sample(g_Samplers[samplerSlot], float4(dir, cube));
 }

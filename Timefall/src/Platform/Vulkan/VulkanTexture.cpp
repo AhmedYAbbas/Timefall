@@ -505,16 +505,26 @@ namespace Timefall::RHI
 					uiHandle = m_Impl->UIHandle, uiDestroy = m_Impl->UIHandleDestroy, bindless = m_Impl->BindlessIndex,
 					bindlessSRGB = m_Impl->BindlessSRGBIndex, subViews = std::move(m_Impl->SubresourceViews),
 					arrayViews = std::move(m_Impl->ArrayViews),
-					isCube = IsCubeDimension(m_Impl->Dim)]() {
+					dim = m_Impl->Dim]() {
 
-					if (isCube)
+					switch (dim)
 					{
-						VulkanBindlessTable::ReleaseCube(bindless);
-					}
-					else
-					{
-						VulkanBindlessTable::Release(bindless);
-						VulkanBindlessTable::Release(bindlessSRGB);
+						case Dimension::Cube:
+							VulkanBindlessTable::ReleaseCube(bindless);
+							break;
+
+						case Dimension::CubeArray:
+							VulkanBindlessTable::ReleaseCubeArray(bindless);
+							break;
+
+						case Dimension::Tex2DArray:
+							VulkanBindlessTable::ReleaseArray(bindless);
+							break;
+
+						default:
+							VulkanBindlessTable::Release(bindless);
+							VulkanBindlessTable::Release(bindlessSRGB);
+							break;
 					}
 
 					if (uiHandle && uiDestroy)
@@ -579,19 +589,39 @@ namespace Timefall::RHI
 		if (!IsValid())
 			return VulkanBindlessTable::WhiteIndex;
 
-		if (IsCubeDimension(m_Impl->Dim))
+		if (m_Impl->Dim != Dimension::Tex2D)
 		{
 			if (srgb)
-				TF_CORE_WARN("GetBindlessIndex(srgb) on a cube texture; cubes carry no sRGB view");
+				TF_CORE_WARN("GetBindlessIndex(srgb) on a layered texture; only Tex2D carries an sRGB view");
 
 			if (m_Impl->BindlessIndex != VulkanBindlessTable::InvalidIndex)
 				return m_Impl->BindlessIndex;
 
-			const uint32_t cubeIndex = VulkanBindlessTable::AcquireCube(m_Impl->View);
-			if (cubeIndex == VulkanBindlessTable::InvalidIndex)
-				return VulkanBindlessTable::WhiteCubeIndex; // uncached, so a later call retries once slots free up
+			uint32_t index = VulkanBindlessTable::InvalidIndex;
+			uint32_t fallback = VulkanBindlessTable::WhiteIndex;
 
-			m_Impl->BindlessIndex = cubeIndex;
+			switch (m_Impl->Dim)
+			{
+				case Dimension::Cube:
+					index = VulkanBindlessTable::AcquireCube(m_Impl->View);
+					fallback = VulkanBindlessTable::WhiteCubeIndex;
+					break;
+
+				case Dimension::CubeArray:
+					index = VulkanBindlessTable::AcquireCubeArray(m_Impl->View);
+					fallback = VulkanBindlessTable::WhiteCubeArrayIndex;
+					break;
+
+				default:
+					index = VulkanBindlessTable::AcquireArray(m_Impl->View);
+					fallback = VulkanBindlessTable::WhiteArrayIndex;
+					break;
+			}
+
+			if (index == VulkanBindlessTable::InvalidIndex)
+				return fallback;
+
+			m_Impl->BindlessIndex = index;
 			return m_Impl->BindlessIndex;
 		}
 

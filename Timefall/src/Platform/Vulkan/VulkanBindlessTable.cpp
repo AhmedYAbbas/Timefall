@@ -24,6 +24,8 @@ namespace Timefall
 
 		BindlessTableData s_TableData{};
 		BindlessTableData s_CubeData{};
+		BindlessTableData s_ArrayData{};
+		BindlessTableData s_CubeArrayData{};
 
 		void WriteSlot(BindlessTableData& table, uint32_t index, vk::ImageView view)
 		{
@@ -141,10 +143,24 @@ namespace Timefall
 		InitTable(s_CubeData, set, capacity, whiteCubeView, "Bindless cube table");
 	}
 
+	void VulkanBindlessTable::InitArrays(vk::DescriptorSet set, uint32_t capacity, vk::ImageView whiteArrayView)
+	{
+		s_ArrayData.Binding = VulkanBindings::BindingTextureArrays;
+		InitTable(s_ArrayData, set, capacity, whiteArrayView, "Bindless array table");
+	}
+
+	void VulkanBindlessTable::InitCubeArrays(vk::DescriptorSet set, uint32_t capacity, vk::ImageView whiteCubeArrayView)
+	{
+		s_CubeArrayData.Binding = VulkanBindings::BindingTextureCubeArrays;
+		InitTable(s_CubeArrayData, set, capacity, whiteCubeArrayView, "Bindless cube-array table");
+	}
+
 	void VulkanBindlessTable::Shutdown()
 	{
 		ResetTable(s_TableData);
 		ResetTable(s_CubeData);
+		ResetTable(s_ArrayData);
+		ResetTable(s_CubeArrayData);
 	}
 
 	uint32_t VulkanBindlessTable::Acquire(vk::ImageView view)
@@ -167,6 +183,26 @@ namespace Timefall
 		ReleaseIn(s_CubeData, index);
 	}
 
+	uint32_t VulkanBindlessTable::AcquireArray(vk::ImageView view)
+	{
+		return AcquireIn(s_ArrayData, view);
+	}
+
+	void VulkanBindlessTable::ReleaseArray(uint32_t index)
+	{
+		ReleaseIn(s_ArrayData, index);
+	}
+
+	uint32_t VulkanBindlessTable::AcquireCubeArray(vk::ImageView view)
+	{
+		return AcquireIn(s_CubeArrayData, view);
+	}
+
+	void VulkanBindlessTable::ReleaseCubeArray(uint32_t index)
+	{
+		ReleaseIn(s_CubeArrayData, index);
+	}
+
 	uint32_t VulkanBindlessTable::GetCapacity()
 	{
 		return s_TableData.Capacity;
@@ -180,5 +216,15 @@ namespace Timefall
 	uint32_t VulkanBindlessTable::GetCubeUsed()
 	{
 		return s_CubeData.Used;
+	}
+
+	uint32_t VulkanBindlessTable::GetArrayUsed()
+	{
+		return s_ArrayData.Used;
+	}
+
+	uint32_t VulkanBindlessTable::GetCubeArrayUsed()
+	{
+		return s_CubeArrayData.Used;
 	}
 }
