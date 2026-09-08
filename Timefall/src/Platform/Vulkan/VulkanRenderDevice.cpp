@@ -101,6 +101,7 @@ namespace Timefall::RHI
 		uint32_t colorCount = 0;
 		vk::Extent2D extent{};
 
+		const uint32_t viewCount = std::max(1u, desc.ViewCount);
 		if (desc.Target)
 		{
 			TF_CORE_ASSERT(desc.Target->IsValid(), "BeginPass on an invalid RenderTarget");
@@ -113,7 +114,7 @@ namespace Timefall::RHI
 				const ColorTarget& target = desc.Color[i];
 				Texture::Impl& attachment = *desc.Target->GetColor(i)->m_Impl;
 
-				const vk::ImageSubresourceRange range{attachment.Aspect, desc.Mip, 1, desc.Layer, 1};
+				const vk::ImageSubresourceRange range{attachment.Aspect, desc.Mip, 1, desc.Layer, viewCount};
 
 				const vk::ImageLayout oldLayout = target.Load == LoadOp::Load ? attachment.LayoutAt(desc.Mip, desc.Layer) : vk::ImageLayout::eUndefined;
 
@@ -122,7 +123,8 @@ namespace Timefall::RHI
 					vk::PipelineStageFlagBits2::eColorAttachmentOutput,
 					vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentRead, range);
 
-				attachment.LayoutAt(desc.Mip, desc.Layer) = vk::ImageLayout::eColorAttachmentOptimal;
+				for (uint32_t layer = 0; layer < viewCount; layer++)
+					attachment.LayoutAt(desc.Mip, desc.Layer + layer) = vk::ImageLayout::eColorAttachmentOptimal;
 
 				if (IsIntegerFormat(attachment.PixelFormat))
 					colorClears[i].color.int32 = std::array{target.ClearInt[0], target.ClearInt[1], target.ClearInt[2], target.ClearInt[3]};
@@ -130,7 +132,7 @@ namespace Timefall::RHI
 					colorClears[i].color.float32 =
 						std::array{target.ClearValue[0], target.ClearValue[1], target.ClearValue[2], target.ClearValue[3]};
 
-				colorInfos[i] = {.imageView = attachment.SubresourceView(desc.Mip, desc.Layer),
+				colorInfos[i] = {.imageView = viewCount > 1 ? attachment.SubresourceArrayView(desc.Mip, desc.Layer, viewCount) : attachment.SubresourceView(desc.Mip, desc.Layer),
 					.imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
 					.loadOp = ToVkLoadOp(target.Load),
 					.storeOp = ToVkStoreOp(target.Store),
@@ -170,7 +172,7 @@ namespace Timefall::RHI
 		{
 			Texture::Impl& attachment = *desc.Target->GetDepth()->m_Impl;
 
-			const vk::ImageSubresourceRange range{attachment.Aspect, desc.Mip, 1, desc.Layer, 1};
+			const vk::ImageSubresourceRange range{attachment.Aspect, desc.Mip, 1, desc.Layer, viewCount};
 
 			const vk::ImageLayout oldLayout =
 				desc.Depth.Load == LoadOp::Load ? attachment.LayoutAt(desc.Mip, desc.Layer) : vk::ImageLayout::eUndefined;
@@ -183,25 +185,28 @@ namespace Timefall::RHI
 				vk::AccessFlagBits2::eDepthStencilAttachmentWrite | vk::AccessFlagBits2::eDepthStencilAttachmentRead,
 				range);
 
-			attachment.LayoutAt(desc.Mip, desc.Layer) = vk::ImageLayout::eDepthAttachmentOptimal;
+			for (uint32_t layer = 0; layer < viewCount; layer++)
+				attachment.LayoutAt(desc.Mip, desc.Layer + layer) = vk::ImageLayout::eDepthAttachmentOptimal;
 
 			vk::ClearValue depthClear{};
 			depthClear.depthStencil = vk::ClearDepthStencilValue{.depth = desc.Depth.ClearDepth, .stencil = 0};
 
-			depthInfo = {.imageView = attachment.SubresourceView(desc.Mip, desc.Layer),
+			depthInfo = {.imageView = viewCount > 1 ? attachment.SubresourceArrayView(desc.Mip, desc.Layer, viewCount) : attachment.SubresourceView(desc.Mip, desc.Layer),
 				.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal,
 				.loadOp = ToVkLoadOp(desc.Depth.Load),
 				.storeOp = ToVkStoreOp(desc.Depth.Store),
 				.clearValue = depthClear};
 		}
 
-		m_Impl->Cmd.beginRendering({.renderArea = {{0, 0}, extent}, .layerCount = 1, .colorAttachmentCount = colorCount, .pColorAttachments = colorInfos, .pDepthAttachment = hasDepth ? &depthInfo : nullptr});
+		const uint32_t passViewCount = std::max(1u, desc.ViewCount);
+		m_Impl->Cmd.beginRendering({.renderArea = {{0, 0}, extent}, .layerCount = passViewCount, .viewMask = passViewCount > 1 ? (1u << passViewCount) - 1u : 0u, .colorAttachmentCount = colorCount, .pColorAttachments = colorInfos, .pDepthAttachment = hasDepth ? &depthInfo : nullptr});
 
 		m_Impl->InPass = true;
 		m_Impl->PassTarget = desc.Target;
 		m_Impl->PassColorCount = colorCount;
 		m_Impl->PassLayer = desc.Layer;
 		m_Impl->PassMip = desc.Mip;
+		m_Impl->PassViewCount = passViewCount;
 		m_Impl->PassSlice = 0;
 
 		SetViewport(0, 0, extent.width, extent.height);
@@ -218,32 +223,35 @@ namespace Timefall::RHI
 			{
 				Texture::Impl& attachment = *m_Impl->PassTarget->GetColor(i)->m_Impl;
 
-				const vk::ImageSubresourceRange range{attachment.Aspect, m_Impl->PassMip, 1, m_Impl->PassLayer, 1};
+				const vk::ImageSubresourceRange range{attachment.Aspect, m_Impl->PassMip, 1, m_Impl->PassLayer, m_Impl->PassViewCount};
 
 				TransitionImage(m_Impl->Cmd, attachment.Image, attachment.LayoutAt(m_Impl->PassMip, m_Impl->PassLayer),
 					vk::ImageLayout::eShaderReadOnlyOptimal,
 					vk::PipelineStageFlagBits2::eColorAttachmentOutput, vk::AccessFlagBits2::eColorAttachmentWrite,
 					vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderSampledRead, range);
 
-				attachment.LayoutAt(m_Impl->PassMip, m_Impl->PassLayer) = vk::ImageLayout::eShaderReadOnlyOptimal;
+				for (uint32_t layer = 0; layer < m_Impl->PassViewCount; layer++)
+					attachment.LayoutAt(m_Impl->PassMip, m_Impl->PassLayer + layer) = vk::ImageLayout::eShaderReadOnlyOptimal;
 			}
 
 			if (m_Impl->PassTarget->GetDepth())
 			{
 				Texture::Impl& depth = *m_Impl->PassTarget->GetDepth()->m_Impl;
 
-				const vk::ImageSubresourceRange range{depth.Aspect, m_Impl->PassMip, 1, m_Impl->PassLayer, 1};
+				const vk::ImageSubresourceRange range{depth.Aspect, m_Impl->PassMip, 1, m_Impl->PassLayer, m_Impl->PassViewCount};
 
 				TransitionImage(m_Impl->Cmd, depth.Image, depth.LayoutAt(m_Impl->PassMip, m_Impl->PassLayer),
 					vk::ImageLayout::eShaderReadOnlyOptimal, vk::PipelineStageFlagBits2::eLateFragmentTests,
 					vk::AccessFlagBits2::eDepthStencilAttachmentWrite, vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderSampledRead, range);
 
-				depth.LayoutAt(m_Impl->PassMip, m_Impl->PassLayer) = vk::ImageLayout::eShaderReadOnlyOptimal;
+				for (uint32_t layer = 0; layer < m_Impl->PassViewCount; layer++)
+					depth.LayoutAt(m_Impl->PassMip, m_Impl->PassLayer + layer) = vk::ImageLayout::eShaderReadOnlyOptimal;
 			}
 		}
 
 		m_Impl->PassTarget = nullptr;
 		m_Impl->PassColorCount = 0;
+		m_Impl->PassViewCount = 1;
 		m_Impl->InPass = false;
 
 		if (m_Impl->PassLabelPushed)

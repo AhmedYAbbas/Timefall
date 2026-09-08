@@ -37,6 +37,7 @@ namespace Timefall::RHI
 		uint32_t ColorCount = 0;
 		bool ColorWrite[8]{true, true, true, true, true, true, true, true};
 		Format DepthFormat = Format::Undefined;
+		uint32_t ViewCount = 1;
 		DepthState Depth{};
 		BlendMode Blend = BlendMode::None;
 		RasterState Raster{};

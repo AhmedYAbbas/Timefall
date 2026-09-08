@@ -85,6 +85,7 @@ namespace Timefall::RHI
 		uint32_t PassColorCount = 0;
 		uint32_t PassLayer = 0;
 		uint32_t PassMip = 0;
+		uint32_t PassViewCount = 1;
 		uint32_t PassSlice = 0;
 
 		vk::PipelineLayout BoundLayout;
@@ -120,6 +121,15 @@ namespace Timefall::RHI
 		vk::ImageView SRGBView;
 		std::vector<vk::ImageView> SubresourceViews; // lazily build, mip * ArrayLayers + layer
 
+		struct ArrayViewEntry
+		{
+			uint32_t Mip;
+			uint32_t BaseLayer;
+			uint32_t LayerCount;
+			vk::ImageView View;
+		};
+		std::vector<ArrayViewEntry> ArrayViews; // lazily build, mip * ArrayLayers + layer (sparse)
+
 		VmaAllocation Allocation = nullptr;
 		vk::Format Format = vk::Format::eUndefined;
 		RHI::Format PixelFormat = RHI::Format::Undefined;
@@ -144,6 +154,7 @@ namespace Timefall::RHI
 
 		//Single-(mip, layer) 2D view for use as a render-pass attachment. Built on first use
 		vk::ImageView SubresourceView(uint32_t mip, uint32_t layer);
+		vk::ImageView SubresourceArrayView(uint32_t mip, uint32_t baseLayer, uint32_t layerCount);
 
 		vk::ImageLayout& LayoutAt(uint32_t mip, uint32_t layer)
 		{

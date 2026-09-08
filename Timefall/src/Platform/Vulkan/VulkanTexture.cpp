@@ -187,6 +187,37 @@ namespace Timefall::RHI
 
 		slot = *view;
 		return slot;
+
+
+	}
+
+	vk::ImageView Texture::Impl::SubresourceArrayView(uint32_t mip, uint32_t baseLayer, uint32_t layerCount)
+	{
+		if (mip >= MipLevels || layerCount == 0 || baseLayer + layerCount > ArrayLayers)
+		{
+			TF_CORE_ERROR("SubresourceArrayView({0}, {1}, {2}) out of range for a {3}-mip {4}-layer image", mip, baseLayer, layerCount,
+				MipLevels, ArrayLayers);
+			return nullptr;
+		}
+
+		for (const ArrayViewEntry& entry : ArrayViews)
+			if (entry.Mip == mip && entry.BaseLayer == baseLayer && entry.LayerCount == layerCount)
+				return entry.View;
+
+		auto view = VulkanContext::Get().GetDevice().createImageView({.image = Image,
+			.viewType = vk::ImageViewType::e2DArray, // e2DArray is compatible with cube maps, so this works for both
+			.format = Format,
+			.subresourceRange = {Aspect, mip, 1, baseLayer, layerCount}});
+
+		if (!view)
+		{
+			TF_CORE_ERROR(
+				"createImageView failed for subresource ({0}, {1}, {2}): {3}", mip, baseLayer, layerCount, vk::to_string(view.error()));
+			return nullptr;
+		}
+
+		ArrayViews.push_back({.Mip = mip, .BaseLayer = baseLayer, .LayerCount = layerCount, .View = *view});
+		return *view;
 	}
 
 	Ref<Texture> Texture::Create(const TextureDesc& desc)
@@ -473,6 +504,7 @@ namespace Timefall::RHI
 				[image = m_Impl->Image, view = m_Impl->View, srgbView = m_Impl->SRGBView, allocation = m_Impl->Allocation,
 					uiHandle = m_Impl->UIHandle, uiDestroy = m_Impl->UIHandleDestroy, bindless = m_Impl->BindlessIndex,
 					bindlessSRGB = m_Impl->BindlessSRGBIndex, subViews = std::move(m_Impl->SubresourceViews),
+					arrayViews = std::move(m_Impl->ArrayViews),
 					isCube = IsCubeDimension(m_Impl->Dim)]() {
 
 					if (isCube)
@@ -492,6 +524,9 @@ namespace Timefall::RHI
 					for (vk::ImageView sub : subViews)
 						if (sub)
 							device.destroyImageView(sub);
+					for (const Texture::Impl::ArrayViewEntry& entry : arrayViews)
+						if (entry.View)
+							device.destroyImageView(entry.View);
 					if (srgbView)
 						device.destroyImageView(srgbView);
 					if (view)

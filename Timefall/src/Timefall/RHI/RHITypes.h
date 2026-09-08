@@ -60,6 +60,7 @@ namespace Timefall::RHI
 		RenderTarget* Target = nullptr;
 		uint32_t Layer = 0; // array layer / cube face
 		uint32_t Mip = 0;
+		uint32_t ViewCount = 1; // > 1 renders Layer..Layer+ViewCount-1 at once, SV_ViewID selects
 		ColorTarget Color[8]{};
 		DepthTarget Depth{};
 	};

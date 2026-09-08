@@ -200,7 +200,7 @@ namespace Timefall::RHI
 		for (uint32_t i = 0; i < desc.ColorCount; i++)
 			colorFormats[i] = ToVkFormat(desc.ColorFormats[i]);
 
-		vk::PipelineRenderingCreateInfo rendering{.colorAttachmentCount = desc.ColorCount,
+		vk::PipelineRenderingCreateInfo rendering{.viewMask = desc.ViewCount > 1 ? (1U << desc.ViewCount) - 1u : 0u, .colorAttachmentCount = desc.ColorCount,
 			.pColorAttachmentFormats = colorFormats.data(),
 			.depthAttachmentFormat = ToVkFormat(desc.DepthFormat)};
 
