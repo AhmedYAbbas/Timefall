@@ -157,6 +157,7 @@ namespace Timefall::RHI
 				: desc.Raster.Cull == CullMode::Front      ? vk::CullModeFlags{vk::CullModeFlagBits::eFront}
 														   : vk::CullModeFlags{vk::CullModeFlagBits::eBack},
 			.frontFace = desc.Raster.FrontFaceCCW ? vk::FrontFace::eCounterClockwise : vk::FrontFace::eClockwise,
+			.depthBiasEnable = desc.Depth.BiasEnable ? vk::True : vk::False,
 			.lineWidth = 1.0f};
 
 		const vk::PipelineMultisampleStateCreateInfo multisample{.rasterizationSamples = vk::SampleCountFlagBits::e1};
@@ -192,6 +193,8 @@ namespace Timefall::RHI
 		std::vector<vk::DynamicState> dynamicStates{vk::DynamicState::eViewport, vk::DynamicState::eScissor};
 		if (isLineList)
 			dynamicStates.push_back(vk::DynamicState::eLineWidth);
+		if (desc.Depth.BiasEnable)
+			dynamicStates.push_back(vk::DynamicState::eDepthBias);
 
 		const vk::PipelineDynamicStateCreateInfo dynamic{
 			.dynamicStateCount = (uint32_t)dynamicStates.size(), .pDynamicStates = dynamicStates.data()};

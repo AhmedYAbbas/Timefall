@@ -20,6 +20,7 @@ namespace Timefall::RHI
 		bool Test = false;
 		bool Write = false;
 		CompareOp Compare = CompareOp::LessOrEqual;
+		bool BiasEnable = false;
 	};
 
 	struct RasterState

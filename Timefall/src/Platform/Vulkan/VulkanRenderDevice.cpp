@@ -280,6 +280,11 @@ namespace Timefall::RHI
 		m_Impl->Cmd.setLineWidth(VulkanContext::Get().ClampLineWidth(width));
 	}
 
+	void CommandList::SetDepthBias(float constant, float slope)
+	{
+		m_Impl->Cmd.setDepthBias(constant, 0.0f, slope);
+	}
+
 	void CommandList::BindPipeline(const GraphicsPipeline& pipeline)
 	{
 		if (!pipeline.IsValid())
