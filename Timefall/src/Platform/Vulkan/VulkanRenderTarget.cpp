@@ -167,7 +167,8 @@ namespace Timefall::RHI
 
 	bool RenderTarget::IsValid() const
 	{
-		if (!m_Impl || m_Impl->Desc.ColorCount == 0)
+		// Depth-only targets are legal (shadow maps); a target with no attachments at all is not
+		if (!m_Impl || (m_Impl->Desc.ColorCount == 0 && m_Impl->Desc.DepthFormat == Format::Undefined))
 			return false;
 
 		for (uint32_t i = 0; i < m_Impl->Desc.ColorCount; i++)
