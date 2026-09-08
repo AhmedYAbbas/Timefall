@@ -39,8 +39,12 @@ namespace Timefall
 
 		bool CreatePool(uint32_t bindlessCapacity)
 		{
-			const vk::DescriptorPoolSize sizes[]{
-				{vk::DescriptorType::eUniformBufferDynamic, 2}, {vk::DescriptorType::eSampler, (uint32_t)RHI::SamplerSlot::Count}, {vk::DescriptorType::eSampledImage, bindlessCapacity + VulkanBindings::kTextureCubeCapacity + VulkanBindings::kTextureArrayCapacity + VulkanBindings::kTextureCubeArrayCapacity}};
+			const vk::DescriptorPoolSize sizes[]{{vk::DescriptorType::eUniformBufferDynamic, 2},
+				{vk::DescriptorType::eSampler, (uint32_t)RHI::SamplerSlot::Count},
+				{vk::DescriptorType::eSampledImage,
+					bindlessCapacity + VulkanBindings::kTextureCubeCapacity + VulkanBindings::kTextureArrayCapacity
+						+ VulkanBindings::kTextureCubeArrayCapacity},
+				{vk::DescriptorType::eSampler, (uint32_t)RHI::ComparisonSamplerSlot::Count}};
 
 			auto pool = VulkanContext::Get().GetDevice().createDescriptorPool({
 				.flags = vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind,
@@ -115,6 +119,11 @@ namespace Timefall
 				.descriptorCount = VulkanBindings::kTextureCubeArrayCapacity,
 				.stageFlags = VulkanBindings::kAllStages},
 
+				{.binding = VulkanBindings::BindingComparisonSamplers,
+					.descriptorType = vk::DescriptorType::eSampler,
+					.descriptorCount = (uint32_t)RHI::ComparisonSamplerSlot::Count,
+					.stageFlags = VulkanBindings::kAllStages},
+
 				{.binding = VulkanBindings::BindingTextures,
 				.descriptorType = vk::DescriptorType::eSampledImage,
 				.descriptorCount = bindlessCapacity,
@@ -125,6 +134,7 @@ namespace Timefall
 				vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind,
 				vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind,
 				vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind,
+				{},
 				vk::DescriptorBindingFlagBits::ePartiallyBound | vk::DescriptorBindingFlagBits::eUpdateAfterBind
 					| vk::DescriptorBindingFlagBits::eVariableDescriptorCount};
 
@@ -302,6 +312,10 @@ namespace Timefall
 			for (uint32_t i = 0; i < (uint32_t)RHI::SamplerSlot::Count; i++)
 				samplerInfos[i].sampler = VulkanSamplerCache::Get((RHI::SamplerSlot)i);
 
+			std::array < vk::DescriptorImageInfo, (size_t)RHI::ComparisonSamplerSlot::Count> cmpSamplerInfos{};
+			for (uint32_t i = 0; i < (uint32_t)RHI::ComparisonSamplerSlot::Count; i++)
+				cmpSamplerInfos[i].sampler = VulkanSamplerCache::Get((RHI::ComparisonSamplerSlot)i);
+
 			const vk::WriteDescriptorSet writes[]{{.dstSet = s_Sets[0], .dstBinding = 0, .dstArrayElement = 0, .descriptorCount = 1, .descriptorType = vk::DescriptorType::eUniformBufferDynamic, .pBufferInfo = &frameInfo},
 				{.dstSet = s_Sets[1], .dstBinding = 0, .dstArrayElement = 0, .descriptorCount = 1, .descriptorType = vk::DescriptorType::eUniformBufferDynamic, .pBufferInfo = &passInfo},
 				{.dstSet = s_Sets[2],
@@ -309,7 +323,13 @@ namespace Timefall
 					.dstArrayElement = 0,
 					.descriptorCount = (uint32_t)samplerInfos.size(),
 					.descriptorType = vk::DescriptorType::eSampler,
-					.pImageInfo = samplerInfos.data()}};
+					.pImageInfo = samplerInfos.data()},
+				{.dstSet = s_Sets[2],
+					.dstBinding = VulkanBindings::BindingComparisonSamplers,
+					.dstArrayElement = 0,
+					.descriptorCount = (uint32_t)cmpSamplerInfos.size(),
+					.descriptorType = vk::DescriptorType::eSampler,
+					.pImageInfo = cmpSamplerInfos.data()}};
 
 			VulkanContext::Get().GetDevice().updateDescriptorSets(writes, {});
 		}
@@ -346,6 +366,7 @@ namespace Timefall
 			{2, VulkanBindings::BindingTextureCubes, ShaderBindingType::SampledImage, VulkanBindings::kTextureCubeCapacity},
 			{2, VulkanBindings::BindingTextureArrays, ShaderBindingType::SampledImage, VulkanBindings::kTextureArrayCapacity},
 			{2, VulkanBindings::BindingTextureCubeArrays, ShaderBindingType::SampledImage, VulkanBindings::kTextureCubeArrayCapacity},
+			{2, VulkanBindings::BindingComparisonSamplers, ShaderBindingType::Sampler, (uint32_t)RHI::ComparisonSamplerSlot::Count},
 			{2, VulkanBindings::BindingTextures, ShaderBindingType::SampledImage, 0}};
 
 		const char* BindingTypeName(ShaderBindingType type)

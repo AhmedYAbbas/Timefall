@@ -13,6 +13,12 @@ namespace Timefall::RHI
 		Count
 	};
 
+	enum class ComparisonSamplerSlot : uint32_t
+	{
+		ShadowLinearClamp = 0, // linear, clamp-to-edge, compareEnable - hardware 2x2 PCF per tap
+		Count 
+	};
+
 	inline constexpr uint64_t FrameUniformSlotBytes = 256;
 	inline constexpr uint64_t PassUniformSlotBytes = 4608;
 	inline constexpr uint32_t PassUniformSlices = 16; // per frame in flight

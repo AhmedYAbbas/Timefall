@@ -25,5 +25,6 @@ namespace Timefall
 
 		static vk::Sampler Get(const SamplerDesc& desc);
 		static vk::Sampler Get(RHI::SamplerSlot slot);
+		static vk::Sampler Get(RHI::ComparisonSamplerSlot slot);
 	};
 }

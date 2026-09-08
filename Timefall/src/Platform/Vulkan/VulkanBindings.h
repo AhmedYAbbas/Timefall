@@ -17,6 +17,7 @@ namespace Timefall
 		static constexpr uint32_t BindingTextureCubes = 1;
 		static constexpr uint32_t BindingTextureArrays = 2;
 		static constexpr uint32_t BindingTextureCubeArrays = 3;
+		static constexpr uint32_t BindingComparisonSamplers = 4;
 
 		static constexpr uint32_t BindingTextures = 15;
 

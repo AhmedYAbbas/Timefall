@@ -95,6 +95,13 @@ TextureCubeArray g_TextureCubeArrays[8];
 
 static const uint BINDLESS_WHITE_CUBE_ARRAY = 0;
 
+// Comparison sampler for shadow taps: SampleCmp does the depth compare in the sampler and returns
+// hardware-filtered occlusion. The PCSS blocker search still reads raw depth through g_Samplers
+[[vk::binding(4, 2)]]
+SamplerComparisonState g_ComparisonSamplers[1];
+
+static const uint SAMPLER_SHADOW_CMP = 0;
+
 [[vk::binding(15, 2)]]
 Texture2D g_Textures[];
 

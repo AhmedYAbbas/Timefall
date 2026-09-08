@@ -9,6 +9,7 @@ namespace Timefall
 	{
 		std::vector<std::pair<VulkanSamplerCache::SamplerDesc, vk::Sampler>> s_Cache;
 		std::array<vk::Sampler, (size_t)RHI::SamplerSlot::Count> s_Table{};
+		std::array < vk::Sampler, (size_t)RHI::ComparisonSamplerSlot::Count> s_CmpTable{};
 
 		const char* SlotName(RHI::SamplerSlot slot)
 		{
@@ -17,6 +18,15 @@ namespace Timefall
 				case RHI::SamplerSlot::LinearRepeat: return "LinearRepeat";
 				case RHI::SamplerSlot::LinearClampEdge: return "LinearClampEdge";
 				case RHI::SamplerSlot::NearestClampEdge: return "NearestClampEdge";
+				default: return "<unknown>";
+			}
+		}
+
+		const char* CmpSlotName(RHI::ComparisonSamplerSlot slot)
+		{
+			switch (slot)
+			{
+				case RHI::ComparisonSamplerSlot::ShadowLinearClamp: return "ShadowLinearClamp";
 				default: return "<unknown>";
 			}
 		}
@@ -62,6 +72,12 @@ namespace Timefall
 		return index < s_Table.size() ? s_Table[index] : nullptr;
 	}
 
+	vk::Sampler VulkanSamplerCache::Get(RHI::ComparisonSamplerSlot slot)
+	{
+		const size_t index = (size_t)slot;
+		return index < s_CmpTable.size() ? s_CmpTable[index] : nullptr;
+	}
+
 	void VulkanSamplerCache::Init()
 	{
 		s_Table[(size_t)RHI::SamplerSlot::LinearRepeat] = Get({.MinMagFilter = vk::Filter::eLinear,
@@ -77,6 +93,12 @@ namespace Timefall
 			.MipMode = vk::SamplerMipmapMode::eNearest,
 			.AddressMode = vk::SamplerAddressMode::eClampToEdge});
 
+		s_CmpTable[(size_t)RHI::ComparisonSamplerSlot::ShadowLinearClamp] = Get({.MinMagFilter = vk::Filter::eLinear,
+			.MipMode = vk::SamplerMipmapMode::eNearest,
+			.AddressMode = vk::SamplerAddressMode::eClampToEdge,
+			.Anisotropic = false,
+			.CompareDepth = true});
+
 		auto& ctx = VulkanContext::Get();
 		for (uint32_t i = 0; i < (uint32_t)RHI::SamplerSlot::Count; i++)
 		{
@@ -87,6 +109,17 @@ namespace Timefall
 			}
 
 			ctx.SetObjectName(s_Table[i], std::format("Sampler:{}", SlotName((RHI::SamplerSlot)i)));
+		}
+
+		for (uint32_t i = 0; i < (uint32_t)RHI::ComparisonSamplerSlot::Count; i++)
+		{
+			if (!s_CmpTable[i])
+			{
+				TF_CORE_ERROR("Comparison sampler slot {0} failed to build", CmpSlotName((RHI::ComparisonSamplerSlot)i));
+				continue;
+			}
+
+			ctx.SetObjectName(s_CmpTable[i], std::format("ComparisonSampler:{}", CmpSlotName((RHI::ComparisonSamplerSlot)i)));
 		}
 
 		TF_CORE_INFO("Sampler cache: {0} canonical slots, {1} distinct samplers", (uint32_t)RHI::SamplerSlot::Count, s_Cache.size());
