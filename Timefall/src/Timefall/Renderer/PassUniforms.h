@@ -77,13 +77,18 @@ namespace Timefall
 		glm::vec4 PointShadowParams[MAX_POINT_LIGHTS]{}; // x = casts, y = lightSize, z = depthBias, w = cubeLayer
 
 		uint32_t SunShadowIndex = 0; // g_TextureArrays slot of the cascade depth array; 0 = white fallback
-		float SunShadowTexel = 1.0f; // 1 / ShadowMapResolution, in UV
-		uint32_t _ShadowPad0 = 0;
+		uint32_t SpotShadowIndex = 0; // g_TextureArrays slot of the spot atlas; 0 = white fallback
 		uint32_t _ShadowPad1 = 0;
+
+		float SunShadowTexel = 1.0f; // 1 / ShadowMapResolution, in UV
+		float SpotShadowTexel = 1.0f; // 1 / SpotShadowResolution, in UV
+		float PointShadowTexel = 1.0f;
+		uint32_t _ShadowPad2 = 0;
+		uint32_t _ShadowPad3 = 0;
 	};
 
 	// Measured against slangc: these are the offsets Slang gives the std140 twin.
-	static_assert(sizeof(PassUniforms) == 4512);
+	static_assert(sizeof(PassUniforms) == 4528);
 	static_assert(offsetof(PassUniforms, DirLights) == 144);
 	static_assert(offsetof(PassUniforms, PointLights) == 272);
 	static_assert(offsetof(PassUniforms, SpotLights) == 1296);
@@ -94,6 +99,7 @@ namespace Timefall
 	static_assert(offsetof(PassUniforms, SpotShadowParams) == 3728);
 	static_assert(offsetof(PassUniforms, PointShadowParams) == 3984);
 	static_assert(offsetof(PassUniforms, SunShadowIndex) == 4496);
+	static_assert(offsetof(PassUniforms, SpotShadowTexel) == 4512);
 
 	// The slice must hold the struct; the descriptor's range is PassUniformSlotBytes
 	static_assert(sizeof(PassUniforms) <= RHI::PassUniformSlotBytes);

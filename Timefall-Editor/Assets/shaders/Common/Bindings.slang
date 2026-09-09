@@ -14,7 +14,7 @@ struct FrameUniforms
 [[vk::binding(0, 0)]]
 ConstantBuffer<FrameUniforms> u_Frame;
 
-// set 1 - per pass. 4496 bytes in a 4608-byte slice, selected by a dynamic offset CommandList records.
+// set 1 - per pass. 4528 bytes in a 4608-byte slice, selected by a dynamic offset CommandList records.
 // Twin of PassUniforms.h - fields are appended, never reordered
 struct DirLight { float4 Direction; float4 Color; }
 struct PointLight { float4 Position; float4 Color; }
@@ -62,9 +62,14 @@ struct PassUniforms
 	float4 PointShadowParams[32];
 
 	uint SunShadowIndex;
-	float SunShadowTexel;
-	uint _ShadowPad0;
+	uint SpotShadowIndex;
 	uint _ShadowPad1;
+
+	float SunShadowTexel;
+	float SpotShadowTexel;
+	float PointShadowTexel;
+	uint _ShadowPad2;
+	uint _ShadowPad3;
 }
 
 [[vk::binding(0, 1)]]
