@@ -113,7 +113,7 @@ FSOutput fsMain(VSOutput input)
 		const float3 L = normalize(-u_Pass.DirLights[i].Direction.xyz);
 		const float3 radiance = u_Pass.DirLights[i].Color.rgb * u_Pass.DirLights[i].Color.a;
 
-		const float shadow = i == 0 ? SunShadow(input.worldPos, viewDepth, s.N, L) : 0.0;
+		const float shadow = i == 0 ? SunShadow(input.worldPos, viewDepth, s.N, L, input.position.xy) : 0.0;
 		Lo += (1.0 - shadow) * CookTorrance(s, L, radiance);
 	}
 
@@ -126,7 +126,7 @@ FSOutput fsMain(VSOutput input)
 
 		float3 radiance = u_Pass.PointLights[i].Color.rgb * u_Pass.PointLights[i].Color.a * att;
 		if (u_Pass.PointShadowParams[i].x > 0.5)
-			radiance *= 1.0 - PointShadow(input.worldPos, (int)i, s.N, L);
+			radiance *= 1.0 - PointShadow(input.worldPos, (int)i, s.N, L, input.position.xy);
 
 		Lo += CookTorrance(s, L, radiance);
 	}
@@ -149,7 +149,7 @@ FSOutput fsMain(VSOutput input)
 
 		float3 radiance = u_Pass.SpotLights[i].Color.rgb * intensity * att * cone;
 		if (u_Pass.SpotShadowParams[i].x > 0.5)
-			radiance *= 1.0 - SpotShadow(input.worldPos, (int)i, s.N, L);
+			radiance *= 1.0 - SpotShadow(input.worldPos, (int)i, s.N, L, input.position.xy);
 
 		Lo += CookTorrance(s, L, radiance);
 	}

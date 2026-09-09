@@ -60,6 +60,11 @@ struct PassUniforms
 	float4 SpotShadowParams[16];
 
 	float4 PointShadowParams[32];
+
+	uint SunShadowIndex;
+	float SunShadowTexel;
+	uint _ShadowPad0;
+	uint _ShadowPad1;
 }
 
 [[vk::binding(0, 1)]]
