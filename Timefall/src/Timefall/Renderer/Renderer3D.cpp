@@ -94,6 +94,24 @@ namespace Timefall
 		uint32_t Layer;
 	};
 
+	struct SpotCaster
+	{
+		uint32_t LightIndex; // index into PassUniforms::SpotLights
+		glm::mat4 Matrix;
+		float LightSize;
+		float DepthBias;
+	};
+
+	// One multiview depth pass. Casters sharing a chunk share one vkCmdSetDepthBias, so a chunk
+	// breaks at MaxMultiviewViews and at every DepthBias change
+	struct ShadowChunk
+	{
+		uint32_t BaseLayer = 0;
+		uint32_t ViewCount = 0;
+		float DepthBias = 1.0f;
+		RHI::GraphicsPipeline* Pipeline = nullptr;
+	};
+
 	// Mirros ResolvePush in Renderer3D_HDRResolve.slang. 16 bytes
 	struct ResolvePush
 	{
@@ -170,6 +188,13 @@ namespace Timefall
 		glm::vec3 SunDirection{0.0f, -1.0f, 0.0f};
 		float SunShadowSoftness = 0.5f;
 		float SunDepthBias = 1.0f;
+
+		Ref<RHI::RenderTarget> SpotShadowTarget;
+		uint32_t SpotShadowLayers = 0;
+		uint32_t SpotShadowResolution = 0;
+
+		std::vector<SpotCaster> SpotCasters;
+		std::vector<ShadowChunk> SpotChunks;
 
 		static constexpr float SHADOW_DEPTH_EXTENT = 6.0f;
 
@@ -357,6 +382,41 @@ namespace Timefall
 		return true;
 	}
 
+	static bool EnsureSpotShadowTarget(uint32_t casterCount)
+	{
+		const uint32_t resolution = s_Data.Shadows.SpotShadowResolution;
+
+		const bool matches = s_Data.SpotShadowTarget && s_Data.SpotShadowTarget->IsValid() && s_Data.SpotShadowResolution == resolution
+			&& s_Data.SpotShadowLayers >= casterCount;
+
+		if (!matches)
+		{
+			const bool keepLayers = s_Data.SpotShadowTarget && s_Data.SpotShadowResolution == resolution;
+			const uint32_t layers = keepLayers ? glm::max(casterCount, s_Data.SpotShadowLayers) : casterCount;
+
+			s_Data.SpotShadowTarget = RHI::RenderTarget::Create({.Width = resolution, .Height = resolution, .ColorCount = 0, .DepthFormat = kDepthFormat, .Dim = RHI::Dimension::Tex2DArray, .ArrayLayers = layers, .DebugName = "SpotShadowTarget"});
+
+			s_Data.SpotShadowResolution = resolution;
+			s_Data.SpotShadowLayers = layers;
+
+			if (!s_Data.SpotShadowTarget || !s_Data.SpotShadowTarget->IsValid())
+			{
+				TF_CORE_ERROR("Spot shadow target ({0}x{0}, {1} layers) failed to allocate", resolution, layers);
+				s_Data.SpotShadowTarget = nullptr;
+				s_Data.SpotShadowLayers = 0;
+				s_Data.SpotShadowResolution = 0;
+				return false;
+			}
+
+			TF_CORE_INFO("Spot shadow atlas: {0}x{0}, {1} caster layers", resolution, layers);
+		}
+
+		s_Data.Pass.SpotShadowIndex = s_Data.SpotShadowTarget->GetDepth()->GetBindlessIndex();
+		s_Data.Pass.SpotShadowTexel = 1.0f / float(resolution);
+
+		return true;
+	}
+
 	static constexpr RHI::CullMode ToRHICull(ShadowCullMode mode)
 	{
 		switch (mode)
@@ -508,6 +568,35 @@ namespace Timefall
 			s_Data.Stats.CascadeCount = s_Data.Shadows.CascadeCount;
 
 			s_Data.SunShadowPipeline = GetShadowPipeline(s_Data.Pass.CascadeCount, s_Data.Shadows.CullMode);
+		}
+
+		s_Data.SpotChunks.clear();
+		if (!s_Data.SpotCasters.empty() && EnsureSpotShadowTarget((uint32_t)s_Data.SpotCasters.size()))
+		{
+			std::ranges::sort(s_Data.SpotCasters, {}, &SpotCaster::DepthBias);
+
+			const uint32_t maxViews = glm::max(1u, RHI::RenderDevice::Get().GetLimits().MaxMultiviewViews);
+
+			for (uint32_t layer = 0; layer < (uint32_t)s_Data.SpotCasters.size(); layer++)
+			{
+				const SpotCaster& caster = s_Data.SpotCasters[layer];
+
+				s_Data.Pass.SpotLightViewProj[layer] = caster.Matrix;
+				s_Data.Pass.PointShadowParams[caster.LightIndex] = glm::vec4(1.0f, caster.LightSize, caster.DepthBias, (float)layer);
+
+				const bool breakChunk = s_Data.SpotChunks.empty() || s_Data.SpotChunks.back().ViewCount >= maxViews
+					|| s_Data.SpotChunks.back().DepthBias != caster.DepthBias;
+
+				if (breakChunk)
+					s_Data.SpotChunks.push_back({.BaseLayer = layer, .ViewCount = 1, .DepthBias = caster.DepthBias});
+				else
+					s_Data.SpotChunks.back().ViewCount++;
+			}
+
+			for (ShadowChunk& chunk : s_Data.SpotChunks)
+				chunk.Pipeline = GetShadowPipeline(chunk.ViewCount, s_Data.Shadows.CullMode);
+
+			s_Data.Stats.ShadowCasters += (uint32_t)s_Data.SpotCasters.size();
 		}
 
 		s_Data.PassSlice = RHI::Bindings::WritePassUniforms(&s_Data.Pass, sizeof(s_Data.Pass));
@@ -898,9 +987,11 @@ namespace Timefall
 	{
 		ResetStats();
 		s_Data.Submissions.clear();
-		s_Data.Pass = {};
 		s_Data.ActiveEnvironmentHandle = 0; // outside Pass, so reset it here: no SkyLight means no environment
 		s_Data.SunCastsShadow = false;
+		s_Data.SpotCasters.clear();
+
+		s_Data.Pass = {};
 		s_Data.Pass.ViewProjection = camera.GetViewProjection();
 		s_Data.Pass.View = camera.GetView();
 		s_Data.Pass.CameraPosition = glm::vec4(camera.GetPosition(), 1.0f);
@@ -911,10 +1002,12 @@ namespace Timefall
 	{
 		ResetStats();
 		s_Data.Submissions.clear();
-		s_Data.Pass = {};
 		s_Data.ActiveEnvironmentHandle = 0; // outside Pass, so reset it here: no SkyLight means no environment
 		s_Data.SunCastsShadow = false;
+		s_Data.SpotCasters.clear();
+
 		const glm::mat4 view = glm::inverse(transform);
+		s_Data.Pass = {};
 		s_Data.Pass.ViewProjection = camera.GetProjection() * view;
 		s_Data.Pass.View = view;
 		s_Data.Pass.CameraPosition = glm::vec4(glm::vec3(transform[3]), 1.0f);
@@ -925,7 +1018,9 @@ namespace Timefall
 	{
 		s_Data.Shadows = settings;
 		s_Data.Shadows.CascadeCount = glm::clamp(s_Data.Shadows.CascadeCount, 1u, ShadowSettings::MaxCascades);
+
 		s_Data.Shadows.ShadowMapResolution = glm::max(s_Data.Shadows.ShadowMapResolution, 1u);
+		s_Data.Shadows.SpotShadowResolution = glm::max(s_Data.Shadows.SpotShadowResolution, 1u);
 	}
 
 	void Renderer3D::SetPostProcessSettings(const PostProcessSettings& settings)
@@ -1021,11 +1116,15 @@ namespace Timefall
 		const float innerCos = glm::cos(glm::radians(innerCutoffDegrees));
 		const float outerCos = glm::cos(glm::radians(outerCutoffDegrees));
 
-		GpuSpotLight& light = s_Data.Pass.SpotLights[s_Data.Pass.SpotCount++];
+		const uint32_t index = s_Data.Pass.SpotCount++;
+		GpuSpotLight& light = s_Data.Pass.SpotLights[index];
 		light.Position = glm::vec4(position, 0.0f);
 		light.Direction = glm::vec4(glm::normalize(direction), 0.0f);
 		light.Color = glm::vec4(SRGBToLinear(color), 0.0f);
 		light.Params = glm::vec4(range, innerCos, outerCos, intensity);
+
+		if (castsShadows)
+			s_Data.SpotCasters.push_back({.LightIndex = index, .Matrix = ComputeSpotMatrix(position, direction, range, outerCutoffDegrees), .LightSize = shadowSoftness * 0.16f, .DepthBias = depthBias});
 
 		s_Data.Stats.SpotLights = s_Data.Pass.SpotCount;
 	}
