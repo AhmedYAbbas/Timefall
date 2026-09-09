@@ -50,6 +50,15 @@ namespace Timefall
 	};
 	static_assert(sizeof(DrawPush) == 32);
 
+	struct ShadowPush
+	{
+		uint64_t Transforms = 0;
+		uint32_t TransformIndex = 0;
+		uint32_t ViewBase = 0;
+		glm::vec4 LightPosFar{0.0f};
+	};
+	static_assert(sizeof(ShadowPush) == 32);
+
 	struct SkyboxPush
 	{
 		glm::mat4 SkyViewProjection{1.0f};
@@ -153,6 +162,10 @@ namespace Timefall
 		uint32_t SunShadowLayers = 0;
 		uint32_t SunShadowResolution = 0;
 
+		Ref<Shader> ShadowDepthShader;
+		std::unordered_map<uint32_t, Ref<RHI::GraphicsPipeline>> ShadowPipelines; // keyed by (ViewMask, CullMode)
+		RHI::GraphicsPipeline* SunShadowPipeline = nullptr;
+
 		bool SunCastsShadow = false;
 		glm::vec3 SunDirection{0.0f, -1.0f, 0.0f};
 		float SunShadowSoftness = 0.5f;
@@ -168,6 +181,8 @@ namespace Timefall
 	static constexpr RHI::Format kIDFormat = RHI::Format::R32I;
 	static constexpr RHI::Format kDepthFormat = RHI::Format::D32F;
 	static constexpr RHI::Format kLDRFormat = RHI::Format::RGBA8Unorm;
+	static constexpr float kShadowConstantBias = 1.25f;
+	static constexpr float kShadowSlopeBias = 1.75f;
 
 	static glm::vec3 SRGBToLinear(const glm::vec3& c)
 	{
@@ -341,6 +356,45 @@ namespace Timefall
 		return true;
 	}
 
+	static constexpr RHI::CullMode ToRHICull(ShadowCullMode mode)
+	{
+		switch (mode)
+		{
+			case ShadowCullMode::Front: return RHI::CullMode::Front;
+			case ShadowCullMode::None:  return RHI::CullMode::None;
+			default:					return RHI::CullMode::Back;
+		}
+	}
+
+	static RHI::GraphicsPipeline* GetShadowPipeline(uint32_t viewCount, ShadowCullMode cull)
+	{
+		if (!s_Data.ShadowDepthShader)
+			return nullptr;
+
+		const uint32_t key = (viewCount << 8) | (uint32_t)cull;
+
+		auto it = s_Data.ShadowPipelines.find(key);
+		if (it == s_Data.ShadowPipelines.end())
+		{
+			RHI::GraphicsPipelineDesc desc;
+			desc.ShaderModule = s_Data.ShadowDepthShader;
+			desc.VertexLayout = {{ShaderDataType::Float3, "a_Position"}, {ShaderDataType::Float3, "a_Normal"},
+				{ShaderDataType::Float2, "a_TexCoord"}, {ShaderDataType::Float3, "a_Tangent"}, {ShaderDataType::Float3, "a_Bitangent"}};
+			desc.Primitive = RHI::Topology::TriangleList;
+			desc.ColorCount = 0;
+			desc.DepthFormat = kDepthFormat;
+			desc.ViewCount = viewCount;
+			desc.Depth = {.Test = true, .Write = true, .Compare = RHI::CompareOp::Less, .BiasEnable = true};
+			desc.Blend = RHI::BlendMode::None;
+			desc.Raster.Cull = ToRHICull(cull);
+			desc.DebugName = "Renderer3DShadowDepthPipeline";
+
+			it = s_Data.ShadowPipelines.emplace(key, RHI::GraphicsPipeline::Create(desc)).first;
+		}
+
+		return it->second && it->second->IsValid() ? it->second.get() : nullptr;
+	}
+
 	static uint32_t MapIndex(AssetHandle handle, bool srgb, uint32_t fallback)
 	{
 		if (handle == 0 || !AssetManager::IsAssetHandleValid(handle))
@@ -439,6 +493,7 @@ namespace Timefall
 		s_Data.Pass.PCFSamples = (int32_t)s_Data.Shadows.PCFSamples;
 		s_Data.Pass.SoftShadows = s_Data.Shadows.SoftShadows ? 1 : 0;
 
+		s_Data.SunShadowPipeline = nullptr;
 		if (s_Data.SunCastsShadow && EnsureSunShadowTarget())
 		{
 			ComputeCascades(s_Data.Pass.ViewProjection, s_Data.Pass.View, s_Data.SunDirection, s_Data.Shadows, s_Data.Pass);
@@ -447,6 +502,8 @@ namespace Timefall
 
 			s_Data.Stats.ShadowCasters++;
 			s_Data.Stats.CascadeCount = s_Data.Shadows.CascadeCount;
+
+			s_Data.SunShadowPipeline = GetShadowPipeline(s_Data.Shadows.CascadeCount, s_Data.Shadows.CullMode);
 		}
 
 		s_Data.PassSlice = RHI::Bindings::WritePassUniforms(&s_Data.Pass, sizeof(s_Data.Pass));
@@ -536,6 +593,48 @@ namespace Timefall
 		RHI::CommandList* cmd = RHI::RenderDevice::Get().GetCurrentCommandList();
 		if (!cmd)
 			return;
+
+		if (s_Data.Pass.CascadeCount > 0 && s_Data.SunShadowTarget && s_Data.SunShadowTarget->IsValid() && s_Data.TransformsAddress != 0)
+		{
+			if (RHI::GraphicsPipeline* pipeline = s_Data.SunShadowPipeline)
+			{
+				TF_PROFILE_SCOPE("Shadow Sun");
+				TF_PROFILE_GPU_SCOPE("Shadow Sun");
+				PerformanceStats::ScopedPassTimer passTimer("Shadow Sun");
+
+				cmd->BeginPass({.DebugName = "Shadow Sun",
+					.Target = s_Data.SunShadowTarget.get(),
+					.ViewCount = s_Data.Shadows.CascadeCount,
+					.Depth = {.Load = RHI::LoadOp::Clear, .ClearDepth = 1.0f}});
+
+				cmd->SetPassUniformSlice(s_Data.PassSlice);
+				cmd->BindPipeline(*pipeline);
+				cmd->SetDepthBias(kShadowConstantBias * s_Data.SunDepthBias, kShadowSlopeBias * s_Data.SunDepthBias);
+
+				const MeshSource* boundMesh = nullptr;
+				for (uint32_t i = 0; i < (uint32_t)s_Data.Submissions.size(); i++)
+				{
+					const MeshSubmission& sub = s_Data.Submissions[i];
+					if (sub.Mesh.get() != boundMesh)
+					{
+						cmd->BindVertexBuffer(*sub.Mesh->GetVertexBuffer());
+						cmd->BindIndexBuffer(*sub.Mesh->GetIndexBuffer(), RHI::IndexType::U32);
+					}
+
+					const ShadowPush push{.Transforms = s_Data.TransformsAddress,
+						.TransformIndex = i};
+					cmd->PushConstants(&push, sizeof(push));
+
+					const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
+					cmd->DrawIndexed(sm.IndexCount, 1, sm.BaseIndex, (int32_t)sm.BaseVertex);
+
+					s_Data.Stats.DrawCalls++;
+					s_Data.Stats.ShadowDrawCalls++;
+				}
+
+				cmd->EndPass();
+			}
+		}
 
 		{
 			TF_PROFILE_SCOPE("Forward Opaque");
@@ -755,6 +854,8 @@ namespace Timefall
 		blended.DebugName = "Renderer3DForwardBlendedPipeline";
 
 		s_Data.ForwardBlendedPipeline = RHI::GraphicsPipeline::Create(blended);
+
+		s_Data.ShadowDepthShader = ShaderLibrary::Load("Assets/Shaders/Renderer3D_ShadowDepth.slang");
 
 		s_Data.SkyboxShader = ShaderLibrary::Load("Assets/Shaders/Renderer3D_Skybox.slang");
 
