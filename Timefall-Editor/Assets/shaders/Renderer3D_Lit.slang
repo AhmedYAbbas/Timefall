@@ -156,6 +156,12 @@ FSOutput fsMain(VSOutput input)
 
 	Lo += m.EmissiveRoughness.rgb * m.Params.y * SampleBindless(m.Maps1.y, SAMPLER_LINEAR_REPEAT, input.uv).rgb;
 
+	if (u_Pass.VisualizeCascades == 1 && u_Pass.CascadeCount > 0)
+	{
+		const float3 tints[4] = {float3(1.0f, 0.4f, 0.4f), float3(0.4f, 1.0f, 0.4f), float3(0.4f, 0.4f, 1.0f), float3(1.0f, 1.0f, 0.4f)};
+		Lo *= tints[SelectCascade(viewDepth)];
+	}
+
 	FSOutput o;
 	o.color = float4(Lo, m.Maps1.z == 2 ? alpha : 1.0); // only Blend writes a real alpha
 	o.entityID = u_Draw.EntityID;
