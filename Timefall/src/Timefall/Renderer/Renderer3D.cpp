@@ -323,7 +323,8 @@ namespace Timefall
 		const uint32_t resolution = s_Data.Shadows.ShadowMapResolution;
 		const uint32_t layers = s_Data.Shadows.CascadeCount;
 
-		const bool matches = s_Data.SunShadowTarget && s_Data.SunShadowTarget->IsValid() && s_Data.SunShadowResolution == resolution && s_Data.SunShadowLayers == layers;
+		const bool matches = s_Data.SunShadowTarget && s_Data.SunShadowTarget->IsValid() && s_Data.SunShadowResolution == resolution
+			&& s_Data.SunShadowLayers == layers;
 
 		if (!matches)
 		{
@@ -361,8 +362,8 @@ namespace Timefall
 		switch (mode)
 		{
 			case ShadowCullMode::Front: return RHI::CullMode::Front;
-			case ShadowCullMode::None:  return RHI::CullMode::None;
-			default:					return RHI::CullMode::Back;
+			case ShadowCullMode::None: return RHI::CullMode::None;
+			default: return RHI::CullMode::Back;
 		}
 	}
 
@@ -465,7 +466,8 @@ namespace Timefall
 				Ref<Texture2D> equirect = AssetManager::GetAsset<Texture2D>(s_Data.ActiveEnvironmentHandle);
 				const std::filesystem::path sourcePath = ResolveEnvironmentSourcePath(s_Data.ActiveEnvironmentHandle);
 
-				it = s_Data.EnvironmentCacheMap.emplace(s_Data.ActiveEnvironmentHandle, equirect ? Environment::Create(equirect, sourcePath) : nullptr)
+				it = s_Data.EnvironmentCacheMap
+						 .emplace(s_Data.ActiveEnvironmentHandle, equirect ? Environment::Create(equirect, sourcePath) : nullptr)
 						 .first;
 			}
 
@@ -497,7 +499,9 @@ namespace Timefall
 		if (s_Data.SunCastsShadow && EnsureSunShadowTarget())
 		{
 			ComputeCascades(s_Data.Pass.ViewProjection, s_Data.Pass.View, s_Data.SunDirection, s_Data.Shadows, s_Data.Pass);
-			s_Data.Pass.LightSize = s_Data.SunShadowSoftness * 0.16f;
+			// Softness is the tangent of the light's angular radius: the real sun is 0.0047 (0.27 deg),
+			// so the 0..1 slider spans roughly 1x to 8x the sun and the 0.5 default sits near 4x
+			s_Data.Pass.LightSize = s_Data.SunShadowSoftness * 0.04f;
 			s_Data.Pass.DepthBias = s_Data.SunDepthBias;
 
 			s_Data.Stats.ShadowCasters++;
@@ -569,17 +573,15 @@ namespace Timefall
 		s_Data.OpaqueOrder.reserve(s_Data.Submissions.size());
 
 		for (uint32_t i = 0; i < (uint32_t)s_Data.Submissions.size(); i++)
-		{
 			if (s_Data.Submissions[i].Material->Alpha == AlphaMode::Blend)
 				s_Data.BlendedOrder.push_back(i);
 			else
 				s_Data.OpaqueOrder.push_back(i);
-		}
 
 		const glm::vec3 cameraPosition = glm::vec3(s_Data.Pass.CameraPosition);
 		std::ranges::sort(s_Data.BlendedOrder, [&](uint32_t a, uint32_t b) {
 			const glm::vec3 da = glm::vec3(s_Data.Submissions[a].Transform[3]) - cameraPosition;
-			const glm::vec3 db = glm::vec3(s_Data.Submissions[b].Transform[3]) - cameraPosition	;
+			const glm::vec3 db = glm::vec3(s_Data.Submissions[b].Transform[3]) - cameraPosition;
 			return glm::dot(da, da) > glm::dot(db, db);
 		});
 
@@ -621,8 +623,7 @@ namespace Timefall
 						cmd->BindIndexBuffer(*sub.Mesh->GetIndexBuffer(), RHI::IndexType::U32);
 					}
 
-					const ShadowPush push{.Transforms = s_Data.TransformsAddress,
-						.TransformIndex = i};
+					const ShadowPush push{.Transforms = s_Data.TransformsAddress, .TransformIndex = i};
 					cmd->PushConstants(&push, sizeof(push));
 
 					const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
@@ -649,7 +650,8 @@ namespace Timefall
 
 			cmd->SetPassUniformSlice(s_Data.PassSlice);
 
-			if (s_Data.TransformsAddress != 0 && s_Data.MaterialsAddress != 0 && s_Data.ForwardOpaquePipeline && s_Data.ForwardOpaquePipeline->IsValid())
+			if (s_Data.TransformsAddress != 0 && s_Data.MaterialsAddress != 0 && s_Data.ForwardOpaquePipeline
+				&& s_Data.ForwardOpaquePipeline->IsValid())
 			{
 				cmd->BindPipeline(*s_Data.ForwardOpaquePipeline);
 
