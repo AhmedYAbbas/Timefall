@@ -507,7 +507,7 @@ namespace Timefall
 			s_Data.Stats.ShadowCasters++;
 			s_Data.Stats.CascadeCount = s_Data.Shadows.CascadeCount;
 
-			s_Data.SunShadowPipeline = GetShadowPipeline(s_Data.Shadows.CascadeCount, s_Data.Shadows.CullMode);
+			s_Data.SunShadowPipeline = GetShadowPipeline(s_Data.Pass.CascadeCount, s_Data.Shadows.CullMode);
 		}
 
 		s_Data.PassSlice = RHI::Bindings::WritePassUniforms(&s_Data.Pass, sizeof(s_Data.Pass));
@@ -606,7 +606,7 @@ namespace Timefall
 
 				cmd->BeginPass({.DebugName = "Shadow Sun",
 					.Target = s_Data.SunShadowTarget.get(),
-					.ViewCount = s_Data.Shadows.CascadeCount,
+					.ViewCount = s_Data.Pass.CascadeCount,
 					.Depth = {.Load = RHI::LoadOp::Clear, .ClearDepth = 1.0f}});
 
 				cmd->SetPassUniformSlice(s_Data.PassSlice);
@@ -621,6 +621,7 @@ namespace Timefall
 					{
 						cmd->BindVertexBuffer(*sub.Mesh->GetVertexBuffer());
 						cmd->BindIndexBuffer(*sub.Mesh->GetIndexBuffer(), RHI::IndexType::U32);
+						boundMesh = sub.Mesh.get();
 					}
 
 					const ShadowPush push{.Transforms = s_Data.TransformsAddress, .TransformIndex = i};
@@ -977,12 +978,18 @@ namespace Timefall
 		if (s_Data.Pass.DirCount >= MAX_DIR_LIGHTS)
 			return;
 
-		GpuDirLight& light = s_Data.Pass.DirLights[s_Data.Pass.DirCount++];
+		const uint32_t index = s_Data.Pass.DirCount++;
+		GpuDirLight& light = s_Data.Pass.DirLights[index];
 		light.Direction = glm::vec4(glm::normalize(direction), 0.0f);
 		light.Color = glm::vec4(SRGBToLinear(color), intensity);
 
 		if (castsShadows && !s_Data.SunCastsShadow)
 		{
+			// Lit.slang shadows directional light 0 and no other, so the caster has to be light 0.
+			// Directional contributions are order-independent, so swapping it down costs nothing
+			if (index != 0)
+				std::swap(s_Data.Pass.DirLights[0], s_Data.Pass.DirLights[index]);
+
 			s_Data.SunCastsShadow = true;
 			s_Data.SunDirection = glm::normalize(direction);
 			s_Data.SunShadowSoftness = shadowSoftness;
