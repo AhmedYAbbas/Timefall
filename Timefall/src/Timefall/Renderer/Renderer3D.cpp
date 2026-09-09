@@ -147,6 +147,17 @@ namespace Timefall
 
 		bool NoTargetWarned = false;
 
+		ShadowSettings Shadows;
+
+		Ref<RHI::RenderTarget> SunShadowTarget;
+		uint32_t SunShadowLayers = 0;
+		uint32_t SunShadowResolution = 0;
+
+		bool SunCastsShadow = false;
+		glm::vec3 SunDirection{0.0f, -1.0f, 0.0f};
+		float SunShadowSoftness = 0.5f;
+		float SunDepthBias = 1.0f;
+
 		static constexpr float SHADOW_DEPTH_EXTENT = 6.0f;
 
 		Renderer3D::Statistics Stats;
@@ -292,6 +303,44 @@ namespace Timefall
 		return s_Data.HDRTarget && s_Data.HDRTarget->IsValid();
 	}
 
+	static bool EnsureSunShadowTarget()
+	{
+		const uint32_t resolution = s_Data.Shadows.ShadowMapResolution;
+		const uint32_t layers = s_Data.Shadows.CascadeCount;
+
+		const bool matches = s_Data.SunShadowTarget && s_Data.SunShadowTarget->IsValid() && s_Data.SunShadowResolution == resolution && s_Data.SunShadowLayers == layers;
+
+		if (!matches)
+		{
+			s_Data.SunShadowTarget = RHI::RenderTarget::Create({.Width = resolution,
+				.Height = resolution,
+				.ColorCount = 0,
+				.DepthFormat = kDepthFormat,
+				.Dim = RHI::Dimension::Tex2DArray,
+				.ArrayLayers = layers,
+				.DebugName = "SunShadowTarget"});
+
+			s_Data.SunShadowResolution = resolution;
+			s_Data.SunShadowLayers = layers;
+
+			if (!s_Data.SunShadowTarget || !s_Data.SunShadowTarget->IsValid())
+			{
+				TF_CORE_ERROR("Sun shadow target ({0}x{0}, {1} layers) failed to allocate", resolution, layers);
+				s_Data.SunShadowTarget = nullptr;
+				s_Data.SunShadowLayers = 0;
+				s_Data.SunShadowResolution = 0;
+				return false;
+			}
+
+			TF_CORE_INFO("Sun shadow target: {0}x{0}, {1} cascade layers", resolution, layers);
+		}
+
+		s_Data.Pass.SunShadowIndex = s_Data.SunShadowTarget->GetDepth()->GetBindlessIndex();
+		s_Data.Pass.SunShadowTexel = 1.0f / float(resolution);
+
+		return true;
+	}
+
 	static uint32_t MapIndex(AssetHandle handle, bool srgb, uint32_t fallback)
 	{
 		if (handle == 0 || !AssetManager::IsAssetHandleValid(handle))
@@ -383,6 +432,21 @@ namespace Timefall
 			s_Data.Pass.PrefilterIndex = s_Data.ActiveEnvironment->GetPrefilterMap()->GetBindlessIndex(false);
 			s_Data.Pass.SkyboxIndex = s_Data.SkyboxCubeIndex;
 			s_Data.Pass.HasEnvironment = 1;
+		}
+
+		s_Data.Pass.CascadeBlend = s_Data.Shadows.CascadeBlend;
+		s_Data.Pass.BlockerSamples = (int32_t)s_Data.Shadows.BlockerSearchSamples;
+		s_Data.Pass.PCFSamples = (int32_t)s_Data.Shadows.PCFSamples;
+		s_Data.Pass.SoftShadows = s_Data.Shadows.SoftShadows ? 1 : 0;
+
+		if (s_Data.SunCastsShadow && EnsureSunShadowTarget())
+		{
+			ComputeCascades(s_Data.Pass.ViewProjection, s_Data.Pass.View, s_Data.SunDirection, s_Data.Shadows, s_Data.Pass);
+			s_Data.Pass.LightSize = s_Data.SunShadowSoftness * 0.16f;
+			s_Data.Pass.DepthBias = s_Data.SunDepthBias;
+
+			s_Data.Stats.ShadowCasters++;
+			s_Data.Stats.CascadeCount = s_Data.Shadows.CascadeCount;
 		}
 
 		s_Data.PassSlice = RHI::Bindings::WritePassUniforms(&s_Data.Pass, sizeof(s_Data.Pass));
@@ -732,6 +796,7 @@ namespace Timefall
 		s_Data.Submissions.clear();
 		s_Data.Pass = {};
 		s_Data.ActiveEnvironmentHandle = 0; // outside Pass, so reset it here: no SkyLight means no environment
+		s_Data.SunCastsShadow = false;
 		s_Data.Pass.ViewProjection = camera.GetViewProjection();
 		s_Data.Pass.View = camera.GetView();
 		s_Data.Pass.CameraPosition = glm::vec4(camera.GetPosition(), 1.0f);
@@ -744,6 +809,7 @@ namespace Timefall
 		s_Data.Submissions.clear();
 		s_Data.Pass = {};
 		s_Data.ActiveEnvironmentHandle = 0; // outside Pass, so reset it here: no SkyLight means no environment
+		s_Data.SunCastsShadow = false;
 		const glm::mat4 view = glm::inverse(transform);
 		s_Data.Pass.ViewProjection = camera.GetProjection() * view;
 		s_Data.Pass.View = view;
@@ -751,7 +817,12 @@ namespace Timefall
 		s_Data.Projection = camera.GetProjection();
 	}
 
-	void Renderer3D::SetShadowSettings(const ShadowSettings& settings) {}
+	void Renderer3D::SetShadowSettings(const ShadowSettings& settings)
+	{
+		s_Data.Shadows = settings;
+		s_Data.Shadows.CascadeCount = glm::clamp(s_Data.Shadows.CascadeCount, 1u, ShadowSettings::MaxCascades);
+		s_Data.Shadows.ShadowMapResolution = glm::max(s_Data.Shadows.ShadowMapResolution, 1u);
+	}
 
 	void Renderer3D::SetPostProcessSettings(const PostProcessSettings& settings)
 	{
@@ -806,6 +877,14 @@ namespace Timefall
 		GpuDirLight& light = s_Data.Pass.DirLights[s_Data.Pass.DirCount++];
 		light.Direction = glm::vec4(glm::normalize(direction), 0.0f);
 		light.Color = glm::vec4(SRGBToLinear(color), intensity);
+
+		if (castsShadows && !s_Data.SunCastsShadow)
+		{
+			s_Data.SunCastsShadow = true;
+			s_Data.SunDirection = glm::normalize(direction);
+			s_Data.SunShadowSoftness = shadowSoftness;
+			s_Data.SunDepthBias = depthBias;
+		}
 
 		s_Data.Stats.DirectionalLights = s_Data.Pass.DirCount;
 	}
