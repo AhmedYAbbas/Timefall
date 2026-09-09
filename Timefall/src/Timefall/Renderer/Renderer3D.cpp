@@ -50,14 +50,20 @@ namespace Timefall
 	};
 	static_assert(sizeof(DrawPush) == 32);
 
+	inline constexpr uint32_t kShadowModeSun = 0;
+	inline constexpr uint32_t kShadowModeSpot = 1;
+
 	struct ShadowPush
 	{
 		uint64_t Transforms = 0;
 		uint32_t TransformIndex = 0;
 		uint32_t ViewBase = 0;
 		glm::vec4 LightPosFar{0.0f};
+
+		uint32_t Mode = kShadowModeSun;
+		uint32_t _Pad[3]{};
 	};
-	static_assert(sizeof(ShadowPush) == 32);
+	static_assert(sizeof(ShadowPush) == 48);
 
 	struct SkyboxPush
 	{
@@ -208,6 +214,8 @@ namespace Timefall
 	static constexpr RHI::Format kLDRFormat = RHI::Format::RGBA8Unorm;
 	static constexpr float kShadowConstantBias = 1.25f;
 	static constexpr float kShadowSlopeBias = 1.75f;
+	static constexpr float kSpotConstantBias = 1.25f;
+	static constexpr float kSpotSlopeBias = 2.5f;
 
 	static glm::vec3 SRGBToLinear(const glm::vec3& c)
 	{
@@ -713,11 +721,56 @@ namespace Timefall
 						boundMesh = sub.Mesh.get();
 					}
 
-					const ShadowPush push{.Transforms = s_Data.TransformsAddress, .TransformIndex = i};
+					const ShadowPush push{.Transforms = s_Data.TransformsAddress, .TransformIndex = i, .Mode = kShadowModeSun};
 					cmd->PushConstants(&push, sizeof(push));
 
 					const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
 					cmd->DrawIndexed(sm.IndexCount, 1, sm.BaseIndex, (int32_t)sm.BaseVertex);
+
+					s_Data.Stats.DrawCalls++;
+					s_Data.Stats.ShadowDrawCalls++;
+				}
+
+				cmd->EndPass();
+			}
+		}
+
+		if (!s_Data.SpotChunks.empty() && s_Data.SpotShadowTarget && s_Data.SpotShadowTarget->IsValid() && s_Data.TransformsAddress != 0)
+		{
+			TF_PROFILE_SCOPE("Shadow Spot");
+			TF_PROFILE_GPU_SCOPE("Shadow Spot");
+			PerformanceStats::ScopedPassTimer passTimer("Shadow Spot");
+
+			for (const ShadowChunk& chunk : s_Data.SpotChunks)
+			{
+				if (!chunk.Pipeline)
+					continue;
+
+				cmd->BeginPass({.DebugName = "Shadow Spot",
+					.Target = s_Data.SpotShadowTarget.get(),
+					.Layer = chunk.BaseLayer,
+					.ViewCount = chunk.ViewCount,
+					.Depth = {.Load = RHI::LoadOp::Clear, .ClearDepth = 1.0f}});
+
+				cmd->SetPassUniformSlice(s_Data.PassSlice);
+				cmd->BindPipeline(*chunk.Pipeline);
+				cmd->SetDepthBias(kSpotConstantBias * chunk.DepthBias, kSpotSlopeBias * chunk.DepthBias);
+
+				const MeshSource* boundMesh = nullptr;
+				for (uint32_t i = 0; i < (uint32_t)s_Data.Submissions.size(); i++)
+				{
+					const MeshSubmission& sub = s_Data.Submissions[i];
+					if (sub.Mesh.get() != boundMesh)
+					{
+						cmd->BindVertexBuffer(*sub.Mesh->GetVertexBuffer());
+						cmd->BindIndexBuffer(*sub.Mesh->GetIndexBuffer(), RHI::IndexType::U32);
+						boundMesh = sub.Mesh.get();
+					}
+
+					const ShadowPush push{.Transforms = s_Data.TransformsAddress, .TransformIndex = i, .ViewBase = chunk.BaseLayer, .Mode = kShadowModeSpot};
+					cmd->PushConstants(&push, sizeof(push));
+
+					const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
 
 					s_Data.Stats.DrawCalls++;
 					s_Data.Stats.ShadowDrawCalls++;

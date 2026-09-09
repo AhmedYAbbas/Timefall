@@ -15,6 +15,9 @@ struct GpuTransform
 	float4 Normal2;
 }
 
+static const uint SHADOW_MODE_SUN = 0;
+static const uint SHADOW_MODE_SPOT = 1;
+
 // Shared by all three shadow types. LightPosFar is dead for sun and spot
 struct ShadowPush
 {
@@ -22,6 +25,10 @@ struct ShadowPush
 	uint TransformIndex;
 	uint ViewBase;
 	float4 LightPosFar; // xyz = light position, w = far plane distance for point/spot
+	uint Mode;
+	uint _Pad0;
+	uint _Pad1;
+	uint _Pad2;
 }
 
 [[vk::push_constant]]
@@ -35,7 +42,8 @@ float4 vsMain(float3 position, float3 normal, float2 texCoord, float3 tangent, f
 	const GpuTransform t = u_Shadow.Transforms[u_Shadow.TransformIndex];
 	const float4 world = mul(t.Model, float4(position, 1.0f));
 
-	return mul(u_Pass.LightViewProj[u_Shadow.ViewBase + viewID], world);
+	const float4x4 lightViewProj = u_Shadow.Mode == SHADOW_MODE_SPOT ? u_Pass.SpotLightViewProj[u_Shadow.ViewBase + viewID] : u_Pass.LightViewProj[u_Shadow.ViewBase + viewID];
+	return mul(lightViewProj, world);
 }
 
 // Empty, but required: the pipeline always builds two stages
