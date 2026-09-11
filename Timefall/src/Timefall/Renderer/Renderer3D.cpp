@@ -412,7 +412,13 @@ namespace Timefall
 			const bool keepLayers = s_Data.SpotShadowTarget && s_Data.SpotShadowResolution == resolution;
 			const uint32_t layers = keepLayers ? glm::max(casterCount, s_Data.SpotShadowLayers) : casterCount;
 
-			s_Data.SpotShadowTarget = RHI::RenderTarget::Create({.Width = resolution, .Height = resolution, .ColorCount = 0, .DepthFormat = kDepthFormat, .Dim = RHI::Dimension::Tex2DArray, .ArrayLayers = layers, .DebugName = "SpotShadowTarget"});
+			s_Data.SpotShadowTarget = RHI::RenderTarget::Create({.Width = resolution,
+				.Height = resolution,
+				.ColorCount = 0,
+				.DepthFormat = kDepthFormat,
+				.Dim = RHI::Dimension::Tex2DArray,
+				.ArrayLayers = layers,
+				.DebugName = "SpotShadowTarget"});
 
 			s_Data.SpotShadowResolution = resolution;
 			s_Data.SpotShadowLayers = layers;
@@ -855,7 +861,8 @@ namespace Timefall
 						boundMesh = sub.Mesh.get();
 					}
 
-					const ShadowPush push{.Transforms = s_Data.TransformsAddress, .TransformIndex = i, .ViewBase = chunk.BaseLayer, .Mode = kShadowModeSpot};
+					const ShadowPush push{
+						.Transforms = s_Data.TransformsAddress, .TransformIndex = i, .ViewBase = chunk.BaseLayer, .Mode = kShadowModeSpot};
 					cmd->PushConstants(&push, sizeof(push));
 
 					const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
@@ -869,7 +876,8 @@ namespace Timefall
 			}
 		}
 
-		if (s_Data.PointShadowPipeline && !s_Data.PointCasters.empty() && s_Data.PointShadowTarget && s_Data.PointShadowTarget->IsValid() && s_Data.TransformsAddress != 0)
+		if (s_Data.PointShadowPipeline && !s_Data.PointCasters.empty() && s_Data.PointShadowTarget && s_Data.PointShadowTarget->IsValid()
+			&& s_Data.TransformsAddress != 0)
 		{
 			TF_PROFILE_SCOPE("Shadow Point");
 			TF_PROFILE_GPU_SCOPE("Shadow Point");
@@ -900,7 +908,10 @@ namespace Timefall
 						boundMesh = sub.Mesh.get();
 					}
 
-					const ShadowPush push{.Transforms = s_Data.TransformsAddress, .TransformIndex = i, .LightPosFar = glm::vec4(caster.Position, caster.Range), .Mode = kShadowModePoint};
+					const ShadowPush push{.Transforms = s_Data.TransformsAddress,
+						.TransformIndex = i,
+						.LightPosFar = glm::vec4(caster.Position, caster.Range),
+						.Mode = kShadowModePoint};
 					cmd->PushConstants(&push, sizeof(push));
 
 					const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
@@ -1296,7 +1307,8 @@ namespace Timefall
 		light.Color = glm::vec4(SRGBToLinear(color), intensity);
 
 		if (castsShadows)
-			s_Data.PointCasters.push_back({.LightIndex = index, .Position = position, .Range = range, .LightSize = shadowSoftness * 0.1f, .DepthBias = depthBias});
+			s_Data.PointCasters.push_back(
+				{.LightIndex = index, .Position = position, .Range = range, .LightSize = shadowSoftness * 0.1f, .DepthBias = depthBias});
 
 		s_Data.Stats.PointLights = s_Data.Pass.PointCount;
 	}
@@ -1321,7 +1333,10 @@ namespace Timefall
 		light.Params = glm::vec4(range, innerCos, outerCos, intensity);
 
 		if (castsShadows)
-			s_Data.SpotCasters.push_back({.LightIndex = index, .Matrix = ComputeSpotMatrix(position, direction, range, outerCutoffDegrees), .LightSize = shadowSoftness * 0.16f, .DepthBias = depthBias});
+			s_Data.SpotCasters.push_back({.LightIndex = index,
+				.Matrix = ComputeSpotMatrix(position, direction, range, outerCutoffDegrees),
+				.LightSize = shadowSoftness * 0.16f,
+				.DepthBias = depthBias});
 
 		s_Data.Stats.SpotLights = s_Data.Pass.SpotCount;
 	}
