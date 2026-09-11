@@ -63,7 +63,7 @@ struct PassUniforms
 
 	uint SunShadowIndex;
 	uint SpotShadowIndex;
-	uint _ShadowPad1;
+	uint PointShadowIndex;
 
 	float SunShadowTexel;
 	float SpotShadowTexel;

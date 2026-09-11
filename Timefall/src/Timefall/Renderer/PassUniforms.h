@@ -78,11 +78,11 @@ namespace Timefall
 
 		uint32_t SunShadowIndex = 0; // g_TextureArrays slot of the cascade depth array; 0 = white fallback
 		uint32_t SpotShadowIndex = 0; // g_TextureArrays slot of the spot atlas; 0 = white fallback
-		uint32_t _ShadowPad1 = 0;
+		uint32_t PointShadowIndex = 0; // g_TextureCubeArrays slot of the point cubes; 0 = white fallback
 
 		float SunShadowTexel = 1.0f; // 1 / ShadowMapResolution, in UV
 		float SpotShadowTexel = 1.0f; // 1 / SpotShadowResolution, in UV
-		float PointShadowTexel = 1.0f;
+		float PointShadowTexel = 1.0f; // 1 / PointShadowResolution, in UV
 		uint32_t _ShadowPad2 = 0;
 		uint32_t _ShadowPad3 = 0;
 	};
@@ -100,6 +100,8 @@ namespace Timefall
 	static_assert(offsetof(PassUniforms, PointShadowParams) == 3984);
 	static_assert(offsetof(PassUniforms, SunShadowIndex) == 4496);
 	static_assert(offsetof(PassUniforms, SpotShadowTexel) == 4512);
+	static_assert(offsetof(PassUniforms, PointShadowIndex) == 4504);
+	static_assert(offsetof(PassUniforms, PointShadowTexel) == 4516);
 
 	// The slice must hold the struct; the descriptor's range is PassUniformSlotBytes
 	static_assert(sizeof(PassUniforms) <= RHI::PassUniformSlotBytes);
