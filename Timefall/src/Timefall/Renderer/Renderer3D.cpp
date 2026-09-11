@@ -620,16 +620,20 @@ namespace Timefall
 		s_Data.SunShadowPipeline = nullptr;
 		if (s_Data.SunCastsShadow && EnsureSunShadowTarget())
 		{
-			ComputeCascades(s_Data.Pass.ViewProjection, s_Data.Pass.View, s_Data.SunDirection, s_Data.Shadows, s_Data.Pass);
-			// Softness is the tangent of the light's angular radius: the real sun is 0.0047 (0.27 deg),
-			// so the 0..1 slider spans roughly 1x to 8x the sun and the 0.5 default sits near 4x
-			s_Data.Pass.LightSize = s_Data.SunShadowSoftness * 0.04f;
-			s_Data.Pass.DepthBias = s_Data.SunDepthBias;
+			s_Data.SunShadowPipeline = GetShadowPipeline(s_Data.Shadows.CascadeCount, s_Data.Shadows.CullMode);
 
-			s_Data.Stats.ShadowCasters++;
-			s_Data.Stats.CascadeCount = s_Data.Shadows.CascadeCount;
+			// Without a pipeline the cascades are never written, so nothing may be told to read them
+			if (s_Data.SunShadowPipeline)
+			{
+				ComputeCascades(s_Data.Pass.ViewProjection, s_Data.Pass.View, s_Data.SunDirection, s_Data.Shadows, s_Data.Pass);
+				// Softness is the tangent of the light's angular radius: the real sun is 0.0047 (0.27 deg),
+				// so the 0..1 slider spans roughly 1x to 8x the sun and the 0.5 default sits near 4x
+				s_Data.Pass.LightSize = s_Data.SunShadowSoftness * 0.04f;
+				s_Data.Pass.DepthBias = s_Data.SunDepthBias;
 
-			s_Data.SunShadowPipeline = GetShadowPipeline(s_Data.Pass.CascadeCount, s_Data.Shadows.CullMode);
+				s_Data.Stats.ShadowCasters++;
+				s_Data.Stats.CascadeCount = s_Data.Shadows.CascadeCount;
+			}
 		}
 
 		s_Data.SpotChunks.clear();
@@ -644,7 +648,6 @@ namespace Timefall
 				const SpotCaster& caster = s_Data.SpotCasters[layer];
 
 				s_Data.Pass.SpotLightViewProj[layer] = caster.Matrix;
-				s_Data.Pass.SpotShadowParams[caster.LightIndex] = glm::vec4(1.0f, caster.LightSize, caster.DepthBias, (float)layer);
 
 				const bool breakChunk = s_Data.SpotChunks.empty() || s_Data.SpotChunks.back().ViewCount >= maxViews
 					|| s_Data.SpotChunks.back().DepthBias != caster.DepthBias;
@@ -656,9 +659,21 @@ namespace Timefall
 			}
 
 			for (ShadowChunk& chunk : s_Data.SpotChunks)
+			{
 				chunk.Pipeline = GetShadowPipeline(chunk.ViewCount, s_Data.Shadows.CullMode);
 
-			s_Data.Stats.ShadowCasters += (uint32_t)s_Data.SpotCasters.size();
+				// Without a pipeline these layers are never written, so nothing may be told to read them
+				if (!chunk.Pipeline)
+					continue;
+
+				for (uint32_t layer = chunk.BaseLayer; layer < chunk.BaseLayer + chunk.ViewCount; layer++)
+				{
+					const SpotCaster& caster = s_Data.SpotCasters[layer];
+					s_Data.Pass.SpotShadowParams[caster.LightIndex] = glm::vec4(1.0f, caster.LightSize, caster.DepthBias, (float)layer);
+				}
+
+				s_Data.Stats.ShadowCasters += chunk.ViewCount;
+			}
 		}
 
 		s_Data.PointShadowPipeline = nullptr;
@@ -666,6 +681,7 @@ namespace Timefall
 		{
 			s_Data.PointShadowPipeline = GetShadowPipeline(6, s_Data.Shadows.CullMode, true);
 
+			// Without a pipeline the cubes are never written, so nothing may be told to read them
 			if (s_Data.PointShadowPipeline)
 			{
 				for (uint32_t cube = 0; cube < (uint32_t)s_Data.PointCasters.size(); cube++)

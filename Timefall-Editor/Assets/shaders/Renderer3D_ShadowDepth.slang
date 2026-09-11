@@ -1,6 +1,6 @@
 //--------------------------
 // - Timefall -
-// Depth-only shadow pass. One multiview draw fills every cascade layer; SV_ViewID picks the matrix
+// Depth-only shadow pass for sun, spot and point. One multiview draw fills every view; SV_ViewID picks the matrix or cube face
 // --------------------------
 
 import Common.Bindings;
@@ -20,6 +20,7 @@ static const uint SHADOW_MODE_SUN = 0;
 static const uint SHADOW_MODE_SPOT = 1;
 static const uint SHADOW_MODE_POINT = 2;
 
+// Rows map (worldPos - lightPos) to (x = sc, y = -tc, depth = |ma|) under the Y-flipped viewport: GL's lookAt faces with the up row negated
 static const float3x3 CUBE_FACE_BASIS[6] = {
 	float3x3( 0, 0, -1, 0, 1,  0,  1,  0,  0),	// +X
 	float3x3( 0, 0,  1, 0, 1,  0, -1,  0,  0),	// -X
@@ -55,6 +56,7 @@ float4 vsMain(float3 position, float3 normal, float2 texCoord, float3 tangent, f
 
 	if (u_Shadow.Mode == SHADOW_MODE_POINT)
 	{
+		// 90-degree faces need no x/y scale; z stays affine in depth so the divide yields A + B / depth with no NaN at the light
 		const float3 v = mul(CUBE_FACE_BASIS[viewID], world.xyz - u_Shadow.LightPosFar.xyz);
 		const float2 depth = PerspectiveDepthCoeffs(POINT_SHADOW_NEAR, PointShadowFar(u_Shadow.LightPosFar.w));
 		return float4(v.x, v.y, depth.x * v.z + depth.y, v.z);
