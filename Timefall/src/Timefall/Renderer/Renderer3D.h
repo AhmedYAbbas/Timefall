@@ -35,7 +35,7 @@ namespace Timefall
 		static void BeginScene(const Camera& camera, const glm::mat4& transform);
 		static void EndScene();
 
-		// Call before EndScene. Recreates the shadow map on resolution / cascade-count change.
+		// Call before EndScene. Clamps to the shadow panel's ranges; EndScene reconciles the shadow targets against it.
 		static void SetShadowSettings(const ShadowSettings& settings);
 		static void SetPostProcessSettings(const PostProcessSettings& settings);
 
@@ -56,11 +56,11 @@ namespace Timefall
 
 		static void SubmitEnvironment(AssetHandle environmentMap, float intensity, float rotationDegrees);
 
-		// Per-frame counters, reset at the top of EndScene. Read by the editor ProfilerPanel.
+		// Per-frame counters, reset in BeginScene. Read by the editor ProfilerPanel.
 		struct Statistics
 		{
 			uint32_t DrawCalls = 0; // every draw call, all passes
-			uint32_t ShadowDrawCalls = 0; // sun cascades + spot + point faces (subset of DrawCalls)
+			uint32_t ShadowDrawCalls = 0; // one per submission per shadow pass, not per layer (subset of DrawCalls)
 
 			uint32_t OpaqueMeshes = 0; // forward opaque/mask submissions
 			uint32_t BlendedMeshes = 0; // forward blended submissions

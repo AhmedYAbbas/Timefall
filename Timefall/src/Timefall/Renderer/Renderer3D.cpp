@@ -1216,12 +1216,22 @@ namespace Timefall
 
 	void Renderer3D::SetShadowSettings(const ShadowSettings& settings)
 	{
+		// ShadowSettingsPanel's ranges: YAML and scripts bypass the panel, and PCFSamples = 0 divides by zero in Shadows.slang
 		s_Data.Shadows = settings;
 		s_Data.Shadows.CascadeCount = glm::clamp(s_Data.Shadows.CascadeCount, 1u, ShadowSettings::MaxCascades);
 
 		s_Data.Shadows.ShadowMapResolution = glm::max(s_Data.Shadows.ShadowMapResolution, 1u);
 		s_Data.Shadows.SpotShadowResolution = glm::max(s_Data.Shadows.SpotShadowResolution, 1u);
 		s_Data.Shadows.PointShadowResolution = glm::max(s_Data.Shadows.PointShadowResolution, 1u);
+
+		s_Data.Shadows.MaxShadowDistance = glm::clamp(s_Data.Shadows.MaxShadowDistance, 1.0f, 1000.0f);
+		s_Data.Shadows.SplitLambda = glm::clamp(s_Data.Shadows.SplitLambda, 0.0f, 1.0f);
+		s_Data.Shadows.CascadeBlend = glm::clamp(s_Data.Shadows.CascadeBlend, 0.0f, 0.5f);
+		s_Data.Shadows.BlockerSearchSamples = glm::clamp(s_Data.Shadows.BlockerSearchSamples, 4u, 16u);
+		s_Data.Shadows.PCFSamples = glm::clamp(s_Data.Shadows.PCFSamples, 4u, 16u);
+
+		if (s_Data.Shadows.CullMode > ShadowCullMode::None)
+			s_Data.Shadows.CullMode = ShadowCullMode::Back;
 	}
 
 	void Renderer3D::SetPostProcessSettings(const PostProcessSettings& settings)
