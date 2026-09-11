@@ -181,118 +181,7 @@ namespace Timefall
 			}
 		}
 
-		Camera* mainCamera = nullptr;
-		glm::mat4 cameraTransform;
-		{
-			auto group = m_Registry.group<CameraComponent>(entt::get<TransformComponent>);
-			for (auto entity : group)
-			{
-				auto [transform, camera] = group.get<TransformComponent, CameraComponent>(entity);
-				if (camera.Primary)
-				{
-					mainCamera = &camera.Camera;
-					cameraTransform = Entity{entity, this}.GetWorldTransform();
-				}
-			}
-		}
-
-		if (mainCamera)
-		{
-			TF_PROFILE_SCOPE("Scene Render");
-			PerformanceStats::ScopedPassTimer passTimer("Scene Render");
-
-			// --- 3D pass (depth-tested) ---
-			Renderer3D::BeginScene(*mainCamera, cameraTransform);
-			Renderer3D::SetShadowSettings(m_ShadowSettings);
-			Renderer3D::SetPostProcessSettings(m_PostProcessSettings);
-			// Gather lights (must precede mesh submission — meshes read the Lights UBO).
-			{
-				auto lightView = m_Registry.view<TransformComponent, LightComponent>();
-				for (auto entity : lightView)
-				{
-					auto& light = lightView.get<LightComponent>(entity);
-					glm::mat4 world = Entity{entity, this}.GetWorldTransform();
-					glm::vec3 position = glm::vec3(world[3]);
-					glm::vec3 direction = glm::normalize(glm::mat3(world) * glm::vec3(0.0f, 0.0f, -1.0f));
-
-					switch (light.Type)
-					{
-						case LightComponent::LightType::Directional:
-							Renderer3D::SubmitDirectionalLight(
-								direction, light.Color, light.Intensity, light.CastsShadows, light.ShadowSoftness, light.DepthBias);
-							break;
-						case LightComponent::LightType::Point:
-							Renderer3D::SubmitPointLight(position, light.Color, light.Intensity, light.Range, light.CastsShadows,
-								light.ShadowSoftness, light.DepthBias);
-							break;
-						case LightComponent::LightType::Spot:
-							Renderer3D::SubmitSpotLight(position, direction, light.Color, light.Intensity, light.Range, light.InnerCutoff,
-								light.OuterCutoff, light.CastsShadows, light.ShadowSoftness, light.DepthBias);
-							break;
-					}
-				}
-			}
-			{
-				auto skyView = m_Registry.view<SkyLightComponent>();
-				for (auto entity : skyView)
-				{
-					auto& sky = skyView.get<SkyLightComponent>(entity);
-					Renderer3D::SubmitEnvironment(sky.EnvironmentMap, sky.Intensity, sky.Rotation);
-					break; // first SkyLight wins, mirroring the shadow-sun rule
-				}
-			}
-			{
-				auto view = m_Registry.view<TransformComponent, MeshComponent>();
-				for (auto entity : view)
-				{
-					auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
-					if (mesh.Mesh == 0 || !AssetManager::IsAssetHandleValid(mesh.Mesh))
-						continue;
-					Ref<MeshSource> meshSource = AssetManager::GetAsset<MeshSource>(mesh.Mesh);
-					Ref<Material> material = (mesh.Material != 0 && AssetManager::IsAssetHandleValid(mesh.Material))
-						? AssetManager::GetAsset<Material>(mesh.Material)
-						: Renderer3D::GetDefaultMaterial();
-					Renderer3D::SubmitMesh(Entity{entity, this}.GetWorldTransform(), meshSource, mesh.Submesh, material, (int)entity);
-				}
-			}
-			Renderer3D::EndScene();
-
-			// --- 2D overlay pass (no depth test; draws on top) ---
-			Renderer2D::BeginScene(*mainCamera, cameraTransform);
-
-			// Draw sprites
-			{
-				auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
-				for (auto entity : group)
-				{
-					auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-					Renderer2D::DrawSprite(Entity{entity, this}.GetWorldTransform(), sprite, (int)entity);
-				}
-			}
-
-			// Draw circles
-			{
-				auto group = m_Registry.group<CircleRendererComponent>(entt::get<TransformComponent>);
-				for (auto entity : group)
-				{
-					auto [crc, transform] = group.get<CircleRendererComponent, TransformComponent>(entity);
-					Renderer2D::DrawCircle(Entity{entity, this}.GetWorldTransform(), crc.Color, crc.Thickness, crc.Fade, (int)entity);
-				}
-			}
-
-			// Draw texts
-			{
-				auto group = m_Registry.group<TextComponent>(entt::get<TransformComponent>);
-				for (auto entity : group)
-				{
-					auto [textComponent, transform] = group.get<TextComponent, TransformComponent>(entity);
-					Renderer2D::DrawString(textComponent.Text, textComponent.FontAsset, Entity{entity, this}.GetWorldTransform(),
-						{textComponent.Color, textComponent.Kerning, textComponent.LineSpacing}, (int)entity);
-				}
-			}
-
-			Renderer2D::EndScene();
-		}
+		RenderRuntime();
 
 		// Safe point: scripts and component iteration are done for this frame.
 		FlushDestroyQueue();
@@ -702,11 +591,19 @@ namespace Timefall
 	{
 		TF_PROFILE_FUNCTION();
 
-		// --- 3D pass (depth-tested) ---
 		Renderer3D::BeginScene(camera);
+		Submit3DPass();
+
+		Renderer2D::BeginScene(camera);
+		Submit2DPass();
+	}
+
+	void Scene::Submit3DPass()
+	{
 		Renderer3D::SetShadowSettings(m_ShadowSettings);
 		Renderer3D::SetPostProcessSettings(m_PostProcessSettings);
-		// Gather lights (must precede mesh submission — meshes read the Lights UBO).
+
+		// Gather lights
 		{
 			auto lightView = m_Registry.view<TransformComponent, LightComponent>();
 			for (auto entity : lightView)
@@ -733,6 +630,7 @@ namespace Timefall
 				}
 			}
 		}
+
 		{
 			auto skyView = m_Registry.view<SkyLightComponent>();
 			for (auto entity : skyView)
@@ -742,6 +640,7 @@ namespace Timefall
 				break; // first SkyLight wins, mirroring the shadow-sun rule
 			}
 		}
+
 		{
 			auto view = m_Registry.view<TransformComponent, MeshComponent>();
 			for (auto entity : view)
@@ -749,6 +648,7 @@ namespace Timefall
 				auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
 				if (mesh.Mesh == 0 || !AssetManager::IsAssetHandleValid(mesh.Mesh))
 					continue;
+
 				Ref<MeshSource> meshSource = AssetManager::GetAsset<MeshSource>(mesh.Mesh);
 				Ref<Material> material = (mesh.Material != 0 && AssetManager::IsAssetHandleValid(mesh.Material))
 					? AssetManager::GetAsset<Material>(mesh.Material)
@@ -756,11 +656,12 @@ namespace Timefall
 				Renderer3D::SubmitMesh(Entity{entity, this}.GetWorldTransform(), meshSource, mesh.Submesh, material, (int)entity);
 			}
 		}
+
 		Renderer3D::EndScene();
+	}
 
-		// --- 2D overlay pass (no depth test; draws on top) ---
-		Renderer2D::BeginScene(camera);
-
+	void Scene::Submit2DPass()
+	{
 		// Draw sprites
 		{
 			auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
@@ -781,7 +682,7 @@ namespace Timefall
 			}
 		}
 
-		// Draw Texts
+		// Draw texts
 		{
 			auto group = m_Registry.group<TextComponent>(entt::get<TransformComponent>);
 			for (auto entity : group)
@@ -793,6 +694,27 @@ namespace Timefall
 		}
 
 		Renderer2D::EndScene();
+	}
+
+	bool Scene::RenderRuntime()
+	{
+		Entity cameraEntity = GetPrimaryCameraEntity();
+		if (!cameraEntity)
+			return false;
+
+		TF_PROFILE_SCOPE("Scene Render");
+		PerformanceStats::ScopedPassTimer passTimer("Scene Render");
+
+		Camera& camera = cameraEntity.GetComponent<CameraComponent>().Camera;
+		glm::mat4 cameraTransform = cameraEntity.GetWorldTransform();
+
+		Renderer3D::BeginScene(camera, cameraTransform);
+		Submit3DPass();
+
+		Renderer2D::BeginScene(camera, cameraTransform);
+		Submit2DPass();
+
+		return true;
 	}
 
 	template <typename T> TF_API void Scene::OnComponentAdded(Entity entity, T& component)

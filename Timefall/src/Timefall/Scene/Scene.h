@@ -55,6 +55,8 @@ namespace Timefall
 		void OnSimulationStop();
 
 		void OnUpdateRuntime(Timestep ts);
+		bool RenderRuntime();
+
 		void OnUpdateSimulation(Timestep ts, EditorCamera& camera);
 		void OnUpdateEditor(Timestep ts, EditorCamera& camera);
 		void OnViewportResize(uint32_t width, uint32_t height);
@@ -111,6 +113,9 @@ namespace Timefall
 		Entity DuplicateEntitySubtree(Entity entity);
 
 		void RenderScene(EditorCamera& camera);
+
+		void Submit3DPass();
+		void Submit2DPass();
 
 	private:
 		entt::registry m_Registry;
