@@ -10,7 +10,9 @@ int main(int argc, char** argv)
 
 	const auto app = Timefall::CreateApplication({argc, argv});
 	app->Run();
+	const int exitCode = app->GetExitCode();
 	delete app;
+	return exitCode;
 }
 
 #endif

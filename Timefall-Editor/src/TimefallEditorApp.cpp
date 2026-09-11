@@ -2,16 +2,20 @@
 #include <Timefall/Core/EntryPoint.h>
 
 #include "EditorLayer.h"
+#include "Regression/RegressionLayer.h"
 
 namespace Timefall
 {
 	class TimefallEditor : public Application
 	{
 	public:
-		TimefallEditor(const ApplicationSpecification& spec)
+		TimefallEditor(const ApplicationSpecification& spec, bool regression, bool updateGoldens)
 			: Application(spec)
 		{
-			PushLayer(new EditorLayer());
+			if (regression)
+				PushLayer(new RegressionLayer(updateGoldens));
+			else
+				PushLayer(new EditorLayer());
 		}
 
 		~TimefallEditor() = default;
@@ -23,6 +27,17 @@ namespace Timefall
 		spec.Name = "Timefall Editor";
 		spec.CommandLineArgs = args;
 
-		return new TimefallEditor(spec);
+		bool regression = false, updateGoldens = false;
+
+		for (int i = 2; i < args.Count; i++)
+		{
+			std::string_view arg = args[i];
+			if (arg == "--regression")
+				regression = true;
+			else if (arg == "--update-goldens")
+				updateGoldens = true;
+		}
+
+		return new TimefallEditor(spec, regression, updateGoldens);
 	}
 }

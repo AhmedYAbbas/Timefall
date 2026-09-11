@@ -94,9 +94,10 @@ namespace Timefall
 		overlay->OnAttach();
 	}
 
-	void Application::Shutdown()
+	void Application::Shutdown(int exitCode)
 	{
 		m_Running = false;
+		m_ExitCode = exitCode;
 	}
 
 	void Application::SubmitToMainThread(const std::function<void()>& function)

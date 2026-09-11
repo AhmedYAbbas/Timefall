@@ -39,7 +39,8 @@ namespace Timefall
 
 		void PushLayer(Layer* layer);
 		void PushOverlay(Layer* overlay);
-		void Shutdown();
+		void Shutdown(int exitCode = 0);
+		int GetExitCode() const { return m_ExitCode; }
 
 		ImGuiLayer* GetImGuiLayer() { return m_ImGuiLayer; }
 
@@ -63,6 +64,7 @@ namespace Timefall
 		ImGuiLayer* m_ImGuiLayer;
 		bool m_Running = true;
 		bool m_Minimized = false;
+		int m_ExitCode = 0;
 		LayerStack m_LayerStack;
 		float m_LastFrameTime = 0.0f;
 

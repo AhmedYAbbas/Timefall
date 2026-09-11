@@ -72,6 +72,9 @@ project "Timefall-Editor"
 		postbuildcommands
 		{
 			"{COPYFILE} \"%{wks.location}Timefall/bin/" .. outputdir .. "/Timefall/Timefall.dll\" \"%{cfg.targetdir}\"",
+			-- Timefall.dll imports nethost.dll directly (the C# hosting entry point); missing it is a
+			-- silent 0xC0000135 (DLL not found) before main() even runs, with no log and no window.
+			"{COPYFILE} \"%{wks.location}Timefall/vendor/hostfxr/lib/%{cfg.buildcfg}/nethost.dll\" \"%{cfg.targetdir}\"",
     		"{COPYFILE} \"$(VULKAN_SDK)/Bin/slang.dll\" \"%{cfg.targetdir}\"",
     		"{COPYFILE} \"$(VULKAN_SDK)/Bin/slang-compiler.dll\" \"%{cfg.targetdir}\"",
     		"{COPYFILE} \"$(VULKAN_SDK)/Bin/slang-glslang.dll\" \"%{cfg.targetdir}\"",
