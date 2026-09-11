@@ -1,0 +1,16 @@
+Material:
+  BaseColor: [1, 1, 1]
+  Metallic: 1
+  Roughness: 1
+  NormalStrength: 1
+  AlphaMode: Opaque
+  Opacity: 1
+  AlphaCutoff: 0.5
+  BaseColorMap: 9135727119899229571
+  NormalMap: 10404957970762289941
+  MetallicMap: 5140424422873302392
+  RoughnessMap: 5140424422873302392
+  AOMap: 0
+  Emissive: [0, 0, 0]
+  EmissiveIntensity: 1
+  EmissiveMap: 0

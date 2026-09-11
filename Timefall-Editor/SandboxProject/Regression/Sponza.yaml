@@ -1,0 +1,26 @@
+Scene: Scenes/Regression/Sponza.timefall
+Width: 1920
+Height: 1080
+WarmupFrames: 4
+TimingFrames: 120
+PixelThreshold: 2
+MaxDifferingFraction: 0.001
+Golden:
+  Device: NVIDIA GeForce RTX 4070 SUPER
+  Driver: 616.64
+  Counters:
+    DrawCalls: 1798
+    ShadowDrawCalls: 1347
+    OpaqueMeshes: 445
+    BlendedMeshes: 4
+    TriangleCount: 5744396
+    MaterialBinds: 33
+    DirectionalLights: 1
+    PointLights: 3
+    SpotLights: 4
+    ShadowCasters: 5
+    CascadeCount: 4
+    PointShadowCubes: 0
+    Renderer2D_DrawCalls: 0
+    Renderer2D_QuadCount: 0
+    Renderer2D_CircleCount: 0

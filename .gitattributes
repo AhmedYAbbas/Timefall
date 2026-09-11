@@ -2,3 +2,8 @@
 *.dll filter=lfs diff=lfs merge=lfs -text
 *.lib filter=lfs diff=lfs merge=lfs -text
 *.pdb filter=lfs diff=lfs merge=lfs -text
+
+# Sponza's regression-harness dependency set
+Timefall-Editor/SandboxProject/Assets/Models/**/*.png filter=lfs diff=lfs merge=lfs -text
+Timefall-Editor/SandboxProject/Assets/Models/**/*.bin filter=lfs diff=lfs merge=lfs -text
+Timefall-Editor/SandboxProject/Assets/Textures/*.hdr filter=lfs diff=lfs merge=lfs -text
