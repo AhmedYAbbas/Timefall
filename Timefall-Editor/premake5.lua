@@ -13,6 +13,9 @@ project "Timefall-Editor"
 		"%{wks.location}/Timefall/src/Timefall/Debug/MemoryHooks.cpp",
 		"%{wks.location}/Timefall/%{IncludeDir.filewatch}/FileWatch.h",
 
+		"%{wks.location}/Timefall/%{IncludeDir.stb_image}/**.h",
+		"%{wks.location}/Timefall/%{IncludeDir.stb_image}/**.cpp",
+
 		"assets/shaders/**.slang"
 
 		--"%{wks.location}/Timefall/%{IncludeDir.ImGuizmo}/ImGuizmo.h",
@@ -30,7 +33,10 @@ project "Timefall-Editor"
 		"%{wks.location}/Timefall/%{IncludeDir.entt}",
 		"%{wks.location}/Timefall/%{IncludeDir.ImGuizmo}",
 		"%{wks.location}/Timefall/%{IncludeDir.box2d}",
+		"%{wks.location}/Timefall/%{IncludeDir.stb_image}",
+		"%{wks.location}/Timefall/%{IncludeDir.yaml_cpp}",
 		"%{wks.location}/Timefall/vendor/tracy/public",
+
 		"%{IncludeDir.VulkanSDK}"
 	}
 
@@ -39,6 +45,8 @@ project "Timefall-Editor"
 		"_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING",
 		"IMGUI_API=__declspec(dllimport)",
 
+		"YAML_CPP_STATIC_DEFINE",
+
 		"IMGUI_DISABLE_OBSOLETE_FUNCTIONS",
 
 		"GLM_FORCE_DEPTH_ZERO_TO_ONE"
@@ -46,7 +54,8 @@ project "Timefall-Editor"
 
 	links
 	{
-		"Timefall"
+		"Timefall",
+		"yaml-cpp"
 	}
 
 	filter "files:Assets/Shaders/*.slang"
