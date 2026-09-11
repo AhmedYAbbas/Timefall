@@ -590,7 +590,7 @@ namespace Timefall
 				const SpotCaster& caster = s_Data.SpotCasters[layer];
 
 				s_Data.Pass.SpotLightViewProj[layer] = caster.Matrix;
-				s_Data.Pass.PointShadowParams[caster.LightIndex] = glm::vec4(1.0f, caster.LightSize, caster.DepthBias, (float)layer);
+				s_Data.Pass.SpotShadowParams[caster.LightIndex] = glm::vec4(1.0f, caster.LightSize, caster.DepthBias, (float)layer);
 
 				const bool breakChunk = s_Data.SpotChunks.empty() || s_Data.SpotChunks.back().ViewCount >= maxViews
 					|| s_Data.SpotChunks.back().DepthBias != caster.DepthBias;
@@ -771,6 +771,7 @@ namespace Timefall
 					cmd->PushConstants(&push, sizeof(push));
 
 					const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
+					cmd->DrawIndexed(sm.IndexCount, 1, sm.BaseIndex, (int32_t)sm.BaseVertex);
 
 					s_Data.Stats.DrawCalls++;
 					s_Data.Stats.ShadowDrawCalls++;

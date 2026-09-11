@@ -11,6 +11,9 @@ static const float SEARCH_GAP_WORLD = 4.0f;	  // caster gap, in world units, the
 static const float FIXED_PCF_TEXELS = 2.0f;	  // fixed-kernel radius when soft shadows are off
 static const float GOLDEN_ANGLE = 2.39996323f;
 
+static const float SPOT_SHADOW_NEAR = 0.05f; // twin of the near plane in ComputeSpotMatrix
+static const float SPOT_SHADOW_MIN_FAR = 0.1f; // twin of its max(range, 0.1) far clamp
+
 // Interleaved gradient noise (Jimenez 2014): low-discrepancy per-pixel seed
 float InterleavedGradientNoise(float2 p)
 {
@@ -163,9 +166,94 @@ float SunShadow(float3 worldPos, float viewDepth, float3 N, float3 L, float2 pix
 	return shadow;
 }
 
+// PCSS for one spot: Fernando's blocker ratio in LINEARISED depth, since a perspective frustum's
+// stored depth is not linear in world distance the way the sun's ortho slab is
 float SpotShadow(float3 worldPos, int index, float3 N, float3 L, float2 pixel)
 {
-	return 0.0f;
+	const int layer = (int)u_Pass.SpotShadowParams[index].w;
+	const float lightSize = u_Pass.SpotShadowParams[index].y;
+
+	const float3 lightPos = u_Pass.SpotLights[index].Position.xyz;
+	const float3 spotDir = normalize(u_Pass.SpotLights[index].Direction.xyz);
+	const float far = max(u_Pass.SpotLights[index].Params.x, SPOT_SHADOW_MIN_FAR);
+	const float outerCos = clamp(u_Pass.SpotLights[index].Params.z, 1e-3f, 1.0f);
+	const float tanHalf = sqrt(max(1.0f - outerCos * outerCos, 0.0f)) / outerCos; // half-FOV is the outer cutoff
+
+	// Distance along the spot axis IS the receiver's view-space depth in the light's frustum, so it
+	// gives both the linear receiver and the texel world size without projecting first
+	const float zView = max(dot(worldPos - lightPos, spotDir), SPOT_SHADOW_NEAR);
+	const float texelUV = u_Pass.SpotShadowTexel;
+	const float texelWorld = max(2.0f * zView * tanHalf * texelUV, 1e-6f);
+
+	const float NdotL = clamp(dot(N, L), 0.0f, 1.0f);
+	const float3 offsetPos = worldPos + N * (texelWorld * 2.0f * (1.0f - NdotL));
+
+	const float4 lightSpace = mul(u_Pass.SpotLightViewProj[layer], float4(offsetPos, 1.0f));
+	if (lightSpace.w <= 0.0f)
+		return 0.0f; // behind the light
+
+	const float3 proj = lightSpace.xyz / lightSpace.w;
+
+	const float2 uv = float2(proj.x, -proj.y) * 0.5f + 0.5f; // Y-flipped viewport; Z is already 0..1
+	const float receiver = proj.z;
+
+	if (receiver > 1.0f)
+		return 0.0f;
+
+	const uint map = u_Pass.SpotShadowIndex;
+	const float rotation = InterleavedGradientNoise(pixel) * 6.2831853f;
+	const float searchRotation = InterleavedGradientNoiseAlt(pixel) * 6.2831853f;
+
+	float filterTexels;
+	if (u_Pass.SoftShadows != 0)
+	{
+		// Same bound as the sun: only blockers inside the light's cone can shadow this point, and the
+		// one radius bounds both the search and the filter
+		const float searchWorld = min(lightSize * SEARCH_GAP_WORLD, MAX_FILTER_WORLD);
+		const float tapCeiling = MAX_FILTER_TEXELS * sqrt(float(u_Pass.PCFSamples) / PCF_REFERENCE_SAMPLES);
+		const float maxFilterTexels = max(min(searchWorld / texelWorld, tapCeiling), MIN_FILTER_TEXELS);
+
+		const float searchUV = maxFilterTexels * texelUV;
+		float blockerSum = 0.0f;
+		int blockerCount = 0;
+
+		for (int i = 0; i < u_Pass.BlockerSamples; ++i)
+		{
+			const float2 off = VogelDisk(float(i), float(u_Pass.BlockerSamples), searchRotation) * searchUV;
+			const float d = g_TextureArrays[NonUniformResourceIndex(map)]
+								.SampleLevel(g_Samplers[SAMPLER_NEAREST_CLAMP], float3(uv + off, float(layer)), 0.0f)
+								.r;
+
+			if (d < receiver)
+			{
+				blockerSum += d;
+				blockerCount++;
+			}
+		}
+
+		if (blockerCount == 0)
+			return 0.0f; // no occluder -> fully lit
+
+		const float linBlocker = max(LinearizeDepth(blockerSum / float(blockerCount), SPOT_SHADOW_NEAR, far), 1e-4f);
+		const float penumbraWorld = min((zView - linBlocker) / linBlocker * lightSize, searchWorld);
+		filterTexels = clamp(penumbraWorld / texelWorld, MIN_FILTER_TEXELS, maxFilterTexels);
+	}
+	else
+	{
+		filterTexels = FIXED_PCF_TEXELS;
+	}
+
+	const float filterUV = filterTexels * texelUV;
+	float sum = 0.0f;
+	for (int i = 0; i < u_Pass.PCFSamples; ++i)
+	{
+		const float2 off = VogelDisk(float(i), float(u_Pass.PCFSamples), rotation) * filterUV;
+		sum += 1.0f
+			- g_TextureArrays[NonUniformResourceIndex(map)]
+				  .SampleCmpLevelZero(g_ComparisonSamplers[SAMPLER_SHADOW_CMP], float3(uv + off, float(layer)), receiver);
+	}
+
+	return sum / float(u_Pass.PCFSamples);
 }
 
 float PointShadow(float3 worldPos, int index, float3 N, float3 L, float2 pixel)
