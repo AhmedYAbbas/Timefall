@@ -345,11 +345,12 @@ namespace Timefall
 
 	void VulkanContext::QueryLimits()
 	{
-		auto chain = m_PhysicalDevice.getProperties2<vk::PhysicalDeviceProperties2, vk::PhysicalDeviceDescriptorIndexingProperties, vk::PhysicalDeviceMultiviewProperties>();
+		auto chain = m_PhysicalDevice.getProperties2<vk::PhysicalDeviceProperties2, vk::PhysicalDeviceDescriptorIndexingProperties, vk::PhysicalDeviceMultiviewProperties, vk::PhysicalDeviceDriverProperties>();
 
 		const auto& props = chain.get<vk::PhysicalDeviceProperties2>().properties;
 		const auto& di = chain.get<vk::PhysicalDeviceDescriptorIndexingProperties>();
 		const auto& mv = chain.get<vk::PhysicalDeviceMultiviewProperties>();
+		const auto& driver = chain.get<vk::PhysicalDeviceDriverProperties>();
 
 		const uint32_t deviceMax =
 			std::min(di.maxDescriptorSetUpdateAfterBindSampledImages, di.maxPerStageDescriptorUpdateAfterBindSampledImages);
@@ -363,6 +364,8 @@ namespace Timefall
 		m_Limits.MaxMultiviewViews = mv.maxMultiviewViewCount;
 		m_Limits.SupportsWideLines = m_WideLinesAvailable;
 		m_Limits.SupportsSmoothLines = m_SmoothLinesAvailable;
+		m_Limits.DeviceName = std::string(std::string_view(props.deviceName));
+		m_Limits.DriverInfo = std::string(std::string_view(driver.driverInfo));
 
 		TF_CORE_INFO("Bindless textures: {0} (device reports {1}, budget {2})", m_Limits.MaxBindlessTextures, deviceMax,
 			RHI::TF_BINDLESS_TEXTURE_BUDGET);

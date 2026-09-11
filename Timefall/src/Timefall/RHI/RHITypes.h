@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <string>
 
 namespace Timefall::RHI
 {
@@ -16,6 +17,8 @@ namespace Timefall::RHI
 		bool SupportsRobustness2 = false;
 		bool SupportsWideLines = false;
 		bool SupportsSmoothLines = false;
+		std::string DeviceName;
+		std::string DriverInfo;
 	};
 
 	inline constexpr uint32_t TF_BINDLESS_TEXTURE_BUDGET = 16384;
