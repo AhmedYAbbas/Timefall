@@ -26,6 +26,11 @@ namespace Timefall::RHI
 		// Valid only between BeginFrame and EndFrame; nullptr otherwise.
 		CommandList* GetCurrentCommandList();
 
+		// The value this frame signals when it retires. Valid between BeginFrame and EndFrame; 0 otherwise
+		uint64_t GetFrameValue() const;
+		// Every frame at or below this value has retired, so its copies are readable on the CPU
+		uint64_t GetCompletedFrameValue() const;
+
 		void OnResize(uint32_t width, uint32_t height);
 		void SetVSync(bool enabled);
 		void WaitIdle();

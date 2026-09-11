@@ -27,6 +27,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <cmath>
+#include <cstring>
 
 namespace Timefall
 {
@@ -53,8 +54,10 @@ namespace Timefall
 			.Height = 720,
 			.ColorFormat = {RHI::Format::RGBA8Unorm, RHI::Format::R32I},
 			.ColorCount = 2,
-			.ColorUsage = {RHI::TextureUsage::None, RHI::TextureUsage::TransferDst},
+			.ColorUsage = {RHI::TextureUsage::None, RHI::TextureUsage::TransferDst | RHI::TextureUsage::TransferSrc},
 			.DebugName = "ViewportTarget"});
+
+		m_PickReadback = CreateScope<RHI::GpuReadback>("PickReadback");
 
 		ShaderLibrary::EnableHotReload("Assets/Shaders");
 
@@ -87,6 +90,7 @@ namespace Timefall
 
 		ShaderLibrary::Shutdown();
 
+		m_PickReadback.reset();
 		m_ViewportTarget.reset();
 		s_Font.reset(); // file-scope, so it would otherwise outlive the device along with its atlas
 	}
@@ -99,6 +103,8 @@ namespace Timefall
 	void EditorLayer::OnUpdate(Timestep ts)
 	{
 		TF_PROFILE_FUNCTION();
+
+		ApplyPick();
 
 		if (m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f
 			&& m_ViewportTarget->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y))
@@ -143,11 +149,11 @@ namespace Timefall
 			}
 		}
 
-		m_HoveredEntity = Entity();
-
 		// Play with no camera renders nothing, and the resolve is the only clear, so the panel would keep the previous frame.
 		if (m_SceneState == SceneState::Play && !GetActiveScene()->GetPrimaryCameraEntity())
 			ClearViewportTarget();
+
+		RecordPick();
 
 		Renderer2D::SetTargetRenderTarget(m_ViewportTarget, false);
 		OnOverlayRender();
@@ -538,7 +544,12 @@ namespace Timefall
 		if (e.GetMouseButton() == MouseCode::LeftButton)
 		{
 			if (m_ViewportHovered && !ImGuizmo::IsOver() && !Input::IsKeyPressed(KeyCode::LeftAlt))
-				m_SceneHierarchyPanel.SetSelectedEntity(m_HoveredEntity);
+			{
+				const auto [mouseX, mouseY] = Input::GetMousePosition();
+				const glm::vec2 panelSize = m_ViewportBounds[1] - m_ViewportBounds[0];
+				if (panelSize.x > 0.0f && panelSize.y > 0.0f)
+					m_PickUV = glm::clamp((glm::vec2{mouseX, mouseY} - m_ViewportBounds[0]) / panelSize, glm::vec2(0.0f), glm::vec2(1.0f));
+			}
 		}
 
 		return false;
@@ -642,6 +653,53 @@ namespace Timefall
 			.Target = m_ViewportTarget.get(),
 			.Color = {{.Load = RHI::LoadOp::Clear}, {.Load = RHI::LoadOp::Clear, .ClearInt = {-1, -1, -1, 0}}}});
 		cmd->EndPass();
+	}
+
+	void EditorLayer::RecordPick()
+	{
+		if (!m_PickUV)
+			return;
+
+		const glm::vec2 uv = *m_PickUV;
+		m_PickUV.reset();
+
+		RHI::CommandList* cmd = RHI::RenderDevice::Get().GetCurrentCommandList();
+		if (!cmd || !m_ViewportTarget->IsValid())
+			return;
+
+		const uint32_t width = m_ViewportTarget->GetWidth();
+		const uint32_t height = m_ViewportTarget->GetHeight();
+		const RHI::TextureRegion pixel{.X = std::min((uint32_t)(uv.x * width), width - 1),
+			.Y = std::min((uint32_t)(uv.y * height), height - 1),
+			.Width = 1,
+			.Height = 1};
+
+		if (m_PickReadback->Request(*cmd, *m_ViewportTarget->GetColor(1), pixel))
+			m_PickScene = GetActiveScene();
+	}
+
+	void EditorLayer::ApplyPick()
+	{
+		const std::optional<RHI::ReadbackResult> result = m_PickReadback->Poll();
+		if (!result || result->Bytes.size() < sizeof(int32_t))
+			return;
+
+		const Ref<Scene> scene = m_PickScene.lock();
+		if (!scene || scene != GetActiveScene())
+			return;
+
+		int32_t id = -1;
+		std::memcpy(&id, result->Bytes.data(), sizeof(id));
+
+		if (id == -1)
+		{
+			m_SceneHierarchyPanel.SetSelectedEntity({});
+			return;
+		}
+
+		const Entity entity{(entt::entity)id, scene.get()};
+		if (entity.IsValid())
+			m_SceneHierarchyPanel.SetSelectedEntity(entity);
 	}
 
 	void EditorLayer::OnOverlayRender()

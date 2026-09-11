@@ -7,11 +7,12 @@
 #include "Panels/PostProcessSettingsPanel.h"
 #include "Panels/ProfilerPanel.h"
 
-#include "Timefall/RHI/Pipeline.h"
-#include "Timefall/RHI/GpuBuffer.h"
 #include "Timefall/RHI/RenderTarget.h"
+#include "Timefall/RHI/GpuReadback.h"
 
 #include <filesystem>
+#include <memory>
+#include <optional>
 
 namespace Timefall
 {
@@ -35,6 +36,9 @@ namespace Timefall
 
 		void OnOverlayRender();
 		void ClearViewportTarget();
+
+		void RecordPick();
+		void ApplyPick();
 
 		void NewProject();
 		bool OpenProject();
@@ -73,7 +77,10 @@ namespace Timefall
 		Entity m_SecondaryCamera;
 
 		EditorCamera m_EditorCamera;
-		Entity m_HoveredEntity;
+
+		Scope<RHI::GpuReadback> m_PickReadback;
+		std::optional<glm::vec2> m_PickUV;
+		std::weak_ptr<Scene> m_PickScene;
 
 		bool m_IsPrimaryCamera = true;
 

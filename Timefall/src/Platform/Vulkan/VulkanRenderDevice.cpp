@@ -840,6 +840,16 @@ namespace Timefall::RHI
 		m_Impl = nullptr;
 	}
 
+	uint64_t RenderDevice::GetFrameValue() const
+	{
+		return m_Impl && m_Impl->FrameActive ? m_Impl->FrameSignalValue : 0;
+	}
+
+	uint64_t RenderDevice::GetCompletedFrameValue() const
+	{
+		return m_Impl ? m_Impl->Frames.CompletedValue() : 0;
+	}
+
 	CommandList* RenderDevice::GetCurrentCommandList()
 	{
 		return m_Impl && m_Impl->FrameActive ? &m_Impl->List : nullptr;
