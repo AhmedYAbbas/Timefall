@@ -44,22 +44,6 @@ namespace Timefall::RHI
 		}
 	}
 
-	inline uint32_t BytesPerPixel(Format format)
-	{
-		switch (format)
-		{
-			case Format::R8Unorm:	 return 1;
-			case Format::RGBA8Unorm:
-			case Format::RGBA8Srgb:
-			case Format::BGRA8Unorm:
-			case Format::R32I:
-			case Format::D32F:		 return 4;
-			case Format::RGBA16F:	 return 8;
-			case Format::RGBA32F:	 return 16;
-			default:				 return 0;
-		}
-	}
-
 	inline bool IsDepthFormat(Format format)
 	{
 		return format == Format::D32F;

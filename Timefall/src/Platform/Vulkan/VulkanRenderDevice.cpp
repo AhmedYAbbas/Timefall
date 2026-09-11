@@ -403,12 +403,12 @@ namespace Timefall::RHI
 		d.SetAllLayouts(vk::ImageLayout::eShaderReadOnlyOptimal);
 	}
 
-	void CommandList::CopyTextureToBuffer(Texture& src, GpuBuffer& dst, const TextureRegion& region, uint64_t dstOffset)
+	bool CommandList::CopyTextureToBuffer(Texture& src, GpuBuffer& dst, const TextureRegion& region, uint64_t dstOffset)
 	{
 		TF_CORE_ASSERT(!m_Impl->InPass, "CopyTextureToBuffer must be called outside a pass");
 
 		if (!src.IsValid() || !dst.IsValid())
-			return;
+			return false;
 
 		Texture::Impl& s = *src.m_Impl;
 
@@ -416,23 +416,28 @@ namespace Timefall::RHI
 		{
 			TF_CORE_ERROR("CopyTextureToBuffer got mip {0} layer {1} on a {2}-mip {3}-layer image", region.Mip, region.Layer, s.MipLevels,
 				s.ArrayLayers);
-			return;
+			return false;
 		}
 
 		if (!(s.UsageFlags & vk::ImageUsageFlagBits::eTransferSrc))
 		{
 			TF_CORE_ERROR("CopyTextureToBuffer needs TextureUsage::TransferSrc on the source");
-			return;
+			return false;
 		}
 
-		const uint32_t width = std::max(1u, s.Width >> region.Mip);
-		const uint32_t height = std::max(1u, s.Height >> region.Mip);
-		const uint64_t bytes = (uint64_t)width * height * BytesPerPixel(s.PixelFormat);
+		const std::optional<TextureRect> rect = ResolveRegion(region, s.Width, s.Height);
+		if (!rect)
+		{
+			TF_CORE_ERROR("CopyTextureToBuffer region at ({0}, {1}) size {2}x{3} falls outside mip {4} of a {5}x{6} image", region.X,
+				region.Y, region.Width, region.Height, region.Mip, s.Width, s.Height);
+			return false;
+		}
 
+		const uint64_t bytes = (uint64_t)rect->Width * rect->Height * BytesPerPixel(s.PixelFormat);
 		if (dstOffset + bytes > dst.Size())
 		{
 			TF_CORE_ERROR("CopyTextureToBuffer of {0} bytes at offset {1} exceeds the {2} byte buffer", bytes, dstOffset, dst.Size());
-			return;
+			return false;
 		}
 
 		const vk::ImageSubresourceRange range{s.Aspect, region.Mip, 1, region.Layer, 1};
@@ -447,8 +452,8 @@ namespace Timefall::RHI
 			.bufferRowLength = 0,
 			.bufferImageHeight = 0,
 			.imageSubresource = {s.Aspect, region.Mip, region.Layer, 1},
-			.imageOffset = {0, 0, 0},
-			.imageExtent = {width, height, 1}};
+			.imageOffset = {(int32_t)rect->X, (int32_t)rect->Y, 0},
+			.imageExtent = {rect->Width, rect->Height, 1}};
 
 		m_Impl->Cmd.copyImageToBuffer2({.srcImage = s.Image,
 			.srcImageLayout = vk::ImageLayout::eTransferSrcOptimal,
@@ -460,6 +465,11 @@ namespace Timefall::RHI
 			vk::PipelineStageFlagBits2::eCopy, vk::AccessFlagBits2::eTransferRead, vk::PipelineStageFlagBits2::eFragmentShader,
 			vk::AccessFlagBits2::eShaderSampledRead, range);
 		s.LayoutAt(region.Mip, region.Layer) = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+		const vk::BufferMemoryBarrier2 toHost{.srcStageMask = vk::PipelineStageFlagBits2::eCopy, .srcAccessMask = vk::AccessFlagBits2::eTransferWrite, .dstStageMask = vk::PipelineStageFlagBits2::eHost, .dstAccessMask = vk::AccessFlagBits2::eHostRead, .srcQueueFamilyIndex = vk::QueueFamilyIgnored, .dstQueueFamilyIndex = vk::QueueFamilyIgnored, .buffer = dst.m_Impl->Buffer, .offset = dstOffset, .size = bytes};
+		m_Impl->Cmd.pipelineBarrier2({.bufferMemoryBarrierCount = 1, .pBufferMemoryBarriers = &toHost});
+
+		return true;
 	}
 
 	void CommandList::CopyBufferToTexture(const GpuBuffer& src, Texture& dst, const TextureRegion& region, uint64_t srcOffset)
@@ -481,6 +491,12 @@ namespace Timefall::RHI
 		if (!(d.UsageFlags & vk::ImageUsageFlagBits::eTransferDst))
 		{
 			TF_CORE_ERROR("CopyBufferToTexture needs TextureUsage::TransferDst on the destination");
+			return;
+		}
+
+		if (region.X != 0 || region.Y != 0 || region.Width != 0 || region.Height != 0)
+		{
+			TF_CORE_ERROR("CopyBufferToTexture writes whole (layer, mip) slices; a pixel rectangle is not supported");
 			return;
 		}
 

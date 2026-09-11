@@ -32,7 +32,7 @@ namespace Timefall::RHI
 
 		void CopyTexture(Texture& src, Texture& dst);
 
-		void CopyTextureToBuffer(Texture& src, GpuBuffer& dst, const TextureRegion& region, uint64_t dstOffset = 0);
+		bool CopyTextureToBuffer(Texture& src, GpuBuffer& dst, const TextureRegion& region, uint64_t dstOffset = 0);
 		void CopyBufferToTexture(const GpuBuffer& src, Texture& dst, const TextureRegion& region, uint64_t srcOffset = 0);
 
 		void GenerateMips(Texture& texture);

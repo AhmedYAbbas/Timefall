@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 
 namespace Timefall::RHI
 {
@@ -65,10 +66,53 @@ namespace Timefall::RHI
 		DepthTarget Depth{};
 	};
 
-	// One (layer, mip) slice of an image
+	// One (layer, mip) slice of an image, optionally narrowed to a pixel rectangle (CopyTextureToBuffer only)
 	struct TextureRegion
 	{
 		uint32_t Layer = 0; // array layer / cube face
 		uint32_t Mip = 0;
+		uint32_t X = 0;
+		uint32_t Y = 0;
+		uint32_t Width = 0;
+		uint32_t Height = 0;
 	};
+
+	struct TextureRect
+	{
+		uint32_t X = 0;
+		uint32_t Y = 0;
+		uint32_t Width = 0;
+		uint32_t Height = 0;
+	};
+
+	constexpr std::optional<TextureRect> ResolveRegion(const TextureRegion& region, uint32_t width, uint32_t height)
+	{
+		const uint32_t mipWidth = (width >> region.Mip) ? (width >> region.Mip) : 1u;
+		const uint32_t mipHeight = (height >> region.Mip) ? (height >> region.Mip) : 1u;
+		if (region.X >= mipWidth || region.Y >= mipHeight)
+			return std::nullopt;
+
+		const uint32_t w = region.Width ? region.Width : mipWidth - region.X;
+		const uint32_t h = region.Height ? region.Height : mipHeight - region.Y;
+		if (w > mipWidth - region.X || h > mipHeight - region.Y)
+			return std::nullopt;
+
+		return TextureRect{.X = region.X, .Y = region.Y, .Width = w, .Height = h};
+	}
+
+	constexpr uint32_t BytesPerPixel(Format format)
+	{
+		switch (format)
+		{
+			case Format::R8Unorm:	return 1;
+			case Format::RGBA8Unorm:
+			case Format::RGBA8Srgb:
+			case Format::BGRA8Unorm:
+			case Format::R32I:
+			case Format::D32F:		return 4;
+			case Format::RGBA16F:	return 8;
+			case Format::RGBA32F:	return 16;
+			default:				return 0;
+		}
+	}
 }
