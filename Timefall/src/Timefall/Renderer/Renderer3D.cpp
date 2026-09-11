@@ -1167,6 +1167,9 @@ namespace Timefall
 		if (s_Data.Pass.SpotCount >= MAX_SPOT_LIGHTS)
 			return;
 
+		// glm::perspective degenerates at 0 and 180 degrees; clamped once so the cone and shadow matrix agree
+		outerCutoffDegrees = glm::clamp(outerCutoffDegrees, 0.1f, 89.0f);
+
 		const float innerCos = glm::cos(glm::radians(innerCutoffDegrees));
 		const float outerCos = glm::cos(glm::radians(outerCutoffDegrees));
 

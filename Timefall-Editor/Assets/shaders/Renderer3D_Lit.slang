@@ -148,7 +148,7 @@ FSOutput fsMain(VSOutput input)
 		const float cone = clamp((theta - outerCos) / max(innerCos - outerCos, 0.0001), 0.0, 1.0);
 
 		float3 radiance = u_Pass.SpotLights[i].Color.rgb * intensity * att * cone;
-		if (u_Pass.SpotShadowParams[i].x > 0.5)
+		if (u_Pass.SpotShadowParams[i].x > 0.5 && cone * att > 0.0)
 			radiance *= 1.0 - SpotShadow(input.worldPos, (int)i, s.N, L, input.position.xy);
 
 		Lo += CookTorrance(s, L, radiance);
