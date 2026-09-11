@@ -95,9 +95,11 @@ namespace Timefall
 
 	struct PointCaster
 	{
+		uint32_t LightIndex; // index into PassUniforms::PointLights
 		glm::vec3 Position;
-		float Far;
-		uint32_t Layer;
+		float Range;
+		float LightSize;
+		float DepthBias;
 	};
 
 	struct SpotCaster
@@ -187,7 +189,7 @@ namespace Timefall
 		uint32_t SunShadowResolution = 0;
 
 		Ref<Shader> ShadowDepthShader;
-		std::unordered_map<uint32_t, Ref<RHI::GraphicsPipeline>> ShadowPipelines; // keyed by (ViewMask, CullMode)
+		std::unordered_map<uint32_t, Ref<RHI::GraphicsPipeline>> ShadowPipelines; // keyed by (ViewCount, Mirrored, CullMode)
 		RHI::GraphicsPipeline* SunShadowPipeline = nullptr;
 
 		bool SunCastsShadow = false;
@@ -201,6 +203,13 @@ namespace Timefall
 
 		std::vector<SpotCaster> SpotCasters;
 		std::vector<ShadowChunk> SpotChunks;
+
+		Ref<RHI::RenderTarget> PointShadowTarget;
+		uint32_t PointShadowCapacity = 0; // in cubes
+		uint32_t PointShadowResolution = 0;
+
+		std::vector<PointCaster> PointCasters;
+		RHI::GraphicsPipeline* PointShadowPipeline = nullptr;
 
 		static constexpr float SHADOW_DEPTH_EXTENT = 6.0f;
 
@@ -425,6 +434,48 @@ namespace Timefall
 		return true;
 	}
 
+	static bool EnsurePointShadowTarget(uint32_t casterCount)
+	{
+		const uint32_t resolution = s_Data.Shadows.PointShadowResolution;
+
+		const bool matches = s_Data.PointShadowTarget && s_Data.PointShadowTarget->IsValid() && s_Data.PointShadowResolution == resolution
+			&& s_Data.PointShadowCapacity >= casterCount;
+
+		if (!matches)
+		{
+			const bool keepCubes = s_Data.PointShadowTarget && s_Data.PointShadowResolution == resolution;
+			const uint32_t cubes = keepCubes ? glm::max(casterCount, s_Data.PointShadowCapacity) : casterCount;
+
+			// CubeArray takes the total layer count: six faces per cube
+			s_Data.PointShadowTarget = RHI::RenderTarget::Create({.Width = resolution,
+				.Height = resolution,
+				.ColorCount = 0,
+				.DepthFormat = kDepthFormat,
+				.Dim = RHI::Dimension::CubeArray,
+				.ArrayLayers = cubes * 6,
+				.DebugName = "PointShadowTarget"});
+
+			s_Data.PointShadowResolution = resolution;
+			s_Data.PointShadowCapacity = cubes;
+
+			if (!s_Data.PointShadowTarget || !s_Data.PointShadowTarget->IsValid())
+			{
+				TF_CORE_ERROR("Point shadow target ({0}x{0}, {1} cubes) failed to allocate", resolution, cubes);
+				s_Data.PointShadowTarget = nullptr;
+				s_Data.PointShadowCapacity = 0;
+				s_Data.PointShadowResolution = 0;
+				return false;
+			}
+
+			TF_CORE_INFO("Point shadow cubes: {0}x{0}, {1} cubes", resolution, cubes);
+		}
+
+		s_Data.Pass.PointShadowIndex = s_Data.PointShadowTarget->GetDepth()->GetBindlessIndex();
+		s_Data.Pass.PointShadowTexel = 1.0f / float(resolution);
+
+		return true;
+	}
+
 	static constexpr RHI::CullMode ToRHICull(ShadowCullMode mode)
 	{
 		switch (mode)
@@ -435,12 +486,13 @@ namespace Timefall
 		}
 	}
 
-	static RHI::GraphicsPipeline* GetShadowPipeline(uint32_t viewCount, ShadowCullMode cull)
+	// mirrored: the views wind opposite to a lookAt camera (the cube faces), so their front faces are clockwise
+	static RHI::GraphicsPipeline* GetShadowPipeline(uint32_t viewCount, ShadowCullMode cull, bool mirrored = false)
 	{
 		if (!s_Data.ShadowDepthShader)
 			return nullptr;
 
-		const uint32_t key = (viewCount << 8) | (uint32_t)cull;
+		const uint32_t key = (viewCount << 8) | (mirrored ? 0x80u : 0u) | (uint32_t)cull;
 
 		auto it = s_Data.ShadowPipelines.find(key);
 		if (it == s_Data.ShadowPipelines.end())
@@ -456,6 +508,7 @@ namespace Timefall
 			desc.Depth = {.Test = true, .Write = true, .Compare = RHI::CompareOp::Less, .BiasEnable = true};
 			desc.Blend = RHI::BlendMode::None;
 			desc.Raster.Cull = ToRHICull(cull);
+			desc.Raster.FrontFaceCCW = !mirrored;
 			desc.DebugName = "Renderer3DShadowDepthPipeline";
 
 			it = s_Data.ShadowPipelines.emplace(key, RHI::GraphicsPipeline::Create(desc)).first;
@@ -605,6 +658,24 @@ namespace Timefall
 				chunk.Pipeline = GetShadowPipeline(chunk.ViewCount, s_Data.Shadows.CullMode);
 
 			s_Data.Stats.ShadowCasters += (uint32_t)s_Data.SpotCasters.size();
+		}
+
+		s_Data.PointShadowPipeline = nullptr;
+		if (!s_Data.PointCasters.empty() && EnsurePointShadowTarget((uint32_t)s_Data.PointCasters.size()))
+		{
+			s_Data.PointShadowPipeline = GetShadowPipeline(6, s_Data.Shadows.CullMode, true);
+
+			if (s_Data.PointShadowPipeline)
+			{
+				for (uint32_t cube = 0; cube < (uint32_t)s_Data.PointCasters.size(); cube++)
+				{
+					const PointCaster& caster = s_Data.PointCasters[cube];
+					s_Data.Pass.PointShadowParams[caster.LightIndex] = glm::vec4(1.0f, caster.LightSize, caster.DepthBias, (float)cube);
+				}
+
+				s_Data.Stats.ShadowCasters += (uint32_t)s_Data.PointCasters.size();
+				s_Data.Stats.PointShadowCubes = (uint32_t)s_Data.PointCasters.size();
+			}
 		}
 
 		s_Data.PassSlice = RHI::Bindings::WritePassUniforms(&s_Data.Pass, sizeof(s_Data.Pass));
@@ -1044,6 +1115,7 @@ namespace Timefall
 		s_Data.ActiveEnvironmentHandle = 0; // outside Pass, so reset it here: no SkyLight means no environment
 		s_Data.SunCastsShadow = false;
 		s_Data.SpotCasters.clear();
+		s_Data.PointCasters.clear();
 
 		s_Data.Pass = {};
 		s_Data.Pass.ViewProjection = camera.GetViewProjection();
@@ -1059,6 +1131,7 @@ namespace Timefall
 		s_Data.ActiveEnvironmentHandle = 0; // outside Pass, so reset it here: no SkyLight means no environment
 		s_Data.SunCastsShadow = false;
 		s_Data.SpotCasters.clear();
+		s_Data.PointCasters.clear();
 
 		const glm::mat4 view = glm::inverse(transform);
 		s_Data.Pass = {};
@@ -1075,6 +1148,7 @@ namespace Timefall
 
 		s_Data.Shadows.ShadowMapResolution = glm::max(s_Data.Shadows.ShadowMapResolution, 1u);
 		s_Data.Shadows.SpotShadowResolution = glm::max(s_Data.Shadows.SpotShadowResolution, 1u);
+		s_Data.Shadows.PointShadowResolution = glm::max(s_Data.Shadows.PointShadowResolution, 1u);
 	}
 
 	void Renderer3D::SetPostProcessSettings(const PostProcessSettings& settings)
@@ -1154,9 +1228,13 @@ namespace Timefall
 		if (s_Data.Pass.PointCount >= MAX_POINT_LIGHTS)
 			return;
 
-		GpuPointLight& light = s_Data.Pass.PointLights[s_Data.Pass.PointCount++];
+		const uint32_t index = s_Data.Pass.PointCount++;
+		GpuPointLight& light = s_Data.Pass.PointLights[index];
 		light.Position = glm::vec4(position, range);
 		light.Color = glm::vec4(SRGBToLinear(color), intensity);
+
+		if (castsShadows)
+			s_Data.PointCasters.push_back({.LightIndex = index, .Position = position, .Range = range, .LightSize = shadowSoftness * 0.1f, .DepthBias = depthBias});
 
 		s_Data.Stats.PointLights = s_Data.Pass.PointCount;
 	}
