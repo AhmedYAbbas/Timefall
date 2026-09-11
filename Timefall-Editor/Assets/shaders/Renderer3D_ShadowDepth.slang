@@ -4,6 +4,7 @@
 // --------------------------
 
 import Common.Bindings;
+import Common.Shadows;
 
 
 // Twin of GpuTransform in Renderer3D_Lit.slang - the same array, reached by the same device address
@@ -17,6 +18,16 @@ struct GpuTransform
 
 static const uint SHADOW_MODE_SUN = 0;
 static const uint SHADOW_MODE_SPOT = 1;
+static const uint SHADOW_MODE_POINT = 2;
+
+static const float3x3 CUBE_FACE_BASIS[6] = {
+	float3x3( 0, 0, -1, 0, 1,  0,  1,  0,  0),	// +X
+	float3x3( 0, 0,  1, 0, 1,  0, -1,  0,  0),	// -X
+	float3x3( 1, 0,  0, 0, 0, -1,  0,  1,  0),	// +Y
+	float3x3( 1, 0,  0, 0, 0,  1,  0, -1,  0),	// -Y
+	float3x3( 1, 0,  0, 0, 1,  0,  0,  0,  1),	// +Z
+	float3x3(-1, 0,  0, 0, 1,  0,  0,  0, -1),	// -Z
+};
 
 // Shared by all three shadow types. LightPosFar is dead for sun and spot
 struct ShadowPush
@@ -24,7 +35,7 @@ struct ShadowPush
 	ConstBufferPointer<GpuTransform> Transforms;
 	uint TransformIndex;
 	uint ViewBase;
-	float4 LightPosFar; // xyz = light position, w = far plane distance for point/spot
+	float4 LightPosFar; // point only: xyz = light position, w = raw light range (PointShadowFar clamps it)
 	uint Mode;
 	uint _Pad0;
 	uint _Pad1;
@@ -41,6 +52,13 @@ float4 vsMain(float3 position, float3 normal, float2 texCoord, float3 tangent, f
 {
 	const GpuTransform t = u_Shadow.Transforms[u_Shadow.TransformIndex];
 	const float4 world = mul(t.Model, float4(position, 1.0f));
+
+	if (u_Shadow.Mode == SHADOW_MODE_POINT)
+	{
+		const float3 v = mul(CUBE_FACE_BASIS[viewID], world.xyz - u_Shadow.LightPosFar.xyz);
+		const float2 depth = PerspectiveDepthCoeffs(POINT_SHADOW_NEAR, PointShadowFar(u_Shadow.LightPosFar.w));
+		return float4(v.x, v.y, depth.x * v.z + depth.y, v.z);
+	}
 
 	const float4x4 lightViewProj = u_Shadow.Mode == SHADOW_MODE_SPOT ? u_Pass.SpotLightViewProj[u_Shadow.ViewBase + viewID] : u_Pass.LightViewProj[u_Shadow.ViewBase + viewID];
 	return mul(lightViewProj, world);

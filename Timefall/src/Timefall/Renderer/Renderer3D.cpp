@@ -52,6 +52,7 @@ namespace Timefall
 
 	inline constexpr uint32_t kShadowModeSun = 0;
 	inline constexpr uint32_t kShadowModeSpot = 1;
+	inline constexpr uint32_t kShadowModePoint = 2;
 
 	struct ShadowPush
 	{
@@ -221,10 +222,13 @@ namespace Timefall
 	static constexpr RHI::Format kIDFormat = RHI::Format::R32I;
 	static constexpr RHI::Format kDepthFormat = RHI::Format::D32F;
 	static constexpr RHI::Format kLDRFormat = RHI::Format::RGBA8Unorm;
+
 	static constexpr float kShadowConstantBias = 1.25f;
 	static constexpr float kShadowSlopeBias = 1.75f;
 	static constexpr float kSpotConstantBias = 1.25f;
 	static constexpr float kSpotSlopeBias = 2.5f;
+	static constexpr float kPointConstantBias = 1.25f;
+	static constexpr float kPointSlopeBias = 2.5f;
 
 	static glm::vec3 SRGBToLinear(const glm::vec3& c)
 	{
@@ -337,9 +341,6 @@ namespace Timefall
 		glm::mat4 view = glm::lookAt(position, position + dir, up);
 		return proj * view;
 	}
-
-	static const glm::vec3 s_CubeFaceDir[6] = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
-	static const glm::vec3 s_CubeFaceUp[6] = {{0, -1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}, {0, -1, 0}, {0, -1, 0}};
 
 	static bool EnsureHDRTarget()
 	{
@@ -839,6 +840,51 @@ namespace Timefall
 					}
 
 					const ShadowPush push{.Transforms = s_Data.TransformsAddress, .TransformIndex = i, .ViewBase = chunk.BaseLayer, .Mode = kShadowModeSpot};
+					cmd->PushConstants(&push, sizeof(push));
+
+					const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];
+					cmd->DrawIndexed(sm.IndexCount, 1, sm.BaseIndex, (int32_t)sm.BaseVertex);
+
+					s_Data.Stats.DrawCalls++;
+					s_Data.Stats.ShadowDrawCalls++;
+				}
+
+				cmd->EndPass();
+			}
+		}
+
+		if (s_Data.PointShadowPipeline && !s_Data.PointCasters.empty() && s_Data.PointShadowTarget && s_Data.PointShadowTarget->IsValid() && s_Data.TransformsAddress != 0)
+		{
+			TF_PROFILE_SCOPE("Shadow Point");
+			TF_PROFILE_GPU_SCOPE("Shadow Point");
+			PerformanceStats::ScopedPassTimer passTimer("Shadow Point");
+
+			for (uint32_t cube = 0; cube < (uint32_t)s_Data.PointCasters.size(); cube++)
+			{
+				const PointCaster& caster = s_Data.PointCasters[cube];
+
+				cmd->BeginPass({.DebugName = "Shadow Point",
+					.Target = s_Data.PointShadowTarget.get(),
+					.Layer = cube * 6,
+					.ViewCount = 6,
+					.Depth = {.Load = RHI::LoadOp::Clear, .ClearDepth = 1.0f}});
+
+				cmd->SetPassUniformSlice(s_Data.PassSlice);
+				cmd->BindPipeline(*s_Data.PointShadowPipeline);
+				cmd->SetDepthBias(kPointConstantBias * caster.DepthBias, kPointSlopeBias * caster.DepthBias);
+
+				const MeshSource* boundMesh = nullptr;
+				for (uint32_t i = 0; i < (uint32_t)s_Data.Submissions.size(); i++)
+				{
+					const MeshSubmission& sub = s_Data.Submissions[i];
+					if (sub.Mesh.get() != boundMesh)
+					{
+						cmd->BindVertexBuffer(*sub.Mesh->GetVertexBuffer());
+						cmd->BindIndexBuffer(*sub.Mesh->GetIndexBuffer(), RHI::IndexType::U32);
+						boundMesh = sub.Mesh.get();
+					}
+
+					const ShadowPush push{.Transforms = s_Data.TransformsAddress, .TransformIndex = i, .LightPosFar = glm::vec4(caster.Position, caster.Range), .Mode = kShadowModePoint};
 					cmd->PushConstants(&push, sizeof(push));
 
 					const Submesh& sm = sub.Mesh->GetSubmeshes()[sub.SubmeshIndex];

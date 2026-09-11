@@ -1,5 +1,5 @@
-import Common.Bindings;
-import Common.BRDF;
+import Bindings;
+import BRDF;
 
 static const float c_AmbientStrength = 0.09;
 

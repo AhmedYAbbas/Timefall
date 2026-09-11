@@ -3,7 +3,7 @@
 // Shared BRDF math. The analytic path (Lit) and the image-based path (IBL) both evaluate it
 // --------------------------
 
-import Common.Bindings;
+import Bindings;
 
 static const float PI = 3.14159265359;
 

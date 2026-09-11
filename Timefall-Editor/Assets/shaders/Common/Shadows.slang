@@ -1,4 +1,4 @@
-import Common.Bindings;
+import Bindings;
 
 // Penumbra caps. The world cap is what keeps apparent softness independent of shadow map resolution
 // and of which cascade a pixel lands in; the texel cap is a sampling-quality limit, since a kernel
@@ -13,6 +13,9 @@ static const float GOLDEN_ANGLE = 2.39996323f;
 
 static const float SPOT_SHADOW_NEAR = 0.05f; // twin of the near plane in ComputeSpotMatrix
 static const float SPOT_SHADOW_MIN_FAR = 0.1f; // twin of its max(range, 0.1) far clamp
+
+static const float POINT_SHADOW_NEAR = 0.05f; // point has no CPU matrix, so this and PointShadowFar are the only definitions
+static const float POINT_SHADOW_MIN_FAR = 0.1f;
 
 // Interleaved gradient noise (Jimenez 2014): low-discrepancy per-pixel seed
 float InterleavedGradientNoise(float2 p)
@@ -38,6 +41,18 @@ float2 VogelDisk(float index, float count, float rotation)
 float LinearizeDepth(float d, float near, float far)
 {
 	return (near * far) / (far - d * (far - near));
+}
+
+float PointShadowFar(float range)
+{
+	return max(range, POINT_SHADOW_MIN_FAR);
+}
+
+// [0,1] perspective depth is z_ndc = A + B / z. The point depth pass writes it and PointShadow compares against it
+float2 PerspectiveDepthCoeffs(float near, float far)
+{
+	const float a = far / (far - near);
+	return float2(a, -near * a);
 }
 
 int SelectCascade(float viewDepth)
