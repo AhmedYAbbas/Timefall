@@ -125,7 +125,7 @@ FSOutput fsMain(VSOutput input)
 		const float att = Attenuate(dist, u_Pass.PointLights[i].Position.w);
 
 		float3 radiance = u_Pass.PointLights[i].Color.rgb * u_Pass.PointLights[i].Color.a * att;
-		if (u_Pass.PointShadowParams[i].x > 0.5)
+		if (u_Pass.PointShadowParams[i].x > 0.5 && att > 0.0f)
 			radiance *= 1.0 - PointShadow(input.worldPos, (int)i, s.N, L, input.position.xy);
 
 		Lo += CookTorrance(s, L, radiance);

@@ -55,6 +55,34 @@ float2 PerspectiveDepthCoeffs(float near, float far)
 	return float2(a, -near * a);
 }
 
+// The receiver's view-space depth in whichever cube face d lands on
+float CubeFaceDepth(float3 d)
+{
+	const float3 a = abs(d);
+	return max(a.x, max(a.y, a.z));
+}
+
+// The two axes spanning the face d lands on
+void CubeFaceTangents(float3 d, out float3 t, out float3 b)
+{
+	const float3 a = abs(d);
+	if (a.x >= a.y && a.x >= a.z)
+	{
+		t = float3(0.0f, 1.0f, 0.0f);
+		b = float3(0.0f, 0.0f, 1.0f);
+	}
+	else if (a.y >= a.z)
+	{
+		t = float3(1.0f, 0.0f, 0.0f);
+		b = float3(0.0f, 0.0f, 1.0f);
+	}
+	else
+	{
+		t = float3(1.0f, 0.0f, 0.0f);
+		b = float3(0.0f, 1.0f, 0.0f);
+	}
+}
+
 int SelectCascade(float viewDepth)
 {
 	for (uint c = 0; c < u_Pass.CascadeCount; ++c)
@@ -271,7 +299,89 @@ float SpotShadow(float3 worldPos, int index, float3 N, float3 L, float2 pixel)
 	return sum / float(u_Pass.PCFSamples);
 }
 
+// PCSS for one point caster. Taps move in the receiver's face plane, so inside a face this is sun and spot's
+// flat-receiver assumption; a tap that crosses a seam compares against its own face's depth
 float PointShadow(float3 worldPos, int index, float3 N, float3 L, float2 pixel)
 {
-	return 0.0f;
+	const float cube = u_Pass.PointShadowParams[index].w;
+	const float lightSize = u_Pass.PointShadowParams[index].y;
+
+	const float3 lightPos = u_Pass.PointLights[index].Position.xyz;
+	const float far = PointShadowFar(u_Pass.PointLights[index].Position.w);
+	const float2 depthCoeffs = PerspectiveDepthCoeffs(POINT_SHADOW_NEAR, far);
+
+	// A 90-degree face is 2z wide at depth z
+	const float texelUV = u_Pass.PointShadowTexel;
+	const float texelWorld = max(2.0f * max(CubeFaceDepth(worldPos - lightPos), POINT_SHADOW_NEAR) * texelUV, 1e-6f);
+
+	const float NdotL = clamp(dot(N, L), 0.0f, 1.0f);
+	const float3 d = worldPos + N * (texelWorld * 2.0f * (1.0f - NdotL)) - lightPos;
+
+	const float zView = max(CubeFaceDepth(d), POINT_SHADOW_NEAR);
+	if (zView >= far)
+		return 0.0f; // beyond the far plane the depth pass stored nothing
+
+	float3 tangent;
+	float3 bitangent;
+	CubeFaceTangents(d, tangent, bitangent);
+
+	const uint map = u_Pass.PointShadowIndex;
+	const float rotation = InterleavedGradientNoise(pixel) * 6.2831853f;
+	const float searchRotation = InterleavedGradientNoiseAlt(pixel) * 6.2831853f;
+
+	float filterTexels;
+	if (u_Pass.SoftShadows != 0)
+	{
+		const float searchWorld = min(lightSize * SEARCH_GAP_WORLD, MAX_FILTER_WORLD);
+		const float tapCeiling = MAX_FILTER_TEXELS * sqrt(float(u_Pass.PCFSamples) / PCF_REFERENCE_SAMPLES);
+		const float maxFilterTexels = max(min(searchWorld / texelWorld, tapCeiling), MIN_FILTER_TEXELS);
+
+		const float searchRadius = maxFilterTexels * texelWorld;
+		float blockerSum = 0.0f;
+		int blockerCount = 0;
+
+		for (int i = 0; i < u_Pass.BlockerSamples; ++i)
+		{
+			const float2 off = VogelDisk(float(i), float(u_Pass.BlockerSamples), searchRotation) * searchRadius;
+			const float3 tap = d + tangent * off.x + bitangent * off.y;
+			const float receiver = depthCoeffs.x + depthCoeffs.y / max(CubeFaceDepth(tap), POINT_SHADOW_NEAR);
+
+			const float stored = g_TextureCubeArrays[NonUniformResourceIndex(map)]
+									 .SampleLevel(g_Samplers[SAMPLER_NEAREST_CLAMP], float4(tap, cube), 0.0f)
+									 .r;
+
+			if (stored < receiver)
+			{
+				blockerSum += stored;
+				blockerCount++;
+			}
+		}
+
+		if (blockerCount == 0)
+			return 0.0f; // no occluder -> fully lit
+
+		const float linBlocker = max(LinearizeDepth(blockerSum / float(blockerCount), POINT_SHADOW_NEAR, far), 1e-4f);
+		const float penumbraWorld = min((zView - linBlocker) / linBlocker * lightSize, searchWorld);
+		filterTexels = clamp(penumbraWorld / texelWorld, MIN_FILTER_TEXELS, maxFilterTexels);
+	}
+	else
+	{
+		filterTexels = FIXED_PCF_TEXELS;
+	}
+
+	const float filterWorld = filterTexels * texelWorld;
+	float sum = 0.0f;
+	for (int i = 0; i < u_Pass.PCFSamples; ++i)
+	{
+		const float2 off = VogelDisk(float(i), float(u_Pass.PCFSamples), rotation) * filterWorld;
+		const float3 tap = d + tangent * off.x + bitangent * off.y;
+		const float receiver = depthCoeffs.x + depthCoeffs.y / max(CubeFaceDepth(tap), POINT_SHADOW_NEAR);
+
+		sum += 1.0f
+			- g_TextureCubeArrays[NonUniformResourceIndex(map)]
+				  .SampleCmpLevelZero(g_ComparisonSamplers[SAMPLER_SHADOW_CMP], float4(tap, cube), receiver);
+	}
+
+	return sum / float(u_Pass.PCFSamples);
 }
+
